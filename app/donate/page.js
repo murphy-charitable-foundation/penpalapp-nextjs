@@ -11,7 +11,6 @@ export default function Donate() {
         { label: "Account Number", value: "01113657970966" },
         { label: "Bank Name", value: "Dfcu Bank Uganda" },
         { label: "Swift Code", value: "DFCUUGKA" },
-        { label: "PayPal", value: "https://www.paypal.com/donate/?hosted_button_id=5AFEFHRYLY558" },
     ];
 
 
@@ -34,7 +33,7 @@ export default function Donate() {
                         </p>
 
                         <div className="mt-6 text-center">
-                            <Link href="/donation-page">
+                            <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
                                 <button className="inline-block text-white bg-blue-600 hover:bg-blue-700 font-semibold py-3 px-6 rounded-md transition duration-300">
                                     Make a Donation
                                 </button>
@@ -60,3 +59,9 @@ export default function Donate() {
     );
 }
 
+
+
+
+// 1 - Firebase data retrieval in child selection, home, inbox instead of hard code
+// 2 - Child selection UI Fixes 
+// 3 - Messaging screen TS to JS Migrate
