@@ -6,65 +6,133 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
+import { db } from '../firebaseConfig'; // Adjust this import to where your Firebase config is initialized
+import { collection, addDoc, getDocs} from 'firebase/firestore';
+import { useRouter } from 'next/navigation'; // If you want to redirect after sending
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
+
 
 import { FiFileText, FiMic, FiSend } from 'react-icons/fi';
 
 export default function WriteLetter() {
     const [letterContent, setLetterContent] = useState("");
+    const [isSending, setIsSending] = useState(false);
+    const router = useRouter(); // useRouter hook for redirection
+    const [users, setUsers] = useState([]);
+    const [selectedRecipient, setSelectedRecipient] = useState(null);
+    const { currentUser } = useContext(AuthContext); // Get current user info
+
+
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const querySnapshot = await getDocs(collection(db, "users"));
+            const userList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setUsers(userList);
+        };
+
+        fetchUsers();
+    }, []);
+
+    // Function to send letter
+    const handleSendLetter = async () => {
+        if (!letterContent || !selectedRecipient) {
+            alert("Please fill in the letter content and select a recipient.");
+            return;
+        }
+
+        setIsSending(true);
+
+        const letterData = {
+            content: letterContent,
+            recipientId: selectedRecipient.id, // Assuming you have the recipient's ID when selected
+            senderId: currentUser.uid, // Get the sender's user ID from the current user context
+            dateSent: new Date(),
+            status: 'sent',
+        };
+
+        try {
+            await addDoc(collection(db, "letters"), letterData);
+            alert('Letter sent successfully!');
+            setLetterContent(''); // Clear the letter content
+            setIsSending(false);
+            router.push('/sent-letters'); // Assuming you have a route for sent letters
+        } catch (error) {
+            console.error("Error sending letter: ", error);
+            alert("Failed to send the letter.");
+            setIsSending(false);
+        }
+    };
+
+    // Open recipient selection modal
+    const openRecipientModal = () => {
+        setIsSelectingRecipient(true);
+    };
+
+    // Close recipient selection modal
+    const closeRecipientModal = () => {
+        setIsSelectingRecipient(false);
+    };
+
+    // Handle recipient selection
+    const handleRecipientSelect = (user) => {
+        setSelectedRecipient(user);
+        closeRecipientModal();
+    };
+
+
+    const RecipientModal = () => (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
+            <div className="bg-white p-4 rounded-lg max-w-md w-full">
+                <h3 className="font-semibold text-lg mb-2">Select a Recipient</h3>
+                <ul className="max-h-60 overflow-auto">
+                    {users.map((user) => (
+                        <li key={user.id} onClick={() => handleRecipientSelect(user)} className="p-2 hover:bg-gray-200 cursor-pointer">
+                            {user.firstName} {user.lastName}
+                        </li>
+                    ))}
+                </ul>
+                <button onClick={closeRecipientModal} className="mt-4 p-2 w-full bg-gray-300 text-gray-700 rounded-lg">Close</button>
+            </div>
+        </div>
+    );
+
+
 
     return (
         <div className="min-h-screen bg-[#E5E7EB] p-4">
             <div className="bg-white shadow rounded-lg">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
+                <div className="p-4 border-b border-gray-300 bg-[#FAFAFA] flex justify-between items-center">
                     <Link href="/">
-                        <button>
-                            <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
+                        <button className="text-gray-600"><FiSend className="h-6 w-6" /></button>
                     </Link>
-                    <h1 className="text-xl font-bold text-center flex-grow text-black">Write a letter</h1>
-                    <button className="opacity-0">{"<"}</button>
-                </div>
-
-                {/* Recipient Info */}
-                <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
-                    <Image src="/usericon.png" alt="Recipient Name" width={50} height={50} className="rounded-full border-2 border-teal-500" />
-                    <div>
-                        <h2 className="font-bold text-black">Re: Louise Palermo</h2>
-                        <p className="text-sm text-gray-500">Uganda</p>
+                    <h1 className="text-xl font-bold text-black">Write a Letter</h1>
+                    <div className="opacity-0">
+                        <FiSend className="h-6 w-6" />
                     </div>
                 </div>
-
-                {/* Text Area */}
-                <textarea
-                    className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
-                    rows="8"
-                    placeholder="Tap to write letter..."
-                    value={letterContent}
-                    onChange={(e) => setLetterContent(e.target.value)}
-                />
-
-                {/* Attachments and Actions */}
-                <div className="flex justify-between items-center p-4 bg-[#F3F4F6] border-t border-gray-300">
-                    <span className="text-black">0 files</span>
-                    <div className="space-x-2">
-                        <button className="text-black p-2 rounded-full">
-                            <FiFileText className="h-6 w-6" />
-                        </button>
-                        <button className="text-black p-2 rounded-full">
-                            <FiMic className="h-6 w-6" />
-                        </button>
-                        <button className="text-black p-2 rounded-full">
-                            <FiSend className="h-6 w-6" />
-                        </button>
+                {selectedRecipient && (
+                    <div className="p-4 bg-[#F3F4F6] flex items-center space-x-4">
+                        <Image src="/usericon.png" alt="Recipient" width={40} height={40} className="rounded-full" />
+                        <div>
+                            <h2 className="font-bold text-black">{selectedRecipient.firstName} {selectedRecipient.lastName}</h2>
+                        </div>
+                    </div>
+                )}
+                <div className="p-4">
+                    <textarea className="w-full p-4 h-60 text-black bg-white border border-gray-300 rounded-lg" placeholder="Start writing..." value={letterContent} onChange={(e) => setLetterContent(e.target.value)}></textarea>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-[#F3F4F6]">
+                    <button onClick={openRecipientModal} className="bg-blue-500 text-white p-2 rounded-lg">Select Recipient</button>
+                    <div className="flex space-x-3">
+                        <FiFileText className="h-6 w-6 text-gray-600" />
+                        <FiMic className="h-6 w-6 text-gray-600" />
+                        <FiSend className="h-6 w-6 text-gray-600" onClick={isSending ? null : handleSendLetter} />
                     </div>
                 </div>
-
-                {/* Character Count */}
-                <div className="text-right text-sm p-4 text-gray-600">{letterContent.length} / 500</div>
             </div>
+            {isSelectingRecipient && <RecipientModal />}
         </div>
     );
 }
