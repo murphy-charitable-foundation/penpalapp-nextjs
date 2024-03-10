@@ -6,15 +6,8 @@ import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
 
-import ProfileIcon from '/public/homeicon.png';
-import LetterIcon from '/public/lettericon.png';
-import DiscoverIcon from '/public/discovericon.png';
-import AboutIcon from '/public/abouticon.png';
-import ContactIcon from '/public/contacticon.png';
-import DonateIcon from '/public/donateicon.png';
-import SettingsIcon from '/public/settingsicon.png';
-import NotifyIcon from '/public/notifyicon.png';
-import WriteIcon from '/public/writeicon.png';
+
+import { FaUserCircle, FaRegEnvelope, FaCompass, FaInfoCircle, FaPhone, FaDonate, FaCog, FaBell, FaPen, FaUserAlt, FaHandHoldingHeart, FaInfo, FaEnvelopeOpenText } from 'react-icons/fa';
 
 
 
@@ -33,7 +26,7 @@ export default function Home() {
             country: 'Uganda',
             message: 'Hey there, How is it going? I saw you pictures in Italy. They look amazing. Lorem ipsum dolor sit amet...',
             image: '/usericon.png',
-            status: 'read', 
+            status: 'read',
         },
     ];
 
@@ -42,7 +35,7 @@ export default function Home() {
     const meetKids = [
         {
             name: 'Louise Perdomo',
-            image: '/usericon.png', 
+            image: '/usericon.png',
             details: '8, male, Uganda',
             interests: ['Math', 'Zoo', 'Capoeira'],
         },
@@ -54,13 +47,13 @@ export default function Home() {
         },
         {
             name: 'Amelia Nkechi',
-            image: '/usericon.png', 
+            image: '/usericon.png',
             details: '7, female, Nigeria',
             interests: ['Art', 'Dance', 'Nature'],
         },
         {
             name: 'Miguel Esteban',
-            image: '/usericon.png', 
+            image: '/usericon.png',
             details: '10, male, Colombia',
             interests: ['Coding', 'Chess', 'Books'],
         },
@@ -77,42 +70,24 @@ export default function Home() {
                 <header className="flex justify-between items-center bg-[#F8F8F8] p-4 border-b border-gray-300">
                     {/* User Info */}
                     <Link href="/login">
-
-                        <button>
-                            <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                            </svg>
+                        <button className="flex items-center text-gray-600">
+                            <FaUserCircle className="h-6 w-6" />
                         </button>
                     </Link>
-                    <div className="flex items-center">
-                        <Image src="/usericon.png" alt="Jack Doe" width={50} height={50} className="rounded-full border-2 border-teal-500" />
-                        <div className="ml-2">
-                            <div className="font-semibold text-black">Jack Doe</div>
-                            <div className="text-sm text-gray-500">Mexico</div>
-                        </div>
+                    <div className="ml-2">
+                        <div className="font-semibold text-black">Jack Doe</div>
+                        <div className="text-sm text-gray-500">Mexico</div>
                     </div>
                     {/* Icons */}
                     <div className="flex items-center space-x-3">
-                        {/* Settings Icon */}
                         <Link href="/settings">
-                            <button className="flex flex-col items-center">
-                                {/* Home Icon */}
-                                <Image src={SettingsIcon} alt="Home" className="h-6 w-6" />
-                            </button>
+                            <button className="text-gray-600"><FaCog className="h-6 w-6" /></button>
                         </Link>
-                        {/* Notification Icon */}
                         <Link href="/discover">
-                            <button className="flex flex-col items-center">
-                                {/* Home Icon */}
-                                <Image src={NotifyIcon} alt="Home" className="h-6 w-6" />
-                            </button>
+                            <button className="text-gray-600"><FaBell className="h-6 w-6" /></button>
                         </Link>
-                        {/* Write Icon */}
                         <Link href="/letterwrite">
-                            <button className="flex flex-col items-center">
-                                {/* Home Icon */}
-                                <Image src={WriteIcon} alt="Home" className="h-6 w-6" />
-                            </button>
+                            <button className="text-gray-600"><FaPen className="h-6 w-6" /></button>
                         </Link>
                     </div>
                 </header>
@@ -133,7 +108,8 @@ export default function Home() {
 
                     {/* Last Letters */}
                     <section className="mt-6">
-                        <h2 className="font-bold text-lg mb-3 text-black">Last letters (2)</h2>
+                        <h2 className="font-bold text-lg mb-3 text-black">Last letters (2)  <div><Link href="/myletters">
+                            <button className="text-blue-600 text-black">Show more</button></Link></div></h2>
                         {lastLetters.map((letter, index) => (
                             <div
                                 key={index}
@@ -207,46 +183,40 @@ export default function Home() {
                 </main>
 
                 {/* Bottom Navigation */}
-                <nav className="fixed inset-x-0 bottom-0 bg-[#cfe899] p-2 flex justify-between text-[#333333] border-t border-[#E6E6E6]"> 
+                <nav className="fixed inset-x-0 bottom-0 bg-[#cfe899] p-2 flex justify-between text-[#333333] border-t border-[#E6E6E6]">
                     <Link href="/profile">
                         <button className="flex flex-col items-center">
-                            {/* Home Icon */}
-                            <Image src={ProfileIcon} alt="Home" className="h-6 w-6" />
+                            <FaUserAlt className="h-6 w-6" />
                             <span className="text-xs">Profile</span>
                         </button>
                     </Link>
                     <Link href="/letterwrite">
-                        <button className="flex flex-col items-center relative">
-                            {/* Letter Icon */}
-                            <Image src={LetterIcon} alt="Home" className="h-6 w-6" />
+                        <button className="flex flex-col items-center">
+                            <FaPen className="h-6 w-6" />
                             <span className="text-xs">Letter</span>
                         </button>
                     </Link>
                     <Link href="/discovery">
                         <button className="flex flex-col items-center">
-                            {/* Discovery Icon */}
-                            <Image src={DiscoverIcon} alt="Home" className="h-6 w-6" />
+                            <FaCompass className="h-6 w-6" />
                             <span className="text-xs">Discover</span>
                         </button>
                     </Link>
                     <Link href="/donate">
                         <button className="flex flex-col items-center">
-                            {/* Donation Icon */}
-                            <Image src={DonateIcon} alt="Home" className="h-6 w-6" />
+                            <FaHandHoldingHeart className="h-6 w-6 color-" />
                             <span className="text-xs">Donate</span>
                         </button>
                     </Link>
                     <Link href="/about">
                         <button className="flex flex-col items-center">
-                            {/* Donation Icon */}
-                            <Image src={AboutIcon} alt="Home" className="h-6 w-6" />
+                            <FaInfo className="h-6 w-6" />
                             <span className="text-xs">About</span>
                         </button>
                     </Link>
                     <Link href="/contact">
                         <button className="flex flex-col items-center">
-                            {/* Donation Icon */}
-                            <Image src={ContactIcon} alt="Home" className="h-6 w-6" />
+                            <FaEnvelopeOpenText className="h-6 w-6" />
                             <span className="text-xs">Contact</span>
                         </button>
                     </Link>
