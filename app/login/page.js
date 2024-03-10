@@ -21,7 +21,7 @@ export default function Login() {
         setError(''); 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            router.push('/profile'); 
+            router.push('/letterhome'); 
         } catch (error) {
             console.error("Authentication error:", error.message);
             switch (error.code) {
