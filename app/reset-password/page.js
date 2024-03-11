@@ -55,7 +55,7 @@ export default function ResetPassword() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Ex: user@gmail.com"
-        style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '80%', margin: '0 auto', display: 'block' }}
+        style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '80%', margin: '0 auto', display: 'block', color: 'black' }}
       />
       <button
         onClick={resetPassword}
