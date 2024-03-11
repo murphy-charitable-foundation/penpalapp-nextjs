@@ -3,7 +3,8 @@
 // pages/login.js
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from '../firebaseConfig';
+import { db, auth } from '../firebaseConfig'; 
+import { doc, getDoc, setDoc } from "firebase/firestore"; 
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '/public/murphylogo.png';
@@ -21,7 +22,14 @@ export default function Login() {
         setError(''); 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            router.push('/letterhome'); 
+            const uid = auth.currentUser.uid;
+            const userRef = doc(db, "users", uid);
+            const userSnap = await getDoc(userRef)
+            if (userSnap.exists()) {
+                router.push('/letterhome'); 
+            } else {
+                router.push('/create-acc'); 
+            }
         } catch (error) {
             console.error("Authentication error:", error.message);
             switch (error.code) {
@@ -46,6 +54,7 @@ export default function Login() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
             <div className="w-full max-w-md space-y-8">
+            <div style={{ textAlign: 'left', padding: '20px', background: 'white' }}>
                 <Link href="/">
                     <button>
                         <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,34 +76,34 @@ export default function Login() {
                 </h2>
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="rounded-md shadow-sm -space-y-px">
                         <div>
-                            <input
-                                id="email-address"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                                placeholder="Email address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)} 
-                            />
+                        <input
+                            type="email"
+                            value={email}
+                            autoComplete="email"
+                            required
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Ex. user@gmail.com"
+                            style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block' }}
+                        />
                         </div>
                         <div>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autoComplete="current-password"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                        </div>
+                        <input
+                            type="password"
+                            value={password}
+                            autoComplete="current-password"
+                            required
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="******"
+                            style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block' }}
+                        />
                     </div>
+
+                    <div className="text-sm">
+                            <a href="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
+                                Forgot your password?
+                            </a>
+                        </div>
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -102,12 +111,6 @@ export default function Login() {
                             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                                 Remember me
                             </label>
-                        </div>
-
-                        <div className="text-sm">
-                            <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                                Forgot your password?
-                            </a>
                         </div>
                     </div>
 
@@ -122,6 +125,7 @@ export default function Login() {
                         Create Account
                     </button>
                 </Link>
+            </div>
             </div>
         </div>
     );
