@@ -84,7 +84,7 @@ export default function Login() {
                             required
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Ex. user@gmail.com"
-                            style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block' }}
+                            style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block', color: 'black' }}
                         />
                         </div>
                         <div>
@@ -95,7 +95,7 @@ export default function Login() {
                             required
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="******"
-                            style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block' }}
+                            style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block', color: 'black' }}
                         />
                     </div>
 
