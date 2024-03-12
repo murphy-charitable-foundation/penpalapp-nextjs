@@ -92,6 +92,7 @@ export default function ResetPassword() {
             padding: '20px',
             borderRadius: '5px',
             textAlign: 'center',
+            width: '80%',
             boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2)'
           }}>
             <h3 style={{ color: '#023268' }}>Check your email</h3>
