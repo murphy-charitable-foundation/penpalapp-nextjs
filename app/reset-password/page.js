@@ -37,7 +37,7 @@ export default function ResetPassword() {
                         className="h-6 w-6 cursor-pointer"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        stroke="black"
                     >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -95,10 +95,7 @@ export default function ResetPassword() {
             boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2)'
           }}>
             <h3 style={{ color: '#023268' }}>Check your email</h3>
-            <p>Please check your email inbox and spam folder for a verification email to reset your password.</p>
-            <button onClick={closeModal} style={{ backgroundColor: 'lightgray', color: 'black', padding: '10px 20px', margin: '10px 0', borderRadius: '20px', border: 'none', cursor: 'pointer' }}>
-              Cancel
-            </button>
+            <p style={{ color: 'black' }}>Please check your email inbox and spam folder for a verification email to reset your password.</p>
             <button onClick={closeModal} style={{ backgroundColor: '#48801c', color: 'white', padding: '10px 20px', margin: '10px 0', borderRadius: '20px', border: 'none', cursor: 'pointer' }}>
               Understood
             </button>
