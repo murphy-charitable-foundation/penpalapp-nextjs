@@ -153,14 +153,14 @@ export default function Home() {
 
 
                     {/* Meet Some Kids Section */}
-                    <section className="mt-6">
+                    <section className="mt-8">
                         <div className="flex justify-between items-center">
                             <h2 className="font-bold text-lg text-black">Meet Some Kids</h2>
-                            <Link href="/kids">
+                            <Link href="/discovery">
                                 <button className="text-blue-600 text-black">Show All</button>
                             </Link>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div className="grid grid-cols-2 gap-4 py-12">
                             {meetKids.map((kid, index) => (
                                 <div key={index} className="flex flex-col items-center text-black bg-[#94c1f2] p-3 rounded-lg shadow">
                                     <Image src={kid.image} alt={kid.name} width={70} height={70} className="rounded-full" />
