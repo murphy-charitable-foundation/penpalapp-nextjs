@@ -20,6 +20,9 @@ export default function WriteLetter() {
   const router = useRouter();
   const [isSending, setIsSending] = useState(false);
   const [user, setUser] = useState(null); 
+  const [selectedUser, setSelectedUser] = useState(null);
+  const auth = getAuth();
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -29,37 +32,32 @@ export default function WriteLetter() {
         id: doc.id,
         ...doc.data(),
       }));
-      console.log(usersList); // Check if users are fetched
       setUsers(usersList);
     };
 
     fetchUsers();
   }, []);
 
-  // Function to send a letter
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !selectedUser) {
       alert("Please fill in the letter content and select a recipient.");
       return;
     }
-
-    // Assuming you're correctly retrieving the current user's ID. Adjust as needed.
-    const senderId = "CURRENT_USER_ID"; // You should replace this with the actual current user's ID
-    if (!senderId) {
+  
+    if (!auth.currentUser) { // Directly using auth.currentUser for immediate check
       alert("Sender not identified, please log in.");
       return;
     }
-
+  
     setIsSending(true);
-
+  
     const letterData = {
       content: letterContent,
-      recipientId: selectedUser.id, // Use the selected user's ID
-      senderId: senderId,
-      timestamp: new Date(), // Capture the current time as the send timestamp
-      // Any other data you want to include in the letter document
+      recipientId: selectedUser.id,
+      senderId: auth.currentUser.uid, // Directly using the uid from auth.currentUser
+      timestamp: new Date(),
     };
-
+  
     try {
       await addDoc(collection(db, "letters"), letterData);
       alert("Letter sent successfully!");
@@ -73,8 +71,8 @@ export default function WriteLetter() {
       setIsSending(false);
     }
   };
+  
 
-  const [selectedUser, setSelectedUser] = useState(null);
 
   // Simplified modal close and user selection functions
   const openRecipientModal = () => {
