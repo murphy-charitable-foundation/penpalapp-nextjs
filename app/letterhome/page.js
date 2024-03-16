@@ -218,7 +218,7 @@ export default function Home() {
 
 
                     {/* Meet Some Kids Section */}
-                    <section className="mt-6">
+                    <section className="mt-8">
                         <div className="flex justify-between items-center">
                             <h2 className="font-bold text-lg text-black">Meet Some Kids</h2>
                             <Link href="/discovery">

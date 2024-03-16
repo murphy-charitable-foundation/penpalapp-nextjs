@@ -22,7 +22,14 @@ export default function Login() {
         setError(''); 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            router.push('/letterhome'); 
+            const uid = auth.currentUser.uid;
+            const userRef = doc(db, "users", uid);
+            const userSnap = await getDoc(userRef)
+            if (userSnap.exists()) {
+                router.push('/letterhome'); 
+            } else {
+                router.push('/create-acc'); 
+            }
         } catch (error) {
             console.error("Authentication error:", error.message);
             switch (error.code) {
