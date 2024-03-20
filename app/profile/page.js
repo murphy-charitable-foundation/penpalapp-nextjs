@@ -11,19 +11,19 @@ import { updateDoc } from "firebase/firestore";
 
 export default function EditProfile() {
     // State initializations
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
+    const [first_name, setFirstName] = useState('');
+    const [last_name, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [birthday, setBirthday] = useState('');
+    const [date_of_birth, setBirthday] = useState('');
     const [country, setCountry] = useState('');
     const [village, setVillage] = useState('');
     const [bio, setBio] = useState('');
-    const [educationLevel, setEducationLevel] = useState('');
-    const [isOrphan, setIsOrphan] = useState(false); 
-    const [livesWith, setLivesWith] = useState('');
-    const [dreamJob, setDreamJob] = useState('');
+    const [education_level, setEducationLevel] = useState('');
+    const [is_orphan, setIsOrphan] = useState(false); 
+    const [lives_with, setLivesWith] = useState('');
+    const [dream_job, setDreamJob] = useState('');
     const [hobby, setHobby] = useState('');
-    const [favoriteColor, setFavoriteColor] = useState('');
+    const [favorite_color, setFavoriteColor] = useState('');
     const [user, setUser] = useState(null);
 
 
@@ -38,19 +38,19 @@ export default function EditProfile() {
     
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
-                    setFirstName(userData.firstName || '');
-                    setLastName(userData.lastName || '');
+                    setFirstName(userData.first_name || '');
+                    setLastName(userData.last_name || '');
                     setEmail(userData.email || '');
-                    setBirthday(userData.birthday || '');
+                    setBirthday(userData.date_of_birth || '');
                     setCountry(userData.country || '');
                     setVillage(userData.village || '');
                     setBio(userData.bio || '');
-                    setEducationLevel(userData.educationLevel || '');
-                    setIsOrphan(userData.isOrphan ? 'Yes' : 'No'); 
-                    setLivesWith(userData.livesWith || '');
-                    setDreamJob(userData.dreamJob || '');
+                    setEducationLevel(userData.education_level || '');
+                    setIsOrphan(userData.is_orphan ? 'Yes' : 'No'); 
+                    setLivesWith(userData.lives_with || '');
+                    setDreamJob(userData.dream_job || '');
                     setHobby(userData.hobby || '');
-                    setFavoriteColor(userData.favoriteColor || '');
+                    setFavoriteColor(userData.favorite_color || '');
                 } else {
                     console.log("No such document!");
                 }
@@ -73,19 +73,19 @@ export default function EditProfile() {
             const userProfileRef = doc(db, "users", uid);
 
             const userProfile = {
-                firstName,
-                lastName,
+                first_name,
+                last_name,
                 email, 
-                birthday,
+                date_of_birth,
                 country,
                 village,
                 bio,
-                educationLevel,
-                isOrphan: isOrphan === 'Yes' ? true : false,
-                livesWith,
-                dreamJob,
+                education_level,
+                is_orphan: is_orphan === 'Yes' ? true : false,
+                lives_with,
+                dream_job,
                 hobby,
-                favoriteColor,
+                favorite_color,
             };
 
             try {
@@ -179,7 +179,7 @@ export default function EditProfile() {
                         <input
                             type="text"
                             id="firstName"
-                            value={firstName}
+                            value={first_name}
                             onChange={(e) => setFirstName(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         />
@@ -189,7 +189,7 @@ export default function EditProfile() {
                         <input
                             type="text"
                             id="lastName"
-                            value={lastName}
+                            value={last_name}
                             onChange={(e) => setLastName(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         />
@@ -240,7 +240,7 @@ export default function EditProfile() {
                         <input
                             type="date"
                             id="birthday"
-                            value={birthday}
+                            value={date_of_birth}
                             onChange={(e) => setBirthday(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         />
@@ -248,10 +248,10 @@ export default function EditProfile() {
 
                     {/* Education Level Dropdown */}
                     <div>
-                        <label htmlFor="educationLevel" className="text-sm font-medium text-gray-700 block mb-2">Education level</label>
+                        <label htmlFor="education_level" className="text-sm font-medium text-gray-700 block mb-2">Education level</label>
                         <select
                             id="educationLevel"
-                            value={educationLevel}
+                            value={education_level}
                             onChange={(e) => setEducationLevel(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
@@ -270,7 +270,7 @@ export default function EditProfile() {
                         <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Is orphan</label>
                         <select
                             id="isOrphan"
-                            value={isOrphan}
+                            value={is_orphan}
                             onChange={(e) => setIsOrphan(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
@@ -284,7 +284,7 @@ export default function EditProfile() {
                         <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Who the child lives with</label>
                         <select
                             id="isOrphan"
-                            value={livesWith}
+                            value={lives_with}
                             onChange={(e) => setLivesWith(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
@@ -305,7 +305,7 @@ export default function EditProfile() {
                         <input
                             type="text"
                             id="dreamjob"
-                            value={dreamJob}
+                            value={dream_job}
                             onChange={(e) => setDreamJob(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                             placeholder="Ex: Astronaut"
@@ -329,7 +329,7 @@ export default function EditProfile() {
                         <input
                             type="text"
                             id="favcolor"
-                            value={favoriteColor}
+                            value={favorite_color}
                             onChange={(e) => setFavoriteColor(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                             placeholder="Ex: Blue"
