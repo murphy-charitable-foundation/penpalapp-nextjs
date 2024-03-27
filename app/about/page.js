@@ -38,7 +38,7 @@ export default function About() {
                 
                 <div className="bg-blue-600 text-white p-6">
                     <blockquote className="italic text-lg">
-                        "Together, we can create a brighter future for the children of Uganda."
+                        Together, we can create a brighter future for the children of Uganda.
                     </blockquote>
                 </div>
             </div>
