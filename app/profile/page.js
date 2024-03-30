@@ -8,6 +8,8 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore"; 
 import { db, auth } from '../firebaseConfig'; 
 import { updateDoc } from "firebase/firestore";
+import BottomNavBar from '@/components/bottom-nav-bar';
+
 
 export default function EditProfile() {
     // State initializations
@@ -134,14 +136,11 @@ export default function EditProfile() {
             <div className="max-w-lg mx-auto p-6">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                        <Link href="/login">
-
-                            <button>
-                                <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                        </Link>
+                    <button onClick={() => window.history.back()}>
+                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
 
                         <h1 className="ml-4 text-xl font-bold text-gray-800">Edit profile</h1>
                     </div>
@@ -343,6 +342,7 @@ export default function EditProfile() {
 
                 </div>
             </div>
+            <BottomNavBar />
         </div>
     );
 }
