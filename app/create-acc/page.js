@@ -216,7 +216,7 @@ export default function CreateAccount() {
             </form>
           </>
         ) : (
-          <EditProfileImage />
+          <EditProfileImage router={router} />
         )}
       </div>
     </div>

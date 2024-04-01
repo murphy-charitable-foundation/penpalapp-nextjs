@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 const SelectProfileLocation = ({ updateStage, countries }) => {
-	console.log(countries)
 	const [location, setLocation] = useState(null)
 	const buttonClasses = () => {
 		if (!location) { 
