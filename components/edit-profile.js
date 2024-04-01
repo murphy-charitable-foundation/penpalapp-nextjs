@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react';
-import Cropper from 'react-cropper';
-import Dropzone from 'react-dropzone';
-import 'cropperjs/dist/cropper.css';
+import { useState, useRef, useEffect } from 'react';
 import SelectProfileImage from './select-profile-image';
+import SelectProfileLocation from './select-location';
 
-const EditProfileImage = () => {
+const EditProfileImage = ({ }) => {
+	// console.log("C", countries)
 	const [image, setImage] = useState(null);
 	const [croppedImage, setCroppedImage] = useState(null);
 	const [newProfileImage, setNewProfileImage] = useState(null);
@@ -17,6 +16,17 @@ const EditProfileImage = () => {
 		}
 		return "w-[80%] mx-auto mt-[100px] p-2 bg-[#4E802A] text-white font-semibold  rounded-[100px]"
 	}
+	const [countries, setCountries] = useState([]);
+
+	useEffect(() => {
+		const fetchCountries = async () => {
+			const res = await fetch("https://countriesnow.space/api/v0.1/countries/iso");
+			const data = await res.json();
+			console.log(data)
+			setCountries(data.data)
+		}
+		fetchCountries()
+	}, [stage])
 
 	const handleDrop = (acceptedFiles) => {
 		setImage(URL.createObjectURL(acceptedFiles[0]));
@@ -49,17 +59,17 @@ const EditProfileImage = () => {
 		setPreviewURL(null)
 	}
 
-	const updateStage = (skip=false) => {
-		if(skip){
+	const updateStage = (stage, skip = false) => {
+		if (skip) {
 			resetAll()
 		}
-		setStage(1)
+		setStage(stage)
 	}
 
 	return (
 		<div className='flex flex-col'>
 			{stage === 0 && (
-				<SelectProfileImage 
+				<SelectProfileImage
 					image={image}
 					handleSave={handleSave}
 					newProfileImage={newProfileImage}
@@ -72,10 +82,23 @@ const EditProfileImage = () => {
 				/>
 			)}
 			{stage === 1 && (
-				<></>
+				<SelectProfileLocation countries={countries} />
 			)}
 		</div>
 	);
 };
+
+// export async function getStaticProps() {
+// 	// Fetch options from an API
+// 	const res = await fetch("https://countriesnow.space/api/v0.1/countries/iso");
+// 	const countries = await res.json();
+
+// 	// Pass options to the page component as props
+// 	return {
+// 		props: {
+// 			countries: countries.data ?? [],
+// 		},
+// 	};
+// }
 
 export default EditProfileImage;

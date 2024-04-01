@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
 import Cropper from 'react-cropper';
 import Dropzone from 'react-dropzone';
 import 'cropperjs/dist/cropper.css';
 
-const SelectProfileImage = ({image, handleSave, newProfileImage, previewURL, buttonClasses, handleDrop, handleCrop, cropperRef, updateStage}) => {
+const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, buttonClasses, handleDrop, handleCrop, cropperRef, updateStage }) => {
 	return (
 		<div className='flex flex-col'>
 			<h2 className='text-[#034792] text-center text-2xl font-bold my-[64px]'>Add a profile avatar</h2>
@@ -41,8 +40,8 @@ const SelectProfileImage = ({image, handleSave, newProfileImage, previewURL, but
 					<button onClick={handleSave}>Save</button>
 				</div>
 			)}
-			<button className={buttonClasses()} onClick={() => updateStage(false)}>Continue</button>
-			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(true)}>Skip for now</button>
+			<button className={buttonClasses()} onClick={() => updateStage(1, false)}>Continue</button>
+			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(1, true)}>Skip for now</button>
 		</div>
 	);
 };
