@@ -172,7 +172,7 @@ export default function EditProfile() {
                 </div>
 
                 {/* Form Fields */}
-                <div className="space-y-4">
+                <div className="space-y-4 mb-[120px]">
                     <div>
                         <label htmlFor="firstName" className="text-sm font-medium text-gray-700 block mb-2">First name</label>
                         <input
