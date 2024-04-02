@@ -1,13 +1,15 @@
 "use client"
 
+// pages/change-password.js
 import { db, auth } from '../firebaseConfig'; 
-import { useState } from 'react';
+import React,{ useState } from 'react';
 import { useRouter } from 'next/navigation';
 import logo from '/public/murphylogo.png';
 import Image from 'next/image';
 //import { sendPasswordResetEmail } from 'firebase/auth';
 import { updatePassword, signOut } from "firebase/auth";
 //import { handleLogout } from '../profile/page'; 
+import PasswordChecklist from "react-password-checklist";
 
 export default function ChangePassword() {
   const [password, setPassword] = useState('');
@@ -16,30 +18,33 @@ export default function ChangePassword() {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (password !== repeatPassword) {
-            alert("Passwords do not match.");
-            return;
-        }
-        const user = auth.currentUser;
-        const uid = user.uid;
-        updatePassword(user, password)
-        .then(() => {
-          setShowModal(true);
-        })
-        .catch((error) => {
+        //if(password !== repeatPassword){
+          //return;
+        //}
+        //setError('');
+        try{
+          const user = auth.currentUser;
+          const uid = user.uid;
+          updatePassword(user, password)
+          
+          setShowModal(true); 
+          //router.push('/login'); 
+             
+        }catch(error) {
           console.error(error);
-        });           
-        // Redirect to profile page or any other page as needed
-        router.push('/login'); 
-
-    }
-
+        }           
+        //Redirect to profile page or any other page as needed
+        //router.push('/login'); 
+  }
+ 
   function closeModal() {
     setShowModal(false);
+    router.push('/login'); 
   }
+
 
   return (
     //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
@@ -68,13 +73,32 @@ export default function ChangePassword() {
             <div style={{textAlign:'left',marginTop:'80px'}}>
                 <label htmlFor="password" style={{padding:'10px'}} className="text-sm font-medium text-gray-700 block mb-2"> New password</label>
                 <input id="password" name="password" type="password" placeholder="*******" autoComplete="new-password" style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" value={password} onChange={(e) => setPassword(e.target.value)} />
+
             </div>
             <div style={{textAlign:'left',marginTop:'50px'}}>
                 <label htmlFor="repeat-password" style={{padding:'10px'}} className="text-sm font-medium text-gray-700 block mb-2">Verified a new Password</label>
                 <input id="repeat-password" name="repeatPassword" type="password" placeholder="*******" style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} />
+                
             </div>
-        
 
+            <div className="text-left text-sm text-red-600">
+              <PasswordChecklist
+                    rules={["minLength", "specialChar", "number", "capital","lowercase","match"]}
+                    minLength={7}
+                    value={password}
+                    valueAgain={repeatPassword}
+                    messages={{
+                       minLength:"Must be at least 7 characters.",
+                       specialChar:"Must contain at least 1 special character.",
+                       number:"Must contain at least 1 number.",
+                       capital:"Must contain at least 1 uppercase letter.",
+                       lowercase:"Must conatain at least 1 lowercase letter.",
+                       match:"Passwords do not match.",
+                    }}
+               />
+             </div>
+
+        <div>
         <button
             type="submit"
             style={{
@@ -89,11 +113,12 @@ export default function ChangePassword() {
             marginTop:'50px',
             cursor: 'pointer'
             }}
-            className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-green-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200  hover:text-white hover:bg-[#48801c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
 
         >
             Done
         </button>
+        </div>
     </form>
 
       {showModal && (
