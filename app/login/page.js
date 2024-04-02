@@ -14,6 +14,7 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [showModal, setShowModal] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (e) => {
@@ -33,19 +34,27 @@ export default function Login() {
             console.error("Authentication error:", error.message);
             switch (error.code) {
                 case 'auth/user-not-found':
-                    setError('No user found with this email.');
+                    setError('The email is not correct.');
+                    
                     break;
                 case 'auth/wrong-password':
-                    setError('Wrong password.');
+                    setError('The password is not correct.');
                     break;
                 case 'auth/too-many-requests':
-                    setError('Too many attempts. Try again later.');
+                    setError('Too many attempts. Your account was blocked.');
+                    setShowModal(true);
                     break;
                 default:
                     setError('Failed to log in.');
             }
         }
-    };
+    }
+
+        function closeModal() {
+            setShowModal(false);
+        }
+
+    //};
 
     return (
         //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
@@ -102,8 +111,8 @@ export default function Login() {
                         />
                         </div>
                         
-                    
-
+                        {error && <span className="flex items-left text-sm text-red-500">{error}</span>}
+                        
                     <div className="text-sm">
                             <a href="/reset-password" style={{textDecoration:'underline'}} className="font-medium text-gray-600 hover:text-blue-500">
                                 Forgot your password?
@@ -131,15 +140,49 @@ export default function Login() {
                            cursor:'pointer',
                            marginTop:"120px",
                            }} 
-                           className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-green-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                           className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#48801c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent">
                             Log in
                         </button>
-                        {error && <span className="flex items-left text-sm font-bold text-gray-500">Something went wrong</span>}
+                        
                     </div>
                 </form>
 
+        {showModal && (
+        <div style={{
+          position: 'absolute',
+          paddingTop:'80px',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow:'auto',
+          zIndex: '2',
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '5px',
+            textAlign: 'left',
+            width: '80%',
+            boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2)'
+          }}>
+            <h3 style={{ color: 'red'}}>Your account was blocked</h3>
+            <p style={{ color: 'black', marginTop:'20px',leading:'[2rem]'}}>Please send an email to verify the reason.</p>
+            <div className="flex justify-center">
+            <button onClick={closeModal} style={{backgroundColor: '#48801c', color: 'white', padding: '10px 20px', margin: '30px 0', borderRadius: '20px', border: 'none', cursor: 'pointer' }}>
+              Understood
+            </button>
             </div>
-            </div>
+          </div>
+        </div>
+      )}
+
+     </div>
+    </div>
         //</div>
     );
 }
