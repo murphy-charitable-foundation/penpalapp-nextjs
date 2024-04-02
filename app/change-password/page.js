@@ -31,7 +31,6 @@ export default function ChangePassword() {
           updatePassword(user, password)
           
           setShowModal(true); 
-          //router.push('/login'); 
              
         }catch(error) {
           console.error(error);
