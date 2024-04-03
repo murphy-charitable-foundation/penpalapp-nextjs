@@ -25,8 +25,7 @@ const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, bu
 					)}
 				</Dropzone>
 			) : (
-				<div>
-					<h3>Preview</h3>
+				<div className='flex flex-col'>
 					<Cropper
 						src={image}
 						style={{ height: 400, width: '100%' }}
@@ -37,7 +36,7 @@ const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, bu
 						viewMode={1}
 					/>
 					<br />
-					<button onClick={handleSave}>Save</button>
+					<button className='w-[80%] mx-auto mt-[100px] p-2 bg-[#034792] text-[#ffffff] font-semibold  rounded-[100px]' onClick={handleSave}>Save</button>
 				</div>
 			)}
 			<button className={buttonClasses()} disabled={!previewURL} onClick={() => updateStage(1, false)}>Continue</button>
