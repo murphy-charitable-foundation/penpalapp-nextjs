@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import SelectProfileImage from './select-profile-image';
 import SelectProfileLocation from './select-location';
-import { auth, db } from '@/app/firebaseConfig';
+import { auth, db, storage } from '@/app/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
 
 const EditProfileImage = ({ router }) => {
 	const [image, setImage] = useState(null);
@@ -10,6 +11,7 @@ const EditProfileImage = ({ router }) => {
 	const [newProfileImage, setNewProfileImage] = useState(null);
 	const [previewURL, setPreviewURL] = useState(null);
 	const [stage, setStage] = useState(0);
+	const [storageUrl, setStorageUrl] = useState(null)
 	const cropperRef = useRef();
 
 	const buttonClasses = () => {
@@ -65,17 +67,32 @@ const EditProfileImage = ({ router }) => {
 			resetAll()
 		}
 		const uid = auth.currentUser?.uid
-		if(stage === 1) {
+		if (stage === 1) {
 			// const uid = user.uid; // Get the user ID from the created user
 			console.log(auth.currentUser?.uid)
-      // Create a document in Firestore in "users" collection with UID as the document key
-			if(previewURL) {
+			// Create a document in Firestore in "users" collection with UID as the document key
+			if (previewURL) {
+				const storageRef = ref(storage, `profile/${previewURL}`);
+				const uploadTask = uploadBytesResumable(storageRef, previewURL);
+				uploadTask.on('state_changed',
+					(snapshot) => {
+						// const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+						// setUploadProgress(progress);
+					},
+					(error) => {
+						console.error('Upload error:', error);
+					},
+					async () => {
+						const url = await getDownloadURL(uploadTask.snapshot.ref);
+						setStorageUrl(url)
+					}
+				);
 				await updateDoc(doc(db, "users", uid), {
-				  photo_uri: previewURL
+					photo_uri: storageUrl
 				});
 			}
 		}
-		if(stage === 2){
+		if (stage === 2) {
 			router.push("/profile");
 		}
 		setStage(stage)

@@ -40,7 +40,7 @@ const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, bu
 					<button onClick={handleSave}>Save</button>
 				</div>
 			)}
-			<button className={buttonClasses()} onClick={() => updateStage(1, false)}>Continue</button>
+			<button className={buttonClasses()} disabled={!previewURL} onClick={() => updateStage(1, false)}>Continue</button>
 			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(1, true)}>Skip for now</button>
 		</div>
 	);
