@@ -9,6 +9,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { addDoc } from "firebase/firestore";
 import { getDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
+import * as Sentry from "@sentry/nextjs";
 
 const InboxPage = () => {
   const [letters, setLetters] = useState([]);
@@ -21,36 +22,33 @@ const InboxPage = () => {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      try {
-        if (user) {
-          const fetchLetters = async () => {
-            try {
-              const lettersRef = collection(db, "letters");
-              const q = query(lettersRef, where("recipientId", "==", user.uid));
-              const querySnapshot = await getDocs(q);
+      if (user) {
+        const fetchLetters = async () => {
+          try {
+            const lettersRef = collection(db, "letters");
+            const q = query(lettersRef, where("recipientId", "==", user.uid));
+            const querySnapshot = await getDocs(q);
 
-              const fetchedLetters = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                received: doc.data().timestamp.toDate().toLocaleString(),
-              }));
+            const fetchedLetters = querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+              received: doc.data().timestamp.toDate().toLocaleString(),
+            }));
 
-              setLetters(fetchedLetters);
-            } catch (err) {
-              setError("Failed to fetch letters. Please try again later.");
-              console.error(err);
-            } finally {
-              setIsLoading(false);
-            }
-          };
+            setLetters(fetchedLetters);
+          } catch (err) {
+            setError("Failed to fetch letters. Please try again later.");
+            Sentry.captureException("Error fetching letters. Error " + err);
+            console.error(err);
+          } finally {
+            setIsLoading(false);
+          }
+        };
 
-          fetchLetters();
-        } else {
-          setError("No user logged in.");
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.log(`Error fetching letters. Error ${error}`)
+        fetchLetters();
+      } else {
+        setError("No user logged in.");
+        setIsLoading(false);
       }
     });
 
