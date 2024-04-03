@@ -9,11 +9,11 @@ import { collection, addDoc, getDocs } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { auth } from '../firebaseConfig';
+import { auth } from "../firebaseConfig";
+import * as Sentry from "@sentry/nextjs";
 
 import { FiFileText, FiMic, FiSend } from "react-icons/fi";
-import BottomNavBar from '@/components/bottom-nav-bar';
-
+import BottomNavBar from "@/components/bottom-nav-bar";
 
 export default function WriteLetter() {
   const [letterContent, setLetterContent] = useState("");
@@ -28,13 +28,18 @@ export default function WriteLetter() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const usersCollectionRef = collection(db, "users");
-      const snapshot = await getDocs(usersCollectionRef);
-      const usersList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(usersList);
+      try {
+        const usersCollectionRef = collection(db, "users");
+        const snapshot = await getDocs(usersCollectionRef);
+        const usersList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setUsers(usersList);
+      } catch (error) {
+        console.error("Error fetching users. Error " + error);
+        Sentry.captureException("Error fetching users. Error " + error);
+      }
     };
 
     fetchUsers();
@@ -46,7 +51,8 @@ export default function WriteLetter() {
       return;
     }
 
-    if (!auth.currentUser) { // Directly using auth.currentUser for immediate check
+    if (!auth.currentUser) {
+      // Directly using auth.currentUser for immediate check
       alert("Sender not identified, please log in.");
       return;
     }
@@ -69,12 +75,11 @@ export default function WriteLetter() {
       // Optionally redirect the user or update UI to reflect the letter has been sent
     } catch (error) {
       console.error("Error sending letter: ", error);
+      Sentry.captureException("Error sending letter " + error);
       alert("Failed to send the letter.");
       setIsSending(false);
     }
   };
-
-
 
   // Simplified modal close and user selection functions
   const openRecipientModal = () => {
@@ -113,7 +118,6 @@ export default function WriteLetter() {
     );
   };
 
-
   const selectUser = (user) => {
     setSelectedUser(user);
     closeRecipientModal(); // Close the modal upon selection
@@ -139,8 +143,18 @@ export default function WriteLetter() {
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">
             <button onClick={() => window.history.back()}>
-              <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              <svg
+                className="h-6 w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
           </Link>
@@ -178,32 +192,31 @@ export default function WriteLetter() {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-              <h3 className="font-semibold text-xl text-gray-800 mb-4">
-                Select a Recipient
-              </h3>
-              <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
-                {users.map((user) => (
-                  <li
-                    key={user.id}
-                    onClick={() => selectUser(user)}
-                    className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
-                  >
-                    {user.firstName} - {user.country}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-              >
-                Close
-              </button>
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+              <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                <h3 className="font-semibold text-xl text-gray-800 mb-4">
+                  Select a Recipient
+                </h3>
+                <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
+                  {users.map((user) => (
+                    <li
+                      key={user.id}
+                      onClick={() => selectUser(user)}
+                      className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
+                    >
+                      {user.firstName} - {user.country}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-          </div>
-        ) && <RecipientModal />}
-
+          ) && <RecipientModal />}
 
         {/* Text Area */}
         <textarea
