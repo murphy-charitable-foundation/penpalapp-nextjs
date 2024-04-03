@@ -19,7 +19,7 @@ export default function CreateAccount() {
   const [birthday, setBirthday] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(true);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
