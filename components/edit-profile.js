@@ -12,6 +12,7 @@ const EditProfileImage = ({ router }) => {
 	const [previewURL, setPreviewURL] = useState(null);
 	const [stage, setStage] = useState(0);
 	const [storageUrl, setStorageUrl] = useState(null)
+	const [location, setLocation] = useState(null)
 	const cropperRef = useRef();
 
 	const buttonClasses = () => {
@@ -93,6 +94,11 @@ const EditProfileImage = ({ router }) => {
 			}
 		}
 		if (stage === 2) {
+			if(location){
+				await updateDoc(doc(db, "users", uid), {
+					country: location
+				});
+			}
 			router.push("/profile");
 		}
 		setStage(stage)
@@ -114,7 +120,7 @@ const EditProfileImage = ({ router }) => {
 				/>
 			)}
 			{stage === 1 && (
-				<SelectProfileLocation countries={countries} updateStage={updateStage} />
+				<SelectProfileLocation countries={countries} updateStage={updateStage} location={location} setLocation={setLocation} />
 			)}
 		</div>
 	);

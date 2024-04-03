@@ -1,7 +1,4 @@
-import { useState } from "react";
-
-const SelectProfileLocation = ({ updateStage, countries }) => {
-	const [location, setLocation] = useState(null)
+const SelectProfileLocation = ({ updateStage, countries, location, setLocation }) => {
 	const buttonClasses = () => {
 		if (!location) { 
 			return "w-[80%] mx-auto mt-[100px] p-2 bg-[#1C1B1F1F] text-[#1D1D00] font-semibold  rounded-[100px]"
