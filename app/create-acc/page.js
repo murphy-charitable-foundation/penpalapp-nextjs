@@ -12,7 +12,7 @@ import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 
 export default function CreateAccount() {
-  const [firstName, setFirstName] = useState("");
+  const [firstName, setFirstName] = useState(false);
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
