@@ -9,6 +9,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
+import * as Sentry from "@sentry/nextjs";
 
 export default function EditProfile() {
   // State initializations
@@ -61,6 +62,7 @@ export default function EditProfile() {
         }
       } catch (error) {
         console.error(`Error fetching user data. Error ${error}`)
+        Sentry.captureException(`Error fetching user data. Error ${error}`);
       }
     };
 
@@ -94,6 +96,7 @@ export default function EditProfile() {
         alert("Profile saved successfully!");
       } catch (error) {
         console.error("Error saving profile: ", error);
+        Sentry.captureException("Error saving profile: ", error);
         alert("Error saving profile.");
       }
     } else {
@@ -124,6 +127,7 @@ export default function EditProfile() {
       router.push("/login");
     } catch (error) {
       console.error("Error signing out: ", error);
+      Sentry.captureException("Error signing out: ", error);
     }
   };
 
