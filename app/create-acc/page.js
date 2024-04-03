@@ -13,7 +13,7 @@ import { handleLogout } from "../profile/page";
 import * as Sentry from "@sentry/nextjs";
 
 export default function CreateAccount() {
-  const [firstName, setFirstName] = useState(false);
+  const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
