@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import logo from '/public/murphylogo.png';
 import Image from 'next/image';
 import { sendPasswordResetEmail } from 'firebase/auth';
+import * as Sentry from "@sentry/nextjs";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
@@ -18,6 +19,7 @@ export default function ResetPassword() {
         setShowModal(true);
       })
       .catch((error) => {
+        Sentry.captureException(`Error reseting password. Error ${error}`);
         console.error(error);
       });
   }
