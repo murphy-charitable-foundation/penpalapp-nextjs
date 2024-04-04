@@ -21,8 +21,8 @@ const SelectProfileLocation = ({ updateStage, countries, location, setLocation }
 					))}
 				</select>
 			</div>
-			<button className={buttonClasses()} onClick={() => updateStage(2, false)}>Continue</button>
-			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(2, true)}>Skip for now</button>
+			<button className={buttonClasses()} onClick={() => updateStage(3, false)}>Continue</button>
+			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(3, true)}>Skip for now</button>
 		</div>
 	);
 };

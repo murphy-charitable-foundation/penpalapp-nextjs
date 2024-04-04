@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import SelectProfileImage from './select-profile-image';
 import SelectProfileLocation from './select-location';
 import { auth, db, storage } from '@/app/firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
 
 const EditProfileImage = ({ router }) => {
@@ -13,6 +13,7 @@ const EditProfileImage = ({ router }) => {
 	const [stage, setStage] = useState(0);
 	const [storageUrl, setStorageUrl] = useState(null)
 	const [location, setLocation] = useState(null)
+	const [user, setUser] = useState(null)
 	const cropperRef = useRef();
 
 	const buttonClasses = () => {
@@ -30,6 +31,8 @@ const EditProfileImage = ({ router }) => {
 			setCountries(data.data)
 		}
 		fetchCountries()
+		updateStage(0)
+
 	}, [stage])
 
 	const handleDrop = (acceptedFiles) => {
@@ -68,9 +71,14 @@ const EditProfileImage = ({ router }) => {
 			resetAll()
 		}
 		const uid = auth.currentUser?.uid
-		if (stage === 1) {
+		console.log(stage)
+		if (stage === 0) {
+			const u = await getDoc(doc(db, "users", uid))
+			console.log(u.data())
+			setUser(u.data())
+		}
+		if (stage === 2) {
 			// const uid = user.uid; // Get the user ID from the created user
-			console.log(auth.currentUser?.uid)
 			// Create a document in Firestore in "users" collection with UID as the document key
 			if (previewURL) {
 				const storageRef = ref(storage, `profile/${previewURL}`);
@@ -93,8 +101,8 @@ const EditProfileImage = ({ router }) => {
 				});
 			}
 		}
-		if (stage === 2) {
-			if(location){
+		if (stage === 3) {
+			if (location) {
 				await updateDoc(doc(db, "users", uid), {
 					country: location
 				});
@@ -107,6 +115,16 @@ const EditProfileImage = ({ router }) => {
 	return (
 		<div className='flex flex-col'>
 			{stage === 0 && (
+				<div className='absolute top-0 left-0 right-0 bottom-0 rounded-lg overflow-hidden'>
+					<img className='absolute top-0 left-0 bottom-0 right-0 h-full w-full object-cover' src="/welcomebackground.jpeg" />
+					<div className='min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col justify-center p-4 text-white'>
+						<h2 className='text-2xl'>Welcome {user?.firstName}</h2>
+						<p>We are so happy to be here, thanks for your support and help.
+You are part of the family now. </p>
+					</div>
+				</div>
+			)}
+			{stage === 1 && (
 				<SelectProfileImage
 					image={image}
 					handleSave={handleSave}
@@ -119,7 +137,8 @@ const EditProfileImage = ({ router }) => {
 					updateStage={updateStage}
 				/>
 			)}
-			{stage === 1 && (
+
+			{stage === 2 && (
 				<SelectProfileLocation countries={countries} updateStage={updateStage} location={location} setLocation={setLocation} />
 			)}
 		</div>

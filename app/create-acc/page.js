@@ -19,7 +19,7 @@ export default function CreateAccount() {
   const [birthday, setBirthday] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [showCreate, setShowCreate] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -57,8 +57,8 @@ export default function CreateAccount() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative min-h-[80vh]">
         <div className="flex items-center justify-between mb-4">
           <svg
             onClick={() => window.history.back()}

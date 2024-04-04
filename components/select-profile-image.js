@@ -39,8 +39,8 @@ const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, bu
 					<button className='w-[80%] mx-auto mt-[100px] p-2 bg-[#034792] text-[#ffffff] font-semibold  rounded-[100px]' onClick={handleSave}>Save</button>
 				</div>
 			)}
-			<button className={buttonClasses()} disabled={!previewURL} onClick={() => updateStage(1, false)}>Continue</button>
-			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(1, true)}>Skip for now</button>
+			<button className={buttonClasses()} disabled={!previewURL} onClick={() => updateStage(2, false)}>Continue</button>
+			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(2, true)}>Skip for now</button>
 		</div>
 	);
 };
