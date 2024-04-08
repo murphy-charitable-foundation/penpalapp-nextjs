@@ -1,13 +1,22 @@
-import Cropper from 'react-cropper';
-import Dropzone from 'react-dropzone';
-import 'cropperjs/dist/cropper.css';
+import EditProfileImage from './edit-profile-image';
 
 const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, buttonClasses, handleDrop, handleCrop, cropperRef, updateStage }) => {
 	return (
 		<div className='flex flex-col'>
 			<h2 className='text-[#034792] text-center text-2xl font-bold my-[64px]'>Add a profile avatar</h2>
 			{/* {stage === 0 ? ()} */}
-			{!image ? (
+			<EditProfileImage
+				image={image}
+				handleSave={handleSave}
+				newProfileImage={newProfileImage}
+				previewURL={previewURL}
+				buttonClasses={buttonClasses}
+				handleDrop={handleDrop}
+				handleCrop={handleCrop}
+				cropperRef={cropperRef}
+				updateStage={updateStage}
+			/>
+			{/* {!image ? (
 				<Dropzone onDrop={handleDrop}>
 					{({ getRootProps, getInputProps }) => (
 						<section>
@@ -38,7 +47,7 @@ const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, bu
 					<br />
 					<button className='w-[80%] mx-auto mt-[100px] p-2 bg-[#034792] text-[#ffffff] font-semibold  rounded-[100px]' onClick={handleSave}>Save</button>
 				</div>
-			)}
+			)} */}
 			<button className={buttonClasses()} disabled={!previewURL} onClick={() => updateStage(2, false)}>Continue</button>
 			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(2, true)}>Skip for now</button>
 		</div>

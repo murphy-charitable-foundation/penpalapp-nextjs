@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import SelectProfileImage from './select-profile-image';
+import SelectProfileImage from './select-profile-image-wrapper';
 import SelectProfileLocation from './select-location';
 import { auth, db, storage } from '@/app/firebaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -81,13 +81,7 @@ const EditProfileImage = ({ router }) => {
 		if (skip) {
 			resetAll()
 		}
-		// const uid = auth.currentUser?.uid
-		// console.log(stage)
-		// if (stage === 0) {
-		// 	const u = await getDoc(doc(db, "users", uid))
-		// 	console.log(u.data())
-		// 	setUser(u.data())
-		// }
+		const uid = auth.currentUser?.uid
 		if (stage === 2) {
 			// const uid = user.uid; // Get the user ID from the created user
 			// Create a document in Firestore in "users" collection with UID as the document key
