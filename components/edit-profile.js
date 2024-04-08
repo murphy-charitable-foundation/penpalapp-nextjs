@@ -117,10 +117,11 @@ const EditProfileImage = ({ router }) => {
 			{stage === 0 && (
 				<div className='absolute top-0 left-0 right-0 bottom-0 rounded-lg overflow-hidden'>
 					<img className='absolute top-0 left-0 bottom-0 right-0 h-full w-full object-cover' src="/welcomebackground.jpeg" />
-					<div className='min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col justify-center p-4 text-white'>
-						<h2 className='text-2xl'>Welcome {user?.firstName}</h2>
+					<div className='min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col p-4 text-white text-center'>
+						<h2 className='text-[32px]'>Welcome {user?.firstName}</h2>
 						<p>We are so happy to be here, thanks for your support and help.
-You are part of the family now. </p>
+							You are part of the family now. </p>
+						<button className='w-[80%] max-w-[240px] mx-auto mt-8 p-2 bg-white text-[#111] font-semibold  rounded-[100px]'>Continue</button>
 					</div>
 				</div>
 			)}
