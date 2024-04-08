@@ -31,9 +31,20 @@ const EditProfileImage = ({ router }) => {
 			setCountries(data.data)
 		}
 		fetchCountries()
-		updateStage(0)
-
+		if (stage === null) {
+			updateStage(0)
+		}
 	}, [stage])
+
+	useEffect(() => {
+		const findUser = async () => {
+			const uid = auth.currentUser?.uid
+			const u = await getDoc(doc(db, "users", uid))
+			console.log(u.data())
+			setUser(u.data())
+		}
+		findUser()
+	}, [])
 
 	const handleDrop = (acceptedFiles) => {
 		setImage(URL.createObjectURL(acceptedFiles[0]));
@@ -70,13 +81,13 @@ const EditProfileImage = ({ router }) => {
 		if (skip) {
 			resetAll()
 		}
-		const uid = auth.currentUser?.uid
-		console.log(stage)
-		if (stage === 0) {
-			const u = await getDoc(doc(db, "users", uid))
-			console.log(u.data())
-			setUser(u.data())
-		}
+		// const uid = auth.currentUser?.uid
+		// console.log(stage)
+		// if (stage === 0) {
+		// 	const u = await getDoc(doc(db, "users", uid))
+		// 	console.log(u.data())
+		// 	setUser(u.data())
+		// }
 		if (stage === 2) {
 			// const uid = user.uid; // Get the user ID from the created user
 			// Create a document in Firestore in "users" collection with UID as the document key
@@ -121,7 +132,9 @@ const EditProfileImage = ({ router }) => {
 						<h2 className='text-[32px]'>Welcome {user?.firstName}</h2>
 						<p>We are so happy to be here, thanks for your support and help.
 							You are part of the family now. </p>
-						<button className='w-[80%] max-w-[240px] mx-auto mt-8 p-2 bg-white text-[#111] font-semibold  rounded-[100px]'>Continue</button>
+						<button className='w-[80%] max-w-[240px] mx-auto mt-8 p-2 bg-white text-[#111] font-semibold  rounded-[100px]'
+							onClick={() => updateStage(1)}
+						>Continue</button>
 					</div>
 				</div>
 			)}
