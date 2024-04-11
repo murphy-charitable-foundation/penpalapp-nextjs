@@ -4,6 +4,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import BottomNavBar from '@/components/bottom-nav-bar';
+
 
 export default function Donate() {
     const details = [
@@ -17,13 +19,11 @@ export default function Donate() {
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
             <div className="max-w-2xl w-full mb-8">
-            <Link href="/login">
-                <button>
+            <button onClick={() => window.history.back()}>
                     <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
-            </Link>
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div className="p-6">
                         <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">Donate</h2>
@@ -55,13 +55,7 @@ export default function Donate() {
                     ))}
                 </div>
             </div>
+            <BottomNavBar />
         </div>
     );
 }
-
-
-
-
-// 1 - Firebase data retrieval in child selection, home, inbox instead of hard code
-// 2 - Child selection UI Fixes 
-// 3 - Messaging screen TS to JS Migrate

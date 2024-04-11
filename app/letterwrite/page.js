@@ -9,9 +9,11 @@ import { collection, addDoc, getDocs } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { auth } from '../firebaseConfig'; 
+import { auth } from '../firebaseConfig';
 
 import { FiFileText, FiMic, FiSend } from "react-icons/fi";
+import BottomNavBar from '@/components/bottom-nav-bar';
+
 
 export default function WriteLetter() {
   const [letterContent, setLetterContent] = useState("");
@@ -19,7 +21,7 @@ export default function WriteLetter() {
   const [users, setUsers] = useState([]);
   const router = useRouter();
   const [isSending, setIsSending] = useState(false);
-  const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
   const [currentUser, setCurrentUser] = useState(null);
@@ -43,21 +45,21 @@ export default function WriteLetter() {
       alert("Please fill in the letter content and select a recipient.");
       return;
     }
-  
+
     if (!auth.currentUser) { // Directly using auth.currentUser for immediate check
       alert("Sender not identified, please log in.");
       return;
     }
-  
+
     setIsSending(true);
-  
+
     const letterData = {
       content: letterContent,
       recipientId: selectedUser.id,
       senderId: auth.currentUser.uid, // Directly using the uid from auth.currentUser
       timestamp: new Date(),
     };
-  
+
     try {
       await addDoc(collection(db, "letters"), letterData);
       alert("Letter sent successfully!");
@@ -71,7 +73,7 @@ export default function WriteLetter() {
       setIsSending(false);
     }
   };
-  
+
 
 
   // Simplified modal close and user selection functions
@@ -84,17 +86,17 @@ export default function WriteLetter() {
 
   const RecipientModal = () => {
     return (
-      <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-        <div className="bg-white p-4 rounded-lg max-w-md w-full">
-          <h3 className="font-semibold text-lg mb-2 text-black">
+      <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+          <h3 className="font-semibold text-xl mb-4 text-gray-800">
             Select a Recipient
           </h3>
-          <ul className="max-h-60 overflow-auto">
+          <ul className="max-h-60 overflow-auto mb-4">
             {users.map((user) => (
               <li
                 key={user.id}
                 onClick={() => selectUser(user)}
-                className="p-2 hover:bg-gray-200 cursor-pointer text-black"
+                className="p-3 hover:bg-blue-100 cursor-pointer text-gray-700 rounded-md"
               >
                 {user.firstName} {user.lastName} - {user.country}
               </li>
@@ -102,7 +104,7 @@ export default function WriteLetter() {
           </ul>
           <button
             onClick={() => setIsModalOpen(false)}
-            className="mt-4 p-2 w-full bg-gray-300 text-gray-700 rounded-lg"
+            className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
           >
             Close
           </button>
@@ -111,6 +113,7 @@ export default function WriteLetter() {
     );
   };
 
+
   const selectUser = (user) => {
     setSelectedUser(user);
     closeRecipientModal(); // Close the modal upon selection
@@ -118,16 +121,16 @@ export default function WriteLetter() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        if (currentUser) {
-            setUser(currentUser); // This will now work
-        } else {
-            setUser(null); // Clear user state when no user is logged in
-        }
+      if (currentUser) {
+        setUser(currentUser); // This will now work
+      } else {
+        setUser(null); // Clear user state when no user is logged in
+      }
     });
 
     // Cleanup subscription on component unmount
     return () => unsubscribe();
-}, []);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#E5E7EB] p-4">
@@ -135,19 +138,9 @@ export default function WriteLetter() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">
-            <button>
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
+            <button onClick={() => window.history.back()}>
+              <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
           </Link>
@@ -185,31 +178,32 @@ export default function WriteLetter() {
         </div>
 
         {isModalOpen && (
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50 ">
-              <div className="bg-white p-4 rounded-lg max-w-md w-full">
-                <h3 className="font-semibold text-lg text-black mb-2">
-                  Select a Recipient
-                </h3>
-                <ul className="max-h-60 overflow-auto text-black">
-                  {users.map((user) => (
-                    <li
-                      key={user.id}
-                      onClick={() => selectUser(user)}
-                      className="p-2 hover:bg-gray-200 cursor-pointer"
-                    >
-                      {user.firstName} - {user.country}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="mt-4 p-2 w-full bg-gray-300 text-gray-700 rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+              <h3 className="font-semibold text-xl text-gray-800 mb-4">
+                Select a Recipient
+              </h3>
+              <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
+                {users.map((user) => (
+                  <li
+                    key={user.id}
+                    onClick={() => selectUser(user)}
+                    className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
+                  >
+                    {user.firstName} - {user.country}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
+              >
+                Close
+              </button>
             </div>
-          ) && <RecipientModal />}
+          </div>
+        ) && <RecipientModal />}
+
 
         {/* Text Area */}
         <textarea
@@ -244,6 +238,7 @@ export default function WriteLetter() {
           {letterContent.length} / 1000
         </div>
       </div>
+      <BottomNavBar />
     </div>
   );
 }

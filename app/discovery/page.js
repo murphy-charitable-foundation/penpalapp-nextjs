@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig'; // Ensure this path is correct
 import { collection, getDocs } from 'firebase/firestore';
 import { differenceInCalendarYears } from 'date-fns';
+import BottomNavBar from '@/components/bottom-nav-bar';
+
 
 export default function ChooseKid() {
     const [kids, setKids] = useState([]);
@@ -32,6 +34,11 @@ export default function ChooseKid() {
     return (
         <div className="min-h-screen p-4" style={{ backgroundColor: '#f0f2f5' }}>
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <button onClick={() => window.history.back()}>
+                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
                 <div className="p-4 flex justify-between items-center" style={{ backgroundColor: '#034078' }}>
                     <h1 className="text-2xl font-bold text-white">Choose a kid to write to</h1>
                     <button className="text-white px-3 py-1 rounded-full text-sm flex items-center justify-center" style={{ backgroundColor: '#022f5b' }}>
@@ -80,6 +87,7 @@ export default function ChooseKid() {
 
                 </div>
             </div>
+            <BottomNavBar />
         </div>
 
     );

@@ -52,13 +52,11 @@ export default function Login() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
             <div className="w-full max-w-md space-y-8">
             <div style={{ textAlign: 'left', padding: '20px', background: 'white' }}>
-                <Link href="/">
-                    <button>
-                        <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                </Link>
+            <button onClick={() => window.history.back()}>
+                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
                 <div className="flex justify-center">
                     <Image
                         src={logo}
