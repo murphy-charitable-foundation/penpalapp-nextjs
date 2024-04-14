@@ -101,6 +101,7 @@ const EditProfileImage = ({ router }) => {
 						setStorageUrl(url)
 					}
 				);
+				console.log(storageUrl)
 				await updateDoc(doc(db, "users", uid), {
 					photo_uri: storageUrl
 				});

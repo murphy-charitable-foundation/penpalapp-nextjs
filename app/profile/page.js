@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore"; 
-import { db, auth } from '../firebaseConfig'; 
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db, auth } from '../firebaseConfig';
 import { updateDoc } from "firebase/firestore";
 import BottomNavBar from '@/components/bottom-nav-bar';
 
@@ -21,11 +21,12 @@ export default function EditProfile() {
     const [village, setVillage] = useState('');
     const [bio, setBio] = useState('');
     const [educationLevel, setEducationLevel] = useState('');
-    const [isOrphan, setIsOrphan] = useState(false); 
+    const [isOrphan, setIsOrphan] = useState(false);
     const [livesWith, setLivesWith] = useState('');
     const [dreamJob, setDreamJob] = useState('');
     const [hobby, setHobby] = useState('');
     const [favoriteColor, setFavoriteColor] = useState('');
+    const [photoUri, setPhotoUri] = useState('');
     const [user, setUser] = useState(null);
 
 
@@ -37,7 +38,8 @@ export default function EditProfile() {
                 const uid = auth.currentUser.uid;
                 const docRef = doc(db, "users", uid);
                 const docSnap = await getDoc(docRef);
-    
+                console.log(docSnap.data())
+
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
                     setFirstName(userData.firstName || '');
@@ -48,11 +50,12 @@ export default function EditProfile() {
                     setVillage(userData.village || '');
                     setBio(userData.bio || '');
                     setEducationLevel(userData.educationLevel || '');
-                    setIsOrphan(userData.isOrphan ? 'Yes' : 'No'); 
+                    setIsOrphan(userData.isOrphan ? 'Yes' : 'No');
                     setLivesWith(userData.livesWith || '');
                     setDreamJob(userData.dreamJob || '');
                     setHobby(userData.hobby || '');
                     setFavoriteColor(userData.favoriteColor || '');
+                    setPhotoUri(userData.photo_uri || '');
                 } else {
                     console.log("No such document!");
                 }
@@ -61,10 +64,10 @@ export default function EditProfile() {
                 router.push('/login');
             }
         };
-    
+
         fetchUserData();
-    }, [auth.currentUser]); 
-    
+    }, [auth.currentUser]);
+
 
 
 
@@ -77,7 +80,7 @@ export default function EditProfile() {
             const userProfile = {
                 firstName,
                 lastName,
-                email, 
+                email,
                 birthday,
                 country,
                 village,
@@ -136,11 +139,11 @@ export default function EditProfile() {
             <div className="max-w-lg mx-auto p-6">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                    <button onClick={() => window.history.back()}>
-                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
+                        <button onClick={() => window.history.back()}>
+                            <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
 
                         <h1 className="ml-4 text-xl font-bold text-gray-800">Edit profile</h1>
                     </div>
@@ -157,11 +160,12 @@ export default function EditProfile() {
                 <div className="my-6">
                     <div className="relative w-24 h-24 mx-auto">
                         <Image
-                            src="/murphylogo.png" 
+                            src={photoUri ? photoUri : "/murphylogo.png"}
                             layout="fill"
                             className="rounded-full"
                             alt="Profile picture"
                         />
+                        {photoUri}
                         {/* Edit Icon */}
                         <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
