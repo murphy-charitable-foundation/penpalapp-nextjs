@@ -165,7 +165,6 @@ export default function EditProfile() {
                             className="rounded-full"
                             alt="Profile picture"
                         />
-                        {photoUri}
                         {/* Edit Icon */}
                         <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
