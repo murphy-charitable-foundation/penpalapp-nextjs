@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
+import * as Sentry from "@sentry/nextjs";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -47,6 +48,8 @@ export default function CreateAccount() {
       // Redirect to profile page or any other page as needed
       router.push("/profile");
     } catch (error) {
+      // Sentry.captureException(error);
+      throw new Error("Dude")
       console.error("Error creating account:", error);
       alert(error.message);
     }
