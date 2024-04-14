@@ -99,12 +99,12 @@ const EditProfileImage = ({ router }) => {
 					async () => {
 						const url = await getDownloadURL(uploadTask.snapshot.ref);
 						setStorageUrl(url)
+						console.log(storageUrl)
+						await updateDoc(doc(db, "users", uid), {
+							photo_uri: storageUrl
+						});
 					}
 				);
-				console.log(storageUrl)
-				await updateDoc(doc(db, "users", uid), {
-					photo_uri: storageUrl
-				});
 			}
 		}
 		if (stage === 3) {
