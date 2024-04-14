@@ -16,12 +16,14 @@ import PasswordChecklist from "react-password-checklist";
 export default function CreateAccount() {
     const [first_name, setFirstName] = useState('');
     const [last_name, setLastName] = useState('');
-    const [email, setEmail] = useState('');
+    //const [email, setEmail] = useState('');
     const [date_of_birth, setBirthday] = useState('');
-    const [password, setPassword] = useState('');
+    const [newPassword, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
     const [error, setError] = useState('');
     const router = useRouter(); 
+    const user = auth.currentUser;
+    const email= user.email;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,11 +32,10 @@ export default function CreateAccount() {
             //alert("Passwords do not match.");
             //return;
         //}
-        try {
-            const user = auth.currentUser;
+        try {           
             const uid = user.uid;
             try {
-                await updatePassword(user, password);
+                await updatePassword(user, newPassword);
             }
             catch (error) {
                 if (error.code == 'auth/requires-recent-login') {
@@ -100,15 +101,15 @@ export default function CreateAccount() {
                     </div>
                     <div>
                         <label htmlFor="email" className="text-sm font-medium text-gray-700 block mb-2">Email</label>
-                        <input id="email" type="text" placeholder="Ex: my-email@gmail.com" style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <input id="email"  style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value={email}/>
                     </div>
                     <div>
                         <label htmlFor="birthday" className="text-sm font-medium text-gray-700 block mb-2">Birthday</label>
                         <input id="birthday" type="date" style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value={date_of_birth} onChange={(e) => setBirthday(e.target.value)} />
                     </div>
                     <div>
-                        <label htmlFor="password" className="text-sm font-medium text-gray-700 block mb-2"> Create a password</label>
-                        <input id="password" name="password" type="password" placeholder="*******" autoComplete="new-password" style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <label htmlFor="newPassword" className="text-sm font-medium text-gray-700 block mb-2"> Create a password</label>
+                        <input id="newPassword" name="newPassword" type="password" placeholder="*******" autoComplete="new-password" style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900  focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" value={newPassword} onChange={(e) => setPassword(e.target.value)} />
                     </div>
                     <div>
                         <label htmlFor="repeatPassword" className="text-sm font-medium text-gray-700 block mb-2">Repeat Password</label>
@@ -118,7 +119,7 @@ export default function CreateAccount() {
                       <PasswordChecklist
                         rules={["minLength", "specialChar", "number", "capital","lowercase","match"]}
                         minLength={7}
-                        value={password}
+                        value={newPassword}
                         valueAgain={repeatPassword}
                         messages={{
                           minLength:"Must be at least 7 characters.",
