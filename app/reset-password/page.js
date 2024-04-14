@@ -25,11 +25,12 @@ export default function ResetPassword() {
 
   function closeModal() {
     setShowModal(false);
+    router.push('/login');
   }
 
   return (
     //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
-    <div className="bg-white p-8 min-h-screen">
+    <div className="w-full max-w-md space-y-8 bg-white p-8 min-h-screen">
     <div style={{ textAlign: 'center', padding: '0px', background: 'white' }}>
         <div className="flex flex-row items-center justify-between mb-4">
                     <svg
