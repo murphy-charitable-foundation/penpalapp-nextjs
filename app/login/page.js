@@ -16,10 +16,11 @@ export default function Login() {
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
     const router = useRouter();
-
+   
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(''); 
+        
         try {
             await signInWithEmailAndPassword(auth, email, password);
             const uid = auth.currentUser.uid;
@@ -49,6 +50,7 @@ export default function Login() {
             }
         }
     }
+    
 
         function closeModal() {
             setShowModal(false);
@@ -57,8 +59,8 @@ export default function Login() {
     //};
 
     return (
-        //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
-            <div className="bg-white p-8 min-h-screen">
+        <div>
+            <div className="w-full max-w-md space-y-8 bg-white p-8 min-h-screen">
             <div style={{ textAlign: 'left', padding: '0px', background: 'white' }}>
                 <div className="flex flex-row items-center justify-center ">
                 <Link href="/">
@@ -94,8 +96,10 @@ export default function Login() {
                             placeholder="Ex. user@gmail.com"
                             style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }}
                             className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                             
                         />
                         </div>
+                        
                         
                         <div>
                         <h6 className="mt-12 text-left ml-2 text-gray-800 ">Password</h6>
@@ -108,9 +112,10 @@ export default function Login() {
                             placeholder="******"
                             style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display: 'block', color: 'black' }}
                             className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+        
                         />
                         </div>
-                        
+
                         {error && <span className="flex items-left text-sm text-red-500">{error}</span>}
                         
                     <div className="text-sm">
@@ -129,8 +134,9 @@ export default function Login() {
                     </div>
 
                     <div >
+                        
                         <button 
-                           type="submit" 
+                           type="submit"                            
                            style={{
                            padding:'10px 20px',
                            width:'80%', 
@@ -139,11 +145,13 @@ export default function Login() {
                            borderRadius:'20px',
                            cursor:'pointer',
                            marginTop:"120px",
+                           hover:'enabled',
                            }} 
-                           className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#48801c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent">
-                            Log in
-                        </button>
-                        
+                           className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#48801c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent"
+                           disabled={email===""}                          
+                        > 
+                        Login
+                        </button>                                       
                     </div>
                 </form>
 
@@ -183,6 +191,6 @@ export default function Login() {
 
      </div>
     </div>
-        //</div>
+    </div>
     );
 }
