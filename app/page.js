@@ -32,7 +32,7 @@ export default function Home() {
      
 
       
-      <div className="flex flex-col gap-8 md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-28">
+      <div className="flex flex-col justify-center gap-8 md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-28">
         <Link href="/login">
           <button style={{
             width:"229 px",
@@ -42,13 +42,18 @@ export default function Home() {
             Log in
           </button>
         </Link>
-        <button style={{
+      </div>
+
+      <div className="flex flex-col justify-center gap-8 md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-28">
+        <Link href="https://calendly.com/murphycharity/60min">
+          <button style={{
             width:"229 px",
             height:"40 px",
-        }}
-        className="group relative  w-full flex justify-center py-3 px-6 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#034792] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent">
-          Become a Pen Pal Volunteer
-        </button>
+          }}
+          className="group relative  w-full flex justify-center py-3 px-6 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#034792] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent">
+            Become a Pen Pal Volunteer
+          </button>
+        </Link>
       </div>
     </div>
     </div>
