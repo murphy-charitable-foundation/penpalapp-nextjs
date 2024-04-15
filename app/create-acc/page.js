@@ -48,8 +48,8 @@ export default function CreateAccount() {
       // Redirect to profile page or any other page as needed
       router.push("/profile");
     } catch (error) {
-      // Sentry.captureException(error);
-      throw new Error("Dude")
+      Sentry.captureException(error);
+      // throw new Error("Dude")
       console.error("Error creating account:", error);
       alert(error.message);
     }
