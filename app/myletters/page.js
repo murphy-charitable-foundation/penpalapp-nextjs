@@ -9,7 +9,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { addDoc } from 'firebase/firestore';
 import { getDoc } from 'firebase/firestore';
 import BottomNavBar from '@/components/bottom-nav-bar';
-
+import * as Sentry from "@sentry/nextjs";
 
 
 const InboxPage = () => {
@@ -40,6 +40,7 @@ const InboxPage = () => {
 
                         setLetters(fetchedLetters);
                     } catch (err) {
+                        Sentry.captureException(error);
                         setError('Failed to fetch letters. Please try again later.');
                         console.error(err);
                     } finally {
