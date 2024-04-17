@@ -9,7 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import logo from '/public/murphylogo.png';
 import { useRouter } from 'next/navigation';
-
+import * as Sentry from "@sentry/nextjs";
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -43,6 +43,7 @@ export default function Login() {
                     setError('Too many attempts. Try again later.');
                     break;
                 default:
+                    Sentry.captureException(error);
                     setError('Failed to log in.');
             }
         }
