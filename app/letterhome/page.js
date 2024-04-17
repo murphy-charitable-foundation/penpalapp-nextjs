@@ -11,6 +11,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { differenceInCalendarYears } from 'date-fns';
 import BottomNavBar from '@/components/bottom-nav-bar';
+import * as Sentry from "@sentry/nextjs";
 
 
 
@@ -33,6 +34,7 @@ export default function Home() {
 
     useEffect(() => {
         const fetchKids = async () => {
+            try {
             const usersCollectionRef = collection(db, "users");
             const q = query(usersCollectionRef, limit(4));
             const snapshot = await getDocs(q);
@@ -41,6 +43,10 @@ export default function Home() {
                 ...doc.data(),
             }));
             setKids(kidsList);
+            } catch(error) {
+                Sentry.captureException(error);
+                console.error("There has been a error fetching kids")
+            }
         };
 
         fetchKids();
