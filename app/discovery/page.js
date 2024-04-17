@@ -21,6 +21,7 @@ export default function ChooseKid() {
                 id: doc.id,
                 ...doc.data(),
             }));
+            console.log(kidsList)
             setKids(kidsList);
         };
 
