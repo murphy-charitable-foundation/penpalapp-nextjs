@@ -8,6 +8,7 @@ import { db } from '../firebaseConfig'; // Ensure this path is correct
 import { collection, getDocs } from 'firebase/firestore';
 import { differenceInCalendarYears } from 'date-fns';
 import BottomNavBar from '@/components/bottom-nav-bar';
+import * as Sentry from "@sentry/nextjs";
 
 
 export default function ChooseKid() {
@@ -15,6 +16,7 @@ export default function ChooseKid() {
 
     useEffect(() => {
         const fetchKids = async () => {
+            try {
             const usersCollectionRef = collection(db, "users");
             const snapshot = await getDocs(usersCollectionRef);
             const kidsList = snapshot.docs.map(doc => ({
@@ -22,6 +24,10 @@ export default function ChooseKid() {
                 ...doc.data(),
             }));
             setKids(kidsList);
+            } catch(error) {
+                Sentry.captureException(error);
+                console.error("There has been a error fetching kids")
+            }
         };
 
         fetchKids();
