@@ -8,7 +8,9 @@ export default function KidCard({ kid, calculateAge }) {
     <div
       key={kid.id}
       className="w-full max-w-sm my-4 p-4 rounded-lg shadow-lg flex flex-col items-start"
+      style={{flexGrow: 1}}
     >
+
 <div className="w-48 h-48 overflow-hidden rounded-full mx-auto"> {/* Adjusted width and height */}
   <Image
     src={kid.image || "/usericon.png"}
@@ -18,6 +20,7 @@ export default function KidCard({ kid, calculateAge }) {
     className="object-cover"
   />
 </div>
+
 
       <h2 className="text-xl mt-3 mb-1 text-left text-bold" style={{ color: "#262626" }}>
         {kid.firstName}
