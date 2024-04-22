@@ -35,20 +35,54 @@ export default function ChooseKid() {
     return (
         <div className="min-h-screen p-4" style={{ backgroundColor: '#f0f2f5' }}>
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <button onClick={() => window.history.back()}>
+            {/* <button onClick={() => window.history.back()}>
                     <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                </button>
-                <div className="p-4 flex justify-between items-center" style={{ backgroundColor: '#034078' }}>
-                    <h1 className="text-2xl font-bold text-white">Choose a kid to write to</h1>
+                </button> */}
+                {/* <div className="p-4 flex sm:justify-between items-center" style={{ backgroundColor: '#034078' }}>
+                    <div className="flex gap-4">
+                        <button onClick={() => window.history.back()}>
+                        <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        </button>
+                        <h1 className="text-2xl font-bold text-white">Choose a kid to write to</h1>
+                    </div>
+                    
                     <button className="text-white px-3 py-1 rounded-full text-sm flex items-center justify-center" style={{ backgroundColor: '#022f5b' }}>
                         Filters
                         <svg className="w-4 h-4 ml-2 fill-current" viewBox="0 0 20 20">
                             <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
                         </svg>
                     </button>
-                </div>
+                </div> */}
+<div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078]">
+    {/* Top part with white background and black text */}
+    <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
+        <div className="flex gap-4 justify-center w-full">
+            <button onClick={() => window.history.back()}>
+                <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h1 className="text-xl sm:text-2xl font-bold text-center">Choose a kid to write to</h1>
+        </div>
+    </div>
+
+    {/* Filter button with grey background */}
+    <div className="p-4 bg-[#E6EDF4] sm:bg-[#034078]">
+        <button className="text-black sm:text-white w-full px-3 py-1 rounded-full text-sm flex items-center justify-between sm:justify-center sm:bg-[#022f5b] text-[15px] sm:text-[18px]">
+            <p>Filters</p>
+            <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
+                <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+
+
 
                 <div className="px-4 py-2 flex flex-col items-center relative">
 
