@@ -95,8 +95,7 @@ export default function EditProfile() {
                 await updateDoc(userProfileRef, userProfile);
                 alert('Profile saved successfully!');
             } catch (error) {
-                console.error("Error saving profile: ", error);
-                alert(uid);
+                alert('Error saving profile');
             }
         } else {
             alert('No user logged in.');

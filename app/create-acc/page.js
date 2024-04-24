@@ -58,7 +58,6 @@ export default function CreateAccount() {
         // Redirect to profile page or any other page as needed
         router.push('/profile'); 
     } catch (error) {
-        console.error("Error creating account:", error);
         alert(error.message);
     }
   };
