@@ -22,7 +22,7 @@ export default function EditProfile() {
     const [bio, setBio] = useState('');
     const [educationLevel, setEducationLevel] = useState('');
     const [isOrphan, setIsOrphan] = useState(false); 
-    const [livesWith, setLivesWith] = useState('');
+    const [guardian, setGuardian] = useState('');
     const [dreamJob, setDreamJob] = useState('');
     const [hobby, setHobby] = useState('');
     const [favoriteColor, setFavoriteColor] = useState('');
@@ -40,19 +40,19 @@ export default function EditProfile() {
     
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
-                    setFirstName(userData.firstName || '');
-                    setLastName(userData.lastName || '');
+                    setFirstName(userData.first_name || '');
+                    setLastName(userData.last_name || '');
                     setEmail(userData.email || '');
                     setBirthday(userData.birthday || '');
                     setCountry(userData.country || '');
                     setVillage(userData.village || '');
                     setBio(userData.bio || '');
-                    setEducationLevel(userData.educationLevel || '');
-                    setIsOrphan(userData.isOrphan ? 'Yes' : 'No'); 
-                    setLivesWith(userData.livesWith || '');
-                    setDreamJob(userData.dreamJob || '');
+                    setEducationLevel(userData.education_level || '');
+                    setIsOrphan(userData.is_orphan ? 'Yes' : 'No'); 
+                    setGuardian(userData.gaurdian || '');
+                    setDreamJob(userData.dream_job || '');
                     setHobby(userData.hobby || '');
-                    setFavoriteColor(userData.favoriteColor || '');
+                    setFavoriteColor(userData.favorite_color || '');
                 } else {
                     console.log("No such document!");
                 }
@@ -75,27 +75,27 @@ export default function EditProfile() {
             const userProfileRef = doc(db, "users", uid);
 
             const userProfile = {
-                firstName,
-                lastName,
+                first_name: firstName,
+                last_name: lastName,
                 email, 
                 birthday,
                 country,
                 village,
                 bio,
-                educationLevel,
-                isOrphan: isOrphan === 'Yes' ? true : false,
-                livesWith,
-                dreamJob,
+                education_level: educationLevel,
+                is_orphan: isOrphan.toLowerCase() === 'yes' ? true : false,
+                gaurdian: guardian,
+                dream_job: dreamJob,
                 hobby,
-                favoriteColor,
+                favorite_color: favoriteColor,
+                // missing more fields
             };
 
             try {
                 await updateDoc(userProfileRef, userProfile);
                 alert('Profile saved successfully!');
             } catch (error) {
-                console.error("Error saving profile: ", error);
-                alert('Error saving profile.');
+                alert('Error saving profile');
             }
         } else {
             alert('No user logged in.');
@@ -283,8 +283,8 @@ export default function EditProfile() {
                         <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Who the child lives with</label>
                         <select
                             id="isOrphan"
-                            value={livesWith}
-                            onChange={(e) => setLivesWith(e.target.value)}
+                            value={guardian}
+                            onChange={(e) => setGuardian(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
                             <option value="Parents">Parents</option>
