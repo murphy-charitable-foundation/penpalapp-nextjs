@@ -83,7 +83,7 @@ export default function EditProfile() {
                 village,
                 bio,
                 education_level: educationLevel,
-                is_orphan: isOrphan === 'Yes' ? true : false,
+                is_orphan: isOrphan.toLowerCase() === 'yes' ? true : false,
                 gaurdian: guardian,
                 dream_job: dreamJob,
                 hobby,
