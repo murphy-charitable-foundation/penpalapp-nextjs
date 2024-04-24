@@ -11,7 +11,12 @@ import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebaseConfig';
 
-import { FiFileText, FiMic, FiSend } from "react-icons/fi";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { MdSend } from "react-icons/md";
+import { BsPaperclip } from "react-icons/bs";
+import { IoMdClose } from "react-icons/io";
+import { MdInsertDriveFile } from "react-icons/md";
+
 import BottomNavBar from '@/components/bottom-nav-bar';
 
 
@@ -25,6 +30,7 @@ export default function WriteLetter() {
   const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
   const [currentUser, setCurrentUser] = useState(null);
+  const [isFileModalOpen, setIsFileModalOpen] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -113,11 +119,47 @@ export default function WriteLetter() {
     );
   };
 
+  const FileModal = () => (
+    <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
+        <div className="flex relative">
+          <button
+            onClick={() => setIsFileModalOpen(false)}
+            className="rounded-lg transition-colors duration-150 h-6 w-6 absolute top-0 left-0"
+          >
+            <IoMdClose class="h-full w-full" />
+          </button>
+          <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
+            Files
+          </h3>
+        </div>
+        <button className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4">
+          <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
+          Select a file
+        </button>
+        <h3 className="font-600 mt-4">Selected</h3>
+        {/* <ul className="max-h-60 overflow-auto mb-4">
+          {users.map((user) => (
+            <li
+              key={user.id}
+              onClick={() => selectUser(user)}
+              className="p-3 hover:bg-blue-100 cursor-pointer text-gray-700 rounded-md"
+            >
+              {user.firstName} {user.lastName} - {user.country}
+            </li>
+          ))}
+        </ul> */}
+      </div>
+    </div>
+  )
+
 
   const selectUser = (user) => {
     setSelectedUser({ ...user, profile_picture: "https://media.wired.com/photos/598e35fb99d76447c4eb1f28/master/pass/phonepicutres-TA.jpg" });
     closeRecipientModal(); // Close the modal upon selection
   };
+
+  const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -140,9 +182,6 @@ export default function WriteLetter() {
           <Link href="/">
             <button onClick={() => window.history.back()}>
               <img src="/closeicon.svg" />
-              {/* <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-              </svg> */}
             </button>
           </Link>
           <button className="opacity-0">{"<"}</button>
@@ -150,15 +189,18 @@ export default function WriteLetter() {
           <div className="flex justify-between items-center p-4">
             <span className="text-black">0 files</span>
             <div className="space-x-2">
-              <button className="text-black p-2 rounded-full">
-                <FiFileText className="h-6 w-6" />
+              <button className="text-black p-2 rounded-full" onClick={openFileModal}>
+                <BsPaperclip className="h-6 w-6 rotate-90" />
               </button>
-
               <button
                 className="text-black p-2 rounded-full"
                 onClick={handleSendLetter}
               >
-                <FiSend className="h-6 w-6" />
+                <MdSend className="h-6 w-6" />
+              </button>
+              <button className="text-black p-2 rounded-full">
+                {/* <img src="/deleteicon.svg" /> */}
+                <RiDeleteBin6Line className="h-6 w-6" />
               </button>
             </div>
           </div>
@@ -222,6 +264,9 @@ export default function WriteLetter() {
             </div>
           </div>
         ) && <RecipientModal />}
+
+
+        {isFileModalOpen && <FileModal />}
 
 
         {/* Text Area */}
