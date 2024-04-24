@@ -115,7 +115,7 @@ export default function WriteLetter() {
 
 
   const selectUser = (user) => {
-    setSelectedUser(user);
+    setSelectedUser({...user, profile_picture: "https://media.wired.com/photos/598e35fb99d76447c4eb1f28/master/pass/phonepicutres-TA.jpg"});
     closeRecipientModal(); // Close the modal upon selection
   };
 
@@ -155,14 +155,18 @@ export default function WriteLetter() {
           {selectedUser ? (
             <>
               {/* Use a default placeholder if no photoURL is available */}
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-xl text-gray-600">
-                  {selectedUser.firstName[0]}
-                </span>
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                {selectedUser.profile_picture ? (
+                  <img src={selectedUser.profile_picture} class="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl text-gray-600">
+                    {selectedUser.firstName[0]}
+                  </span>
+                )}
               </div>
               <div>
                 <h2 className="font-bold text-black">
-                  Re: {selectedUser.firstName}
+                  {selectedUser.firstName} {selectedUser.lastName}
                 </h2>
                 <p className="text-sm text-gray-500">{selectedUser.country}</p>
               </div>
