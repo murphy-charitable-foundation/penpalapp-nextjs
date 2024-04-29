@@ -6,14 +6,14 @@ import Image from "next/image";
 export default function KidCard({ kid, calculateAge }) {
   return (
     <div
-      key={kid.id}
+      key={kid?.id}
       className="w-full max-w-sm my-4 p-4 rounded-lg shadow-lg flex flex-col items-start"
       style={{ flexGrow: 1 }}
     >
       <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
         <Image
-          src={kid.image || "/usericon.png"}
-          alt={kid.firstName}
+          src={kid?.image || "/usericon.png"}
+          alt={kid?.firstName}
           width={220}
           height={220}
           className="object-cover"
@@ -24,17 +24,17 @@ export default function KidCard({ kid, calculateAge }) {
         className="text-xl mt-3 mb-1 text-left text-bold"
         style={{ color: "#262626" }}
       >
-        {kid.firstName}
+        {kid?.firstName}
       </h2>
 
       <p className="text-xs mb-1 text-left text-black">
-        {calculateAge(kid.birthday)} years old
+        {calculateAge(kid?.birthday)} years old
       </p>
       <p
         className="text-left mb-2 text-gray-900 text-xs break-words"
         style={{ color: "#515151" }}
       >
-        {kid.bio}
+        {kid?.bio}
       </p>
       <div className="flex justify-start flex-wrap gap-2 mb-4">
         {/* {kid.interests?.map((interest, idx) => (
