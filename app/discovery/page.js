@@ -114,7 +114,17 @@ export default function ChooseKid() {
       const kidsCollectionRef = collection(db, "users");
       let q = query(kidsCollectionRef, limit(PAGE_SIZE));
 
-      
+            // Apply filters
+            if (ageFilter) {
+                q = query(kidsCollectionRef, where("age", "==", age), limit(PAGE_SIZE));
+              }
+              if (genderFilter) {
+                q = query(kidsCollectionRef, where("gender", "==", gender), limit(PAGE_SIZE));
+              }
+              if (hobbiesFilter) {
+                q = query(kidsCollectionRef, where("hobbies", "array-contains", hobbies), limit(PAGE_SIZE));
+              }
+
       if (lastKidDoc && !initialLoad) {
         q = query(kidsCollectionRef, startAfter(lastKidDoc), limit(PAGE_SIZE));
       }
@@ -199,7 +209,7 @@ export default function ChooseKid() {
 
         {activeFilter ? (
           <div className="h-auto">
-          <KidFilter />
+          <KidFilter setAge={setAge} setGender={setGender} setHobbies={setHobbies}/>
          </div>
         ) : (
           <div>
