@@ -102,13 +102,20 @@ export default function ChooseKid() {
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  const [age, setAge] = useState(null);
-  const [gender, setGender] = useState(null);
-  const [hobbies, setHobbies] = useState(null);
+  const [age, setAge] = useState(0);
+  const [gender, setGender] = useState("");
+  const [hobbies, setHobbies] = useState("");
 
   useEffect(() => {
     fetchKids();
-  }, []);
+  }, [age, gender, hobbies]);
+// useEffect(() => {
+//     // Check if at least one filter option has been set or if initialLoad is true
+//     if (age !== "" || gender !== "" || hobbies !== "" || initialLoad) {
+//       fetchKids();
+//     }
+//   }, [age, gender, hobbies, initialLoad]);
+  
 
   const fetchKids = async () => {
     setLoading(true);
@@ -116,11 +123,10 @@ export default function ChooseKid() {
     console.log(age);
     try {
       const kidsCollectionRef = collection(db, "users");
-      //   let q = query(kidsCollectionRef, limit(PAGE_SIZE));
       let q = kidsCollectionRef;
 
       // Apply filters
-      if (age) {
+      if (age || hobbies || gender) {
         console.log("Age:", age);
         const currentYear = new Date().getFullYear();
         const minBirthYear = currentYear - age;
@@ -131,33 +137,27 @@ export default function ChooseKid() {
         const maxBirthDate = new Date(maxBirthYear, 11, 31)
           .toISOString()
           .slice(0, 10);
-        console.log(minBirthDate);
-        console.log("Max Birth Date:", maxBirthDate);
 
-        // q = query(
-        //     kidsCollectionRef,
-        //     where("birthday", ">=", minBirthDate),
-        //     where("birthday", "<=", maxBirthDate),
-        //     limit(PAGE_SIZE)
-        // );
         q = query(q, where("birthday", ">=", minBirthDate));
         q = query(q, where("birthday", "<=", maxBirthDate));
-
-        // q = query(kidsCollectionRef, where("birthday", "==", "1983-11-09"), limit(PAGE_SIZE))
       }
 
-      q = query(q, limit(PAGE_SIZE));
+      if (gender) {
+        q = query(q, where("gender", "==", gender), limit(PAGE_SIZE));
+      }
 
-      //   if (gender) {
-      //     q = query(kidsCollectionRef, where("gender", "==", gender), limit(PAGE_SIZE));
-      //   }
-      //   if (hobbies) {
-      //     q = query(kidsCollectionRef, where("hobbies", "array-contains", hobbies), limit(PAGE_SIZE));
-      //   }
+      // Apply filter if hobbies are present in the filter string
+      if (hobbies && hobbies.length > 0) {
+        // Convert filter string to an array of hobbies
+        const filterHobbies = hobbies.split(",").map((hobby) => hobby.trim());
+        q = query(q, where("hobby", "array-contains-any", filterHobbies));
+      }
 
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
+
+      q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
       const kidsList = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -189,11 +189,15 @@ export default function ChooseKid() {
     return differenceInCalendarYears(new Date(), new Date(birthday));
   }
 
-  const filter = async () => {
-    setKids([]);
+  const filter = async (age, hobby, gender) => {
+    console.log(age, hobby, gender);
+    await setKids([]);
     await setLastKidDoc(null);
     await setInitialLoad(true);
-    fetchKids();
+    await setAge(age);
+    await setHobbies(hobby);
+    await setGender(gender);
+    // await fetchKids();
     setActiveFilter(false);
     console.log(age);
   };

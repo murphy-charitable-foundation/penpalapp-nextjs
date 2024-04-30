@@ -1,21 +1,27 @@
-import React, { useState } from "react";
+"use client"
+
+import React, { useState, useEffect } from "react";
 
 export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender, gender, filter }) {
-  const [hobbieFilter, setHobbieFilter] = useState(null);
-  const [ageFilter, setAgeFilter] = useState(null);
-  const [genderFilter, setGenderFilter] = useState(null);
+  const [hobbyFilter, setHobbiesFilter] = useState(hobbies || "");
+  const [ageFilter, setAgeFilter] = useState(age || 0);
+  const [genderFilter, setGenderFilter] = useState(gender || "");
+
+  useEffect(() => {
+    setHobbiesFilter(hobbies || ""); // Ensure that the initial state matches the props
+    setAgeFilter(age || 0); // Ensure that the initial state matches the props
+    setGenderFilter(gender || ""); // Ensure that the initial state matches the props
+  }, [hobbies, age, gender])
 
   const applyFilter = (e) => {
     e.preventDefault();
-    
-    setHobbies(hobbieFilter);
-    if(ageFilter) {
-      console.log(ageFilter)
-      setAge(28);
-    }
-
-    setGender(genderFilter);
-    filter();
+    // setHobbies(hobbyFilter);
+    // if(ageFilter.length > 0) {
+    //   console.log(ageFilter)
+    //   setAge(ageFilter);
+    // }
+    // setGender(genderFilter);
+    filter(ageFilter, hobbyFilter, genderFilter);
 
   }
 
@@ -38,8 +44,8 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
         <input
           type="text"
           id="hobbies"
-          value={hobbies}
-          onChange={(e) => setHobbieFilter(e.target.value)}
+          value={hobbyFilter}
+          onChange={(e) => setHobbiesFilter(e.target.value)}
           className="w-full p-2 border-b border-black text-black outline-none"
           placeholder="Ex: Football, baseball"
         />
@@ -53,7 +59,7 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
         </label>
         <select
           id="gender"
-          value={gender}
+          value={genderFilter}
           onChange={(e) => setGenderFilter(e.target.value)}
           className="w-full p-2 border-b border-black text-black outline-none"
           placeholder="Select a option"
