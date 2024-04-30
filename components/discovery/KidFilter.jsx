@@ -1,14 +1,22 @@
 import React, { useState } from "react";
 
-export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender, gender }) {
+export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender, gender, filter }) {
   const [hobbieFilter, setHobbieFilter] = useState(null);
   const [ageFilter, setAgeFilter] = useState(null);
   const [genderFilter, setGenderFilter] = useState(null);
 
-  const applyFilter = () => {
+  const applyFilter = (e) => {
+    e.preventDefault();
+    
     setHobbies(hobbieFilter);
-    setAge(ageFilter);
+    if(ageFilter) {
+      console.log(ageFilter)
+      setAge(28);
+    }
+
     setGender(genderFilter);
+    filter();
+
   }
 
   const clearFilter = () => {
@@ -66,7 +74,7 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
         <input
           type="number"
           id="age"
-          value={age}
+          value={ageFilter}
           onChange={(e) => setAgeFilter(e.target.value)}
           className="w-full p-2 border-b border-black text-black outline-none"
           placeholder="Input age"
@@ -74,7 +82,7 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
       </div>
       <div className="flex justify-center mt-24">
       <div className="flex flex-col gap-2">
-        <button onClick={applyFilter} className="bg-[#4E802A] text-white text-lg font-bold py-2 px-4 rounded-3xl">
+        <button onClick={(e) => applyFilter(e)} className="bg-[#4E802A] text-white text-lg font-bold py-2 px-4 rounded-3xl">
           Apply Filters
         </button>
         <button onClick={clearFilter} className="text-black text-lg">

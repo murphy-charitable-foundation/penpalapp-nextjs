@@ -84,9 +84,11 @@ import {
   query,
   startAfter,
   limit,
+  where,
+  and,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig"; // Ensure this path is correct
-import { differenceInCalendarYears } from "date-fns";
+import { differenceInCalendarYears, parseISO } from "date-fns";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
@@ -110,23 +112,51 @@ export default function ChooseKid() {
 
   const fetchKids = async () => {
     setLoading(true);
+    console.log("re-filtering");
+    console.log(age);
     try {
       const kidsCollectionRef = collection(db, "users");
-      let q = query(kidsCollectionRef, limit(PAGE_SIZE));
+      //   let q = query(kidsCollectionRef, limit(PAGE_SIZE));
+      let q = kidsCollectionRef;
 
-            // Apply filters
-            if (ageFilter) {
-                q = query(kidsCollectionRef, where("age", "==", age), limit(PAGE_SIZE));
-              }
-              if (genderFilter) {
-                q = query(kidsCollectionRef, where("gender", "==", gender), limit(PAGE_SIZE));
-              }
-              if (hobbiesFilter) {
-                q = query(kidsCollectionRef, where("hobbies", "array-contains", hobbies), limit(PAGE_SIZE));
-              }
+      // Apply filters
+      if (age) {
+        console.log("Age:", age);
+        const currentYear = new Date().getFullYear();
+        const minBirthYear = currentYear - age;
+        const maxBirthYear = currentYear - age;
+        const minBirthDate = new Date(minBirthYear, 0, 1)
+          .toISOString()
+          .slice(0, 10);
+        const maxBirthDate = new Date(maxBirthYear, 11, 31)
+          .toISOString()
+          .slice(0, 10);
+        console.log(minBirthDate);
+        console.log("Max Birth Date:", maxBirthDate);
+
+        // q = query(
+        //     kidsCollectionRef,
+        //     where("birthday", ">=", minBirthDate),
+        //     where("birthday", "<=", maxBirthDate),
+        //     limit(PAGE_SIZE)
+        // );
+        q = query(q, where("birthday", ">=", minBirthDate));
+        q = query(q, where("birthday", "<=", maxBirthDate));
+
+        // q = query(kidsCollectionRef, where("birthday", "==", "1983-11-09"), limit(PAGE_SIZE))
+      }
+
+      q = query(q, limit(PAGE_SIZE));
+
+      //   if (gender) {
+      //     q = query(kidsCollectionRef, where("gender", "==", gender), limit(PAGE_SIZE));
+      //   }
+      //   if (hobbies) {
+      //     q = query(kidsCollectionRef, where("hobbies", "array-contains", hobbies), limit(PAGE_SIZE));
+      //   }
 
       if (lastKidDoc && !initialLoad) {
-        q = query(kidsCollectionRef, startAfter(lastKidDoc), limit(PAGE_SIZE));
+        q = query(q, startAfter(lastKidDoc));
       }
       const snapshot = await getDocs(q);
       const kidsList = snapshot.docs.map((doc) => ({
@@ -159,6 +189,15 @@ export default function ChooseKid() {
     return differenceInCalendarYears(new Date(), new Date(birthday));
   }
 
+  const filter = async () => {
+    setKids([]);
+    await setLastKidDoc(null);
+    await setInitialLoad(true);
+    fetchKids();
+    setActiveFilter(false);
+    console.log(age);
+  };
+
   const loadMoreKids = () => {
     if (loading) return;
     fetchKids();
@@ -166,8 +205,8 @@ export default function ChooseKid() {
 
   return (
     <div className="min-h-screen p-4 bg-white">
-        <div className="bg-white">
-      {/* <div className="bg-white shadow-md rounded-lg overflow-hidden"> */}
+      <div className="bg-white">
+        {/* <div className="bg-white shadow-md rounded-lg overflow-hidden"> */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078]">
           {/* Top part with white background and black text */}
           <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
@@ -209,8 +248,13 @@ export default function ChooseKid() {
 
         {activeFilter ? (
           <div className="h-auto">
-          <KidFilter setAge={setAge} setGender={setGender} setHobbies={setHobbies}/>
-         </div>
+            <KidFilter
+              setAge={setAge}
+              setGender={setGender}
+              setHobbies={setHobbies}
+              filter={filter}
+            />
+          </div>
         ) : (
           <div>
             <div className="px-4 py-2 flex flex-row flex-wrap gap-5 justify-center relative">
