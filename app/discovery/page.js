@@ -126,7 +126,7 @@ export default function ChooseKid() {
       let q = kidsCollectionRef;
 
       // Apply filters
-      if (age || hobbies || gender) {
+      if (age > 0) {
         console.log("Age:", age);
         const currentYear = new Date().getFullYear();
         const minBirthYear = currentYear - age;
@@ -142,15 +142,17 @@ export default function ChooseKid() {
         q = query(q, where("birthday", "<=", maxBirthDate));
       }
 
-      if (gender) {
+      if (gender && gender?.length > 0) {
         q = query(q, where("gender", "==", gender), limit(PAGE_SIZE));
       }
 
       // Apply filter if hobbies are present in the filter string
       if (hobbies && hobbies.length > 0) {
         // Convert filter string to an array of hobbies
-        const filterHobbies = hobbies.split(",").map((hobby) => hobby.trim());
-        q = query(q, where("hobby", "array-contains-any", filterHobbies));
+        // const filterHobbies = hobbies.split(",").map((hobby) => hobby.trim());
+        // q = query(q, where("hobby", "array-contains-any", filterHobbies));
+        // q = query(q, where("hobby", "array-contains", hobbies));
+        q = query(q, where("hobby", "==", hobbies));
       }
 
       if (lastKidDoc && !initialLoad) {
@@ -191,12 +193,12 @@ export default function ChooseKid() {
 
   const filter = async (age, hobby, gender) => {
     console.log(age, hobby, gender);
-    await setKids([]);
-    await setLastKidDoc(null);
-    await setInitialLoad(true);
-    await setAge(age);
-    await setHobbies(hobby);
-    await setGender(gender);
+    setKids([]);
+    setLastKidDoc(null);
+    setInitialLoad(true);
+    setAge(age);
+    setHobbies(hobby);
+    setGender(gender);
     // await fetchKids();
     setActiveFilter(false);
     console.log(age);
