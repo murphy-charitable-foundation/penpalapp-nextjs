@@ -15,12 +15,6 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
 
   const applyFilter = (e) => {
     e.preventDefault();
-    // setHobbies(hobbyFilter);
-    // if(ageFilter.length > 0) {
-    //   console.log(ageFilter)
-    //   setAge(ageFilter);
-    // }
-    // setGender(genderFilter);
     filter(ageFilter, hobbyFilter, genderFilter);
 
   }
@@ -65,8 +59,8 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
           placeholder="Select a option"
         >
           {/* Add options for gender */}
-          <option value="male">Male</option>
-          <option value="female">Female</option>
+          <option value="male">Man</option>
+          <option value="female">Woman</option>
           <option value="other">Other</option>
         </select>
       </div>

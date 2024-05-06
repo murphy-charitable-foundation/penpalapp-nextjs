@@ -74,6 +74,11 @@ export default function EditProfile() {
             const uid = auth.currentUser.uid;
             const userProfileRef = doc(db, "users", uid);
 
+            // let hobbyArray;
+            // if(hobby.length > 0) {
+            //     hobbyArray = hobby.split(",");
+            // }
+
             const userProfile = {
                 firstName,
                 lastName,
@@ -86,6 +91,7 @@ export default function EditProfile() {
                 isOrphan: isOrphan === 'Yes' ? true : false,
                 livesWith,
                 dreamJob,
+                // hobbyArray,
                 hobby,
                 favoriteColor,
             };

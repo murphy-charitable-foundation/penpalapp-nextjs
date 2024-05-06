@@ -57,15 +57,17 @@ export default function ChooseKid() {
       }
 
       if (gender && gender?.length > 0) {
-        q = query(q, where("gender", "==", gender), limit(PAGE_SIZE));
+        q = query(q, where("gender", "==", gender), limit(PAGE_SIZE));  //where is the pronouns or gender added. I checked PR's and dont see anywhere where pronouns are gender is added. Do you want me to add
       }
 
       // Apply filter if hobbies are present in the filter string
       if (hobbies && hobbies.length > 0) {
         // Convert filter string to an array of hobbies
-        // const filterHobbies = hobbies.split(",").map((hobby) => hobby.trim());
-        // q = query(q, where("hobby", "array-contains-any", filterHobbies));
-        q = query(q, where("hobby", "==", hobbies));
+
+         //this would allow me to filter by just one hobby instea of the entire string(if there is more than one hobby). For it to work uncomment code I added in profile page
+        // q = query(q, where("hobby", "array-contains-any",hobbies));
+
+        q = query(q, where("hobby", "==", hobbies)); //this works if the entire string so best if only one hobby
       }
 
       if (lastKidDoc && !initialLoad) {
@@ -171,6 +173,9 @@ export default function ChooseKid() {
               setAge={setAge}
               setGender={setGender}
               setHobbies={setHobbies}
+              hobbies={hobbies}
+              age={age}
+              gender={gender}
               filter={filter}
             />
           </div>
