@@ -8,6 +8,8 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore"; 
 import { db, auth } from '../firebaseConfig'; 
 import { updateDoc } from "firebase/firestore";
+import BottomNavBar from '@/components/bottom-nav-bar';
+
 
 export default function EditProfile() {
     // State initializations
@@ -20,7 +22,7 @@ export default function EditProfile() {
     const [bio, setBio] = useState('');
     const [educationLevel, setEducationLevel] = useState('');
     const [isOrphan, setIsOrphan] = useState(false); 
-    const [livesWith, setLivesWith] = useState('');
+    const [guardian, setGuardian] = useState('');
     const [dreamJob, setDreamJob] = useState('');
     const [hobby, setHobby] = useState('');
     const [favoriteColor, setFavoriteColor] = useState('');
@@ -38,19 +40,19 @@ export default function EditProfile() {
     
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
-                    setFirstName(userData.firstName || '');
-                    setLastName(userData.lastName || '');
+                    setFirstName(userData.first_name || '');
+                    setLastName(userData.last_name || '');
                     setEmail(userData.email || '');
                     setBirthday(userData.birthday || '');
                     setCountry(userData.country || '');
                     setVillage(userData.village || '');
                     setBio(userData.bio || '');
-                    setEducationLevel(userData.educationLevel || '');
-                    setIsOrphan(userData.isOrphan ? 'Yes' : 'No'); 
-                    setLivesWith(userData.livesWith || '');
-                    setDreamJob(userData.dreamJob || '');
+                    setEducationLevel(userData.education_level || '');
+                    setIsOrphan(userData.is_orphan ? 'Yes' : 'No'); 
+                    setGuardian(userData.gaurdian || '');
+                    setDreamJob(userData.dream_job || '');
                     setHobby(userData.hobby || '');
-                    setFavoriteColor(userData.favoriteColor || '');
+                    setFavoriteColor(userData.favorite_color || '');
                 } else {
                     console.log("No such document!");
                 }
@@ -73,27 +75,27 @@ export default function EditProfile() {
             const userProfileRef = doc(db, "users", uid);
 
             const userProfile = {
-                firstName,
-                lastName,
+                first_name: firstName,
+                last_name: lastName,
                 email, 
                 birthday,
                 country,
                 village,
                 bio,
-                educationLevel,
-                isOrphan: isOrphan === 'Yes' ? true : false,
-                livesWith,
-                dreamJob,
+                education_level: educationLevel,
+                is_orphan: isOrphan.toLowerCase() === 'yes' ? true : false,
+                gaurdian: guardian,
+                dream_job: dreamJob,
                 hobby,
-                favoriteColor,
+                favorite_color: favoriteColor,
+                // missing more fields
             };
 
             try {
                 await updateDoc(userProfileRef, userProfile);
                 alert('Profile saved successfully!');
             } catch (error) {
-                console.error("Error saving profile: ", error);
-                alert('Error saving profile.');
+                alert('Error saving profile');
             }
         } else {
             alert('No user logged in.');
@@ -134,14 +136,11 @@ export default function EditProfile() {
             <div className="max-w-lg mx-auto p-6">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                        <Link href="/login">
-
-                            <button>
-                                <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                        </Link>
+                    <button onClick={() => window.history.back()}>
+                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
 
                         <h1 className="ml-4 text-xl font-bold text-gray-800">Edit profile</h1>
                     </div>
@@ -284,8 +283,8 @@ export default function EditProfile() {
                         <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Who the child lives with</label>
                         <select
                             id="isOrphan"
-                            value={livesWith}
-                            onChange={(e) => setLivesWith(e.target.value)}
+                            value={guardian}
+                            onChange={(e) => setGuardian(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
                             <option value="Parents">Parents</option>
@@ -343,6 +342,7 @@ export default function EditProfile() {
 
                 </div>
             </div>
+            <BottomNavBar />
         </div>
     );
 }

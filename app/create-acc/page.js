@@ -51,6 +51,7 @@ export default function CreateAccount() {
                 }
             }
 
+
             // Create a document in Firestore in "users" collection with UID as the document key
             await setDoc(doc(db, "users", uid), {
                 created_at: new Date(),
@@ -132,6 +133,45 @@ export default function CreateAccount() {
                         />
                     </div>
                     {error && <span className="flex items-left text-sm text-red-500">{error}</span>}
+
+    if (password !== repeatPassword) {
+        alert("Passwords do not match.");
+        return;
+    }
+    try {
+        const user = auth.currentUser;
+        const uid = user.uid;
+        try {
+            await updatePassword(user, password);
+        }
+        catch (error) {
+            if (error.code == 'auth/requires-recent-login') {
+                console.error("Account creation timed out: ", error.message);
+                alert("Account creation timed out. Please try logging in again.");
+                await signOut(auth);
+                router.push('/login');
+                return
+            }
+            else {
+                console.error("Failed to change password: ", error.message);
+                throw error;
+            }
+        }
+
+        // Create a document in Firestore in "users" collection with UID as the document key
+        await setDoc(doc(db, "users", uid), {
+            created_at: new Date(),
+            first_name: firstName,
+            last_name: lastName,
+            birthday, 
+        });
+
+        // Redirect to profile page or any other page as needed
+        router.push('/profile'); 
+    } catch (error) {
+        alert(error.message);
+    }
+  };
 
 
                     <div className="text-sm">
