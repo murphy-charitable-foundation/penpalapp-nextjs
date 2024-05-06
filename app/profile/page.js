@@ -165,7 +165,11 @@ export default function EditProfile() {
                             alt="Profile picture"
                         />
                         {/* Edit Icon */}
-                        <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full">
+                        <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full curspr-pointer"
+                            onClick={() => {
+                                router.push("/edit-profile-user-image")
+                            }}
+                        >
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                             </svg>

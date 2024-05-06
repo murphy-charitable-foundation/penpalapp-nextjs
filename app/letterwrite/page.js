@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { db } from "../firebaseConfig"; // Adjust this path as necessary
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, getDocs, getDoc, doc, query, where } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -31,6 +31,9 @@ export default function WriteLetter() {
   const auth = getAuth();
   const [currentUser, setCurrentUser] = useState(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
+  const [draft, setDraft] = useState(null)
+  const [userRef, setUserRef] = useState(null)
+  const [selectedUserRef, setSelectedUserRef] = useState(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -79,6 +82,51 @@ export default function WriteLetter() {
       setIsSending(false);
     }
   };
+
+  useEffect(() => {
+    if(user){
+      const userDocRef = doc(db, "users", user.uid);
+      setUserRef(userDocRef)
+    }
+    if(selectedUser){
+      const selectedUserDocRef = doc(db, "users", selectedUser.uid)
+      setSelectedUserRef(selectedUserDocRef)
+    }
+  }, [selectedUser])
+  let debounce = 0
+  useEffect(() => {
+    // when typing, we need to update the current doc with a draft status
+    // when we send, we MUST set the draft status to false
+    debounce++
+
+    const updateDraft = async () => {
+      const lettersRef = collection(db, "letterbox");
+      if(!userRef || !selectedUserRef) return
+      const letterboxQuery = query(
+        lettersRef,
+        where(userRef, "in", "members"),
+        where(selectedUserRef, "in", "members"),
+      );
+      const draftSnapshot = await getDocs(letterboxQuery);
+      const letterData = {
+        content: letterContent,
+        recipientId: selectedUser.id,
+        senderId: auth.currentUser.uid, // Directly using the uid from auth.currentUser
+        timestamp: new Date(),
+        draft: true
+      };
+      if(draftSnapshot.length) {
+        await updateDoc(doc(collection(messageDocRef, "letters"), draft.id), letterData);
+      } else {
+        // save this here - we need this to be a draft ref for future calls
+        await addDoc(collection(db, "letters"), letterData);
+      }
+    }
+    if(debounce == 3) {
+      updateDraft()
+      debounce = 0
+    }
+  }, [letterContent])
 
 
 
