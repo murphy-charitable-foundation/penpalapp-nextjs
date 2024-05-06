@@ -19,44 +19,13 @@ import { FaUserCircle, FaRegEnvelope, FaCompass, FaInfoCircle, FaPhone, FaDonate
 
 
 export default function Home() {
-    // Dummy data for the lists
-    const recentChildren = [
-        { name: 'Louise', image: '/usericon.png' },
-        { name: 'Mark', image: '/usericon.png' },
-        { name: 'Pierre', image: '/usericon.png' },
-        { name: 'John', image: '/usericon.png' },
-    ];
-
-    const [meetKids, setMeetKids] = useState([]);
-
-    const [kids, setKids] = useState([]);
-
-    useEffect(() => {
-        const fetchKids = async () => {
-            const usersCollectionRef = collection(db, "users");
-            const q = query(usersCollectionRef, limit(4));
-            const snapshot = await getDocs(q);
-            const kidsList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            setKids(kidsList);
-        };
-
-        fetchKids();
-    }, []);
-
-    function calculateAge(birthday) {
-        return differenceInCalendarYears(new Date(), new Date(birthday));
-    }
-
-
 
     const [userName, setUserName] = useState('');
     const [country, setCountry] = useState('');
     const [lastLetters, setLastLetters] = useState([]);
     const [letters, setLetters] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
 
 
@@ -70,7 +39,7 @@ export default function Home() {
                 if (docSnap.exists()) {
                     const userData = docSnap.data();
                     // Assuming the user's name is stored under a 'name' field. Adjust as necessary.
-                    setUserName(userData.firstName || 'Unknown User'); // You can adjust this line to concatenate firstName and lastName if you want
+                    setUserName(userData.first_name || 'Unknown User'); // You can adjust this line to concatenate firstName and lastName if you want
                     setCountry(userData.country || 'Unknown Country');
                 } else {
                     console.log("No such document!");
@@ -91,11 +60,13 @@ export default function Home() {
             if (user) {
                 const fetchLetters = async () => {
                     try {
-                        const lettersRef = collection(db, "letters");
-                        const q = query(lettersRef, where("recipientId", "==", user.uid));
-                        const querySnapshot = await getDocs(q);
+                        const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+                        // const userDocSnapshot = await getDoc(userDocRef);
+                        const lettersRef = collection(db, "letterbox");
+                        const letterboxQuery = query(lettersRef, where("members", "array-contains", userDocRef));
+                        const letterboxQuerySnapshot = await getDocs(letterboxQuery);
 
-                        const fetchedLetters = querySnapshot.docs.map(doc => ({
+                        const fetchedLetters = letterboxQuerySnapshot.docs.map(doc => ({
                             id: doc.id,
                             ...doc.data(),
                             received: doc.data().timestamp.toDate().toLocaleString(),
@@ -152,24 +123,12 @@ export default function Home() {
                 </header>
                 {/* Main content */}
                 <main className="p-6">
-                    {/* Recent Children */}
-                    <section>
-                        <h2 className="font-bold text-xl mb-4 text-gray-800">Recent children</h2>
-                        <div className="flex space-x-4 overflow-auto">
-                            {recentChildren.map((child, index) => (
-                                <div key={index} className="flex-shrink-0 w-24 h-24 relative">
-                                    <Image src={child.image} alt={child.name} layout="fill" className="rounded-full shadow-lg" />
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
 
                     {/* Last Letters */}
                     <section className="mt-8">
                         <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
                             Last letters
-                            <Link href="/myletters">
+                            <Link href="/letterhome">
                                 <button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">Show more</button>
                             </Link>
                         </h2>
@@ -189,47 +148,6 @@ export default function Home() {
                         ) : (
                             <p className="text-gray-500">No letters found.</p>
                         )}
-                    </section>
-
-                    {/* Meet Some Kids Section */}
-                    <section className="mt-8 mb-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="font-bold text-xl text-gray-800">Meet Some Kids</h2>
-                            <Link href="/discovery">
-                                <button className="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-300">Show All</button>
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-                            {kids.map((kid) => (
-                                <div key={kid.id} className="w-full p-4 rounded-lg shadow-md flex flex-col items-center bg-white">
-                                    <div className="w-32 h-32 overflow-hidden rounded-full"> {/* Profile image container */}
-                                        <Image
-                                            src={kid.image || '/usericon.png'}
-                                            alt={kid.firstName}
-                                            layout="responsive"
-                                            width={128}
-                                            height={128}
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                    <h3 className="mt-3 mb-1 text-lg font-semibold text-gray-900 text-center">{kid.firstName}</h3>
-                                    <p className="text-sm text-gray-500">{calculateAge(kid.birthday)} years old</p>
-                                    <p className="text-sm text-gray-600 text-center mt-1 mb-2">{kid.bio}</p>
-                                    <div className="flex flex-wrap justify-center gap-2 mt-2 mb-4">
-                                        {kid.interests?.map((interest, idx) => (
-                                            <span key={idx} className="px-3 py-1 text-xs rounded-full bg-blue-200 text-blue-800">
-                                                {interest}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <Link href="/letterwrite">
-                                        <button className="w-full py-2 px-2 mt-auto bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-900 transition-colors duration-300">
-                                            Send a message
-                                        </button>
-                                    </Link>
-                                </div>
-                            ))}
-                        </div>
                     </section>
 
                 </main>
