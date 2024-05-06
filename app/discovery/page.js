@@ -1,94 +1,209 @@
-"use client"
+"use client";
 
-// pages/choose-kid.js
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { db } from '../firebaseConfig'; // Ensure this path is correct
-import { collection, getDocs } from 'firebase/firestore';
-import { differenceInCalendarYears } from 'date-fns';
-import BottomNavBar from '@/components/bottom-nav-bar';
+import { useState, useEffect } from "react";
+import {
+  collection,
+  getDocs,
+  query,
+  startAfter,
+  limit,
+  where,
+} from "firebase/firestore";
+import { db } from "../firebaseConfig"; // Ensure this path is correct
+import { differenceInCalendarYears, parseISO } from "date-fns";
+import KidCard from "@/components/general/KidCard";
+import KidFilter from "@/components/discovery/KidFilter";
 
+const PAGE_SIZE = 10; // Number of kids per page
 
 export default function ChooseKid() {
-    const [kids, setKids] = useState([]);
+  const [activeFilter, setActiveFilter] = useState(false);
+  const [kids, setKids] = useState([]);
+  const [lastKidDoc, setLastKidDoc] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
-    useEffect(() => {
-        const fetchKids = async () => {
-            const usersCollectionRef = collection(db, "users");
-            const snapshot = await getDocs(usersCollectionRef);
-            const kidsList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            setKids(kidsList);
-        };
+  const [age, setAge] = useState(0);
+  const [gender, setGender] = useState("");
+  const [hobbies, setHobbies] = useState("");
 
-        fetchKids();
-    }, []);
+  useEffect(() => {
+    fetchKids();
+  }, [age, gender, hobbies]);
 
-    function calculateAge(birthday) {
-        return differenceInCalendarYears(new Date(), new Date(birthday));
+  const fetchKids = async () => {
+    setLoading(true);
+    console.log("re-filtering");
+    console.log(age);
+    try {
+      const kidsCollectionRef = collection(db, "users");
+      let q = kidsCollectionRef;
+
+      // Apply filters
+      if (age > 0) {
+        console.log("Age:", age);
+        const currentYear = new Date().getFullYear();
+        const minBirthYear = currentYear - age;
+        const maxBirthYear = currentYear - age;
+        const minBirthDate = new Date(minBirthYear, 0, 1)
+          .toISOString()
+          .slice(0, 10);
+        const maxBirthDate = new Date(maxBirthYear, 11, 31)
+          .toISOString()
+          .slice(0, 10);
+
+        q = query(q, where("birthday", ">=", minBirthDate));
+        q = query(q, where("birthday", "<=", maxBirthDate));
+      }
+
+      if (gender && gender?.length > 0) {
+        q = query(q, where("gender", "==", gender), limit(PAGE_SIZE));  //where is the pronouns or gender added. I checked PR's and dont see anywhere where pronouns are gender is added. Do you want me to add
+      }
+
+      // Apply filter if hobbies are present in the filter string
+      if (hobbies && hobbies.length > 0) {
+        // Convert filter string to an array of hobbies
+
+         //this would allow me to filter by just one hobby instea of the entire string(if there is more than one hobby). For it to work uncomment code I added in profile page
+        // q = query(q, where("hobby", "array-contains-any",hobbies));
+
+        q = query(q, where("hobby", "==", hobbies)); //this works if the entire string so best if only one hobby
+      }
+
+      if (lastKidDoc && !initialLoad) {
+        q = query(q, startAfter(lastKidDoc));
+      }
+
+      q = query(q, limit(PAGE_SIZE));
+      const snapshot = await getDocs(q);
+      const kidsList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log(kidsList);
+      setKids((prevKids) => {
+        if (initialLoad) {
+          return kidsList;
+        } else {
+          return [...prevKids, ...kidsList];
+        }
+      });
+      if (snapshot.docs.length > 0) {
+        setLastKidDoc(snapshot.docs[snapshot.docs.length - 1]);
+      } else {
+        setLastKidDoc(null);
+      }
+    } catch (error) {
+      console.error("Error fetching kids:", error);
+    } finally {
+      setLoading(false);
+      setInitialLoad(false);
     }
+  };
 
-    return (
-        <div className="min-h-screen p-4" style={{ backgroundColor: '#f0f2f5' }}>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <button onClick={() => window.history.back()}>
-                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <div className="p-4 flex justify-between items-center" style={{ backgroundColor: '#034078' }}>
-                    <h1 className="text-2xl font-bold text-white">Choose a kid to write to</h1>
-                    <button className="text-white px-3 py-1 rounded-full text-sm flex items-center justify-center" style={{ backgroundColor: '#022f5b' }}>
-                        Filters
-                        <svg className="w-4 h-4 ml-2 fill-current" viewBox="0 0 20 20">
-                            <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
-                        </svg>
-                    </button>
-                </div>
+  function calculateAge(birthday) {
+    return differenceInCalendarYears(new Date(), new Date(birthday));
+  }
 
-                <div className="px-4 py-2 flex flex-col items-center relative">
+  const filter = async (age, hobby, gender) => {
+    console.log(age, hobby, gender);
+    setKids([]);
+    setLastKidDoc(null);
+    setInitialLoad(true);
+    setAge(age);
+    setHobbies(hobby);
+    setGender(gender);
+    // await fetchKids();
+    setActiveFilter(false);
+    console.log(age);
+  };
 
+  const loadMoreKids = () => {
+    if (loading) return;
+    fetchKids();
+  };
 
-                    {/* Card components */}
-                    {kids.map((kid) => (
-                        <div key={kid.id} className="w-full max-w-sm my-4 p-4 rounded-lg shadow-lg flex flex-col items-start"> {/* Removed center alignment */}
-                            <div className="w-32 h-32 overflow-hidden rounded-full mx-auto"> {/* Profile image container */}
-                                <Image
-                                    src={kid.image || '/usericon.png'}
-                                    alt={kid.firstName}
-                                    width={128}
-                                    height={128}
-                                    className="object-cover"
-                                />
-                            </div>
-                            <h2 className="text-xl mt-3 mb-1 text-left" style={{ color: '#262626' }}>{kid.firstName}</h2> {/* Text aligned left */}
-                            <p className="text-xs mb-1 text-left text-black">{calculateAge(kid.birthday)} years old</p> {/* Text aligned left */}
-                            <p className="text-left mb-2 text-gray-900 text-xs" style={{ color: '#515151' }}>{kid.bio}</p> {/* Text aligned left */}
-                            <div className="flex justify-start flex-wrap gap-2 mb-4"> {/* Tags container */}
-                                {kid.interests?.map((interest, idx) => (
-                                    <span key={idx} className="px-3 py-1 text-xs rounded-full" style={{ backgroundColor: '#fea500', color: 'white' }}>
-                                        {interest}
-                                    </span>
-                                ))}
-                            </div>
-                            <div className="self-end mt-auto"> {/* Button aligned to the right */}
-                                <Link href="/letterwrite">
-                                    <button className="w-28 py-2 rounded-3xl text-center text-xs" style={{ backgroundColor: '#0369a1', color: 'white' }}>
-                                        Send a message
-                                    </button>
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
-
-
-                </div>
+  return (
+    <div className="min-h-screen p-4 bg-white">
+      <div className="bg-white">
+        {/* <div className="bg-white shadow-md rounded-lg overflow-hidden"> */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078]">
+          {/* Top part with white background and black text */}
+          <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
+            <div className="flex gap-4 justify-center w-full">
+              <button onClick={() => window.history.back()}>
+                <svg
+                  className="h-6 w-6 text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <h1 className="text-xl sm:text-2xl font-bold text-center">
+                Choose a kid to write to
+              </h1>
             </div>
-            <BottomNavBar />
+          </div>
+
+          {/* Filter button with grey background */}
+          <div className="p-4 bg-[#E6EDF4] sm:bg-[#034078]">
+            <button
+              className="text-black sm:text-white w-full px-3 py-1 rounded-full text-sm flex items-center justify-between sm:justify-center sm:bg-[#022f5b] text-[15px] sm:text-[18px]"
+              onClick={() => setActiveFilter(!activeFilter)}
+            >
+              <p>Filters</p>
+              <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
+                <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-    );
+        {activeFilter ? (
+          <div className="h-auto">
+            <KidFilter
+              setAge={setAge}
+              setGender={setGender}
+              setHobbies={setHobbies}
+              hobbies={hobbies}
+              age={age}
+              gender={gender}
+              filter={filter}
+            />
+          </div>
+        ) : (
+          <div>
+            <div className="px-4 py-2 flex flex-row flex-wrap gap-5 justify-center relative">
+              {kids.map((kid) => (
+                <KidCard
+                  kid={kid}
+                  calculateAge={calculateAge}
+                  key={kid?.id}
+                  style={{ minHeight: "300px", minWidth: "280px" }}
+                />
+              ))}
+            </div>
+            {lastKidDoc && (
+              <div className="flex justify-center">
+                <button
+                  onClick={loadMoreKids}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
+                >
+                  {loading ? "Loading..." : "Load More"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

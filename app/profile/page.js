@@ -74,6 +74,11 @@ export default function EditProfile() {
             const uid = auth.currentUser.uid;
             const userProfileRef = doc(db, "users", uid);
 
+            // let hobbyArray;
+            // if(hobby.length > 0) {
+            //     hobbyArray = hobby.split(",");
+            // }
+
             const userProfile = {
                 first_name: firstName,
                 last_name: lastName,
@@ -87,6 +92,7 @@ export default function EditProfile() {
                 gaurdian: guardian,
                 dream_job: dreamJob,
                 hobby,
+                // hobbyArray
                 favorite_color: favoriteColor,
                 // missing more fields
             };
