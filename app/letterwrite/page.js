@@ -18,6 +18,7 @@ import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
 import BottomNavBar from '@/components/bottom-nav-bar';
+import { fetchData } from "../utils/firestore";
 
 
 export default function WriteLetter() {
@@ -34,16 +35,18 @@ export default function WriteLetter() {
   const [draft, setDraft] = useState(null)
   const [userRef, setUserRef] = useState(null)
   const [selectedUserRef, setSelectedUserRef] = useState(null)
+  const [allMessages, setAllMessages] = useState(null)
+  const [availableChatIds, setAvailableChatIds] = useState(null) 
 
   useEffect(() => {
     const fetchUsers = async () => {
       const usersCollectionRef = collection(db, "users");
-      const snapshot = await getDocs(usersCollectionRef);
-      const usersList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(usersList);
+      // const snapshot = await getDocs(usersCollectionRef);
+      // const usersList = snapshot.docs.map((doc) => ({
+      //   id: doc.id,
+      //   ...doc.data(),
+      // }));
+      // setUsers(usersList);
     };
 
     fetchUsers();
@@ -62,11 +65,12 @@ export default function WriteLetter() {
 
     setIsSending(true);
 
+    // recipientId: selectedUser.id,
     const letterData = {
-      content: letterContent,
-      recipientId: selectedUser.id,
-      senderId: auth.currentUser.uid, // Directly using the uid from auth.currentUser
-      timestamp: new Date(),
+      letter: letterContent,
+      sent_by: userRef, // Directly using the uid from auth.currentUser
+      status: "pending_review",
+      created_at: new Date(),
     };
 
     try {
@@ -82,17 +86,38 @@ export default function WriteLetter() {
       setIsSending(false);
     }
   };
+  // find available chats - not users
+  // we must be a part of that chat
 
+
+  // set out user
   useEffect(() => {
     if(user){
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef)
+
+      const fetchMessages = async () => {
+        const messages = await fetchData()
+        setAllMessages(messages)
+      }
+      fetchMessages()
     }
+  }, [user])
+
+  // set the recipient user
+  useEffect(() => {
     if(selectedUser){
-      const selectedUserDocRef = doc(db, "users", selectedUser.uid)
+      const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
       setSelectedUserRef(selectedUserDocRef)
     }
   }, [selectedUser])
+
+  useEffect(() => {
+    let ids = []
+    allMessages?.forEach(m => ids.push({letterboxId: m.letterboxId, recipientId: m.receiver}))
+    setAvailableChatIds(ids)
+  }, [allMessages])
+
   let debounce = 0
   useEffect(() => {
     // when typing, we need to update the current doc with a draft status
@@ -140,30 +165,32 @@ export default function WriteLetter() {
 
   const RecipientModal = () => {
     return (
-      <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-          <h3 className="font-semibold text-xl mb-4 text-gray-800">
-            Select a Recipient
-          </h3>
-          <ul className="max-h-60 overflow-auto mb-4">
-            {users.map((user) => (
-              <li
-                key={user.id}
-                onClick={() => selectUser(user)}
-                className="p-3 hover:bg-blue-100 cursor-pointer text-gray-700 rounded-md"
-              >
-                {user.firstName} {user.lastName} - {user.country}
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setIsModalOpen(false)}
-            className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-          >
-            Close
-          </button>
+      (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="font-semibold text-xl text-gray-800 mb-4">
+              Select a Recipient
+            </h3>
+            <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
+              {availableChatIds.map((chat) => (
+                <li
+                  key={chat.letterboxId}
+                  onClick={() => selectUser(chat)}
+                  className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
+                >
+                  {chat.recipientId}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
+            >
+              Close
+            </button>
+          </div>
         </div>
-      </div>
+      )
     );
   };
 
@@ -175,7 +202,7 @@ export default function WriteLetter() {
             onClick={() => setIsFileModalOpen(false)}
             className="rounded-lg transition-colors duration-150 h-6 w-6 absolute top-0 left-0"
           >
-            <IoMdClose class="h-full w-full" />
+            <IoMdClose className="h-full w-full" />
           </button>
           <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
             Files
@@ -212,13 +239,12 @@ export default function WriteLetter() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(currentUser); // This will now work
+        setUser(currentUser);
       } else {
-        setUser(null); // Clear user state when no user is logged in
+        setUser(null);
       }
     });
 
-    // Cleanup subscription on component unmount
     return () => unsubscribe();
   }, []);
 
@@ -286,33 +312,7 @@ export default function WriteLetter() {
           )}
         </div>
 
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-              <h3 className="font-semibold text-xl text-gray-800 mb-4">
-                Select a Recipient
-              </h3>
-              <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
-                {users.map((user) => (
-                  <li
-                    key={user.id}
-                    onClick={() => selectUser(user)}
-                    className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
-                  >
-                    {user.firstName} - {user.country}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        ) && <RecipientModal />}
-
+        {isModalOpen &&  <RecipientModal />}
 
         {isFileModalOpen && <FileModal />}
 
