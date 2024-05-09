@@ -66,13 +66,16 @@ export default function ChooseKid() {
 
          //this would allow me to filter by just one hobby instea of the entire string(if there is more than one hobby). For it to work uncomment code I added in profile page
         // q = query(q, where("hobby", "array-contains-any",hobbies));
-
+              
         q = query(q, where("hobby", "==", hobbies)); //this works if the entire string so best if only one hobby
       }
 
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
+
+      //add where userType is "
+      q = query(q, where("user_type", "==", "child"))
 
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
