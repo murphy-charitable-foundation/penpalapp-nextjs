@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, setDoc } from "firebase/firestore";
 import { db } from '@/app/firebaseConfig';
 import CreatableSelect from 'react-select/creatable';
 
-const createOption = (label) => ({
-  label,
-  value: label
-
-});
-
-const HobbySelect = ({setHobbies, hobbies}) => {
+const HobbySelect = ({ setHobbies, hobbies }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [options, setOptions] = useState([]);
   const [value, setValue] = useState([]);
@@ -18,8 +12,12 @@ const HobbySelect = ({setHobbies, hobbies}) => {
   useEffect(() => {
     const fetchHobbies = async () => {
       try {
-        const hobbies = await getHobbies();
-        const hobbyOptions = hobbies.map(hobby => createOption(hobby.id, hobby.label));
+        const hobbiesSnapshot = await getDocs(collection(db, 'hobbies'));
+        const hobbyOptions = hobbiesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          value: doc.id,
+          label: doc.data().hobby
+        }));
         setOptions(hobbyOptions);
         setIsLoading(false);
       } catch (error) {
@@ -31,38 +29,32 @@ const HobbySelect = ({setHobbies, hobbies}) => {
     fetchHobbies();
   }, []);
 
-  const getHobbies = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, 'hobbies'));
-      const hobbies = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      console.log(hobbies);
-      return hobbies;
-    } catch (error) {
-      console.error('Error getting hobbies:', error);
-      return [];
-    }
-  };
-
   const handleCreate = async () => {
     setIsLoading(true);
     try {
       const lowercaseInput = inputValue.toLowerCase().trim();
-      const newOption = createOption(lowercaseInput);
-      await addDoc(collection(db, 'hobbies'), { label: lowercaseInput }); // Add new hobby to Firestore
+      const docRef = await addDoc(collection(db, 'hobbies'), { hobby: lowercaseInput }); // Add new hobby to Firestore
+      const newOption = { id: docRef.id, value: docRef.id, label: lowercaseInput };
       setIsLoading(false);
       setOptions(prevOptions => [...prevOptions, newOption]);
       setValue(prevValue => [...prevValue, newOption]);
-      setHobbies(prevHobbies => [...prevHobbies, lowercaseInput]);
-      setInputValue(''); // Clear input value after creating option
+      setHobbies(prevHobbies => [...prevHobbies, docRef.id]);
+      setInputValue('');
     } catch (error) {
       console.error('Error creating option:', error);
       setIsLoading(false);
     }
   };
-  
+
+  const customStyles = {
+    input: (provided) => ({
+      ...provided,
+    //   border: '1px solid #ccc',
+      borderRadius: '4px',
+      padding: '10px',
+      outline: 'none',
+    }),
+  };
 
   return (
     <CreatableSelect
@@ -70,11 +62,12 @@ const HobbySelect = ({setHobbies, hobbies}) => {
       isClearable
       isDisabled={isLoading}
       isLoading={isLoading}
-      onChange={(newValue) => setValue(newValue)}
-      onCreateOption={() => handleCreate()}
-      onInputChange={(input) => setInputValue(input)}
+      onChange={newValue => setValue(newValue)}
+      onCreateOption={handleCreate}
+      onInputChange={input => setInputValue(input)}
       options={options}
       value={value}
+      styles={customStyles}
       className='text-black'
     />
   );

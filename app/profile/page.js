@@ -25,7 +25,7 @@ export default function EditProfile() {
     const [isOrphan, setIsOrphan] = useState(false); 
     const [guardian, setGuardian] = useState('');
     const [dreamJob, setDreamJob] = useState('');
-    const [hobby, setHobby] = useState('');
+    const [hobby, setHobby] = useState([]);
     const [favoriteColor, setFavoriteColor] = useState('');
     const [user, setUser] = useState(null);
 
@@ -52,7 +52,7 @@ export default function EditProfile() {
                     setIsOrphan(userData.is_orphan ? 'Yes' : 'No'); 
                     setGuardian(userData.gaurdian || '');
                     setDreamJob(userData.dream_job || '');
-                    setHobby(userData.hobby || '');
+                    setHobby(userData.hobby || []);
                     setFavoriteColor(userData.favorite_color || '');
                 } else {
                     console.log("No such document!");
@@ -328,7 +328,7 @@ export default function EditProfile() {
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                             placeholder="Ex: Football"
                         /> */}
-                        <HobbySelect/>
+                        <HobbySelect hobbies={hobby} setHobbies={setHobby}/>
                     </div>
 
                     <div>
