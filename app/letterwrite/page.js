@@ -37,6 +37,7 @@ export default function WriteLetter() {
   const [selectedUserRef, setSelectedUserRef] = useState(null)
   const [allMessages, setAllMessages] = useState(null)
   const [availableChatIds, setAvailableChatIds] = useState(null) 
+  const [recipient, setRecipient] = useState(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -106,10 +107,17 @@ export default function WriteLetter() {
 
   // set the recipient user
   useEffect(() => {
-    if(selectedUser){
-      const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
-      setSelectedUserRef(selectedUserDocRef)
+    const getSelectedUser = async () => {
+      if(selectedUser){
+        const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
+        setSelectedUserRef(selectedUserDocRef)
+        console.log(selectedUserDocRef)
+        const selUser = await getDoc(selectedUserDocRef)
+        setRecipient(selUser.data())
+        console.log(selUser.data())
+      }
     }
+    getSelectedUser()
   }, [selectedUser])
 
   useEffect(() => {
@@ -230,7 +238,7 @@ export default function WriteLetter() {
 
 
   const selectUser = (user) => {
-    setSelectedUser({ ...user, profile_picture: "https://media.wired.com/photos/598e35fb99d76447c4eb1f28/master/pass/phonepicutres-TA.jpg" });
+    setSelectedUser({ ...user });
     closeRecipientModal(); // Close the modal upon selection
   };
 
@@ -283,23 +291,23 @@ export default function WriteLetter() {
 
         {/* Recipient Info */}
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
-          {selectedUser ? (
+          {recipient ? (
             <>
               {/* Use a default placeholder if no photoURL is available */}
               <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                {selectedUser.profile_picture ? (
-                  <img src={selectedUser.profile_picture} class="w-full h-full object-cover" />
+                {recipient.profile_picture ? (
+                  <img src={recipient.profile_picture} class="w-full h-full object-cover" />
                 ) : (
                   <span className="text-xl text-gray-600">
-                    {selectedUser.firstName[0]}
+                    {recipient.first_name?.[0]}
                   </span>
                 )}
               </div>
               <div>
                 <h2 className="font-bold text-black">
-                  {selectedUser.firstName} {selectedUser.lastName}
+                  {recipient.first_name} {recipient.last_name}
                 </h2>
-                <p className="text-sm text-gray-500">{selectedUser.country}</p>
+                <p className="text-sm text-gray-500">{recipient.country}</p>
               </div>
             </>
           ) : (
