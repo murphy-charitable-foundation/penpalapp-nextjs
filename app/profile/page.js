@@ -9,6 +9,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from '../firebaseConfig'; 
 import { updateDoc } from "firebase/firestore";
 import BottomNavBar from '@/components/bottom-nav-bar';
+import HobbySelect from '@/components/HobbySelect';
 
 
 export default function EditProfile() {
@@ -319,14 +320,15 @@ export default function EditProfile() {
 
                     <div>
                         <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">Hobby</label>
-                        <input
+                        {/* <input
                             type="text"
                             id="hobby"
                             value={hobby}
                             onChange={(e) => setHobby(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                             placeholder="Ex: Football"
-                        />
+                        /> */}
+                        <HobbySelect/>
                     </div>
 
                     <div>

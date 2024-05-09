@@ -1,70 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import {
-  collection,
-  getDocs,
-  query,
-  startAfter,
-  limit,
-  where,
-} from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { collection, getDocs, query, addDoc } from "firebase/firestore";
+import { db } from '@/app/firebaseConfig';
 import CreatableSelect from 'react-select/creatable';
 
 const createOption = (label) => ({
   label,
-  value: label.toLowerCase().replace(/\W/g, ''),
+  value: label
+
 });
 
-const defaultOptions = [
-  createOption('One'),
-  createOption('Two'),
-  createOption('Three'),
-];
-
-const FirebaseSelect = () => {
+const HobbySelect = ({setHobbies, hobbies}) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [options, setOptions] = useState(defaultOptions);
-  const [value, setValue] = useState(null);
+  const [options, setOptions] = useState([]);
+  const [value, setValue] = useState([]);
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchHobbies = async () => {
       try {
-        const data = await fetchData();
-        const optionData = data.map((item) => createOption(item.label));
-        setOptions([...options, ...optionData]);
+        const hobbies = await getHobbies();
+        const hobbyOptions = hobbies.map(hobby => createOption(hobby.id, hobby.label));
+        setOptions(hobbyOptions);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching hobbies:', error);
         setIsLoading(false);
       }
     };
 
-    fetchOptions();
+    fetchHobbies();
   }, []);
 
-  const fetchData = async () => {
-    const snapshot = await collection(db, 'your_collection').get(); // Replace 'your_collection' with your collection name
-    const data = snapshot.docs.map((doc) => doc.data());
-    return data;
+  const getHobbies = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'hobbies'));
+      const hobbies = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      console.log(hobbies);
+      return hobbies;
+    } catch (error) {
+      console.error('Error getting hobbies:', error);
+      return [];
+    }
   };
 
   const handleCreate = async () => {
     setIsLoading(true);
     try {
-      const newOption = createOption(inputValue);
-      await collection(db, 'your_collection').add({ label: inputValue }); // Replace 'your_collection' with your collection name
+      const lowercaseInput = inputValue.toLowerCase().trim();
+      const newOption = createOption(lowercaseInput);
+      await addDoc(collection(db, 'hobbies'), { label: lowercaseInput }); // Add new hobby to Firestore
       setIsLoading(false);
-      setOptions([...options, newOption]);
-      setValue(newOption);
+      setOptions(prevOptions => [...prevOptions, newOption]);
+      setValue(prevValue => [...prevValue, newOption]);
+      setHobbies(prevHobbies => [...prevHobbies, lowercaseInput]);
+      setInputValue(''); // Clear input value after creating option
     } catch (error) {
       console.error('Error creating option:', error);
       setIsLoading(false);
     }
   };
+  
 
   return (
     <CreatableSelect
+      isMulti
       isClearable
       isDisabled={isLoading}
       isLoading={isLoading}
@@ -73,8 +75,9 @@ const FirebaseSelect = () => {
       onInputChange={(input) => setInputValue(input)}
       options={options}
       value={value}
+      className='text-black'
     />
   );
 };
 
-export default FirebaseSelect;
+export default HobbySelect;

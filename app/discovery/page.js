@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   collection,
+  count,
   getDocs,
   query,
   startAfter,
@@ -76,6 +77,9 @@ export default function ChooseKid() {
 
       //add where userType is "
       q = query(q, where("user_type", "==", "child"))
+      q = query(q, where("connected_penpals", "<=", 3));
+      
+      //make sure that its less 3 connections when filtering
 
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
