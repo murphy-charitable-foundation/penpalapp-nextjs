@@ -38,6 +38,7 @@ export default function WriteLetter() {
   const [allMessages, setAllMessages] = useState(null)
   const [availableChatIds, setAvailableChatIds] = useState(null) 
   const [recipient, setRecipient] = useState(null)
+  const [debounce, setDebounce] = useState(0)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -126,48 +127,46 @@ export default function WriteLetter() {
     setAvailableChatIds(ids)
   }, [allMessages])
 
-  let debounce = 0
   useEffect(() => {
     // when typing, we need to update the current doc with a draft status
     // when we send, we MUST set the draft status to false
-    debounce++
-
+    setDebounce(debounce + 1)
+    console.log("update", debounce)
     const updateDraft = async () => {
-      const lettersRef = collection(db, "letterbox");
-      if(!userRef || !selectedUserRef) return
-      const letterboxQuery = query(
-        lettersRef,
-        where(userRef, "in", "members"),
-        where(selectedUserRef, "in", "members"),
-      );
-      const draftSnapshot = await getDocs(letterboxQuery);
-      const letterData = {
-        content: letterContent,
-        recipientId: selectedUser.id,
-        senderId: auth.currentUser.uid, // Directly using the uid from auth.currentUser
-        timestamp: new Date(),
-        draft: true
-      };
-      if(draftSnapshot.length) {
-        await updateDoc(doc(collection(messageDocRef, "letters"), draft.id), letterData);
-      } else {
-        // save this here - we need this to be a draft ref for future calls
-        await addDoc(collection(db, "letters"), letterData);
+      console.log("updating draft")
+      console.log(selectedUser)
+      const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
+      const lettersRef = collection(letterboxRef, "letters");
+      if(userRef && selectedUserRef && lettersRef) {
+        console.log(1)
+        console.log(userRef, selectedUserRef, lettersRef)
+        const letterboxQuery = query(
+          lettersRef,
+        );
+        console.log(1.5)
+        // failing permission errors
+        const draftSnapshot = await getDocs(letterboxQuery);
+        console.log(2)
+        const letterData = {
+          content: letterContent,
+          recipientId: selectedUser.id,
+          senderId: auth.currentUser.uid,
+          timestamp: new Date(),
+          draft: true
+        };
+        console.log(3, letterData)
+        if(draftSnapshot.length) {
+          await updateDoc(doc(collection(messageDocRef, "letters"), draft.id), letterData);
+        } else {
+          await addDoc(collection(db, "letters"), letterData);
+        }
       }
     }
     if(debounce == 3) {
       updateDraft()
-      debounce = 0
+      setDebounce(0)
     }
   }, [letterContent])
-
-
-
-  // Simplified modal close and user selection functions
-  const openRecipientModal = () => {
-    console.log("Opening modal");
-    setIsModalOpen(true);
-  };
 
   const closeRecipientModal = () => setIsModalOpen(false);
 
@@ -239,7 +238,7 @@ export default function WriteLetter() {
 
   const selectUser = (user) => {
     setSelectedUser({ ...user });
-    closeRecipientModal(); // Close the modal upon selection
+    closeRecipientModal();
   };
 
   const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
@@ -259,7 +258,6 @@ export default function WriteLetter() {
   return (
     <div className="min-h-screen bg-[#E5E7EB] p-4">
       <div className="bg-white shadow rounded-lg">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">
             <button onClick={() => window.history.back()}>
@@ -267,7 +265,6 @@ export default function WriteLetter() {
             </button>
           </Link>
           <button className="opacity-0">{"<"}</button>
-          {/* Attachments and Actions */}
           <div className="flex justify-between items-center p-4">
             <span className="text-black">0 files</span>
             <div className="space-x-2">
@@ -281,7 +278,6 @@ export default function WriteLetter() {
                 <MdSend className="h-6 w-6" />
               </button>
               <button className="text-black p-2 rounded-full">
-                {/* <img src="/deleteicon.svg" /> */}
                 <RiDeleteBin6Line className="h-6 w-6" />
               </button>
             </div>
@@ -289,11 +285,9 @@ export default function WriteLetter() {
 
         </div>
 
-        {/* Recipient Info */}
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
           {recipient ? (
             <>
-              {/* Use a default placeholder if no photoURL is available */}
               <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                 {recipient.profile_picture ? (
                   <img src={recipient.profile_picture} class="w-full h-full object-cover" />
@@ -324,8 +318,6 @@ export default function WriteLetter() {
 
         {isFileModalOpen && <FileModal />}
 
-
-        {/* Text Area */}
         <textarea
           className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
           rows="8"
@@ -334,7 +326,6 @@ export default function WriteLetter() {
           onChange={(e) => setLetterContent(e.target.value)}
         />
 
-        {/* Character Count */}
         <div className="text-right text-sm p-4 text-gray-600">
           {letterContent.length} / 1000
         </div>
