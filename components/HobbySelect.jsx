@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from '@/app/firebaseConfig';
 import CreatableSelect from 'react-select/creatable';
 
@@ -33,23 +33,34 @@ const HobbySelect = ({ setHobbies, hobbies }) => {
     setIsLoading(true);
     try {
       const lowercaseInput = inputValue.toLowerCase().trim();
-      const docRef = await addDoc(collection(db, 'hobbies'), { hobby: lowercaseInput }); // Add new hobby to Firestore
+      const docRef = await addDoc(collection(db, 'hobbies'), { hobby: lowercaseInput });
       const newOption = { id: docRef.id, value: docRef.id, label: lowercaseInput };
       setIsLoading(false);
       setOptions(prevOptions => [...prevOptions, newOption]);
       setValue(prevValue => [...prevValue, newOption]);
-      setHobbies(prevHobbies => [...prevHobbies, docRef.id]);
+      setHobbies(prevHobbies => [...prevHobbies, { id: docRef.id, name: lowercaseInput }]); // Save both ID and name
       setInputValue('');
     } catch (error) {
       console.error('Error creating option:', error);
       setIsLoading(false);
     }
   };
-
+  
+  const handleChange = (newValue, actionMeta) => {
+    if (actionMeta.action === 'select-option') {
+      // A new option is selected
+      const selectedHobbies = newValue ? newValue.map(option => ({ id: option.id, name: option.label })) : [];
+      setHobbies(selectedHobbies);
+    } else if (actionMeta.action === 'remove-value') {
+      // An option is removed
+      const removedOptionId = actionMeta.removedValue.id;
+      setHobbies(prevHobbies => prevHobbies.filter(hobby => hobby.id !== removedOptionId));
+    }
+    setValue(newValue);
+  };
   const customStyles = {
     input: (provided) => ({
       ...provided,
-    //   border: '1px solid #ccc',
       borderRadius: '4px',
       padding: '10px',
       outline: 'none',
@@ -62,7 +73,7 @@ const HobbySelect = ({ setHobbies, hobbies }) => {
       isClearable
       isDisabled={isLoading}
       isLoading={isLoading}
-      onChange={newValue => setValue(newValue)}
+      onChange={handleChange}
       onCreateOption={handleCreate}
       onInputChange={input => setInputValue(input)}
       options={options}
