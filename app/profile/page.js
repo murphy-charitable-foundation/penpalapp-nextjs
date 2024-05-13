@@ -271,6 +271,24 @@ export default function EditProfile() {
                         </select>
                     </div>
 
+                    <div>
+                        <label htmlFor="pronouns" className="text-sm font-medium text-gray-700 block mb-2">Pronouns</label>
+                        <select
+                            id="pronouns"
+                            value={pronouns}
+                            onChange={(e) => setEducationLevel(e.target.value)}
+                            className="w-full p-3 border border-gray-300 rounded-md text-black"
+                        >
+                            <option value="Elementary">Elementary</option>
+                            <option value="Middle">Middle</option>
+                            <option value="High School">High School</option>
+                            <option value="College/University">College/University</option>
+                            <option value="No Grade">No Grade</option>
+
+
+                        </select>
+                    </div>
+
                     {/* Is Orphan Dropdown */}
                     <div>
                         <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Is orphan</label>

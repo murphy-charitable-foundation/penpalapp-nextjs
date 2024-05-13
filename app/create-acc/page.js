@@ -53,6 +53,7 @@ export default function CreateAccount() {
             first_name: firstName,
             last_name: lastName,
             birthday, 
+            connected_penpals_count: 0
         });
 
         // Redirect to profile page or any other page as needed
