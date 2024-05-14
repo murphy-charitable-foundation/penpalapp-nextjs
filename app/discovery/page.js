@@ -26,7 +26,7 @@ export default function ChooseKid() {
 
   const [age, setAge] = useState(0);
   const [gender, setGender] = useState("");
-  const [hobbies, setHobbies] = useState("");
+  const [hobbies, setHobbies] = useState([]);
 
   useEffect(() => {
     fetchKids();
@@ -69,7 +69,7 @@ export default function ChooseKid() {
         // q = query(q, where("hobby", "array-contains-any",hobbies));
               
         // q = query(q, where("hobby", "==", hobbies)); //this works if the entire string so best if only one hobby
-        // q = query(q, where("hobby", "array-contains", hobbies));
+        q = query(q, where("hobby", "array-contains-any", hobbies));
       }
 
       if (lastKidDoc && !initialLoad) {

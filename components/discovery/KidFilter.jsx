@@ -1,17 +1,18 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
+import HobbySelect from "../HobbySelect";
 
 export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender, gender, filter }) {
-  const [hobbyFilter, setHobbiesFilter] = useState(hobbies || "");
+  const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
   const [ageFilter, setAgeFilter] = useState(age || 0);
   const [genderFilter, setGenderFilter] = useState(gender || "");
 
   useEffect(() => {
-    setHobbiesFilter(hobbies || ""); // Ensure that the initial state matches the props
+    setHobbiesFilter(hobbies || []); // Ensure that the initial state matches the props
     setAgeFilter(age || 0); // Ensure that the initial state matches the props
     setGenderFilter(gender || ""); // Ensure that the initial state matches the props
-  }, [hobbies, age, gender])
+  }, [age, gender, hobbies])
 
   const applyFilter = (e) => {
     e.preventDefault();
@@ -28,22 +29,7 @@ export default function KidFilter({ setHobbies, hobbies, setAge, age, setGender,
   return (
     <div className=" bg-white flex flex-col my-14">
     <form className="flex flex-col gap-6">
-      <div className="flex-grow">
-        <label
-          htmlFor="hobbies"
-          className="text-md font-medium text-gray-700 block mb-2 px-2"
-        >
-          Hobbies
-        </label>
-        <input
-          type="text"
-          id="hobbies"
-          value={hobbyFilter}
-          onChange={(e) => setHobbiesFilter(e.target.value)}
-          className="w-full p-2 border-b border-black text-black outline-none"
-          placeholder="Ex: Football, baseball"
-        />
-      </div>
+      <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter}/>
       <div>
         <label
           htmlFor="gender"
