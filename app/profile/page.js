@@ -258,6 +258,7 @@ export default function EditProfile() {
                             onChange={(e) => setEducationLevel(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
+                            <option value="">Select your education level</option>
                             <option value="Elementary">Elementary</option>
                             <option value="Middle">Middle</option>
                             <option value="High School">High School</option>
@@ -276,6 +277,7 @@ export default function EditProfile() {
                             onChange={(e) => setPronouns(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
+                            <option value="">Select your pronouns</option>
                             <option value="He/Him">He/Him</option>
                             <option value="She/Her">She/Her</option>
                             <option value="They/Them">They/Them</option>
