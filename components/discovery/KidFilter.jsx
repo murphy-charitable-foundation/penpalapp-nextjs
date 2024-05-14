@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import HobbySelect from "../HobbySelect";
+import HobbySelect from "../general/HobbySelect";
 
 export default function KidFilter({
   setHobbies,
