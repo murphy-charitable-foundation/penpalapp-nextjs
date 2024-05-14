@@ -271,7 +271,7 @@ export default function EditProfile() {
                         </select>
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label htmlFor="pronouns" className="text-sm font-medium text-gray-700 block mb-2">Pronouns</label>
                         <select
                             id="pronouns"
@@ -287,7 +287,7 @@ export default function EditProfile() {
 
 
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Is Orphan Dropdown */}
                     <div>

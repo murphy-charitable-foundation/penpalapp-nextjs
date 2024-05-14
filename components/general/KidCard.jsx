@@ -46,7 +46,7 @@ export default function KidCard({ kid, calculateAge }) {
             {interest}
           </span>
         ))} */}
-        <p className="text-black break-words text-xs">{kid?.hobby}</p>
+        {/* <p className="text-black break-words text-xs">{kid?.hobby}</p> */}
       </div>
       <div className="self-end mt-auto">
         <Link href="/letterwrite">
