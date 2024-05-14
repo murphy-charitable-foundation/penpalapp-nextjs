@@ -25,12 +25,12 @@ export default function ChooseKid() {
   const [initialLoad, setInitialLoad] = useState(true);
 
   const [age, setAge] = useState(0);
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
   useEffect(() => {
     fetchKids();
-  }, [age, gender, hobbies]);
+  }, [age, pronouns, hobbies]);
 
   const fetchKids = async () => {
     setLoading(true);
@@ -55,8 +55,8 @@ export default function ChooseKid() {
         q = query(q, where("birthday", "<=", maxBirthDate));
       }
 
-      if (gender && gender?.length > 0) {
-        q = query(q, where("gender", "==", gender), limit(PAGE_SIZE));  //where is the pronouns or gender added. I checked PR's and dont see anywhere where pronouns are gender is added. Do you want me to add
+      if (pronouns && pronouns?.length > 0) {
+        q = query(q, where("pronouns", "==", pronouns));  //where is the pronouns or gender added. I checked PR's and dont see anywhere where pronouns are gender is added. Do you want me to add
       }
 
       // Apply filter if hobbies are present in the filter string
@@ -103,14 +103,15 @@ export default function ChooseKid() {
     return differenceInCalendarYears(new Date(), new Date(birthday));
   }
 
-  const filter = async (age, hobby, gender) => {
+  const filter = async (age, hobby, pronouns) => {
     setKids([]);
     setLastKidDoc(null);
     setInitialLoad(true);
     setAge(age);
     setHobbies(hobby);
-    setGender(gender);
+    setPronouns(pronouns);
     setActiveFilter(false);
+    console.log(pronouns)
   };
 
   const loadMoreKids = () => {
@@ -165,11 +166,11 @@ export default function ChooseKid() {
           <div className="h-auto">
             <KidFilter
               setAge={setAge}
-              setGender={setGender}
+              setPronouns={setPronouns}
               setHobbies={setHobbies}
               hobbies={hobbies}
               age={age}
-              gender={gender}
+              pronouns={pronouns}
               filter={filter}
             />
           </div>
