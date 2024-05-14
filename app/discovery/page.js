@@ -34,15 +34,13 @@ export default function ChooseKid() {
 
   const fetchKids = async () => {
     setLoading(true);
-    console.log("re-filtering");
-    console.log(age);
+
     try {
       const kidsCollectionRef = collection(db, "users");
       let q = kidsCollectionRef;
 
       // Apply filters
       if (age > 0) {
-        console.log("Age:", age);
         const currentYear = new Date().getFullYear();
         const minBirthYear = currentYear - age;
         const maxBirthYear = currentYear - age;
@@ -63,12 +61,6 @@ export default function ChooseKid() {
 
       // Apply filter if hobbies are present in the filter string
       if (hobbies && hobbies.length > 0) {
-        // Convert filter string to an array of hobbies
-
-         //this would allow me to filter by just one hobby instea of the entire string(if there is more than one hobby). For it to work uncomment code I added in profile page
-        // q = query(q, where("hobby", "array-contains-any",hobbies));
-              
-        // q = query(q, where("hobby", "==", hobbies)); //this works if the entire string so best if only one hobby
         q = query(q, where("hobby", "array-contains-any", hobbies));
       }
 
@@ -87,7 +79,6 @@ export default function ChooseKid() {
         ...doc.data(),
       }));
 
-      console.log(kidsList);
       setKids((prevKids) => {
         if (initialLoad) {
           return kidsList;
@@ -113,16 +104,13 @@ export default function ChooseKid() {
   }
 
   const filter = async (age, hobby, gender) => {
-    console.log(age, hobby, gender);
     setKids([]);
     setLastKidDoc(null);
     setInitialLoad(true);
     setAge(age);
     setHobbies(hobby);
     setGender(gender);
-    // await fetchKids();
     setActiveFilter(false);
-    console.log(age);
   };
 
   const loadMoreKids = () => {
