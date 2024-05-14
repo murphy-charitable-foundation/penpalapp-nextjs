@@ -25,6 +25,7 @@ export default function EditProfile() {
     const [isOrphan, setIsOrphan] = useState(false); 
     const [guardian, setGuardian] = useState('');
     const [dreamJob, setDreamJob] = useState('');
+    const [pronouns, setPronouns] = useState('');
     const [hobby, setHobby] = useState([]);
     const [favoriteColor, setFavoriteColor] = useState('');
     const [user, setUser] = useState(null);
@@ -54,6 +55,7 @@ export default function EditProfile() {
                     setDreamJob(userData.dream_job || '');
                     setHobby(userData.hobby || []);
                     setFavoriteColor(userData.favorite_color || '');
+                    setPronouns(userData.pronouns || '');
                 } else {
                     console.log("No such document!");
                 }
@@ -75,11 +77,6 @@ export default function EditProfile() {
             const uid = auth.currentUser.uid;
             const userProfileRef = doc(db, "users", uid);
 
-            // let hobbyArray;
-            // if(hobby.length > 0) {
-            //     hobbyArray = hobby.split(",");
-            // }
-
             const userProfile = {
                 first_name: firstName,
                 last_name: lastName,
@@ -93,8 +90,8 @@ export default function EditProfile() {
                 gaurdian: guardian,
                 dream_job: dreamJob,
                 hobby,
-                // hobbyArray
                 favorite_color: favoriteColor,
+                pronouns,
                 // missing more fields
             };
 
@@ -271,23 +268,20 @@ export default function EditProfile() {
                         </select>
                     </div>
 
-                    {/* <div>
+                    <div>
                         <label htmlFor="pronouns" className="text-sm font-medium text-gray-700 block mb-2">Pronouns</label>
                         <select
                             id="pronouns"
                             value={pronouns}
-                            onChange={(e) => setEducationLevel(e.target.value)}
+                            onChange={(e) => setPronouns(e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-md text-black"
                         >
-                            <option value="Elementary">Elementary</option>
-                            <option value="Middle">Middle</option>
-                            <option value="High School">High School</option>
-                            <option value="College/University">College/University</option>
-                            <option value="No Grade">No Grade</option>
-
-
+                            <option value="He/Him">He/Him</option>
+                            <option value="She/Her">She/Her</option>
+                            <option value="They/Them">They/Them</option>
+                            <option value="other">Other</option>
                         </select>
-                    </div> */}
+                    </div>
 
                     {/* Is Orphan Dropdown */}
                     <div>
