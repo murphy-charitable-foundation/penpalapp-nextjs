@@ -13,7 +13,7 @@ export default function KidCard({ kid, calculateAge }) {
       <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
         <Image
           src={kid?.image || "/usericon.png"}
-          alt={kid?.firstName}
+          alt="Kid picture"
           width={220}
           height={220}
           className="object-cover"
