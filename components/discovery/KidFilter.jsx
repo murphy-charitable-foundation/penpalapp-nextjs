@@ -34,7 +34,9 @@ export default function KidFilter({
   };
 
   return (
-    <div className=" bg-white flex flex-col my-14">
+    // <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
+    // <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className=" bg-white flex flex-col my-14 min-h-screen">
       <form className="flex flex-col gap-6">
         <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} />
         <div>
@@ -88,5 +90,7 @@ export default function KidFilter({
         </div>
       </form>
     </div>
+    // </div>
+    // </div>
   );
 }

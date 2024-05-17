@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import {
   collection,
-  count,
   getDocs,
   query,
   startAfter,
@@ -15,7 +14,7 @@ import { differenceInCalendarYears, parseISO } from "date-fns";
 import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
 
-const PAGE_SIZE = 10; // Number of kids per page
+const PAGE_SIZE = 1; // Number of kids per page
 
 export default function ChooseKid() {
   const [activeFilter, setActiveFilter] = useState(false);
@@ -37,12 +36,12 @@ export default function ChooseKid() {
 
     try {
       const kidsCollectionRef = collection(db, "users");
-      let q = kidsCollectionRef;
+      let q = query(kidsCollectionRef);
 
       // Apply filters
       if (age > 0) {
         const currentYear = new Date().getFullYear();
-        const minBirthYear = currentYear - age;
+        const minBirthYear = currentYear - age - 1;
         const maxBirthYear = currentYear - age;
         const minBirthDate = new Date(minBirthYear, 0, 1)
           .toISOString()
@@ -56,21 +55,19 @@ export default function ChooseKid() {
       }
 
       if (pronouns && pronouns?.length > 0) {
-        q = query(q, where("pronouns", "==", pronouns));  //where is the pronouns or gender added. I checked PR's and dont see anywhere where pronouns are gender is added. Do you want me to add
+        q = query(q, where("pronouns", "==", pronouns));  
       }
 
-      // Apply filter if hobbies are present in the filter string
       if (hobbies && hobbies.length > 0) {
         q = query(q, where("hobby", "array-contains-any", hobbies));
       }
 
+      q = query(q, where("user_type", "==", "child"));
+      q = query(q, where("connected_penpals_count", "<=", 3));
+
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
-
-      //add where userType is "
-      q = query(q, where("user_type", "==", "child"));
-      q = query(q, where("connected_penpals_count", "<=", 3));
 
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
@@ -86,6 +83,7 @@ export default function ChooseKid() {
           return [...prevKids, ...kidsList];
         }
       });
+
       if (snapshot.docs.length > 0) {
         setLastKidDoc(snapshot.docs[snapshot.docs.length - 1]);
       } else {
