@@ -41,18 +41,12 @@ export default function ChooseKid() {
   
       // Apply filters
       if (age > 0) {
-        const currentYear = new Date().getFullYear();
-        const minBirthYear = currentYear - age - 1;
-        const maxBirthYear = currentYear - age;
-        const minBirthDate = new Date(minBirthYear, 0, 1)
-          .toISOString()
-          .slice(0, 10);
-        const maxBirthDate = new Date(maxBirthYear, 11, 31)
-          .toISOString()
-          .slice(0, 10);
+        const currentDate = new Date();
+        const minBirthDate = new Date(currentDate.getFullYear() - age - 1, currentDate.getMonth(), currentDate.getDate());
+        const maxBirthDate = new Date(currentDate.getFullYear() - age, currentDate.getMonth(), currentDate.getDate());
   
-        q = query(q, where("birthday", ">=", minBirthDate));
-        q = query(q, where("birthday", "<=", maxBirthDate));
+        q = query(q, where("date_of_birth", ">=", minBirthDate));
+        q = query(q, where("date_of_birth", "<=", maxBirthDate));
       }
   
       if (pronouns && pronouns.length > 0) {
@@ -132,9 +126,25 @@ export default function ChooseKid() {
   };
   
 
-  function calculateAge(birthday) {
-    return differenceInCalendarYears(new Date(), new Date(birthday));
+  function calculateAge(birthdayTimestamp) {
+    const birthdayDate = birthdayTimestamp.toDate(); // Convert Timestamp to Date
+    const currentDate = new Date();
+    
+    // Calculate the difference in years
+    const diffInYears = currentDate.getFullYear() - birthdayDate.getFullYear();
+  
+    // Adjust the age based on the birth month and day
+    if (
+      currentDate.getMonth() < birthdayDate.getMonth() ||
+      (currentDate.getMonth() === birthdayDate.getMonth() &&
+        currentDate.getDate() < birthdayDate.getDate())
+    ) {
+      return diffInYears - 1;
+    }
+    
+    return diffInYears;
   }
+  
 
   const filter = async (age, hobby, pronouns) => {
     setKids([]);
