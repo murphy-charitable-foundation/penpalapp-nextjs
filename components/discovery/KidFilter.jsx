@@ -57,8 +57,8 @@ export default function KidFilter({
           </label>
           <select
             id="gender"
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-md text-black"
           >
             <option value="">Select your gender</option>

@@ -49,9 +49,9 @@ export default function ChooseKid() {
         q = query(q, where("date_of_birth", "<=", maxBirthDate));
       }
   
-    //   if (pronouns && pronouns.length > 0) {
-    //     q = query(q, where("pronouns", "==", pronouns));
-    //   }
+      if (gender && gender.length > 0) {
+        q = query(q, where("gender", "==", gender));
+      }
   
       if (hobbies && hobbies.length > 0) {
         q = query(q, where("hobby", "array-contains-any", hobbies));
@@ -152,9 +152,8 @@ export default function ChooseKid() {
     setInitialLoad(true);
     setAge(age);
     setHobbies(hobby);
-    setGender(pronouns);
+    setGender(gender);
     setActiveFilter(false);
-    console.log(pronouns)
   };
 
   const loadMoreKids = () => {
