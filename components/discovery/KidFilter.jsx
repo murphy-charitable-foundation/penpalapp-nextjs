@@ -13,13 +13,13 @@ export default function KidFilter({
   filter,
 }) {
   const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
-  const [ageFilter, setAgeFilter] = useState(age || 0);
+  const [ageFilter, setAgeFilter] = useState(age !== 0 ? age : "");
   const [pronounsFilter, setPronounsFilter] = useState(pronouns || "");
 
   useEffect(() => {
-    setHobbiesFilter(hobbies || []); 
-    setAgeFilter(age || 0); 
-    setPronounsFilter(pronouns || ""); 
+    setHobbiesFilter(hobbies || []);
+    setAgeFilter(age !== 0 && age !== null ? age : "");
+    setPronounsFilter(pronouns || "");
   }, [age, pronouns, hobbies]);
 
   const applyFilter = (e) => {
@@ -31,19 +31,22 @@ export default function KidFilter({
     setHobbies(null);
     setAge(null);
     setPronouns(null);
+    setHobbiesFilter([]);
+    setAgeFilter("");
+    setPronounsFilter("");
   };
 
   return (
-    // <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
-    // <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-    <div className=" bg-white flex flex-col my-14 min-h-screen">
+    <div className="bg-white flex flex-col my-14 min-h-screen">
       <form className="flex flex-col gap-6">
-        <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} />
         <div>
-          <label
-            htmlFor="pronouns"
-            className="text-sm font-medium text-gray-700 block mb-2"
-          >
+          <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">
+            Hobby
+          </label>
+          <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} />
+        </div>
+        <div>
+          <label htmlFor="pronouns" className="text-sm font-medium text-gray-700 block mb-2">
             Pronouns
           </label>
           <select
@@ -60,10 +63,7 @@ export default function KidFilter({
           </select>
         </div>
         <div>
-          <label
-            htmlFor="age"
-            className="text-md font-medium text-gray-700 block mb-2 px-2"
-          >
+          <label htmlFor="age" className="text-md font-medium text-gray-700 block mb-2 px-2">
             Age
           </label>
           <input
@@ -78,7 +78,7 @@ export default function KidFilter({
         <div className="flex justify-center mt-24">
           <div className="flex flex-col gap-2">
             <button
-              onClick={(e) => applyFilter(e)}
+              onClick={applyFilter}
               className="bg-[#4E802A] text-white text-lg font-bold py-2 px-4 rounded-3xl"
             >
               Apply Filters
@@ -90,7 +90,5 @@ export default function KidFilter({
         </div>
       </form>
     </div>
-    // </div>
-    // </div>
   );
 }
