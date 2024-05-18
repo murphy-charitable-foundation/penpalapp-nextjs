@@ -8,62 +8,71 @@ export default function KidFilter({
   hobbies,
   setAge,
   age,
-  setPronouns,
-  pronouns,
+  setGender,
+  gender,
   filter,
 }) {
   const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
   const [ageFilter, setAgeFilter] = useState(age !== 0 ? age : "");
-  const [pronounsFilter, setPronounsFilter] = useState(pronouns || "");
+  const [genderFilter, setGenderFilter] = useState(gender || "");
 
   useEffect(() => {
     setHobbiesFilter(hobbies || []);
     setAgeFilter(age !== 0 && age !== null ? age : "");
-    setPronounsFilter(pronouns || "");
-  }, [age, pronouns, hobbies]);
+    setGenderFilter(gender || "");
+  }, [age, gender, hobbies]);
 
   const applyFilter = (e) => {
     e.preventDefault();
-    filter(ageFilter, hobbyFilter, pronounsFilter);
+    filter(ageFilter, hobbyFilter, genderFilter);
   };
 
   const clearFilter = () => {
     setHobbies(null);
     setAge(null);
-    setPronouns(null);
+    setGender(null);
     setHobbiesFilter([]);
     setAgeFilter("");
-    setPronounsFilter("");
+    setGenderFilter("");
   };
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen">
       <form className="flex flex-col gap-6">
         <div>
-          <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">
+          <label
+            htmlFor="village"
+            className="text-sm font-medium text-gray-700 block mb-2"
+          >
             Hobby
           </label>
           <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} />
         </div>
         <div>
-          <label htmlFor="pronouns" className="text-sm font-medium text-gray-700 block mb-2">
-            Pronouns
+          <label
+            htmlFor="gender"
+            className="text-sm font-medium text-gray-700 block mb-2"
+          >
+            Gender
           </label>
           <select
-            id="pronouns"
-            value={pronounsFilter}
-            onChange={(e) => setPronounsFilter(e.target.value)}
+            id="gender"
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-md text-black"
           >
-            <option value="">Select your pronouns</option>
-            <option value="He/Him">He/Him</option>
-            <option value="She/Her">She/Her</option>
-            <option value="They/Them">They/Them</option>
-            <option value="other">Other</option>
+            <option value="">Select your gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-Binary">Non-Binary</option>
+            <option value="Other">Other</option>
           </select>
         </div>
         <div>
-          <label htmlFor="age" className="text-md font-medium text-gray-700 block mb-2 px-2">
+          <label
+            htmlFor="age"
+            className="text-md font-medium text-gray-700 block mb-2 px-2"
+          >
             Age
           </label>
           <input

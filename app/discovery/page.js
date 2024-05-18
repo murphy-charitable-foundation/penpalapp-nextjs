@@ -25,12 +25,12 @@ export default function ChooseKid() {
   const [initialLoad, setInitialLoad] = useState(true);
 
   const [age, setAge] = useState(0);
-  const [pronouns, setPronouns] = useState("");
+  const [gender, setGender] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
   useEffect(() => {
     fetchKids();
-  }, [age, pronouns, hobbies]);
+  }, [age, gender, hobbies]);
 
   const fetchKids = async () => {
     setLoading(true);
@@ -49,9 +49,9 @@ export default function ChooseKid() {
         q = query(q, where("date_of_birth", "<=", maxBirthDate));
       }
   
-      if (pronouns && pronouns.length > 0) {
-        q = query(q, where("pronouns", "==", pronouns));
-      }
+    //   if (pronouns && pronouns.length > 0) {
+    //     q = query(q, where("pronouns", "==", pronouns));
+    //   }
   
       if (hobbies && hobbies.length > 0) {
         q = query(q, where("hobby", "array-contains-any", hobbies));
@@ -146,13 +146,13 @@ export default function ChooseKid() {
   }
   
 
-  const filter = async (age, hobby, pronouns) => {
+  const filter = async (age, hobby, gender) => {
     setKids([]);
     setLastKidDoc(null);
     setInitialLoad(true);
     setAge(age);
     setHobbies(hobby);
-    setPronouns(pronouns);
+    setGender(pronouns);
     setActiveFilter(false);
     console.log(pronouns)
   };
@@ -208,11 +208,11 @@ export default function ChooseKid() {
           <div className="h-auto">
             <KidFilter
               setAge={setAge}
-              setPronouns={setPronouns}
+              setGender={setGender}
               setHobbies={setHobbies}
               hobbies={hobbies}
               age={age}
-              pronouns={pronouns}
+              gender={gender}
               filter={filter}
             />
           </div>
