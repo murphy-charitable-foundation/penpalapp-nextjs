@@ -38,15 +38,15 @@ export default function KidCard({ kid, calculateAge }) {
         {kid?.bio}
       </p>
       <div className="flex justify-start flex-wrap gap-2 mb-4">
-        {/* {kid.interests?.map((interest, idx) => (
+        {kid.hobby?.map((hobby, idx) => (
           <span
             key={idx}
             className="px-3 py-1 text-xs rounded-full"
-            style={{ backgroundColor: "#fea500", color: "white" }}
+            style={{ backgroundColor: "#f8fcec", color: "black" }}
           >
-            {interest}
+            {hobby}
           </span>
-        ))} */}
+        ))}
         {/* <p className="text-black break-words text-xs">{kid?.hobby}</p> */}
       </div>
       <div className="self-end mt-auto">
