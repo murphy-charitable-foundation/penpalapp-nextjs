@@ -53,7 +53,7 @@ export default function KidCard({ kid, calculateAge }) {
         <Link href="/letterwrite">
           <button
             className="w-28 py-2 rounded-3xl text-center text-xs"
-            style={{ backgroundColor: "#0369a1", color: "white" }}
+            style={{ backgroundColor: "#034792", color: "white" }}
           >
             Send a message
           </button>

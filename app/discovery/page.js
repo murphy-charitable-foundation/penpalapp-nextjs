@@ -165,8 +165,7 @@ export default function ChooseKid() {
   return (
     <div className="min-h-screen p-4 bg-white">
       <div className="bg-white">
-        {/* <div className="bg-white shadow-md rounded-lg overflow-hidden"> */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078]">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078]  sticky top-0 z-10">
           {/* Top part with white background and black text */}
           <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
             <div className="flex gap-4 justify-center w-full">
