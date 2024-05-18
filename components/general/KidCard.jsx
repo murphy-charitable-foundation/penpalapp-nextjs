@@ -8,7 +8,7 @@ export default function KidCard({ kid, calculateAge }) {
   return (
     <div
       key={kid?.id}
-      className="w-full max-w-sm my-4 p-4 rounded-lg shadow-lg flex flex-col items-start"
+      className="w-full max-w-sm my-4 p-4 rounded-lg shadow-md flex flex-col items-start"
       style={{ flexGrow: 1 }}
     >
       <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
