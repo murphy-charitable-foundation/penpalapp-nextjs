@@ -9,12 +9,13 @@ import {
   limit,
   where,
 } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { db } from "../firebaseConfig"; // Ensure this path is correct
 import { differenceInCalendarYears, parseISO } from "date-fns";
 import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
 
-const PAGE_SIZE = 1; // Number of kids per page
+const PAGE_SIZE = 10; // Number of kids per page
 
 export default function ChooseKid() {
   const [activeFilter, setActiveFilter] = useState(false);
@@ -33,11 +34,11 @@ export default function ChooseKid() {
 
   const fetchKids = async () => {
     setLoading(true);
-
+  
     try {
       const kidsCollectionRef = collection(db, "users");
       let q = query(kidsCollectionRef);
-
+  
       // Apply filters
       if (age > 0) {
         const currentYear = new Date().getFullYear();
@@ -49,33 +50,66 @@ export default function ChooseKid() {
         const maxBirthDate = new Date(maxBirthYear, 11, 31)
           .toISOString()
           .slice(0, 10);
-
+  
         q = query(q, where("birthday", ">=", minBirthDate));
         q = query(q, where("birthday", "<=", maxBirthDate));
       }
-
-      if (pronouns && pronouns?.length > 0) {
-        q = query(q, where("pronouns", "==", pronouns));  
+  
+      if (pronouns && pronouns.length > 0) {
+        q = query(q, where("pronouns", "==", pronouns));
       }
-
+  
       if (hobbies && hobbies.length > 0) {
         q = query(q, where("hobby", "array-contains-any", hobbies));
       }
-
+  
       q = query(q, where("user_type", "==", "child"));
       q = query(q, where("connected_penpals_count", "<=", 3));
-
+  
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
-
+  
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
-      const kidsList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+  
+      const kidsList = await Promise.all(snapshot.docs.map(async (doc) => {
+        const data = doc.data();
+        try {
+          if (data.photo_uri) {
+            const storage = getStorage();
+            const photoRef = ref(storage, data.photo_uri);
+            const photoURL = await getDownloadURL(photoRef);
+            return {
+              id: doc.id,
+              ...data,
+              photoURL,
+            };
+          } else {
+            return {
+              id: doc.id,
+              ...data,
+              photoURL: "/usericon.png", // Default image if no photo_uri
+            };
+          }
+        } catch (error) {
+          if (error.code === 'storage/object-not-found') {
+            return {
+              id: doc.id,
+              ...data,
+              photoURL: "/usericon.png", // Default image if photo not found
+            };
+          } else {
+            console.error("Error fetching photo URL:", error);
+            return {
+              id: doc.id,
+              ...data,
+              photoURL: "/usericon.png", // Default image if other errors
+            };
+          }
+        }
       }));
-
+  
       setKids((prevKids) => {
         if (initialLoad) {
           return kidsList;
@@ -83,7 +117,7 @@ export default function ChooseKid() {
           return [...prevKids, ...kidsList];
         }
       });
-
+  
       if (snapshot.docs.length > 0) {
         setLastKidDoc(snapshot.docs[snapshot.docs.length - 1]);
       } else {
@@ -96,6 +130,7 @@ export default function ChooseKid() {
       setInitialLoad(false);
     }
   };
+  
 
   function calculateAge(birthday) {
     return differenceInCalendarYears(new Date(), new Date(birthday));

@@ -4,6 +4,7 @@ import Image from "next/image";
 
 //Card for kid
 export default function KidCard({ kid, calculateAge }) {
+  console.log(kid)
   return (
     <div
       key={kid?.id}
@@ -12,7 +13,7 @@ export default function KidCard({ kid, calculateAge }) {
     >
       <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
         <Image
-          src={kid?.image || "/usericon.png"}
+          src={kid?.photoURL || "/usericon.png"}
           alt="Kid picture"
           width={220}
           height={220}
@@ -24,11 +25,11 @@ export default function KidCard({ kid, calculateAge }) {
         className="text-xl mt-3 mb-1 text-left text-bold"
         style={{ color: "#262626" }}
       >
-        {kid?.firstName}
+        {kid?.first_name} {kid?.last_name}
       </h2>
 
       <p className="text-xs mb-1 text-left text-black">
-        {calculateAge(kid?.birthday)} years old
+        {calculateAge(kid?.date_of_birth)} years old
       </p>
       <p
         className="text-left mb-2 text-gray-900 text-xs break-words"
