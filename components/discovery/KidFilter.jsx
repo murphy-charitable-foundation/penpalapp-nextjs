@@ -37,7 +37,7 @@ export default function KidFilter({
   };
 
   return (
-    <div className="bg-white flex flex-col my-14 min-h-screen">
+    <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
       <form className="flex flex-col gap-6">
         <div>
           <label
