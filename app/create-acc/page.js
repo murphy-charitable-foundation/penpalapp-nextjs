@@ -57,7 +57,7 @@ export default function CreateAccount() {
                 created_at: new Date(),
                 first_name,
                 last_name,
-                email,
+                email:user.email,
                 date_of_birth, 
             });
 
