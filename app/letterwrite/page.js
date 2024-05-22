@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { db } from "../firebaseConfig"; // Adjust this path as necessary
+import { db, storage } from "../firebaseConfig"; // Adjust this path as necessary
 import { collection, addDoc, getDocs, getDoc, doc, query, where, updateDoc } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -19,14 +19,13 @@ import { MdInsertDriveFile } from "react-icons/md";
 
 import BottomNavBar from '@/components/bottom-nav-bar';
 import { fetchData } from "../utils/firestore";
+import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 
 
 export default function WriteLetter() {
   const [letterContent, setLetterContent] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [users, setUsers] = useState([]);
   const router = useRouter();
-  const [isSending, setIsSending] = useState(false);
   const [user, setUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
@@ -40,6 +39,7 @@ export default function WriteLetter() {
   const [recipient, setRecipient] = useState(null)
   const [debounce, setDebounce] = useState(0)
   const [lettersRef, setLettersRef] = useState(null)
+  const [attachments, setAttachments] = useState([])
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !selectedUser) {
@@ -65,23 +65,18 @@ export default function WriteLetter() {
 
     try {
       await updateDoc(doc(lettersRef, draft.id), letterData)
-      // addDoc(collection(db, "letters"), letterData);
       alert("Letter sent successfully!");
       setLetterContent("");
       setSelectedUser(null);
       setIsSending(false);
-      // Optionally redirect the user or update UI to reflect the letter has been sent
+
     } catch (error) {
       console.error("Error sending letter: ", error);
       alert("Failed to send the letter.");
       setIsSending(false);
     }
   };
-  // find available chats - not users
-  // we must be a part of that chat
 
-
-  // set out user
   useEffect(() => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
@@ -98,37 +93,30 @@ export default function WriteLetter() {
   // set the recipient user
   useEffect(() => {
     const getSelectedUser = async () => {
-      console.log("updated 1")
       if (selectedUser) {
         const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
         setSelectedUserRef(selectedUserDocRef)
         const selUser = await getDoc(selectedUserDocRef)
         setRecipient(selUser.data())
 
-        console.log("updated 2")
-
         const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef)
-        console.log(1)
         const letterboxQuery = query(
           lRef,
           where("sent_by", "==", userRef),
         );
-        console.log(2)
         const draftSnapshot = await getDocs(letterboxQuery);
-        console.log("draftSnapshot", draftSnapshot)
         const draftDoc = draftSnapshot.docs.find(doc => doc.data().draft === true);
         if (draftDoc) {
-          console.log('draft found')
           setDraft({ ...draftDoc.data(), id: draftDoc.id })
+          setLetterContent(draftDoc.data().content)
         } else {
-          console.log("draft being created")
           const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true });
-          setDraft({...d.data(), id: d.id})
-        }
-        console.log("updated 3")
 
+          setDraft({ sent_by: userRef, content: "", draft: true, id: d.id })
+          setLetterContent("")
+        }
       }
     }
     getSelectedUser()
@@ -140,8 +128,6 @@ export default function WriteLetter() {
     setAvailableChatIds(ids)
   }, [allMessages])
 
-  // on page mounted lets check if there is a draft. if not then we make one. then we don't need to worry about this when typing.
-
   useEffect(() => {
     setDebounce(debounce + 1)
     const updateDraft = async () => {
@@ -150,14 +136,13 @@ export default function WriteLetter() {
           content: letterContent,
           sent_by: userRef,
           timestamp: new Date(),
-          draft: true
+          draft: true,
+          attachments
         };
-        console.log("draft", lettersRef, draft.id, letterData)
-        console.log("updaing")
         try {
           await updateDoc(doc(lettersRef, draft.id), letterData);
         } catch (e) {
-          console.log("failed", e)
+          console.error("failed", e)
         }
 
       }
@@ -201,6 +186,39 @@ export default function WriteLetter() {
     );
   };
 
+  const [uploadProgress, setUploadProgress] = useState(null)
+
+  const handleChange = (event) => {
+    const selectedFile = event.target.files[0];
+    handleUpload(selectedFile)
+  };
+
+  const onUploadComplete = (url) => setAttachments([...attachments, url])
+
+  const handleUpload = async (file) => {
+    if (file) {
+      console.log('uploading')
+      const storageRef = ref(storage, `uploads/letterbox/${selectedUser?.letterboxId}/${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error('Upload error:', error);
+        },
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          onUploadComplete(url)
+        }
+      );
+    }
+  };
+
+
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
@@ -215,22 +233,18 @@ export default function WriteLetter() {
             Files
           </h3>
         </div>
-        <button className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4">
+        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
+        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
           <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
           Select a file
-        </button>
+        </label>
+
         <h3 className="font-600 mt-4">Selected</h3>
-        {/* <ul className="max-h-60 overflow-auto mb-4">
-          {users.map((user) => (
-            <li
-              key={user.id}
-              onClick={() => selectUser(user)}
-              className="p-3 hover:bg-blue-100 cursor-pointer text-gray-700 rounded-md"
-            >
-              {user.firstName} {user.lastName} - {user.country}
-            </li>
-          ))}
-        </ul> */}
+        {attachments.map(att => (
+          <div>
+            <img src={att} />
+          </div>
+        ))}
       </div>
     </div>
   )
