@@ -12,8 +12,6 @@ import Image from 'next/image';
 import { getAuth } from 'firebase/auth';
 import PasswordChecklist from "react-password-checklist";
 
-
-
 export default function CreateAccount() {
     const [first_name, setFirstName] = useState('');
     const [last_name, setLastName] = useState('');
@@ -25,10 +23,12 @@ export default function CreateAccount() {
     const router = useRouter(); 
     const auth = getAuth();
     const user = auth.currentUser;
-    const email= user.email;
-    //const emailVerified = user.emailVerified;
 
-    const handleSubmit = async (e) => {
+    if(user){
+        const email= user.email;
+        const uid = user.uid;
+
+     const handleSubmit = async (e) => {
         e.preventDefault();
 
         //if (password !== repeatPassword) {
@@ -166,5 +166,7 @@ export default function CreateAccount() {
             </div>   
         //</div>
 
-    );
-}
+    );}else{
+        return;
+    }
+} 
