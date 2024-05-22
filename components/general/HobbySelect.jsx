@@ -3,7 +3,7 @@ import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "@/app/firebaseConfig";
 import CreatableSelect from "react-select/creatable";
 
-const HobbySelect = ({ setHobbies, hobbies }) => {
+const HobbySelect = ({ setHobbies, hobbies, wantBorder = true }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [options, setOptions] = useState([]);
   const [value, setValue] = useState([]);
@@ -74,11 +74,19 @@ const HobbySelect = ({ setHobbies, hobbies }) => {
   };
 
   const customStyles = {
+    control: (provided) => ({
+      ...provided,
+      border: !wantBorder ? 'none' : provided.border,
+      borderBottom: !wantBorder ? '1px solid #000' : provided.borderBottom,
+      borderRadius: !wantBorder ? '0' : provided.borderRadius,
+    }),
     input: (provided) => ({
       ...provided,
-      borderRadius: "4px",
+      border: "none", 
+      borderRadius: "0", 
       padding: "10px",
       outline: "none",
+      boxShadow: "none", 
     }),
   };
 

@@ -14,6 +14,7 @@ import { db } from "../firebaseConfig"; // Ensure this path is correct
 import { differenceInCalendarYears, parseISO } from "date-fns";
 import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
+import Link from "next/link";
 
 const PAGE_SIZE = 10; // Number of kids per page
 

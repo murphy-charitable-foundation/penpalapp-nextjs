@@ -46,7 +46,7 @@ export default function KidFilter({
           >
             Hobby
           </label>
-          <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} />
+          <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} wantBorder={false}/>
         </div>
         <div>
           <label
