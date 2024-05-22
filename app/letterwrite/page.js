@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { db } from "../firebaseConfig"; // Adjust this path as necessary
-import { collection, addDoc, getDocs, getDoc, doc, query, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, getDoc, doc, query, where, updateDoc } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -112,10 +112,8 @@ export default function WriteLetter() {
       if(selectedUser){
         const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
         setSelectedUserRef(selectedUserDocRef)
-        console.log(selectedUserDocRef)
         const selUser = await getDoc(selectedUserDocRef)
         setRecipient(selUser.data())
-        console.log(selUser.data())
       }
     }
     getSelectedUser()
@@ -134,35 +132,41 @@ export default function WriteLetter() {
     console.log("update", debounce)
     const updateDraft = async () => {
       console.log("updating draft")
-      console.log(selectedUser)
       const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
       const lettersRef = collection(letterboxRef, "letters");
       if(userRef && selectedUserRef && lettersRef) {
         console.log(1)
-        console.log(userRef, selectedUserRef, lettersRef)
+        console.log(selectedUser.letterboxId)
         const letterboxQuery = query(
           lettersRef,
+          where("sent_by", "==", userRef),
         );
-        console.log(1.5)
         // failing permission errors
         const draftSnapshot = await getDocs(letterboxQuery);
-        console.log(2)
+        const draftDocs = draftSnapshot.docs.filter(doc => doc.data().draft === true);
+        if(draftDocs.length) {
+          setDraft({...draftDocs[0].data(), id: draftDocs[0].id})
+        }
+        console.log(lettersRef)
         const letterData = {
           content: letterContent,
-          recipientId: selectedUser.id,
+          // recipientId: selectedUser.id,
           senderId: auth.currentUser.uid,
           timestamp: new Date(),
           draft: true
         };
         console.log(3, letterData)
-        if(draftSnapshot.length) {
-          await updateDoc(doc(collection(messageDocRef, "letters"), draft.id), letterData);
+        console.log(draft)
+        if(draft) {
+          console.log("updating", draft.id)
+          await updateDoc(doc(lettersRef, draft.id), letterData);
         } else {
-          await addDoc(collection(db, "letters"), letterData);
+          console.log("adding")
+          await addDoc(lettersRef, letterData);
         }
       }
     }
-    if(debounce == 3) {
+    if(debounce == 10) {
       updateDraft()
       setDebounce(0)
     }
