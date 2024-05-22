@@ -92,6 +92,7 @@ const HobbySelect = ({ setHobbies, hobbies, wantBorder = true }) => {
 
   return (
     <CreatableSelect
+      placeholder="Select your hobbies"
       isMulti
       isClearable
       isDisabled={isLoading}

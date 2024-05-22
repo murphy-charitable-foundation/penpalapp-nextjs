@@ -59,7 +59,7 @@ export default function KidFilter({
             id="gender"
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-md text-black"
+            className="w-full p-2 border-b border-black text-black outline-none"
           >
             <option value="">Select your gender</option>
             <option value="Male">Male</option>
@@ -81,7 +81,7 @@ export default function KidFilter({
             value={ageFilter}
             onChange={(e) => setAgeFilter(e.target.value)}
             className="w-full p-2 border-b border-black text-black outline-none"
-            placeholder="Input age"
+            placeholder="Input your age"
           />
         </div>
         <div className="flex justify-center mt-24">
