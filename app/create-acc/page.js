@@ -9,6 +9,7 @@ import { auth, db } from '../firebaseConfig';
 import { handleLogout } from '../profile/page'; 
 import Link from 'next/link';
 import Image from 'next/image';
+import { getAuth } from 'firebase/auth';
 import PasswordChecklist from "react-password-checklist";
 
 
@@ -16,14 +17,16 @@ import PasswordChecklist from "react-password-checklist";
 export default function CreateAccount() {
     const [first_name, setFirstName] = useState('');
     const [last_name, setLastName] = useState('');
-    const [email, setEmail] = useState('');
+    //const [email, setEmail] = useState('');
     const [date_of_birth, setBirthday] = useState('');
     const [newPassword, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
     const [error, setError] = useState('');
     const router = useRouter(); 
+    const auth = getAuth();
     const user = auth.currentUser;
-    //const email= user.email;
+    const email= user.email;
+    //const emailVerified = user.emailVerified;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -57,7 +60,7 @@ export default function CreateAccount() {
                 created_at: new Date(),
                 first_name,
                 last_name,
-                email:user.email,
+                email,
                 date_of_birth, 
             });
 
@@ -101,8 +104,8 @@ export default function CreateAccount() {
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="email" className="text-sm font-medium text-gray-700 block mb-2">Email</label>
-                        <input id="email"  style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'black' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value={user.email}/>
+                        <label htmlFor="email" className="text-sm font-medium text-gray-300 block mb-2">Email</label>
+                        <input id="email"  style={{ border: '0px', borderBottom: '1px solid gray', padding: '10px', width: '100%', margin: '0 auto', display:'block', color: 'lightgray' }} required className="appearance-none rounded-none relative block w-full px-3 py-2 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value={email}/>
                     </div>
                     <div>
                         <label htmlFor="birthday" className="text-sm font-medium text-gray-700 block mb-2">Birthday</label>
