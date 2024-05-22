@@ -81,11 +81,8 @@ export const fetchData = async () => {
           latestMessagesMap.set(message.letterboxId, message);
         }
       }
-      console.log(latestMessagesMap, )
       return Array.from(latestMessagesMap, ([_name, value]) => value)
     }
-    console.log("messages", messages)
-    console.log(findLatestMessages(messages))
     return findLatestMessages(messages)
   }
 };

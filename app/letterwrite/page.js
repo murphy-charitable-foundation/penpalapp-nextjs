@@ -36,23 +36,10 @@ export default function WriteLetter() {
   const [userRef, setUserRef] = useState(null)
   const [selectedUserRef, setSelectedUserRef] = useState(null)
   const [allMessages, setAllMessages] = useState(null)
-  const [availableChatIds, setAvailableChatIds] = useState(null) 
+  const [availableChatIds, setAvailableChatIds] = useState(null)
   const [recipient, setRecipient] = useState(null)
   const [debounce, setDebounce] = useState(0)
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const usersCollectionRef = collection(db, "users");
-      // const snapshot = await getDocs(usersCollectionRef);
-      // const usersList = snapshot.docs.map((doc) => ({
-      //   id: doc.id,
-      //   ...doc.data(),
-      // }));
-      // setUsers(usersList);
-    };
-
-    fetchUsers();
-  }, []);
+  const [lettersRef, setLettersRef] = useState(null)
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !selectedUser) {
@@ -69,14 +56,16 @@ export default function WriteLetter() {
 
     // recipientId: selectedUser.id,
     const letterData = {
-      letter: letterContent,
+      content: letterContent,
       sent_by: userRef, // Directly using the uid from auth.currentUser
       status: "pending_review",
       created_at: new Date(),
+      draft: false
     };
 
     try {
-      await addDoc(collection(db, "letters"), letterData);
+      await updateDoc(doc(lettersRef, draft.id), letterData)
+      // addDoc(collection(db, "letters"), letterData);
       alert("Letter sent successfully!");
       setLetterContent("");
       setSelectedUser(null);
@@ -94,7 +83,7 @@ export default function WriteLetter() {
 
   // set out user
   useEffect(() => {
-    if(user){
+    if (user) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef)
 
@@ -109,11 +98,37 @@ export default function WriteLetter() {
   // set the recipient user
   useEffect(() => {
     const getSelectedUser = async () => {
-      if(selectedUser){
+      console.log("updated 1")
+      if (selectedUser) {
         const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
         setSelectedUserRef(selectedUserDocRef)
         const selUser = await getDoc(selectedUserDocRef)
         setRecipient(selUser.data())
+
+        console.log("updated 2")
+
+        const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
+        const lRef = collection(letterboxRef, "letters");
+        setLettersRef(lRef)
+        console.log(1)
+        const letterboxQuery = query(
+          lRef,
+          where("sent_by", "==", userRef),
+        );
+        console.log(2)
+        const draftSnapshot = await getDocs(letterboxQuery);
+        console.log("draftSnapshot", draftSnapshot)
+        const draftDoc = draftSnapshot.docs.find(doc => doc.data().draft === true);
+        if (draftDoc) {
+          console.log('draft found')
+          setDraft({ ...draftDoc.data(), id: draftDoc.id })
+        } else {
+          console.log("draft being created")
+          const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true });
+          setDraft({...d.data(), id: d.id})
+        }
+        console.log("updated 3")
+
       }
     }
     getSelectedUser()
@@ -121,52 +136,33 @@ export default function WriteLetter() {
 
   useEffect(() => {
     let ids = []
-    allMessages?.forEach(m => ids.push({letterboxId: m.letterboxId, recipientId: m.receiver}))
+    allMessages?.forEach(m => ids.push({ letterboxId: m.letterboxId, recipientId: m.receiver }))
     setAvailableChatIds(ids)
   }, [allMessages])
 
+  // on page mounted lets check if there is a draft. if not then we make one. then we don't need to worry about this when typing.
+
   useEffect(() => {
-    // when typing, we need to update the current doc with a draft status
-    // when we send, we MUST set the draft status to false
     setDebounce(debounce + 1)
-    console.log("update", debounce)
     const updateDraft = async () => {
-      console.log("updating draft")
-      const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
-      const lettersRef = collection(letterboxRef, "letters");
-      if(userRef && selectedUserRef && lettersRef) {
-        console.log(1)
-        console.log(selectedUser.letterboxId)
-        const letterboxQuery = query(
-          lettersRef,
-          where("sent_by", "==", userRef),
-        );
-        // failing permission errors
-        const draftSnapshot = await getDocs(letterboxQuery);
-        const draftDocs = draftSnapshot.docs.filter(doc => doc.data().draft === true);
-        if(draftDocs.length) {
-          setDraft({...draftDocs[0].data(), id: draftDocs[0].id})
-        }
-        console.log(lettersRef)
+      if (userRef && selectedUserRef && lettersRef) {
         const letterData = {
           content: letterContent,
-          // recipientId: selectedUser.id,
-          senderId: auth.currentUser.uid,
+          sent_by: userRef,
           timestamp: new Date(),
           draft: true
         };
-        console.log(3, letterData)
-        console.log(draft)
-        if(draft) {
-          console.log("updating", draft.id)
+        console.log("draft", lettersRef, draft.id, letterData)
+        console.log("updaing")
+        try {
           await updateDoc(doc(lettersRef, draft.id), letterData);
-        } else {
-          console.log("adding")
-          await addDoc(lettersRef, letterData);
+        } catch (e) {
+          console.log("failed", e)
         }
+
       }
     }
-    if(debounce == 10) {
+    if (debounce == 20) {
       updateDraft()
       setDebounce(0)
     }
@@ -318,7 +314,7 @@ export default function WriteLetter() {
           )}
         </div>
 
-        {isModalOpen &&  <RecipientModal />}
+        {isModalOpen && <RecipientModal />}
 
         {isFileModalOpen && <FileModal />}
 
