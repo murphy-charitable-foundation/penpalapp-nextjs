@@ -16,7 +16,7 @@ export default function SendMessage({ kidId }) {
 
   useEffect(() => {
     //This gets the penpal data
-    const fetchUserData = async () => {
+    const fetchUserData = async () => {  //this get the current logged in user. This is used throught the code. In the future we could make one and use that through out the code
       try {
         if (auth.currentUser) {
           const uid = auth.currentUser.uid;
@@ -26,6 +26,7 @@ export default function SendMessage({ kidId }) {
 
           if (docSnap.exists()) {
             const userData = docSnap.data();
+            console.log(userData);
             setUser(userData);
           } else {
             console.error("No user logged in");
@@ -40,19 +41,41 @@ export default function SendMessage({ kidId }) {
       }
     };
 
+    const fetchKidData = async () => {
+        try {
+            if(kidId) {
+            const userDocRef = doc(db, "users", kidId); 
+            const userDocSnapshot = await getDoc(userDocRef);
+        
+            if (userDocSnapshot.exists()) {
+              const userData = userDocSnapshot.data();
+              console.log(userData)
+              return userData;
+            } else {
+              console.log("User document does not exist");
+              return null;
+            }
+        } else {
+            console.log("No valid kidId")
+        }
+        } catch(error) {
+            console.error("There has been a error fetching the kid", error);
+        }
+    }
+
     fetchUserData();
-  }, [auth.currentUser]);
+    fetchKidData();
+  }, [auth.currentUser, kidId]);
 
   return (
     <div>
-      <Link href="/letterwrite">
+      {/* <Link href="/letterwrite"> */}
         <button
           className="w-28 py-2 rounded-3xl text-center text-xs"
           style={{ backgroundColor: "#034792", color: "white" }}
         >
           Send a message
         </button>
-      </Link>
     </div>
   );
 }
