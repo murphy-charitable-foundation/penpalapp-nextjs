@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import SendMessage from "../discovery/SendMessage";
 
 //Card for kid
 export default function KidCard({ kid, calculateAge }) {
@@ -50,14 +51,15 @@ export default function KidCard({ kid, calculateAge }) {
         {/* <p className="text-black break-words text-xs">{kid?.hobby}</p> */}
       </div>
       <div className="self-end mt-auto">
-        <Link href="/letterwrite">
+        {/* <Link href="/letterwrite">
           <button
             className="w-28 py-2 rounded-3xl text-center text-xs"
             style={{ backgroundColor: "#034792", color: "white" }}
           >
             Send a message
           </button>
-        </Link>
+        </Link> */}
+        <SendMessage/>
       </div>
     </div>
   );
