@@ -14,68 +14,75 @@ export default function SendMessage({ kidId }) {
   const [user, setUser] = useState(null);
   const [kid, setKid] = useState([]);
 
-  useEffect(() => {
-    //This gets the penpal data
-    const fetchUserData = async () => {  //this get the current logged in user. This is used throught the code. In the future we could make one and use that through out the code
-      try {
-        if (auth.currentUser) {
-          const uid = auth.currentUser.uid;
-          const docRef = doc(db, "users", uid);
-          const docSnap = await getDoc(docRef);
-          console.log(docSnap);
+  //   useEffect(() => {  could have use effect but its make inital loading slower
+  //This gets the penpal data
+  const fetchUserData = async () => {
+    //this get the current logged in user. This is used throught the code. In the future we could make one and use that through out the code
+    try {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
+        console.log(docSnap);
 
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            console.log(userData);
-            setUser(userData);
-          } else {
-            console.error("No user logged in");
-            router.push("/login");
-          }
-        }
-      } catch (error) {
-        console.error(
-          "There has been a error fetching the logged in user",
-          error
-        );
-      }
-    };
-
-    const fetchKidData = async () => {
-        try {
-            if(kidId) {
-            const userDocRef = doc(db, "users", kidId); 
-            const userDocSnapshot = await getDoc(userDocRef);
-        
-            if (userDocSnapshot.exists()) {
-              const userData = userDocSnapshot.data();
-              console.log(userData)
-              return userData;
-            } else {
-              console.log("User document does not exist");
-              return null;
-            }
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          console.log(userData);
+          setUser(userData);
         } else {
-            console.log("No valid kidId")
+          console.error("No user logged in");
+          router.push("/login");
         }
-        } catch(error) {
-            console.error("There has been a error fetching the kid", error);
-        }
+      }
+    } catch (error) {
+      console.error(
+        "There has been a error fetching the logged in user",
+        error
+      );
     }
+  };
 
+  const fetchKidData = async () => {
+    try {
+      if (kidId) {
+        const userDocRef = doc(db, "users", kidId);
+        const userDocSnapshot = await getDoc(userDocRef);
+
+        if (userDocSnapshot.exists()) {
+          const userData = userDocSnapshot.data();
+          console.log(userData);
+          return userData;
+        } else {
+          console.log("User document does not exist");
+          return null;
+        }
+      } else {
+        console.log("No valid kidId");
+      }
+    } catch (error) {
+      console.error("There has been a error fetching the kid", error);
+    }
+  };
+
+  fetchUserData();
+  fetchKidData();
+  //   }, [auth.currentUser, kidId]);
+
+  const handleClick = async () => {
     fetchUserData();
     fetchKidData();
-  }, [auth.currentUser, kidId]);
+  };
 
   return (
     <div>
       {/* <Link href="/letterwrite"> */}
-        <button
-          className="w-28 py-2 rounded-3xl text-center text-xs"
-          style={{ backgroundColor: "#034792", color: "white" }}
-        >
-          Send a message
-        </button>
+      <button
+        className="w-28 py-2 rounded-3xl text-center text-xs"
+        style={{ backgroundColor: "#034792", color: "white" }}
+        onClick={handleClick}
+      >
+        Send a message
+      </button>
     </div>
   );
 }
