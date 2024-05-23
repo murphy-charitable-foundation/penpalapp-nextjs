@@ -59,7 +59,7 @@ export default function KidCard({ kid, calculateAge }) {
             Send a message
           </button>
         </Link> */}
-        <SendMessage kidId={kid.id}/>
+        <SendMessage kid={kid}/>
       </div>
     </div>
   );
