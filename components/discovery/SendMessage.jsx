@@ -23,16 +23,15 @@ export default function SendMessage({ kidId }) {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
-        console.log(docSnap);
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
           console.log(userData);
           setUser(userData);
-        } else {
-          console.error("No user logged in");
-          router.push("/login");
         }
+      } else {
+        console.error("No user logged in");
+        router.push("/login");
       }
     } catch (error) {
       console.error(
@@ -42,6 +41,7 @@ export default function SendMessage({ kidId }) {
     }
   };
 
+  //This fetches the kid
   const fetchKidData = async () => {
     try {
       if (kidId) {
@@ -50,11 +50,10 @@ export default function SendMessage({ kidId }) {
 
         if (userDocSnapshot.exists()) {
           const userData = userDocSnapshot.data();
+          setKid(userData);
           console.log(userData);
-          return userData;
         } else {
           console.log("User document does not exist");
-          return null;
         }
       } else {
         console.log("No valid kidId");
