@@ -12,70 +12,70 @@ import { useRouter } from "next/navigation";
 export default function SendMessage({ kid }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
-//   const [kid, setKid] = useState(null);
+  //   const [kid, setKid] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [kidRef, setKidRef] = useState();
 
-    useEffect(() => {  
-  //This gets the penpal data
-  const fetchUserData = async () => {
-    //this get the current logged in user. This is used throught the code. In the future we could make one and use that through out the code
-    try {
-      if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
+  useEffect(() => {
+    //This gets the penpal data
+    const fetchUserData = async () => {
+      //this get the current logged in user. This is used throught the code. In the future we could make one and use that through out the code
+      try {
+        if (auth.currentUser) {
+          const uid = auth.currentUser.uid;
+          const docRef = doc(db, "users", uid);
+          const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          console.log(userData);
-          setUser(userData);
-          setUserRef(docRef);
-          return userData;
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            console.log(userData);
+            setUser(userData);
+            setUserRef(docRef);
+            return userData;
+          }
+        } else {
+          console.error("No user logged in");
+          router.push("/login");
         }
-      } else {
-        console.error("No user logged in");
-        router.push("/login");
+      } catch (error) {
+        console.error(
+          "There has been a error fetching the logged in user",
+          error
+        );
       }
-    } catch (error) {
-      console.error(
-        "There has been a error fetching the logged in user",
-        error
-      );
-    }
-  };
+    };
 
-  fetchUserData()
-  }, [auth.currentUser])
+    fetchUserData();
+  }, [auth.currentUser]);
 
   //This fetches the kid
-//   const fetchKidData = async () => {  //I dont need to fetch kids. I could also Just use a use effect for the userstate
-//     try {
-//       if (kidId) {
-//         const userDocRef = doc(db, "users", kidId);
-//         const userDocSnapshot = await getDoc(userDocRef);
+  //   const fetchKidData = async () => {  //I dont need to fetch kids. I could also Just use a use effect for the userstate
+  //     try {
+  //       if (kidId) {
+  //         const userDocRef = doc(db, "users", kidId);
+  //         const userDocSnapshot = await getDoc(userDocRef);
 
-//         if (userDocSnapshot.exists()) {
-//           const userData = userDocSnapshot.data();
-//           setKid(userData);
-//           setKidRef(userDocRef);
-//           console.log(userData);
-//           return userData;
-//         } else {
-//           console.log("User document does not exist");
-//         }
-//       } else {
-//         console.log("No valid kidId");
-//       }
-//     } catch (error) {
-//       console.error("There has been a error fetching the kid", error);
-//     }
-//   };
+  //         if (userDocSnapshot.exists()) {
+  //           const userData = userDocSnapshot.data();
+  //           setKid(userData);
+  //           setKidRef(userDocRef);
+  //           console.log(userData);
+  //           return userData;
+  //         } else {
+  //           console.log("User document does not exist");
+  //         }
+  //       } else {
+  //         console.log("No valid kidId");
+  //       }
+  //     } catch (error) {
+  //       console.error("There has been a error fetching the kid", error);
+  //     }
+  //   };
 
   const createConnection = async () => {
     try {
-    //   await fetchUserData();
-    //   await fetchKidData();
+      //   await fetchUserData();
+      //   await fetchKidData();
       console.log("Kid:", kid);
       console.log("User:", user);
       if (kid != null && user != null) {
@@ -85,15 +85,15 @@ export default function SendMessage({ kid }) {
 
           const userDocRef = doc(db, "users", auth.currentUser.uid);
           const kidDocRef = doc(db, "users", kid.id);
-            
+
           const updatedUserConnectedPenpals = [
             ...connectedUserPenpals,
-            doc(db, "users", kid.id), 
+            doc(db, "users", kid.id),
           ];
-  
+
           const updatedKidConnectedPenpals = [
             ...connectedKidPenpals,
-            doc(db, "users", auth.currentUser.uid), 
+            doc(db, "users", auth.currentUser.uid),
           ];
 
           const updateUser = await updateDoc(userDocRef, {
@@ -104,25 +104,15 @@ export default function SendMessage({ kid }) {
             connected_penpals: updatedKidConnectedPenpals,
           });
 
-          if (updateKid && updateUser) {
-            const kidConnectedPenPalCount = kid.connected_penpals_count;
+          const kidConnectedPenPalCount = kid.connected_penpals_count;
 
-            const updatedKidConnectedPenPalCount = kidConnectedPenPalCount + 1;
+          const updatedKidConnectedPenPalCount = kidConnectedPenPalCount + 1;
 
-            const updateConnectedPenpalsCount = await updateDoc(kidDocRef, {
-              connected_penpals_count: updatedKidConnectedPenPalCount,
-            });
+          const updateConnectedPenpalsCount = await updateDoc(kidDocRef, {
+            connected_penpals_count: updatedKidConnectedPenPalCount,
+          });
 
-            if (updateConnectedPenpalsCount) {
-              router.push("/letterhome");
-            } else {
-              console.log("Unable to increase kid penpal count");
-            }
-          } else {
-            console.log(
-              "There has been a error updating the kid or user connected penpals"
-            );
-          }
+          router.push("/letterhome");
         } else {
           console.log("Kid has exceeded penpal limit");
         }
@@ -130,7 +120,7 @@ export default function SendMessage({ kid }) {
         console.log("No kid or user data");
       }
     } catch (error) {
-      console.log("There has been a error creating the connection", error);
+      console.log("There has been a error creating the connection: ", error);
     }
   };
 
