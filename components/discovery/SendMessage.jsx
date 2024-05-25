@@ -2,17 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { updateDoc } from "firebase/firestore";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import Link from "next/link";
+import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  //   const [kid, setKid] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [kidRef, setKidRef] = useState();
 
@@ -48,34 +45,8 @@ export default function SendMessage({ kid }) {
     fetchUserData();
   }, [auth.currentUser]);
 
-  //This fetches the kid
-  //   const fetchKidData = async () => {  //I dont need to fetch kids. I could also Just use a use effect for the userstate
-  //     try {
-  //       if (kidId) {
-  //         const userDocRef = doc(db, "users", kidId);
-  //         const userDocSnapshot = await getDoc(userDocRef);
-
-  //         if (userDocSnapshot.exists()) {
-  //           const userData = userDocSnapshot.data();
-  //           setKid(userData);
-  //           setKidRef(userDocRef);
-  //           console.log(userData);
-  //           return userData;
-  //         } else {
-  //           console.log("User document does not exist");
-  //         }
-  //       } else {
-  //         console.log("No valid kidId");
-  //       }
-  //     } catch (error) {
-  //       console.error("There has been a error fetching the kid", error);
-  //     }
-  //   };
-
   const createConnection = async () => {
     try {
-      //   await fetchUserData();
-      //   await fetchKidData();
       console.log("Kid:", kid);
       console.log("User:", user);
       if (kid != null && user != null) {
@@ -130,7 +101,6 @@ export default function SendMessage({ kid }) {
 
   return (
     <div>
-      {/* <Link href="/letterwrite"> */}
       <button
         className="w-28 py-2 rounded-3xl text-center text-xs"
         style={{ backgroundColor: "#034792", color: "white" }}

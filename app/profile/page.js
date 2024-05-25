@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc} from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
-import BottomNavBar from "@/components/bottom-nav-bar";
 import HobbySelect from "@/components/general/HobbySelect";
 
 export default function EditProfile() {
@@ -87,7 +86,6 @@ export default function EditProfile() {
         hobby,
         favorite_color: favoriteColor,
         gender,
-        // missing more fields
       };
 
       try {
@@ -435,7 +433,6 @@ export default function EditProfile() {
           </div>
         </div>
       </div>
-      {/* <BottomNavBar /> */}
     </div>
   );
 }
