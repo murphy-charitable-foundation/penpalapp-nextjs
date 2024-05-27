@@ -88,6 +88,46 @@ export const fetchData = async () => {
 };
 
 
+export const fetchLetters = async (id) => {
+  if (!auth.currentUser?.uid) {
+    console.warn("error loading auth")
+    setTimeout(() => {
+      fetchLetters()
+    }, 2000)
+    return
+  }
+  const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+  const userDocSnapshot = await getDoc(userDocRef);
+
+  if (userDocSnapshot.exists()) {
+    const letterboxRef = doc(collection(db, "letterbox"), id);
+    const lRef = collection(letterboxRef, "letters");
+    const letterboxQuery = query(lRef);
+
+    const draftSnapshot = await getDocs(letterboxQuery);
+    const messages = [];
+
+    for (const doc of draftSnapshot.docs) {
+      const letterboxData = doc.data();
+      messages.push(letterboxData)
+    }
+    return messages
+  }
+};
+
+export const fetchRecipients = async (id) => {
+  const letterboxRef = doc(collection(db, "letterbox"), id);
+  const letterbox = await getDoc(query(letterboxRef))
+  const users = letterbox.data().members.filter(m => m.id !== auth.currentUser.uid)
+  const members = await Promise.all(users.map(async user => {
+    const selectedUserDocRef = doc(db, "users", user.id);
+    const selUser = await getDoc(selectedUserDocRef);
+    return selUser.data();
+  }));
+  return members
+}
+
+
 export const fetchPendingReviewMessages = async (subcollectionRe, user) => {
   const messages = []
   const pendingQ = query(
