@@ -26,17 +26,14 @@ export default function Page({params}) {
   const {id} = params
 
   const [letterContent, setLetterContent] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
-  const [currentUser, setCurrentUser] = useState(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
   const [draft, setDraft] = useState(null)
   const [userRef, setUserRef] = useState(null)
   const [selectedUserRef, setSelectedUserRef] = useState(null)
   const [allMessages, setAllMessages] = useState(null)
-  const [availableChatIds, setAvailableChatIds] = useState(null)
   const [recipients, setRecipients] = useState(null)
   const [debounce, setDebounce] = useState(0)
   const [lettersRef, setLettersRef] = useState(null)
@@ -118,11 +115,11 @@ export default function Page({params}) {
     getSelectedUser()
   }, [selectedUser])
 
-  useEffect(() => {
-    let ids = []
-    allMessages?.forEach(m => ids.push({ letterboxId: m.letterboxId, recipientId: m.receiver }))
-    setAvailableChatIds(ids)
-  }, [allMessages])
+  // useEffect(() => {
+  //   let ids = []
+  //   allMessages?.forEach(m => ids.push({ letterboxId: m.letterboxId, recipientId: m.receiver }))
+  //   setAvailableChatIds(ids)
+  // }, [allMessages])
 
   useEffect(() => {
     setDebounce(debounce + 1)
@@ -149,39 +146,6 @@ export default function Page({params}) {
     }
   }, [letterContent])
 
-  const closeRecipientModal = () => setIsModalOpen(false);
-
-  // const RecipientModal = () => {
-  //   return (
-  //     (
-  //       <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-  //         <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-  //           <h3 className="font-semibold text-xl text-gray-800 mb-4">
-  //             Select a Recipient
-  //           </h3>
-  //           <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
-  //             {availableChatIds.map((chat) => (
-  //               <li
-  //                 key={chat.letterboxId}
-  //                 onClick={() => selectUser(chat)}
-  //                 className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
-  //               >
-  //                 {chat.recipientId}
-  //               </li>
-  //             ))}
-  //           </ul>
-  //           <button
-  //             onClick={() => setIsModalOpen(false)}
-  //             className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-  //           >
-  //             Close
-  //           </button>
-  //         </div>
-  //       </div>
-  //     )
-  //   );
-  // };
-
   const [uploadProgress, setUploadProgress] = useState(null)
 
   const handleChange = (event) => {
@@ -193,7 +157,6 @@ export default function Page({params}) {
 
   const handleUpload = async (file) => {
     if (file) {
-      console.log('uploading')
       const storageRef = ref(storage, `uploads/letterbox/${selectedUser?.letterboxId}/${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -247,7 +210,6 @@ export default function Page({params}) {
 
   const selectUser = (user) => {
     setSelectedUser({ ...user });
-    closeRecipientModal();
   };
 
   const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
@@ -263,7 +225,6 @@ export default function Page({params}) {
 
     const populateRecipients = async () => {
       const members = await fetchRecipients(id)
-      console.log(members)
       setRecipients(members)
     }
 
@@ -306,16 +267,16 @@ export default function Page({params}) {
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
           {recipients?.length && recipients.map(recipient => (
             <>
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden" key={recipient?.first_name?.[0]}>
                 {recipient?.profile_picture ? (
-                  <img src={recipient?.profile_picture} class="w-full h-full object-cover" />
+                  <img src={recipient?.profile_picture} class="w-full h-full object-cover"/>
                 ) : (
                   <span className="text-xl text-gray-600">
                     {recipient?.first_name?.[0]}
                   </span>
                 )}
               </div>
-              <div>
+              <div key={`${recipient?.first_name?.[0]}_`}>
                 <h2 className="font-bold text-black">
                   {recipient?.first_name} {recipient?.last_name}
                 </h2>
@@ -324,18 +285,16 @@ export default function Page({params}) {
             </>
           ))}
         </div>
-          {/* ) : (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-500 text-white p-2 rounded-lg"
-            >
-              Select a Recipient
-            </button>
-          )} */}
-
-        {/* {isModalOpen && <RecipientModal />} */}
 
         {isFileModalOpen && <FileModal />}
+
+        <div className="flex flex-col">
+          { allMessages?.map(message => (
+              <div key={message.id}>{message.content}</div>
+            ))
+          }
+
+        </div>
 
         <textarea
           className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
