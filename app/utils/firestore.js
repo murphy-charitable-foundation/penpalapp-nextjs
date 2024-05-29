@@ -102,14 +102,16 @@ export const fetchLetters = async (id) => {
   if (userDocSnapshot.exists()) {
     const letterboxRef = doc(collection(db, "letterbox"), id);
     const lRef = collection(letterboxRef, "letters");
-    const letterboxQuery = query(lRef);
+    const letterboxQuery = query(lRef, orderBy("timestamp"));
 
     const draftSnapshot = await getDocs(letterboxQuery);
     const messages = [];
 
     for (const doc of draftSnapshot.docs) {
       const letterboxData = doc.data();
-      messages.push(letterboxData)
+      if(!letterboxData.draft){
+        messages.push(letterboxData)
+      }
     }
     return messages
   }

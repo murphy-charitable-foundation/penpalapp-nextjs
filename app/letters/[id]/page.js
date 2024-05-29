@@ -22,8 +22,8 @@ import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore"
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 
 
-export default function Page({params}) {
-  const {id} = params
+export default function Page({ params }) {
+  const { id } = params
 
   const [letterContent, setLetterContent] = useState("");
   const [user, setUser] = useState(null);
@@ -40,7 +40,7 @@ export default function Page({params}) {
   const [attachments, setAttachments] = useState([])
 
   const handleSendLetter = async () => {
-    if (!letterContent.trim() || !selectedUser) {
+    if (!letterContent.trim() || !recipients?.length) {
       alert("Please fill in the letter content and select a recipient.");
       return;
     }
@@ -62,8 +62,6 @@ export default function Page({params}) {
       await updateDoc(doc(lettersRef, draft.id), letterData)
       alert("Letter sent successfully!");
       setLetterContent("");
-      setSelectedUser(null);
-
     } catch (error) {
       console.error("Error sending letter: ", error);
       alert("Failed to send the letter.");
@@ -86,13 +84,8 @@ export default function Page({params}) {
   // set the recipient user
   useEffect(() => {
     const getSelectedUser = async () => {
-      if (selectedUser) {
-        const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
-        setSelectedUserRef(selectedUserDocRef)
-        const selUser = await getDoc(selectedUserDocRef)
-        setRecipient(selUser.data())
-
-        const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
+      if (recipients?.length) {
+        const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef)
         const letterboxQuery = query(
@@ -113,18 +106,14 @@ export default function Page({params}) {
       }
     }
     getSelectedUser()
-  }, [selectedUser])
-
-  // useEffect(() => {
-  //   let ids = []
-  //   allMessages?.forEach(m => ids.push({ letterboxId: m.letterboxId, recipientId: m.receiver }))
-  //   setAvailableChatIds(ids)
-  // }, [allMessages])
+  }, [recipients])
 
   useEffect(() => {
     setDebounce(debounce + 1)
+    console.log('d')
     const updateDraft = async () => {
-      if (userRef && selectedUserRef && lettersRef) {
+      console.log('sending')
+      if (userRef && lettersRef) {
         const letterData = {
           content: letterContent,
           sent_by: userRef,
@@ -133,6 +122,7 @@ export default function Page({params}) {
           attachments
         };
         try {
+          console.log('updating draft', draft.id)
           await updateDoc(doc(lettersRef, draft.id), letterData);
         } catch (e) {
           console.error("failed", e)
@@ -140,7 +130,7 @@ export default function Page({params}) {
 
       }
     }
-    if (debounce == 20) {
+    if (debounce >= 20) {
       updateDraft()
       setDebounce(0)
     }
@@ -157,7 +147,7 @@ export default function Page({params}) {
 
   const handleUpload = async (file) => {
     if (file) {
-      const storageRef = ref(storage, `uploads/letterbox/${selectedUser?.letterboxId}/${file.name}`);
+      const storageRef = ref(storage, `uploads/letterbox/${id}/${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on('state_changed',
@@ -269,7 +259,7 @@ export default function Page({params}) {
             <>
               <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden" key={recipient?.first_name?.[0]}>
                 {recipient?.profile_picture ? (
-                  <img src={recipient?.profile_picture} class="w-full h-full object-cover"/>
+                  <img src={recipient?.profile_picture} class="w-full h-full object-cover" />
                 ) : (
                   <span className="text-xl text-gray-600">
                     {recipient?.first_name?.[0]}
@@ -288,10 +278,21 @@ export default function Page({params}) {
 
         {isFileModalOpen && <FileModal />}
 
-        <div className="flex flex-col">
-          { allMessages?.map(message => (
+        <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
+          {allMessages?.map(message => (
+            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`}>
+              {message.attachments?.length ? (
+                <div className="flex w-full">
+                  {message.attachments?.map((att, i) => (
+                    <div key={i} className="max-h-[80px]">
+                      <img src={att} />
+                    </div>
+                  ))}
+                </div>
+              ) : (<></>)}
               <div key={message.id}>{message.content}</div>
-            ))
+            </div>
+          ))
           }
 
         </div>
