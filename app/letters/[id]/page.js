@@ -110,7 +110,6 @@ export default function Page({ params }) {
 
   useEffect(() => {
     setDebounce(debounce + 1)
-    console.log('d')
     const updateDraft = async () => {
       console.log('sending')
       if (userRef && lettersRef) {
@@ -196,11 +195,6 @@ export default function Page({ params }) {
       </div>
     </div>
   )
-
-
-  const selectUser = (user) => {
-    setSelectedUser({ ...user });
-  };
 
   const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
 
