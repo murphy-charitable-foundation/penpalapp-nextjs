@@ -62,7 +62,7 @@ export const fetchData = async () => {
           letterboxId: doc.id,
           collectionId: queryDocumentSnapshots[0].id,
           receiver: letterboxData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
-          letter: latestMessage.letter,
+          content: latestMessage.content,
           deleted: latestMessage.deleted_at,
           created_at: latestMessage.created_at,
           pending: true
