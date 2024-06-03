@@ -71,6 +71,7 @@ export default function Login() {
                     viewBox="0 0 24 24"
                     stroke="black"
                 >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                 </svg>
                 <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">Login</h2>
                 <div className="h-6 w-6"></div>
