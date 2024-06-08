@@ -4,12 +4,12 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { db, storage } from "../firebaseConfig"; // Adjust this path as necessary
+import { db, storage } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, addDoc, getDocs, getDoc, doc, query, where, updateDoc } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { auth } from '../firebaseConfig';
+import { auth } from '../../firebaseConfig';
 
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
@@ -18,31 +18,29 @@ import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
 import BottomNavBar from '@/components/bottom-nav-bar';
-import { fetchData } from "../utils/firestore";
+import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 
 
-export default function WriteLetter() {
+export default function Page({ params }) {
+  const { id } = params
+
   const [letterContent, setLetterContent] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
   const [user, setUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
-  const [currentUser, setCurrentUser] = useState(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
   const [draft, setDraft] = useState(null)
   const [userRef, setUserRef] = useState(null)
   const [selectedUserRef, setSelectedUserRef] = useState(null)
   const [allMessages, setAllMessages] = useState(null)
-  const [availableChatIds, setAvailableChatIds] = useState(null)
-  const [recipient, setRecipient] = useState(null)
+  const [recipients, setRecipients] = useState(null)
   const [debounce, setDebounce] = useState(0)
   const [lettersRef, setLettersRef] = useState(null)
   const [attachments, setAttachments] = useState([])
 
   const handleSendLetter = async () => {
-    if (!letterContent.trim() || !selectedUser) {
+    if (!letterContent.trim() || !recipients?.length) {
       alert("Please fill in the letter content and select a recipient.");
       return;
     }
@@ -52,9 +50,6 @@ export default function WriteLetter() {
       return;
     }
 
-    // setIsSending(true);
-
-    // recipientId: selectedUser.id,
     const letterData = {
       content: letterContent,
       sent_by: userRef, // Directly using the uid from auth.currentUser
@@ -67,13 +62,9 @@ export default function WriteLetter() {
       await updateDoc(doc(lettersRef, draft.id), letterData)
       alert("Letter sent successfully!");
       setLetterContent("");
-      setSelectedUser(null);
-      // setIsSending(false);
-
     } catch (error) {
       console.error("Error sending letter: ", error);
       alert("Failed to send the letter.");
-      // setIsSending(false);
     }
   };
 
@@ -83,7 +74,7 @@ export default function WriteLetter() {
       setUserRef(userDocRef)
 
       const fetchMessages = async () => {
-        const messages = await fetchData()
+        const messages = await fetchLetters(id, userRef)
         setAllMessages(messages)
       }
       fetchMessages()
@@ -93,13 +84,8 @@ export default function WriteLetter() {
   // set the recipient user
   useEffect(() => {
     const getSelectedUser = async () => {
-      if (selectedUser) {
-        const selectedUserDocRef = doc(db, "users", selectedUser.recipientId)
-        setSelectedUserRef(selectedUserDocRef)
-        const selUser = await getDoc(selectedUserDocRef)
-        setRecipient(selUser.data())
-
-        const letterboxRef = doc(collection(db, "letterbox"), selectedUser.letterboxId);
+      if (recipients?.length) {
+        const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef)
         const letterboxQuery = query(
@@ -120,18 +106,13 @@ export default function WriteLetter() {
       }
     }
     getSelectedUser()
-  }, [selectedUser])
-
-  useEffect(() => {
-    let ids = []
-    allMessages?.forEach(m => ids.push({ letterboxId: m.letterboxId, recipientId: m.receiver }))
-    setAvailableChatIds(ids)
-  }, [allMessages])
+  }, [recipients])
 
   useEffect(() => {
     setDebounce(debounce + 1)
     const updateDraft = async () => {
-      if (userRef && selectedUserRef && lettersRef) {
+      console.log('sending')
+      if (userRef && lettersRef) {
         const letterData = {
           content: letterContent,
           sent_by: userRef,
@@ -140,6 +121,7 @@ export default function WriteLetter() {
           attachments
         };
         try {
+          console.log('updating draft', draft.id)
           await updateDoc(doc(lettersRef, draft.id), letterData);
         } catch (e) {
           console.error("failed", e)
@@ -147,44 +129,11 @@ export default function WriteLetter() {
 
       }
     }
-    if (debounce == 20) {
+    if (debounce >= 20) {
       updateDraft()
       setDebounce(0)
     }
   }, [letterContent])
-
-  const closeRecipientModal = () => setIsModalOpen(false);
-
-  const RecipientModal = () => {
-    return (
-      (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h3 className="font-semibold text-xl text-gray-800 mb-4">
-              Select a Recipient
-            </h3>
-            <ul className="max-h-60 overflow-auto mb-4 text-gray-700">
-              {availableChatIds.map((chat) => (
-                <li
-                  key={chat.letterboxId}
-                  onClick={() => selectUser(chat)}
-                  className="p-3 hover:bg-blue-100 cursor-pointer rounded-md"
-                >
-                  {chat.recipientId}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )
-    );
-  };
 
   const [uploadProgress, setUploadProgress] = useState(null)
 
@@ -197,10 +146,8 @@ export default function WriteLetter() {
 
   const handleUpload = async (file) => {
     if (file) {
-      console.log('uploading')
-      const storageRef = ref(storage, `uploads/letterbox/${selectedUser?.letterboxId}/${file.name}`);
+      const storageRef = ref(storage, `uploads/letterbox/${id}/${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
-
 
       uploadTask.on('state_changed',
         (snapshot) => {
@@ -249,12 +196,6 @@ export default function WriteLetter() {
     </div>
   )
 
-
-  const selectUser = (user) => {
-    setSelectedUser({ ...user });
-    closeRecipientModal();
-  };
-
   const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
 
   useEffect(() => {
@@ -265,6 +206,14 @@ export default function WriteLetter() {
         setUser(null);
       }
     });
+
+    const populateRecipients = async () => {
+      const members = await fetchRecipients(id)
+      setRecipients(members)
+    }
+
+    populateRecipients()
+
 
     return () => unsubscribe();
   }, []);
@@ -300,37 +249,47 @@ export default function WriteLetter() {
         </div>
 
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
-          {recipient ? (
+          {recipients?.length && recipients.map(recipient => (
             <>
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                {recipient.profile_picture ? (
-                  <img src={recipient.profile_picture} class="w-full h-full object-cover" />
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden" key={recipient?.first_name?.[0]}>
+                {recipient?.profile_picture ? (
+                  <img src={recipient?.profile_picture} class="w-full h-full object-cover" />
                 ) : (
                   <span className="text-xl text-gray-600">
-                    {recipient.first_name?.[0]}
+                    {recipient?.first_name?.[0]}
                   </span>
                 )}
               </div>
-              <div>
+              <div key={`${recipient?.first_name?.[0]}_`}>
                 <h2 className="font-bold text-black">
-                  {recipient.first_name} {recipient.last_name}
+                  {recipient?.first_name} {recipient?.last_name}
                 </h2>
-                <p className="text-sm text-gray-500">{recipient.country}</p>
+                <p className="text-sm text-gray-500">{recipient?.country}</p>
               </div>
             </>
-          ) : (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-blue-500 text-white p-2 rounded-lg"
-            >
-              Select a Recipient
-            </button>
-          )}
+          ))}
         </div>
 
-        {isModalOpen && <RecipientModal />}
-
         {isFileModalOpen && <FileModal />}
+
+        <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
+          {allMessages?.map(message => (
+            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`}>
+              {message.attachments?.length ? (
+                <div className="flex w-full">
+                  {message.attachments?.map((att, i) => (
+                    <div key={i} className="max-h-[80px]">
+                      <img src={att} />
+                    </div>
+                  ))}
+                </div>
+              ) : (<></>)}
+              <div key={message.id}>{message.content}</div>
+            </div>
+          ))
+          }
+
+        </div>
 
         <textarea
           className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
