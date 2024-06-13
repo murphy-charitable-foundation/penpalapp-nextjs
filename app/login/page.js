@@ -33,25 +33,18 @@ export default function Login() {
         } catch (error) {
             console.error("Authentication error:", error.message);
             switch (error.code) {
-                // case 'auth/user-not-found':
-                //     setError('No user found with this email.');
-                //     break;
-                // case 'auth/wrong-password':
-                //     setError('Wrong password.');
-                //     break;
+                case 'auth/user-not-found':
+                    setError('No user found with this email.');
+                    break;
+                case 'auth/wrong-password':
+                    setError('Wrong password.');
+                    break;
                 case 'auth/too-many-requests':
                     setError('Too many attempts. Try again later.');
                     break;
                 default:
-                    try {
-                        console.log(error)
-                        Sentry.captureException(error);
-                        console.log("sent error")
-                        setError('Failed to log in.');
-                    } catch(error) {
-                        console.log(error)
-                        console.log("error with sentry")
-                    }
+                    Sentry.captureException(error);
+                    setError('Failed to log in.');
             }
         }
     };
