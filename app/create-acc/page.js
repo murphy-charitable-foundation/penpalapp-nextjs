@@ -25,28 +25,39 @@ export default function CreateAccount() {
     e.preventDefault();
 
     if (password !== repeatPassword) {
-      alert("Passwords do not match.");
-      return;
+        alert("Passwords do not match.");
+        return;
     }
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const uid = userCredential.user.uid; // Get the user ID from the created user
+        const user = auth.currentUser;
+        const uid = user.uid;
+        try {
+            await updatePassword(user, password);
+        }
+        catch (error) {
+            if (error.code == 'auth/requires-recent-login') {
+                console.error("Account creation timed out: ", error.message);
+                alert("Account creation timed out. Please try logging in again.");
+                await signOut(auth);
+                router.push('/login');
+                return
+            }
+            else {
+                console.error("Failed to change password: ", error.message);
+                throw error;
+            }
+        }
 
-      // Create a document in Firestore in "users" collection with UID as the document key
-      await setDoc(doc(db, "users", uid), {
-        firstName,
-        lastName,
-        email,
-        birthday,
-      });
+        // Create a document in Firestore in "users" collection with UID as the document key
+        await setDoc(doc(db, "users", uid), {
+            created_at: new Date(),
+            first_name: firstName,
+            last_name: lastName,
+            birthday, 
+        });
 
-      // Redirect to profile page or any other page as needed
-      router.push("/profile");
+        // Redirect to profile page or any other page as needed
+        router.push('/profile'); 
     } catch (error) {
       Sentry.captureException(error);  //need to add password checks for size, and etc to make this defualt
       console.error("Error creating account:", error);

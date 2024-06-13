@@ -25,12 +25,6 @@ const NavBar = () => {
                     <span className="text-xs">Write Letter</span>
                 </button>
             </Link>
-            <Link href="/myletters">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaInbox className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">My Letters</span>
-                </button>
-            </Link>
             <Link href="/discovery">
                 <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
                     <FaCompass className="h-6 w-6 hover:text-[#666666]" />
