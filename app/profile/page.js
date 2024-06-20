@@ -9,7 +9,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from '../firebaseConfig'; 
 import { updateDoc } from "firebase/firestore";
 import BottomNavBar from '@/components/bottom-nav-bar';
-
+import * as Sentry from "@sentry/nextjs";
 
 export default function EditProfile() {
     // State initializations
@@ -33,6 +33,7 @@ export default function EditProfile() {
 
     useEffect(() => {
         const fetchUserData = async () => {
+            try {
             if (auth.currentUser) {
                 const uid = auth.currentUser.uid;
                 const docRef = doc(db, "users", uid);
@@ -59,6 +60,10 @@ export default function EditProfile() {
             } else {
                 console.log("No user logged in");
                 router.push('/login');
+            }
+            } catch(error) {
+                Sentry.captureException(error);
+                console.error("There has been a error fetching user data")
             }
         };
     
@@ -95,7 +100,9 @@ export default function EditProfile() {
                 await updateDoc(userProfileRef, userProfile);
                 alert('Profile saved successfully!');
             } catch (error) {
-                alert('Error saving profile');
+                Sentry.captureException(error);
+                console.error("Error saving profile: ", error);
+                alert('Error saving profile.');
             }
         } else {
             alert('No user logged in.');
@@ -125,6 +132,7 @@ export default function EditProfile() {
             // User is signed out
             router.push('/login');
         } catch (error) {
+            Sentry.captureException(error);
             console.error("Error signing out: ", error);
         }
     };
