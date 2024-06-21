@@ -10,7 +10,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebaseConfig';
-
+import * as Sentry from "@sentry/nextjs";
 import { FiFileText, FiMic, FiSend } from "react-icons/fi";
 import BottomNavBar from '@/components/bottom-nav-bar';
 
@@ -28,6 +28,7 @@ export default function WriteLetter() {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      try {
       const usersCollectionRef = collection(db, "users");
       const snapshot = await getDocs(usersCollectionRef);
       const usersList = snapshot.docs.map((doc) => ({
@@ -35,6 +36,10 @@ export default function WriteLetter() {
         ...doc.data(),
       }));
       setUsers(usersList);
+      } catch(error) {
+        Sentry.captureException(error);
+        console.error("There has been a error fetching users")
+      }
     };
 
     fetchUsers();
@@ -68,6 +73,7 @@ export default function WriteLetter() {
       setIsSending(false);
       // Optionally redirect the user or update UI to reflect the letter has been sent
     } catch (error) {
+      Sentry.captureException(error);
       console.error("Error sending letter: ", error);
       alert("Failed to send the letter.");
       setIsSending(false);

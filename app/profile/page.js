@@ -9,6 +9,7 @@ import { doc, getDoc} from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import HobbySelect from "@/components/general/HobbySelect";
+import * as Sentry from "@sentry/nextjs";
 
 export default function EditProfile() {
   // State initializations
@@ -93,6 +94,7 @@ export default function EditProfile() {
         alert("Profile saved successfully!");
       } catch (error) {
         alert("Error saving profile");
+        Sentry.captureException("Error saving profile " + error);
       }
     } else {
       alert("No user logged in.");

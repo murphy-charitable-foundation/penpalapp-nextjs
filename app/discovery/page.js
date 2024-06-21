@@ -15,6 +15,7 @@ import { differenceInCalendarYears, parseISO } from "date-fns";
 import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 
 const PAGE_SIZE = 10; // Number of kids per page
 
@@ -120,6 +121,7 @@ export default function ChooseKid() {
       }
     } catch (error) {
       console.error("Error fetching kids:", error);
+      Sentry.captureException("Error fetching kids " + error);
     } finally {
       setLoading(false);
       setInitialLoad(false);

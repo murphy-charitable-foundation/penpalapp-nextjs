@@ -11,6 +11,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { differenceInCalendarYears } from 'date-fns';
 import BottomNavBar from '@/components/bottom-nav-bar';
+import * as Sentry from "@sentry/nextjs";
 
 
 
