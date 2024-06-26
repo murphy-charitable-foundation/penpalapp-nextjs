@@ -104,7 +104,7 @@ export const fetchLetters = async (id) => {
     const lRef = collection(letterboxRef, "letters");
     const letterboxQuery = query(
       lRef,
-      where("status", "==", "sent"),
+      // where("status", "==", "sent"),
       orderBy("timestamp")
     );
 

@@ -74,7 +74,7 @@ export default function Page({ params }) {
       setUserRef(userDocRef)
 
       const fetchMessages = async () => {
-        const messages = await fetchLetters(id, userRef)
+        const messages = await fetchLetters(id, userDocRef)
         setAllMessages(messages)
       }
       fetchMessages()
@@ -93,10 +93,7 @@ export default function Page({ params }) {
           where("sent_by", "==", userRef),
           where("draft", "==", true)
         );
-        console.log(1)
         const draftSnapshot = await getDocs(letterboxQuery);
-        console.log(draftSnapshot.docs?.[0]?.data())
-        // const draftDoc = draftSnapshot.docs.find(doc => doc.data().draft === true);
         if (draftSnapshot.docs?.[0]?.data()) {
           setDraft({ ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id })
           setLetterContent(draftSnapshot.docs?.[0].data().content)
@@ -281,8 +278,8 @@ export default function Page({ params }) {
         {isFileModalOpen && <FileModal />}
 
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages?.map(message => (
-            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`}>
+          {allMessages?.map((message, index) => (
+            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`} key={`${message.id}_${index}`}>
               {message.attachments?.length ? (
                 <div className="flex w-full">
                   {message.attachments?.map((att, i) => (
