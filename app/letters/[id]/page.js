@@ -74,7 +74,7 @@ export default function Page({ params }) {
       setUserRef(userDocRef)
 
       const fetchMessages = async () => {
-        const messages = await fetchLetters(id, userRef)
+        const messages = await fetchLetters(id, userDocRef)
         setAllMessages(messages)
       }
       fetchMessages()
@@ -91,12 +91,12 @@ export default function Page({ params }) {
         const letterboxQuery = query(
           lRef,
           where("sent_by", "==", userRef),
+          where("draft", "==", true)
         );
         const draftSnapshot = await getDocs(letterboxQuery);
-        const draftDoc = draftSnapshot.docs.find(doc => doc.data().draft === true);
-        if (draftDoc) {
-          setDraft({ ...draftDoc.data(), id: draftDoc.id })
-          setLetterContent(draftDoc.data().content)
+        if (draftSnapshot.docs?.[0]?.data()) {
+          setDraft({ ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id })
+          setLetterContent(draftSnapshot.docs?.[0].data().content)
         } else {
           const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true });
 
@@ -199,21 +199,26 @@ export default function Page({ params }) {
   const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
 
   useEffect(() => {
+    const populateRecipients = async () => {
+      try {
+        console.log("attempting")
+        const members = await fetchRecipients(id)
+        console.log("MEMBERS", members)
+        setRecipients(members)
+      } catch (e) {
+        console.error("err fetching members", e)
+      }
+    } 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        console.log("populate before")
+        populateRecipients()
+        console.log("populate after")
       } else {
         setUser(null);
       }
     });
-
-    const populateRecipients = async () => {
-      const members = await fetchRecipients(id)
-      setRecipients(members)
-    }
-
-    populateRecipients()
-
 
     return () => unsubscribe();
   }, []);
@@ -250,8 +255,8 @@ export default function Page({ params }) {
 
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
           {recipients?.length && recipients.map(recipient => (
-            <>
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden" key={recipient?.first_name?.[0]}>
+            <div key={recipient?.first_name?.[0]}>
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                 {recipient?.profile_picture ? (
                   <img src={recipient?.profile_picture} class="w-full h-full object-cover" />
                 ) : (
@@ -266,15 +271,15 @@ export default function Page({ params }) {
                 </h2>
                 <p className="text-sm text-gray-500">{recipient?.country}</p>
               </div>
-            </>
+            </div>
           ))}
         </div>
 
         {isFileModalOpen && <FileModal />}
 
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages?.map(message => (
-            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`}>
+          {allMessages?.map((message, index) => (
+            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`} key={`${message.id}_${index}`}>
               {message.attachments?.length ? (
                 <div className="flex w-full">
                   {message.attachments?.map((att, i) => (

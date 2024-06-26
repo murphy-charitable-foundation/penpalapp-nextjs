@@ -102,7 +102,11 @@ export const fetchLetters = async (id) => {
   if (userDocSnapshot.exists()) {
     const letterboxRef = doc(collection(db, "letterbox"), id);
     const lRef = collection(letterboxRef, "letters");
-    const letterboxQuery = query(lRef, orderBy("timestamp"));
+    const letterboxQuery = query(
+      lRef,
+      // where("status", "==", "sent"),
+      orderBy("timestamp")
+    );
 
     const draftSnapshot = await getDocs(letterboxQuery);
     const messages = [];
@@ -120,12 +124,21 @@ export const fetchLetters = async (id) => {
 export const fetchRecipients = async (id) => {
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const letterbox = await getDoc(query(letterboxRef))
+  console.log("lbox", letterbox)
   const users = letterbox.data().members.filter(m => m.id !== auth.currentUser.uid)
-  const members = await Promise.all(users.map(async user => {
-    const selectedUserDocRef = doc(db, "users", user.id);
-    const selUser = await getDoc(selectedUserDocRef);
-    return selUser.data();
-  }));
+  console.log("users", users)
+  const members = [];
+  for (const user of users) {
+    try {
+      const selectedUserDocRef = doc(db, "users", user.id);
+      const selUser = await getDoc(selectedUserDocRef);
+      console.log("user", selUser.data());
+      members.push(selUser.data());
+    } catch (e) {
+      console.log("ERR: ", e)
+    }
+  }
+  console.log("members to return", members)
   return members
 }
 
