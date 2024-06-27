@@ -24,10 +24,12 @@ export const fetchData = async () => {
 
       const sentLettersQuerySnapshot = await getDocs(
         query(lettersCollectionRef,
-          where("status", "==", 'sent'),
-          where("deleted_at", "==", null),
+          // where("status", "==", 'sent'),
+          where("content", "!=", null),
+          where("deleted", "==", null),
+          where("draft", "==", false),
           orderBy("created_at", "desc"),
-          limit(10)
+          limit(1)
         )
       );
       console.log("sent letter", sentLettersQuerySnapshot)
@@ -39,7 +41,7 @@ export const fetchData = async () => {
           letterboxId: doc.id,
           collectionId: queryDocumentSnapshots[0].id,
           receiver: letterboxData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
-          content: latestMessage.letter,
+          content: latestMessage.content,
           deleted: latestMessage.deleted_at,
           created_at: latestMessage.created_at,
         });
@@ -58,7 +60,7 @@ export const fetchData = async () => {
       if (!pendingLettersQuerySnapshot.empty) {
         const queryDocumentSnapshots = pendingLettersQuerySnapshot.docs
         const latestMessage = queryDocumentSnapshots[0].data()
-        messages.push({
+        messages.unshift({
           letterboxId: doc.id,
           collectionId: queryDocumentSnapshots[0].id,
           receiver: letterboxData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
@@ -69,21 +71,7 @@ export const fetchData = async () => {
         });
       }
     }
-    function findLatestMessages(messages) {
-      const latestMessagesMap = new Map();
-      for (const message of messages) {
-        if (latestMessagesMap.has(message.letterboxId)) {
-          const currentLatestMessage = latestMessagesMap.get(message.letterboxId);
-          if (message.created_at.seconds > currentLatestMessage.created_at.seconds) {
-            latestMessagesMap.set(message.letterboxId, message);
-          }
-        } else {
-          latestMessagesMap.set(message.letterboxId, message);
-        }
-      }
-      return Array.from(latestMessagesMap, ([_name, value]) => value)
-    }
-    return findLatestMessages(messages)
+    return messages
   }
 };
 
