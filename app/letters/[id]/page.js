@@ -55,6 +55,7 @@ export default function Page({ params }) {
       sent_by: userRef, // Directly using the uid from auth.currentUser
       status: "pending_review",
       created_at: new Date(),
+      deleted: null,
       draft: false
     };
 
@@ -98,9 +99,9 @@ export default function Page({ params }) {
           setDraft({ ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id })
           setLetterContent(draftSnapshot.docs?.[0].data().content)
         } else {
-          const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true });
+          const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true, deleted: null });
 
-          setDraft({ sent_by: userRef, content: "", draft: true, id: d.id })
+          setDraft({ sent_by: userRef, content: "", draft: true, id: d.id, deleted: null })
           setLetterContent("")
         }
       }
@@ -117,6 +118,7 @@ export default function Page({ params }) {
           content: letterContent,
           sent_by: userRef,
           timestamp: new Date(),
+          deteled: null,
           draft: true,
           attachments
         };
@@ -201,9 +203,7 @@ export default function Page({ params }) {
   useEffect(() => {
     const populateRecipients = async () => {
       try {
-        console.log("attempting")
         const members = await fetchRecipients(id)
-        console.log("MEMBERS", members)
         setRecipients(members)
       } catch (e) {
         console.error("err fetching members", e)
@@ -212,9 +212,7 @@ export default function Page({ params }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        console.log("populate before")
         populateRecipients()
-        console.log("populate after")
       } else {
         setUser(null);
       }
@@ -234,7 +232,7 @@ export default function Page({ params }) {
           </Link>
           <button className="opacity-0">{"<"}</button>
           <div className="flex justify-between items-center p-4">
-            <span className="text-black">0 files</span>
+            <span className="text-black">{attachments.length} files</span>
             <div className="space-x-2">
               <button className="text-black p-2 rounded-full" onClick={openFileModal}>
                 <BsPaperclip className="h-6 w-6 rotate-90" />

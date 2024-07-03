@@ -58,7 +58,6 @@ export default function Home() {
 					const rec = await fetchRecipients(l.letterboxId)
 					l.recipients = rec
 				}
-				console.log(letters)
 				setLetters(letters)
 
 			} else {
