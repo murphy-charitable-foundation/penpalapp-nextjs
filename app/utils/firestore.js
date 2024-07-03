@@ -27,7 +27,7 @@ export const fetchData = async () => {
         // where("content", "!=", ''), // Exclude empty messages
         // where("deleted", "==", false),
         where("draft", "==", true),
-        // where('sentBy', "==", userDocRef),
+        where('sent_by', "==", userDocRef),
         orderBy("timestamp"),
         limit(1)
       )

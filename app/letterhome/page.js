@@ -122,6 +122,7 @@ export default function Home() {
 												<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
 											</div>
 										))}
+										{letter.draft  && <h4>[DRAFT]</h4>}
 										<p className="text-gray-600 truncate">{letter.content}</p>
 										<span className="text-xs text-gray-400">{letter.received}</span>
 									</div>
