@@ -118,7 +118,7 @@ export default function Page({ params }) {
           content: letterContent,
           sent_by: userRef,
           timestamp: new Date(),
-          deteled: null,
+          deleted: null,
           draft: true,
           attachments
         };
