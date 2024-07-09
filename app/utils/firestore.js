@@ -10,7 +10,9 @@ export const fetchData = async () => {
     return
   }
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+  console.log(auth.currentUser.uid)
   const userDocSnapshot = await getDoc(userDocRef);
+  console.log(userDocSnapshot)
 
   if (userDocSnapshot.exists()) {
     const letterboxQuery = query(collection(db, "letterbox"), where("members", "array-contains", userDocRef));
@@ -24,14 +26,11 @@ export const fetchData = async () => {
       const lRef = collection(letterboxRef, "letters");
       const draftQuery = query(
         lRef,
-        // where("content", "!=", ''), // Exclude empty messages
-        // where("deleted", "==", false),
         where("draft", "==", true),
         where('sent_by', "==", userDocRef),
         orderBy("timestamp"),
         limit(1)
       )
-      // sentBy userRef currently not working
       const draftSnapshot = await getDocs(draftQuery);
       console.log("DRAFT", draftSnapshot)
       if (!draftSnapshot.empty) {
@@ -47,7 +46,6 @@ export const fetchData = async () => {
           created_at: latestMessage.created_at,
         });
       } else {
-        console.log("no draft")
         const letterboxQuery = query(
           lRef,
           where("content", "!=", ''), // Exclude empty messages
@@ -57,6 +55,7 @@ export const fetchData = async () => {
         );
   
         const snapshot = await getDocs(letterboxQuery);
+        console.log(snapshot)
   
         if (!snapshot.empty) {
           const queryDocumentSnapshots = snapshot.docs;
@@ -121,7 +120,7 @@ export const fetchRecipients = async (id) => {
     try {
       const selectedUserDocRef = doc(db, "users", user.id);
       const selUser = await getDoc(selectedUserDocRef);
-      members.push(selUser.data());
+      members.push({...selUser.data(), id: selectedUserDocRef.id});
     } catch (e) {
       console.log("ERR: ", e)
     }

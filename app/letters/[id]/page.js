@@ -200,6 +200,10 @@ export default function Page({ params }) {
 
   const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
 
+  const messageIsUsers = (recipients, message) => {
+    return !recipients?.some(r => r.id === message.sent_by?._key?.path?.segments[message.sent_by?._key?.path?.segments?.length - 1])
+  }
+
   useEffect(() => {
     const populateRecipients = async () => {
       try {
@@ -277,9 +281,9 @@ export default function Page({ params }) {
 
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
           {allMessages?.map((message, index) => (
-            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''}`} key={`${message.id}_${index}`}>
+            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''} ${messageIsUsers(recipients, message) ? 'text-right justify-end' : 'text-left'}`} key={`${message.id}_${index}`}>
               {message.attachments?.length ? (
-                <div className="flex w-full">
+                <div className={`flex w-full`}>
                   {message.attachments?.map((att, i) => (
                     <div key={i} className="max-h-[80px]">
                       <img src={att} />
