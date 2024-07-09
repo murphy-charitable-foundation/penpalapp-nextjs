@@ -55,7 +55,6 @@ export const fetchData = async () => {
         );
   
         const snapshot = await getDocs(letterboxQuery);
-        console.log(snapshot)
   
         if (!snapshot.empty) {
           const queryDocumentSnapshots = snapshot.docs;
