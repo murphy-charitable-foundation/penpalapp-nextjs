@@ -20,6 +20,7 @@ import { MdInsertDriveFile } from "react-icons/md";
 import BottomNavBar from '@/components/bottom-nav-bar';
 import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
+import { fetchDraft, fetchLetterbox } from "@/app/utils/letterboxFunctions";
 
 
 export default function Page({ params }) {
@@ -75,7 +76,7 @@ export default function Page({ params }) {
       setUserRef(userDocRef)
 
       const fetchMessages = async () => {
-        const messages = await fetchLetters(id, userDocRef)
+        const messages = await fetchLetterbox(id)
         setAllMessages(messages)
       }
       fetchMessages()
@@ -89,21 +90,9 @@ export default function Page({ params }) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef)
-        const letterboxQuery = query(
-          lRef,
-          where("sent_by", "==", userRef),
-          where("draft", "==", true)
-        );
-        const draftSnapshot = await getDocs(letterboxQuery);
-        if (draftSnapshot.docs?.[0]?.data()) {
-          setDraft({ ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id })
-          setLetterContent(draftSnapshot.docs?.[0].data().content)
-        } else {
-          const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true, deleted: null });
-
-          setDraft({ sent_by: userRef, content: "", draft: true, id: d.id, deleted: null })
-          setLetterContent("")
-        }
+        const d = await fetchDraft(id, userRef)
+        setDraft(d)
+        setLetterContent(d.content)
       }
     }
     getSelectedUser()
