@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore"
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, updateDoc, where } from "firebase/firestore"
 import { auth, db } from "../firebaseConfig"
 
 const getUserDoc = async () => {
@@ -68,4 +68,43 @@ export const fetchDraft = async (id, userRef) => {
     draft = { sent_by: userRef, content: "", draft: true, id: d.id, deleted: null }
   }
   return draft
+}
+
+export const fetchRecipients = async (id) => {
+  const letterboxRef = doc(collection(db, "letterbox"), id);
+  const letterbox = await getDoc(letterboxRef);
+
+  const retryFetch = () => setTimeout(() => fetchRecipients(id), 2000);
+  if (!auth.currentUser?.uid) {
+    retryFetch();
+    return
+  }
+
+  const currentUserUid = auth.currentUser.uid;
+
+  const users = letterbox.data().members.filter((m) => m.id !== currentUserUid);
+  const members = [];
+
+  for (const user of users) {
+    try {
+      const selectedUserDocRef = doc(db, "users", user.id);
+      const selUser = await getDoc(selectedUserDocRef);
+      members.push({ ...selUser.data(), id: selectedUserDocRef.id });
+    } catch (e) {
+      console.error("Error fetching user:", e);
+    }
+  }
+  return members;
+};
+
+
+export const sendLetter = async (letterData, letterRef, draftId) => {
+  try {
+    await updateDoc(doc(letterRef, draftId), letterData)
+    return true
+  } catch (e) {
+    console.log("Failed to send letter: ", e)
+    return false
+  }
+
 }

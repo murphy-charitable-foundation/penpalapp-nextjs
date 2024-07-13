@@ -18,9 +18,9 @@ import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
 import BottomNavBar from '@/components/bottom-nav-bar';
-import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
+// import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
-import { fetchDraft, fetchLetterbox } from "@/app/utils/letterboxFunctions";
+import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 
 
 export default function Page({ params }) {
@@ -28,12 +28,10 @@ export default function Page({ params }) {
 
   const [letterContent, setLetterContent] = useState("");
   const [user, setUser] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
   const [draft, setDraft] = useState(null)
   const [userRef, setUserRef] = useState(null)
-  const [selectedUserRef, setSelectedUserRef] = useState(null)
   const [allMessages, setAllMessages] = useState(null)
   const [recipients, setRecipients] = useState(null)
   const [debounce, setDebounce] = useState(0)
@@ -60,13 +58,12 @@ export default function Page({ params }) {
       draft: false
     };
 
-    try {
-      await updateDoc(doc(lettersRef, draft.id), letterData)
-      alert("Letter sent successfully!");
-      setLetterContent("");
-    } catch (error) {
-      console.error("Error sending letter: ", error);
-      alert("Failed to send the letter.");
+    const letterStatus = await sendLetter(letterData, lettersRef,  draft.id)
+    if(letterStatus) {
+      setLetterContent("")
+      window.location.refresh();
+    } else {
+      alert("Failed to send your letter, please try again.")
     }
   };
 
