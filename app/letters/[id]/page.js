@@ -98,7 +98,6 @@ export default function Page({ params }) {
   useEffect(() => {
     setDebounce(debounce + 1)
     const updateDraft = async () => {
-      console.log('sending')
       if (userRef && lettersRef) {
         const letterData = {
           content: letterContent,
@@ -108,13 +107,10 @@ export default function Page({ params }) {
           draft: true,
           attachments
         };
-        try {
-          console.log('updating draft', draft.id)
-          await updateDoc(doc(lettersRef, draft.id), letterData);
-        } catch (e) {
-          console.error("failed", e)
+        const draftStatus = await sendLetter(letterData, lettersRef, draft.id)
+        if(!draftStatus) {
+          console.log("Error updating draft")
         }
-
       }
     }
     if (debounce >= 20) {
@@ -238,7 +234,6 @@ export default function Page({ params }) {
               </button>
             </div>
           </div>
-
         </div>
 
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
@@ -254,9 +249,7 @@ export default function Page({ params }) {
                 )}
               </div>
               <div key={`${recipient?.first_name?.[0]}_`}>
-                <h2 className="font-bold text-black">
-                  {recipient?.first_name} {recipient?.last_name}
-                </h2>
+                <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
                 <p className="text-sm text-gray-500">{recipient?.country}</p>
               </div>
             </div>
@@ -281,7 +274,6 @@ export default function Page({ params }) {
             </div>
           ))
           }
-
         </div>
 
         <textarea

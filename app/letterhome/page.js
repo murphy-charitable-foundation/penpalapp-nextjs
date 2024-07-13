@@ -1,23 +1,16 @@
 "use client"
 
-
 // pages/index.js
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { db, auth } from '../firebaseConfig'; // Adjust the import path as necessary
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from 'firebase/firestore';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { differenceInCalendarYears } from 'date-fns';
 import BottomNavBar from '@/components/bottom-nav-bar';
 
-
-
-import { FaUserCircle, FaRegEnvelope, FaCompass, FaInfoCircle, FaPhone, FaDonate, FaCog, FaBell, FaPen, FaUserAlt, FaHandHoldingHeart, FaInfo, FaEnvelopeOpenText } from 'react-icons/fa';
-import { fetchData, fetchRecipients } from '../utils/firestore';
-
-
+import { FaUserCircle, FaCog, FaBell, FaPen } from 'react-icons/fa';
+// import { fetchData, fetchRecipients } from '../utils/firestore';
+import { fetchLetterbox, fetchLetterboxes, fetchRecipients } from '../utils/letterboxFunctions';
 
 export default function Home() {
 	const [userName, setUserName] = useState('');
@@ -51,19 +44,27 @@ export default function Home() {
 	useEffect(() => {
 		setIsLoading(true);
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
-			if (user) {
-				const letters = await fetchData()
-				// this will be slow but may be the only way
-				for await (const l of letters) {
-					const rec = await fetchRecipients(l.letterboxId)
-					l.recipients = rec
-				}
-				setLetters(letters)
-
-			} else {
+			if(!user){
 				setError('No user logged in.');
 				setIsLoading(false);
 			}
+			const letterboxes = await fetchLetterboxes()
+			const letterboxIds = letterboxes.map(l => l.id)
+			let letters = []
+			for(const id of letterboxIds) {
+				const letterbox = { id }
+				// check if a draft has been created
+				// if not we return the most recent message
+				// else we return the draft
+				letterbox.letters = await fetchLetterbox(id, 1)
+				letters.push(letterbox)
+			}
+			// this will be slow but may be the only way
+			for await (const l of letters) {
+				const rec = await fetchRecipients(l.id)
+				l.recipients = rec
+			}
+			setLetters(letters)
 		});
 
 		return () => unsubscribe();
@@ -106,7 +107,7 @@ export default function Home() {
 						</h2>
 						{letters.length > 0 ? (
 							letters.map((letter, i) => (
-								<a key={letter.id + '_' + i} href={`/letters/${letter.letterboxId}`} className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+								<a key={letter.id + '_' + i} href={`/letters/${letter.id}`} className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
 									<div className="flex-grow">
 										{letter.recipients?.map(rec => (
 											<div key={rec.first_name + '_' + rec.last_name} className='flex'>
@@ -123,8 +124,8 @@ export default function Home() {
 											</div>
 										))}
 										{letter.draft  && <h4>[DRAFT]</h4>}
-										<p className="text-gray-600 truncate">{letter.content}</p>
-										<span className="text-xs text-gray-400">{letter.received}</span>
+										<p className="text-gray-600 truncate">{letter.letters[0].content}</p>
+										<span className="text-xs text-gray-400">{letter.letters[0].received}</span>
 									</div>
 								</a>
 							))
