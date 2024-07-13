@@ -61,7 +61,7 @@ export const fetchLetterbox = async (id, lim = false) => {
 
 }
 
-export const fetchDraft = async (id, userRef) => {
+export const fetchDraft = async (id, userRef, createNew = false) => {
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const lRef = collection(letterboxRef, "letters");
   const letterboxQuery = query(
@@ -78,7 +78,7 @@ export const fetchDraft = async (id, userRef) => {
   let draft
   if (draftSnapshot.docs?.[0]?.data()) {
     draft = { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
-  } else {
+  } else if (createNew) {
     const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true, deleted: null });
     draft = { sent_by: userRef, content: "", draft: true, id: d.id, deleted: null }
   }

@@ -10,7 +10,7 @@ import BottomNavBar from '@/components/bottom-nav-bar';
 
 import { FaUserCircle, FaCog, FaBell, FaPen } from 'react-icons/fa';
 // import { fetchData, fetchRecipients } from '../utils/firestore';
-import { fetchLetterbox, fetchLetterboxes, fetchRecipients } from '../utils/letterboxFunctions';
+import { fetchDraft, fetchLetterbox, fetchLetterboxes, fetchRecipients } from '../utils/letterboxFunctions';
 
 export default function Home() {
 	const [userName, setUserName] = useState('');
@@ -53,10 +53,13 @@ export default function Home() {
 			let letters = []
 			for(const id of letterboxIds) {
 				const letterbox = { id }
-				// check if a draft has been created
-				// if not we return the most recent message
-				// else we return the draft
-				letterbox.letters = await fetchLetterbox(id, 1)
+				const userRef = doc(db, "users", auth.currentUser.uid);
+				const draft = await fetchDraft(id, userRef, true)
+				if(draft) {
+					letterbox.letters = [draft]
+				} else {
+					letterbox.letters = await fetchLetterbox(id, 1)
+				}
 				letters.push(letterbox)
 			}
 			// this will be slow but may be the only way
@@ -123,8 +126,8 @@ export default function Home() {
 												<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
 											</div>
 										))}
-										{letter.draft  && <h4>[DRAFT]</h4>}
-										<p className="text-gray-600 truncate">{letter.letters[0].content}</p>
+										{letter.letters[0].draft  && <h4>[DRAFT]</h4>}
+										<p className="text-gray-600 truncate">{letter.letters[0].content ?? ''}</p>
 										<span className="text-xs text-gray-400">{letter.letters[0].received}</span>
 									</div>
 								</a>
