@@ -45,6 +45,7 @@ export default function Home() {
 		setIsLoading(true);
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if(!user){
+				// TODO: redirect if everything is loaded and still no user
 				setError('No user logged in.');
 				setIsLoading(false);
 			}
@@ -113,6 +114,7 @@ export default function Home() {
 								<a key={letter.id + '_' + i} href={`/letters/${letter.id}`} className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
 									<div className="flex-grow">
 										{letter.recipients?.map(rec => (
+											// TODO: change to an id not the name
 											<div key={rec.first_name + '_' + rec.last_name} className='flex'>
 												<div className="w-12 h-12 relative mr-4">
 												{rec?.profile_picture ? (

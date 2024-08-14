@@ -60,6 +60,7 @@ export default function EditProfile() {
                 }
             } else {
                 console.log("No user logged in");
+                // TODO: redirect if everything is loaded and still no user
                 router.push('/login');
             }
         };
