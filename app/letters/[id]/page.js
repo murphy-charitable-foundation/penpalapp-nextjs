@@ -61,7 +61,7 @@ export default function Page({ params }) {
     const letterStatus = await sendLetter(letterData, lettersRef,  draft.id)
     if(letterStatus) {
       setLetterContent("")
-      window.location.refresh();
+      // TODO: refresh the page
     } else {
       alert("Failed to send your letter, please try again.")
     }
