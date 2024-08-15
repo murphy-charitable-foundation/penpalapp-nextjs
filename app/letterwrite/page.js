@@ -10,13 +10,14 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebaseConfig';
-
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
+import * as Sentry from "@sentry/nextjs";
+import { FiFileText, FiMic, FiSend } from "react-icons/fi";
 import BottomNavBar from '@/components/bottom-nav-bar';
 import { fetchData } from "../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
@@ -30,6 +31,7 @@ export default function WriteLetter() {
   const [selectedUser, setSelectedUser] = useState(null);
   const auth = getAuth();
   const [currentUser, setCurrentUser] = useState(null);
+
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
   const [draft, setDraft] = useState(null)
   const [userRef, setUserRef] = useState(null)
@@ -40,6 +42,26 @@ export default function WriteLetter() {
   const [debounce, setDebounce] = useState(0)
   const [lettersRef, setLettersRef] = useState(null)
   const [attachments, setAttachments] = useState([])
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+      const usersCollectionRef = collection(db, "users");
+      const snapshot = await getDocs(usersCollectionRef);
+      const usersList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(usersList);
+      } catch(error) {
+        Sentry.captureException(error);
+        console.error("There has been a error fetching users")
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !selectedUser) {
@@ -71,6 +93,7 @@ export default function WriteLetter() {
       // setIsSending(false);
 
     } catch (error) {
+      Sentry.captureException(error);
       console.error("Error sending letter: ", error);
       alert("Failed to send the letter.");
       // setIsSending(false);

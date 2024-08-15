@@ -7,6 +7,7 @@ import { db, auth } from '../firebaseConfig'; // Adjust the import path as neces
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from 'firebase/firestore';
 import BottomNavBar from '@/components/bottom-nav-bar';
+import * as Sentry from "@sentry/nextjs";
 
 import { FaUserCircle, FaCog, FaBell, FaPen } from 'react-icons/fa';
 // import { fetchData, fetchRecipients } from '../utils/firestore';

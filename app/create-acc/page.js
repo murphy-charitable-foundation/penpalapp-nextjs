@@ -11,6 +11,7 @@ import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "@/components/edit-profile";
+import * as Sentry from "@sentry/nextjs";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -55,6 +56,7 @@ export default function CreateAccount() {
             first_name: firstName,
             last_name: lastName,
             birthday, 
+            connected_penpals_count: 0
         });
 
       setShowCreate(false)
@@ -62,7 +64,9 @@ export default function CreateAccount() {
       // Redirect to profile page or any other page as needed
       // router.push("/profile");
     } catch (error) {
-        alert(error.message);
+      Sentry.captureException(error);  //need to add password checks for size, and etc to make this defualt
+      console.error("Error creating account:", error);
+      alert(error.message);
     }
   };
 
