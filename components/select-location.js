@@ -16,8 +16,8 @@ const SelectProfileLocation = ({ updateStage, countries, location, setLocation }
 					onChange={(e) => setLocation(e.target.value)}
 					className="w-full p-3 border border-gray-300 rounded-md text-black"
 				>
-					{countries?.length && countries.map(c => (
-						<option value={c.name}>{c.name}</option>
+					{countries?.length && countries.map(c, index => (
+						<option key={index} value={c.name}>{c.name}</option>
 					))}
 				</select>
 			</div>
