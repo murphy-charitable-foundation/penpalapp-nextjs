@@ -171,9 +171,9 @@ export default function Page({ params }) {
         </label>
 
         <h3 className="font-600 mt-4">Selected</h3>
-        {attachments.map(att => (
-          <div>
-            <img src={att} />
+        {attachments.map(att, index => (
+          <div key={index}>
+            <img src={att}/>
           </div>
         ))}
       </div>
