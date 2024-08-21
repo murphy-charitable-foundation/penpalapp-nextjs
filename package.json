@@ -19,6 +19,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.0.1",
+    "react-photo-view": "^1.2.6",
     "react-select": "^5.8.0"
   },
   "devDependencies": {
