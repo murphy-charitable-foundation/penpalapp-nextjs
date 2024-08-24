@@ -123,12 +123,7 @@ const LetterCard = ({ unread = false }) => {
                       size="sm"
                       onClick={() => inputFile.current.click()}
                     >
-                      <Image
-                        src="/filesicon.png"
-                        alt="file-attachement"
-                        width={100}
-                        height={100}
-                      />
+                      <IoIosAttach />
                     </Button>
                   </div>
                   <Button type="success" size="sm" onClick={onSend}>
