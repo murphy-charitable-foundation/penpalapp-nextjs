@@ -18,7 +18,6 @@ import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
 import BottomNavBar from '@/components/bottom-nav-bar';
-// import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 
@@ -32,7 +31,7 @@ export default function Page({ params }) {
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
   const [draft, setDraft] = useState(null)
   const [userRef, setUserRef] = useState(null)
-  const [allMessages, setAllMessages] = useState(null)
+  const [allMessages, setAllMessages] = useState([])
   const [recipients, setRecipients] = useState(null)
   const [debounce, setDebounce] = useState(0)
   const [lettersRef, setLettersRef] = useState(null)
@@ -61,10 +60,13 @@ export default function Page({ params }) {
     const letterStatus = await sendLetter(letterData, lettersRef,  draft.id)
     if(letterStatus) {
       setLetterContent("")
-      // TODO: refresh the page
     } else {
       alert("Failed to send your letter, please try again.")
     }
+    // refresh the data
+    const messages = await fetchLetterbox(id)
+    setAllMessages(messages)
+
   };
 
   useEffect(() => {
@@ -259,7 +261,7 @@ export default function Page({ params }) {
         {isFileModalOpen && <FileModal />}
 
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages?.map((message, index) => (
+          {allMessages.length && allMessages?.map((message, index) => (
             <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''} ${messageIsUsers(recipients, message) ? 'text-right justify-end' : 'text-left'}`} key={`${message.id}_${index}`}>
               {message.attachments?.length ? (
                 <div className={`flex w-full`}>

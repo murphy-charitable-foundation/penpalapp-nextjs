@@ -43,17 +43,23 @@ export const fetchLetterbox = async (id, lim = false) => {
     query(
       lRef,
       where("draft", "==", false),
+      where("status", "==", "approved"),
       orderBy("timestamp"),
       limit(lim),
-    ) 
-    : query(lRef, where("draft", "==", false), orderBy("timestamp"));
+    )
+    : query(
+      lRef,
+      where("draft", "==", false),
+      where("status", "==", "approved"),
+      orderBy("timestamp")
+    );
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
   
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
       .filter((letterboxData) => !letterboxData.draft);
-    return messages
+    return messages.length ? messages : []
   } catch ( e ) { 
     console.log("Error fetching letterbox: ", e)
     return {}
