@@ -54,7 +54,7 @@ export default function Home() {
 				const letterbox = { id }
 				const userRef = doc(db, "users", auth.currentUser.uid);
 				const draft = await fetchDraft(id, userRef, true)
-				if(draft) {
+				if(draft?.content?.length) {
 					letterbox.letters = [draft]
 				} else {
 					letterbox.letters = await fetchLetterbox(id, 1)

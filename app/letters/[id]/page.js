@@ -5,9 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { db, storage } from "../../firebaseConfig"; // Adjust this path as necessary
-import { collection, addDoc, getDocs, getDoc, doc, query, where, updateDoc } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../../firebaseConfig';
 
@@ -202,7 +201,7 @@ export default function Page({ params }) {
         populateRecipients()
       } else {
         setUser(null);
-        Router.push("/login");
+        router.push("/login");
       }
     });
 
