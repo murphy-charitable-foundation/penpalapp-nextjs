@@ -89,16 +89,10 @@ export default function CreateAccount() {
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          {showCreate && (
             <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">
               Create account
             </h2>
-          )}
-          {/* <div className="h-6 w-6"></div> */}
         </div>
-        {showCreate ? (
-          // TODO: the create account page is currently shown conditionally. This needs to appear in all cases
-          <>
           <div className="flex justify-center mb-6">
             <Image
               src="/murphylogo.png"
@@ -229,10 +223,7 @@ export default function CreateAccount() {
                 Create Account
               </button>
             </form>
-          </>
-        ) : (
-          <EditProfileImage router={router} />
-        )}
+          {/* <EditProfileImage router={router} /> */}
       </div>
     </div>
   );
