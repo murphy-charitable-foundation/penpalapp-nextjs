@@ -10,7 +10,6 @@ import BottomNavBar from '@/components/bottom-nav-bar';
 import * as Sentry from "@sentry/nextjs";
 
 import { FaUserCircle, FaCog, FaBell, FaPen } from 'react-icons/fa';
-// import { fetchData, fetchRecipients } from '../utils/firestore';
 import { fetchDraft, fetchLetterbox, fetchLetterboxes, fetchRecipients } from '../utils/letterboxFunctions';
 
 export default function Home() {
@@ -34,8 +33,6 @@ export default function Home() {
 				} else {
 					console.log("No such document!");
 				}
-			} else {
-				console.log("No user logged in");
 			}
 		};
 
@@ -46,9 +43,9 @@ export default function Home() {
 		setIsLoading(true);
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
 			if(!user){
-				// TODO: redirect if everything is loaded and still no user
 				setError('No user logged in.');
 				setIsLoading(false);
+				router.push("/login");
 			}
 			const letterboxes = await fetchLetterboxes()
 			const letterboxIds = letterboxes.map(l => l.id)

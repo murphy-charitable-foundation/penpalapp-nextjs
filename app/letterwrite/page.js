@@ -309,6 +309,7 @@ export default function WriteLetter() {
         setUser(currentUser);
       } else {
         setUser(null);
+        router.push("/login");
       }
     });
 

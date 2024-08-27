@@ -57,16 +57,15 @@ export default function Page({ params }) {
       draft: false
     };
 
-    const letterStatus = await sendLetter(letterData, lettersRef,  draft.id)
-    if(letterStatus) {
+    const letterStatus = await sendLetter(letterData, lettersRef, draft.id)
+    if (letterStatus) {
       setLetterContent("")
     } else {
       alert("Failed to send your letter, please try again.")
     }
-    // refresh the data
+    // TODO: UI FIX we need a message to let the user know we are awaiting approval
     const messages = await fetchLetterbox(id)
     setAllMessages(messages)
-
   };
 
   useEffect(() => {
@@ -110,7 +109,7 @@ export default function Page({ params }) {
           attachments
         };
         const draftStatus = await sendLetter(letterData, lettersRef, draft.id)
-        if(!draftStatus) {
+        if (!draftStatus) {
           console.log("Error updating draft")
         }
       }
@@ -175,7 +174,7 @@ export default function Page({ params }) {
         <h3 className="font-600 mt-4">Selected</h3>
         {attachments.map(att, index => (
           <div key={index}>
-            <img src={att}/>
+            <img src={att} />
           </div>
         ))}
       </div>
@@ -196,13 +195,14 @@ export default function Page({ params }) {
       } catch (e) {
         console.error("err fetching members", e)
       }
-    } 
+    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
         populateRecipients()
       } else {
         setUser(null);
+        Router.push("/login");
       }
     });
 
