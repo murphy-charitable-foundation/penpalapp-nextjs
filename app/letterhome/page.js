@@ -42,7 +42,7 @@ export default function Home() {
 	useEffect(() => {
 		setIsLoading(true);
 		const unsubscribe = onAuthStateChanged(auth, async (user) => {
-			if(!user){
+			if (!user) {
 				setError('No user logged in.');
 				setIsLoading(false);
 				router.push("/login");
@@ -50,11 +50,11 @@ export default function Home() {
 			const letterboxes = await fetchLetterboxes()
 			const letterboxIds = letterboxes.map(l => l.id)
 			let letters = []
-			for(const id of letterboxIds) {
+			for (const id of letterboxIds) {
 				const letterbox = { id }
 				const userRef = doc(db, "users", auth.currentUser.uid);
 				const draft = await fetchDraft(id, userRef, true)
-				if(draft?.content?.length) {
+				if (draft?.content?.length) {
 					letterbox.letters = [draft]
 				} else {
 					letterbox.letters = await fetchLetterbox(id, 1)
@@ -114,18 +114,23 @@ export default function Home() {
 										{letter.recipients?.map(rec => (
 											<div key={rec.id} className='flex'>
 												<div className="w-12 h-12 relative mr-4">
-												{rec?.profile_picture ? (
-													<img src={rec?.profile_picture} class="w-full h-full object-cover" />
-												) : (
-													<span className="text-xl text-gray-600">
-														{rec?.first_name?.[0]}
-													</span>
-												)}
+													{rec?.profile_picture ? (
+														<img src={rec?.profile_picture} class="w-full h-full object-cover" />
+													) : (
+														<span className="text-xl text-gray-600">
+															{rec?.first_name?.[0]}
+														</span>
+													)}
 												</div>
-												<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
+												<div className="flex flex-col">
+													<div className='flex'>
+														{letter.letters[0].draft && <h4 className="mr-2">[DRAFT]</h4>}
+														<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
+													</div>
+													<div>{rec.country}</div>
+												</div>
 											</div>
 										))}
-										{letter.letters[0].draft  && <h4>[DRAFT]</h4>}
 										<p className="text-gray-600 truncate">{letter.letters[0].content ?? ''}</p>
 										<span className="text-xs text-gray-400">{letter.letters[0].received}</span>
 									</div>
