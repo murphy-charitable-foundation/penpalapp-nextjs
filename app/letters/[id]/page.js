@@ -8,7 +8,6 @@ import { db, storage } from "../../firebaseConfig"; // Adjust this path as neces
 import { collection, doc } from "firebase/firestore";
 import { useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { auth } from '../../firebaseConfig';
 
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
@@ -53,7 +52,6 @@ export default function Page({ params }) {
       status: "pending_review",
       created_at: new Date(),
       deleted: null,
-      draft: false
     };
 
     const letterStatus = await sendLetter(letterData, lettersRef, draft.id)
@@ -104,7 +102,7 @@ export default function Page({ params }) {
           sent_by: userRef,
           timestamp: new Date(),
           deleted: null,
-          draft: true,
+          status: "draft",
           attachments
         };
         const draftStatus = await sendLetter(letterData, lettersRef, draft.id)

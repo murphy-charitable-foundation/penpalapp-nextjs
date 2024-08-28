@@ -42,14 +42,12 @@ export const fetchLetterbox = async (id, lim = false) => {
   const letterboxQuery = lim ? 
     query(
       lRef,
-      where("draft", "==", false),
       where("status", "==", "approved"),
       orderBy("timestamp"),
       limit(lim),
     )
     : query(
       lRef,
-      where("draft", "==", false),
       where("status", "==", "approved"),
       orderBy("timestamp")
     );
@@ -73,7 +71,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   const letterboxQuery = query(
     lRef,
     where("sent_by", "==", userRef),
-    where("draft", "==", true),
+    where("status", "==", "draft"),
     limit(1)
   );
   const draftSnapshot = await getDocs(letterboxQuery);

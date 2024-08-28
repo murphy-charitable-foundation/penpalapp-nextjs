@@ -124,7 +124,7 @@ export default function Home() {
 												</div>
 												<div className="flex flex-col">
 													<div className='flex'>
-														{letter.letters[0].draft && <h4 className="mr-2">[DRAFT]</h4>}
+														{letter.letters[0].status === "draft" && <h4 className="mr-2">[DRAFT]</h4>}
 														<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
 													</div>
 													<div>{rec.country}</div>

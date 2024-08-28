@@ -1,4 +1,4 @@
-import { FieldPath, collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 export const fetchData = async () => {
@@ -26,7 +26,7 @@ export const fetchData = async () => {
       const lRef = collection(letterboxRef, "letters");
       const draftQuery = query(
         lRef,
-        where("draft", "==", true),
+        where("status", "==", "draft"),
         where('sent_by', "==", userDocRef),
         orderBy("timestamp"),
         limit(1)
@@ -41,7 +41,7 @@ export const fetchData = async () => {
           collectionId: queryDocumentSnapshots[0].id,
           receiver: letterboxData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
           content: latestMessage.content,
-          draft: latestMessage.draft,
+          status: latestMessage.status,
           deleted: latestMessage.deleted_at,
           created_at: latestMessage.created_at,
         });
@@ -50,7 +50,7 @@ export const fetchData = async () => {
           lRef,
           where("content", "!=", ''), // Exclude empty messages
           where("deleted", "==", false),
-          where("draft", "==", false),
+          where("status", "==", "approved"),
           orderBy("timestamp")
         );
   
@@ -64,7 +64,7 @@ export const fetchData = async () => {
             collectionId: queryDocumentSnapshots[0].id,
             receiver: letterboxData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
             content: latestMessage.content,
-            draft: latestMessage.draft,
+            status: latestMessage.status,
             deleted: latestMessage.deleted_at,
             created_at: latestMessage.created_at,
           });
