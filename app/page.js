@@ -22,7 +22,7 @@ export default function Home() {
 
       
       <div>
-        <h2 className="text-xl md:text-2xl font-semibold text-gray-700">Dedicated to Beloved Friend Aisu Stephen</h2>
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-700">Empowering 1 million underprivileged rural children in Africa through education and global connections</h2>
       </div>
 
       
