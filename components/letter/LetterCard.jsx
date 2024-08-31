@@ -1,30 +1,35 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { FaExclamationCircle } from "react-icons/fa";
-import { IoIosAttach, IoMdSend } from "react-icons/io";
 import ReportPopup from "./ReportPopup";
 import ImageViwer from "../ImageViewer";
 import ConfirmReportPopup from "./ConfirmReportPopup";
-import Button from "../Button";
+
 import Image from "next/image";
 
-const LetterCard = ({ unread = false }) => {
-  const [textArea, setTextArea] = useState("");
-  const [attachedFiles, setAttachedFiles] = useState([]);
+const LetterCard = ({
+  id,
+  attachments,
+  createdAt,
+  content,
+  unread = false,
+}) => {
   const [showFullMessage, setShowFullMessage] = useState(false);
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
 
-  const inputFile = useRef(null);
+  const formatDate = (createdAt) => {
+    const date = new Date(createdAt * 1000);
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
 
-  const onSend = () => {
-    console.log(inputFile.current.files);
-    console.log(textArea);
-  };
+    const ampm = hours >= 12 ? "PM" : "AM";
 
-  const handleFileChange = () => {
-    const files = [];
-    Object.values(inputFile.current.files).map((file) => files.push(file.name));
-    setAttachedFiles(files);
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+
+    const minutesFormatted = minutes < 10 ? "0" + minutes : minutes;
+
+    return `${hours}:${minutesFormatted} ${ampm}`;
   };
 
   return (
@@ -58,7 +63,7 @@ const LetterCard = ({ unread = false }) => {
             </div>
           </div>
           <div>
-            <p className="text-xs">15 March</p>
+            <p className="text-xs">{formatDate(createdAt)}</p>
           </div>
         </div>
         <section className="px-5">
@@ -68,71 +73,20 @@ const LetterCard = ({ unread = false }) => {
               onClick={() => setShowReportPopup(true)}
             />
           </div>
-          <div className="flex gap-2 mb-1">
-            <ImageViwer
-              styleClass="h-8 w-8"
-              imageSources={[
-                "/writeicon.png",
-                "/discovericon.png",
-                "/voiceicon.png",
-              ]}
-            />
-          </div>
+          {attachments && attachments.length && (
+            <div className="flex gap-2 mb-1">
+              <ImageViwer styleClass="h-8 w-8" imageSources={attachments} />
+            </div>
+          )}
+
           <p
             onClick={() => setShowFullMessage((prev) => !prev)}
             className={`${
               !showFullMessage ? "line-clamp-2" : ""
             } text-sm cursor-pointer`}
           >
-            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Excepturi
-            rerum quaerat ad amet animi fuga, eum quasi illo, minus, ut dolorem
-            perspiciatis dicta illum quia corporis. Modi nostrum neque deleniti
-            esse similique labore perferendis ullam rem autem. Voluptate,
-            reprehenderit ad?
+            {content}
           </p>
-          {showFullMessage && (
-            <>
-              <textarea
-                className="text-sm focus:outline-0 p-1 w-full mt-1 border border-gray-300 rounded-md"
-                type="text"
-                onChange={(e) => setTextArea(e.target.value)}
-                placeholder="Reply to this letter..."
-              />
-              <div className="flex gap-2 items-start justify-between mt-2">
-                <div className="flex flex-wrap gap-2">
-                  {attachedFiles.map((file, index) => (
-                    <div className="relative" key={index}>
-                      <label className="text-xs bg-gray-100 border border-gray-300 p-1">
-                        {file}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                <section className="flex gap-2">
-                  <div>
-                    <input
-                      type="file"
-                      id="file"
-                      ref={inputFile}
-                      multiple={true}
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <Button
-                      type="info"
-                      size="sm"
-                      onClick={() => inputFile.current.click()}
-                    >
-                      <IoIosAttach />
-                    </Button>
-                  </div>
-                  <Button type="success" size="sm" onClick={onSend}>
-                    <IoMdSend />
-                  </Button>
-                </section>
-              </div>
-            </>
-          )}
         </section>
       </div>
     </main>
