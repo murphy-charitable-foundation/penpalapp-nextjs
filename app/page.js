@@ -50,14 +50,14 @@ export default function Home() {
             <Link href="/login">
               <Button
                 color={"bg-green-700"}
-                hoverColor={"bg-green-800"}
+                hoverColor={"hover:bg-green-800"}
                 btnText={"Log in"}
               />
             </Link>
             <Link href="https://calendly.com/murphycharity/60min">
               <Button
-                color={"bg-blue-700 "}
-                hoverColor={"bg-blue-800 "}
+                color={"bg-blue-700"}
+                hoverColor={"hover:bg-blue-800"}
                 btnText={"Become a Pen Pal Volunteer"}
               />
             </Link>
