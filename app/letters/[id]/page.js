@@ -86,7 +86,6 @@ export default function Page({ params }) {
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef)
         const d = await fetchDraft(id, userRef, true);
-        console.log('d', d)
         setDraft(d)
         setLetterContent(d.content)
       }
@@ -270,7 +269,10 @@ export default function Page({ params }) {
                   ))}
                 </div>
               ) : (<></>)}
-              <div key={message.id}>{message.content}</div>
+              <div className="flex flex-col">
+                <div key={message.id}>{message.content}</div>
+                <div>{message.created_at.toDate().toDateString()}</div>
+              </div>
             </div>
           ))
           }
