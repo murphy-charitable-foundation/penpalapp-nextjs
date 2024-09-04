@@ -85,7 +85,8 @@ export default function Page({ params }) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef)
-        const d = await fetchDraft(id, userRef)
+        const d = await fetchDraft(id, userRef, true);
+        console.log('d', d)
         setDraft(d)
         setLetterContent(d.content)
       }
