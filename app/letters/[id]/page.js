@@ -57,6 +57,7 @@ export default function Page({ params }) {
     const letterStatus = await sendLetter(letterData, lettersRef, draft.id)
     if (letterStatus) {
       setLetterContent("")
+      setAttachments([])
     } else {
       alert("Failed to send your letter, please try again.")
     }
@@ -169,7 +170,7 @@ export default function Page({ params }) {
         </label>
 
         <h3 className="font-600 mt-4">Selected</h3>
-        {attachments.map(att, index => (
+        {attachments.map((att, index) => (
           <div key={index}>
             <img src={att} />
           </div>
