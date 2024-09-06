@@ -23,6 +23,7 @@ import {
   sendLetter,
 } from "@/app/utils/letterboxFunctions";
 import LetterCard from "@/components/letter/LetterCard";
+import FileModal from "@/components/letter/FileModal";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -87,6 +88,7 @@ export default function Page({ params }) {
 
   // set the recipient user
   useEffect(() => {
+    console.log("reciepient length: ", recipients?.length);
     const getSelectedUser = async () => {
       if (recipients?.length) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
@@ -98,7 +100,7 @@ export default function Page({ params }) {
       }
     };
     getSelectedUser();
-  }, [recipients]);
+  }, [recipients, id, userRef]);
 
   useEffect(() => {
     setDebounce(debounce + 1);
@@ -232,6 +234,14 @@ export default function Page({ params }) {
 
   return (
     <div className="h-screen bg-[#E5E7EB] p-4">
+      {isFileModalOpen && (
+        <FileModal
+          setIsFileModalOpen={setIsFileModalOpen}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          id={id}
+        />
+      )}
       <div className="bg-white shadow rounded-lg">
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">
@@ -253,7 +263,7 @@ export default function Page({ params }) {
             <div className="space-x-2">
               <button
                 className="text-black p-2 rounded-full"
-                onClick={openFileModal}
+                onClick={() => setIsFileModalOpen(true)}
               >
                 <BsPaperclip className="h-6 w-6 rotate-90" />
               </button>
@@ -293,13 +303,20 @@ export default function Page({ params }) {
           }
         </div>
       </div>
-      <textarea
-        className="w-full border p-4 text-black bg-[#ffffff] focus:outline-none resize-none shadow-md"
-        rows="4"
-        placeholder="Reply to the letter..."
-        value={letterContent}
-        onChange={(e) => setLetterContent(e.target.value)}
-      />
+      <div>
+        {attachments?.length > 0 && (
+          <div className="flex gap-2 bg-white p-2">
+            <ImageViwer styleClass="h-12 w-12" imageSources={attachments} />
+          </div>
+        )}
+        <textarea
+          className="w-full border p-4 text-black bg-[#ffffff] focus:outline-none resize-none shadow-md"
+          rows="4"
+          placeholder="Reply to the letter..."
+          value={letterContent}
+          onChange={(e) => setLetterContent(e.target.value)}
+        />
+      </div>
       <BottomNavBar />
     </div>
   );
