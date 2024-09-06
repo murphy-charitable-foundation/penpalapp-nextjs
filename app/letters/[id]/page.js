@@ -82,6 +82,7 @@ export default function Page({ params }) {
 
   // set the recipient user
   useEffect(() => {
+    console.log("reciepient length: ", recipients?.length);
     const getSelectedUser = async () => {
       if (recipients?.length) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
