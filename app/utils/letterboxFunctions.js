@@ -53,15 +53,20 @@ export const fetchLetterbox = async (id, lim = false) => {
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const lRef = collection(letterboxRef, "letters");
   const letterboxQuery = lim
-    ? query(lRef, where("draft", "==", false), orderBy("timestamp"), limit(lim))
-    : query(lRef, where("draft", "==", false), orderBy("timestamp"));
+    ? query(
+        lRef,
+        where("status", "==", "approved"),
+        orderBy("timestamp"),
+        limit(lim)
+      )
+    : query(lRef, where("status", "==", "approved"), orderBy("timestamp"));
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
 
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
       .filter((letterboxData) => !letterboxData.draft);
-    return messages;
+    return messages.length ? messages : [];
   } catch (e) {
     console.log("Error fetching letterbox: ", e);
     return {};
@@ -74,7 +79,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   const letterboxQuery = query(
     lRef,
     where("sent_by", "==", userRef),
-    where("draft", "==", true),
+    where("status", "==", "draft"),
     limit(1)
   );
   const draftSnapshot = await getDocs(letterboxQuery);
@@ -136,12 +141,17 @@ export const fetchRecipients = async (id) => {
   return members;
 };
 
+let sendingLetter = false;
 export const sendLetter = async (letterData, letterRef, draftId) => {
+  if (sendingLetter) return;
   try {
+    sendingLetter = true;
     await updateDoc(doc(letterRef, draftId), letterData);
+    sendingLetter = false;
     return true;
   } catch (e) {
     console.log("Failed to send letter: ", e);
+    sendingLetter = false;
     return false;
   }
 };

@@ -19,17 +19,19 @@ const LetterCard = ({
 
   const formatDate = (createdAt) => {
     const date = new Date(createdAt * 1000);
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
+    const formattedDate = date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
-    const ampm = hours >= 12 ? "PM" : "AM";
+    const formattedTime = date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
 
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-
-    const minutesFormatted = minutes < 10 ? "0" + minutes : minutes;
-
-    return `${hours}:${minutesFormatted} ${ampm}`;
+    return `${formattedDate} ${formattedTime}`;
   };
 
   return (
@@ -73,7 +75,7 @@ const LetterCard = ({
               onClick={() => setShowReportPopup(true)}
             />
           </div>
-          {attachments && attachments.length && (
+          {attachments && attachments.length > 0 && (
             <div className="flex gap-2 mb-1">
               <ImageViwer styleClass="h-8 w-8" imageSources={attachments} />
             </div>
