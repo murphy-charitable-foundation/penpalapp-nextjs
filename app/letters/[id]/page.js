@@ -18,6 +18,7 @@ import { MdInsertDriveFile } from "react-icons/md";
 import BottomNavBar from '@/components/bottom-nav-bar';
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+import ProfileImage from "@/components/general/ProfileImage";
 
 
 export default function Page({ params }) {
@@ -239,15 +240,7 @@ export default function Page({ params }) {
         <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
           {recipients?.length && recipients.map(recipient => (
             <div key={recipient?.first_name?.[0]}>
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                {recipient?.photo_uri ? (
-                  <img src={recipient?.photo_uri} class="w-full h-full object-cover" alt="profile picture" />
-                ) : (
-                  <span className="text-xl text-gray-600">
-                    {recipient?.first_name?.[0]}
-                  </span>
-                )}
-              </div>
+              <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={12}/>
               <div key={`${recipient?.first_name?.[0]}_`}>
                 <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
                 <p className="text-sm text-gray-500">{recipient?.country}</p>
