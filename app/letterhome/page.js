@@ -30,6 +30,7 @@ export default function Home() {
 
 				if (docSnap.exists()) {
 					const userData = docSnap.data();
+					console.log(userData.photo_uri)
 					setUserName(userData.first_name || 'Unknown User');
 					setCountry(userData.country || 'Unknown Country');
 					setProfileImage(userData?.photo_uri || "");
@@ -40,7 +41,7 @@ export default function Home() {
 		};
 
 		fetchUserData();
-	}, []);
+	}, [auth.currentUser]);
 
 	useEffect(() => {
 		setIsLoading(true);
@@ -82,9 +83,7 @@ export default function Home() {
 
 					<Link href="/profile">
 						<button className="flex items-center text-gray-700">
-							{profileImage && profileImage.length != 0 ? <div className='className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2"'>
-								<img src={profileImage} class="w-full h-full object-cover" alt="profile picture" />
-							</div> : <FaUserCircle className="h-8 w-8" />}
+							<ProfileImage photo_uri={profileImage} first_name={userName}/>
 							<div className="ml-3">
 								<div className="font-semibold text-lg">{userName}</div>
 								<div className="text-sm text-gray-600">{country}</div>
