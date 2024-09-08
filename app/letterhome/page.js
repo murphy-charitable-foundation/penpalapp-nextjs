@@ -113,9 +113,9 @@ export default function Home() {
 									<div className="flex-grow">
 										{letter.recipients?.map(rec => (
 											<div key={rec.id} className='flex'>
-												<div className="w-12 h-12 relative mr-4">
-													{rec?.profile_picture ? (
-														<img src={rec?.profile_picture} class="w-full h-full object-cover" />
+												<div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2">
+													{rec?.photo_uri ? (
+														<img src={rec?.photo_uri} class="w-full h-full object-cover" alt="profile picture" />
 													) : (
 														<span className="text-xl text-gray-600">
 															{rec?.first_name?.[0]}
