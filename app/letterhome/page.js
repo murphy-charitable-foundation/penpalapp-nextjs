@@ -14,6 +14,7 @@ import { fetchDraft, fetchLetterbox, fetchLetterboxes, fetchRecipients } from '.
 
 export default function Home() {
 	const [userName, setUserName] = useState('');
+	const [profileImage, setProfileImage] = useState('');
 	const [country, setCountry] = useState('');
 	const [letters, setLetters] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +31,7 @@ export default function Home() {
 					const userData = docSnap.data();
 					setUserName(userData.first_name || 'Unknown User');
 					setCountry(userData.country || 'Unknown Country');
+					setProfileImage(userData?.photo_uri || "");
 				} else {
 					console.log("No such document!");
 				}
@@ -79,7 +81,9 @@ export default function Home() {
 
 					<Link href="/profile">
 						<button className="flex items-center text-gray-700">
-							<FaUserCircle className="h-8 w-8" />
+							{profileImage && profileImage.length != 0 ? <div className='className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2"'>
+								<img src={profileImage} class="w-full h-full object-cover" alt="profile picture" />
+							</div> : <FaUserCircle className="h-8 w-8" />}
 							<div className="ml-3">
 								<div className="font-semibold text-lg">{userName}</div>
 								<div className="text-sm text-gray-600">{country}</div>
