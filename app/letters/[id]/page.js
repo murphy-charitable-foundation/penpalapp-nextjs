@@ -241,7 +241,7 @@ export default function Page({ params }) {
             <div key={recipient?.first_name?.[0]}>
               <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                 {recipient?.photo_uri ? (
-                  <img src={recipient?.photo_uri} class="w-full h-full object-cover" />
+                  <img src={recipient?.photo_uri} class="w-full h-full object-cover" alt="profile picture" />
                 ) : (
                   <span className="text-xl text-gray-600">
                     {recipient?.first_name?.[0]}
