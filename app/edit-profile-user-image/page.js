@@ -79,11 +79,37 @@ export default function EditProfileUserImage() {
     setImage(URL.createObjectURL(acceptedFiles[0]));
   };
 
+  // const saveImage = async () => {
+  //   const uid = auth.currentUser?.uid;
+  //   if (previewURL) {
+  //     const storageRef = ref(storage, `profile/${previewURL}`);
+  //     const uploadTask = uploadBytesResumable(storageRef, previewURL);
+  //     uploadTask.on(
+  //       "state_changed",
+  //       (snapshot) => {},
+  //       (error) => {
+  //         console.error("Upload error:", error);
+  //       },
+  //       async () => {
+  //         const url = await getDownloadURL(uploadTask.snapshot.ref);
+  //         setStorageUrl(url);
+  //         console.log("Image Url:" + url);
+  //         if (storageUrl) {
+  //           await updateDoc(doc(db, "users", uid), {
+  //             photo_uri: storageUrl,
+  //           });
+
+  //           router.push("/profile");
+  //         }
+  //       }
+  //     );
+  //   }
+  // };
   const saveImage = async () => {
     const uid = auth.currentUser?.uid;
-    if (previewURL) {
-      const storageRef = ref(storage, `profile/${previewURL}`);
-      const uploadTask = uploadBytesResumable(storageRef, previewURL);
+    if (croppedImage) {
+      const storageRef = ref(storage, `profile/${uid}/profile-image`); // Better to name by UID to avoid conflict
+      const uploadTask = uploadBytesResumable(storageRef, croppedImage); // Use croppedImage which is a Blob
       uploadTask.on(
         "state_changed",
         (snapshot) => {},
@@ -94,9 +120,9 @@ export default function EditProfileUserImage() {
           const url = await getDownloadURL(uploadTask.snapshot.ref);
           setStorageUrl(url);
           console.log("Image Url:" + url);
-          if (storageUrl) {
+          if (url) {
             await updateDoc(doc(db, "users", uid), {
-              photo_uri: storageUrl,
+              photo_uri: url, // Save the correct URL to Firestore
             });
 
             router.push("/profile");
