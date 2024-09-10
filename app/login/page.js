@@ -22,18 +22,15 @@ export default function Login() {
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
-  const [rememberMe, setRememberMe] = useState(
-    localStorage.getItem("rememberMe") ? true : false
-  );
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     // Check if the user is already logged in and retrieve the email
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        if (rememberMe) {
-          // User is signed in, prefill the email field
-          setEmail(user.email);
-        }
+        router.push("/letterhome");
+      } else {
+        router.push("/login");
       }
     });
 
@@ -45,25 +42,13 @@ export default function Login() {
     setError("");
 
     try {
-      if (rememberMe) {
-        localStorage.setItem("rememberMe", true);
-        // Set persistence based on "Remember Me" checkbox
-        const persistenceType = rememberMe
-          ? browserLocalPersistence
-          : browserSessionPersistence;
+      // Set persistence based on "Remember Me" checkbox
+      const persistenceType = rememberMe
+        ? browserLocalPersistence
+        : browserSessionPersistence;
 
-        await setPersistence(auth, persistenceType);
-
-        // Sign in the user with email and password
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-      } else {
-        localStorage.removeItem("rememberMe");
-        await signInWithEmailAndPassword(auth, email, password);
-      }
+      await setPersistence(auth, persistenceType);
+      await signInWithEmailAndPassword(auth, email, password);
 
       const uid = auth.currentUser.uid;
       const userRef = doc(db, "users", uid);
