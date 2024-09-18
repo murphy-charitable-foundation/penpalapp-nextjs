@@ -42,13 +42,13 @@ export const fetchLetterbox = async (id, lim = false) => {
   const letterboxQuery = lim ?
     query(
       lRef,
-      where("status", "==", "approved"),
+      // where("status", "==", "approved"),
       orderBy("timestamp"),
       limit(lim),
     )
     : query(
       lRef,
-      where("status", "==", "approved"),
+      // where("status", "==", "approved"),
       orderBy("timestamp")
     );
   try {
