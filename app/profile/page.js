@@ -1,351 +1,367 @@
+"use client";
 
-"use client"
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, auth } from '../firebaseConfig';
-
+import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
-import HobbySelect from "@/components/general/HobbySelect";
-import * as Sentry from "@sentry/nextjs";
+import BottomNavBar from "@/components/bottom-nav-bar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 export default function EditProfile() {
-    // State initializations
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [birthday, setBirthday] = useState('');
-    const [country, setCountry] = useState('');
-    const [village, setVillage] = useState('');
-    const [bio, setBio] = useState('');
-    const [educationLevel, setEducationLevel] = useState('');
-    const [isOrphan, setIsOrphan] = useState(false);
-    const [guardian, setGuardian] = useState('');
-    const [dreamJob, setDreamJob] = useState('');
-    const [gender, setGender] = useState('');
-    const [hobby, setHobby] = useState('');
-    const [favoriteColor, setFavoriteColor] = useState('');
-    const [photoUri, setPhotoUri] = useState('');
-    const [user, setUser] = useState(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [country, setCountry] = useState("");
+  const [village, setVillage] = useState("");
+  const [bio, setBio] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [isOrphan, setIsOrphan] = useState(false);
+  const [livesWith, setLivesWith] = useState("");
+  const [dreamJob, setDreamJob] = useState("");
+  const [hobby, setHobby] = useState("");
+  const [favoriteColor, setFavoriteColor] = useState("");
+  const [user, setUser] = useState(null);
 
+  const router = useRouter();
 
-    const router = useRouter();
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (auth.currentUser) {
-                const uid = auth.currentUser.uid;
-                const docRef = doc(db, "users", uid);
-                const docSnap = await getDoc(docRef);
-                console.log(docSnap.data())
-
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
-                    setFirstName(userData.first_name || '');
-                    setLastName(userData.last_name || '');
-                    setEmail(userData.email || '');
-                    setBirthday(userData.birthday || '');
-                    setCountry(userData.country || '');
-                    setVillage(userData.village || '');
-                    setBio(userData.bio || '');
-                    setEducationLevel(userData.education_level || '');
-                    setIsOrphan(userData.is_orphan ? 'Yes' : 'No');
-                    setGuardian(userData.gaurdian || '');
-                    setDreamJob(userData.dream_job || '');
-                    setHobby(userData.hobby || '');
-                    setFavoriteColor(userData.favorite_color || '');
-                } else {
-                    console.log("No such document!");
-                }
-            } else {
-                console.log("No user logged in");
-                // TODO: redirect if everything is loaded and still no user
-                router.push('/login');
-            }
-        };
-
-        fetchUserData();
-    }, [auth.currentUser]);
-
-    // Save profile data to Firestore
-    const saveProfileData = async () => {
-        if (auth.currentUser) {
-            const uid = auth.currentUser.uid;
-            const userProfileRef = doc(db, "users", uid);
-
-            const userProfile = {
-                first_name: firstName,
-                last_name: lastName,
-                email,
-                birthday,
-                country,
-                village,
-                bio,
-                education_level: educationLevel,
-                is_orphan: isOrphan.toLowerCase() === "yes" ? true : false,
-                gaurdian: guardian,
-                dream_job: dreamJob,
-                hobby,
-                favorite_color: favoriteColor,
-                gender,
-            };
-
-            try {
-                await updateDoc(userProfileRef, userProfile);
-                alert("Profile saved successfully!");
-            } catch (error) {
-                alert("Error saving profile");
-                Sentry.captureException("Error saving profile " + error);
-            }
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setFirstName(userData.firstName || "");
+          setLastName(userData.lastName || "");
+          setEmail(userData.email || "");
+          setBirthday(userData.birthday || "");
+          setCountry(userData.country || "");
+          setVillage(userData.village || "");
+          setBio(userData.bio || "");
+          setEducationLevel(userData.educationLevel || "");
+          setIsOrphan(userData.isOrphan ? "Yes" : "No");
+          setLivesWith(userData.livesWith || "");
+          setDreamJob(userData.dreamJob || "");
+          setHobby(userData.hobby || "");
+          setFavoriteColor(userData.favoriteColor || "");
         } else {
-            alert("No user logged in.");
-            // TODO: we need to handle this (but only once we have attempted to find the user)
-            // router.push('/login');
+          console.log("No such document!");
         }
+      } else {
+        console.log("No user logged in");
+        router.push("/login");
+      }
     };
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-            } else {
-                // User is signed out
-                setUser(null);
-                router.push("/login"); // Redirect to login page
-            }
-        });
+    fetchUserData();
+  }, [auth.currentUser]);
 
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
-    }, [router]);
+  const saveProfileData = async () => {
+    if (auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      const userProfileRef = doc(db, "users", uid);
 
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            // User is signed out
-            router.push("/login");
-        } catch (error) {
-            console.error("Error signing out: ", error);
-        }
-    };
+      const userProfile = {
+        firstName,
+        lastName,
+        email,
+        birthday,
+        country,
+        village,
+        bio,
+        educationLevel,
+        isOrphan: isOrphan === "Yes" ? true : false,
+        livesWith,
+        dreamJob,
+        hobby,
+        favoriteColor,
+      };
 
-    return (
-        <div className="bg-gray-50 min-h-screen">
-            <div className="max-w-lg mx-auto p-6">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                        <button onClick={() => window.history.back()}>
-                            <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
+      try {
+        await updateDoc(userProfileRef, userProfile);
+        alert("Profile saved successfully!");
+      } catch (error) {
+        console.error("Error saving profile: ", error);
+        alert("Error saving profile.");
+      }
+    } else {
+      alert("No user logged in.");
+      // router.push('/login');
+    }
+  };
 
-                        <h1 className="ml-4 text-xl font-bold text-gray-800">Edit profile</h1>
-                    </div>
-                    <Link href="/letterhome">
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
 
-                        <button onClick={saveProfileData} className="bg-green-500 text-white py-2 px-4 rounded">
-                            Save
-                        </button>
-                    </Link>
+    return () => unsubscribe();
+  }, [router]);
 
-                </div>
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  };
 
-                {/* Profile Image */}
-                <div className="my-6">
-                    <div className="relative w-24 h-24 mx-auto">
-                        <Image
-                            src={photoUri ? photoUri : "/murphylogo.png"}
-                            layout="fill"
-                            className="rounded-full"
-                            alt="Profile picture"
-                        />
-                        {/* Edit Icon */}
-                        <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full curspr-pointer"
-                            onClick={() => {
-                                router.push("/edit-profile-user-image")
-                            }}
-                        >
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Form Fields */}
-                <div className="space-y-4 mb-[120px]">
-                    <div>
-                        <label htmlFor="firstName" className="text-sm font-medium text-gray-700 block mb-2">First name</label>
-                        <input
-                            type="text"
-                            id="firstName"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="lastName" className="text-sm font-medium text-gray-700 block mb-2">Last name</label>
-                        <input
-                            type="text"
-                            id="lastName"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                        />
-                    </div>
-
-                    {/* Country Field */}
-                    <div>
-                        <label htmlFor="country" className="text-sm font-medium text-gray-700 block mb-2">Country</label>
-                        <input
-                            type="text"
-                            id="country"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                            placeholder="Ex: Country"
-                        />
-                    </div>
-
-                    {/* Village Field */}
-                    <div>
-                        <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">Village</label>
-                        <input
-                            type="text"
-                            id="village"
-                            value={village}
-                            onChange={(e) => setVillage(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                            placeholder="Ex: Village"
-                        />
-                    </div>
-
-                    {/* Bio/Challenges faced Field */}
-                    <div>
-                        <label htmlFor="bio" className="text-sm font-medium text-gray-700 block mb-2">Bio/Challenges faced</label>
-                        <textarea
-                            id="bio"
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                            placeholder="Bio"
-                            maxLength="50"
-                        />
-                    </div>
-
-                    {/* Birthday Field */}
-                    <div>
-                        <label htmlFor="birthday" className="text-sm font-medium text-gray-700 block mb-2">Birthday</label>
-                        <input
-                            type="date"
-                            id="birthday"
-                            value={birthday}
-                            onChange={(e) => setBirthday(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                        />
-                    </div>
-
-                    {/* Education Level Dropdown */}
-                    <div>
-                        <label htmlFor="educationLevel" className="text-sm font-medium text-gray-700 block mb-2">Education level</label>
-                        <select
-                            id="educationLevel"
-                            value={educationLevel}
-                            onChange={(e) => setEducationLevel(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                        >
-                            <option value="Elementary">Elementary</option>
-                            <option value="Middle">Middle</option>
-                            <option value="High School">High School</option>
-                            <option value="College/University">College/University</option>
-                            <option value="No Grade">No Grade</option>
-
-
-                        </select>
-                    </div>
-
-                    {/* Is Orphan Dropdown */}
-                    <div>
-                        <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Is orphan</label>
-                        <select
-                            id="isOrphan"
-                            value={isOrphan}
-                            onChange={(e) => setIsOrphan(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                        >
-                            <option value="No">No</option>
-                            <option value="Yes">Yes</option>
-
-                        </select>
-                    </div>
-
-                    <div>
-                        <label htmlFor="isOrphan" className="text-sm font-medium text-gray-700 block mb-2">Who the child lives with</label>
-                        <select
-                            id="isOrphan"
-                            value={guardian}
-                            onChange={(e) => setGuardian(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                        >
-                            <option value="Parents">Parents</option>
-                            <option value="AdoptiveParents">AdoptiveParents</option>
-                            <option value="Aunt/Uncle">Aunt/Uncle</option>
-                            <option value="Grandparents">Grandparents</option>
-                            <option value="Other Family">Other Family</option>
-                            <option value="Friends">Friends</option>
-                            <option value="Other">Other</option>
-
-
-                        </select>
-                    </div>
-
-                    <div>
-                        <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">Dream job</label>
-                        <input
-                            type="text"
-                            id="dreamjob"
-                            value={dreamJob}
-                            onChange={(e) => setDreamJob(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                            placeholder="Ex: Astronaut"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">Hobby</label>
-                        <input
-                            type="text"
-                            id="hobby"
-                            value={hobby}
-                            onChange={(e) => setHobby(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                            placeholder="Ex: Football"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="village" className="text-sm font-medium text-gray-700 block mb-2">Favorite Color</label>
-                        <input
-                            type="text"
-                            id="favcolor"
-                            value={favoriteColor}
-                            onChange={(e) => setFavoriteColor(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-md text-black"
-                            placeholder="Ex: Blue"
-                        />
-                    </div>
-
-                    <div>
-                        <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded">Log out</button>
-                    </div>
-                </div>
+  return (
+    <div className="bg-gray-50 min-h-screen mb-8">
+      <Card className="max-w-lg mx-auto p-6">
+        <CardHeader className="flex justify-between items-start">
+          <div className="flex items-center">
+            <Button variant="ghost" onClick={() => window.history.back()}>
+              <svg
+                className="h-6 w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </Button>
+            <CardTitle className="ml-4 text-xl font-bold text-gray-800">
+              Edit profile
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Profile Image */}
+          <div className="my-6">
+            <div className="relative w-24 h-24 mx-auto">
+              <div className="flex flex-row items-center justify-between">
+              <Image
+                src="/murphylogo.png"
+                width={96}
+                height={96}
+                className="rounded-full"
+                alt="Profile picture"
+              />
+          </div>
+              {/* Edit Icon */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full"
+                  >
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  {/* Add your edit image functionality here */}
+                </PopoverContent>
+              </Popover>
             </div>
-        </div>
-    );
+          </div>
+          {/* Form Fields */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="firstName">First name</Label>
+              <Input
+                type="text"
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">Last name</Label>
+              <Input
+                type="text"
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+            {/* Country Field */}
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Input
+                type="text"
+                id="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="Ex: Country"
+              />
+            </div>
+            {/* Village Field */}
+            <div>
+              <Label htmlFor="village">Village</Label>
+              <Input
+                type="text"
+                id="village"
+                value={village}
+                onChange={(e) => setVillage(e.target.value)}
+                placeholder="Ex: Village"
+              />
+            </div>
+            {/* Bio/Challenges faced Field */}
+            <div>
+              <Label htmlFor="bio">Bio/Challenges faced</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Bio"
+                maxLength="50"
+              />
+            </div>
+            {/* Birthday Field */}
+            <div>
+              <Label htmlFor="birthday">Birthday</Label>
+              <Input
+                type="date"
+                id="birthday"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
+              />
+            </div>
+            {/* Education Level Dropdown */}
+            <div>
+              <Label htmlFor="educationLevel">Education level</Label>
+              <Select value={educationLevel} onValueChange={setEducationLevel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select education level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Elementary">Elementary</SelectItem>
+                  <SelectItem value="Middle">Middle</SelectItem>
+                  <SelectItem value="High School">High School</SelectItem>
+                  <SelectItem value="College/University">
+                    College/University
+                  </SelectItem>
+                  <SelectItem value="No Grade">No Grade</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Is Orphan Dropdown */}
+            <div>
+              <Label htmlFor="isOrphan">Is orphan</Label>
+              <Select value={isOrphan} onValueChange={setIsOrphan}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select orphan status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="No">No</SelectItem>
+                  <SelectItem value="Yes">Yes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="livesWith">Who the child lives with</Label>
+              <Select value={livesWith} onValueChange={setLivesWith}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select who the child lives with" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Parents">Parents</SelectItem>
+                  <SelectItem value="AdoptiveParents">
+                    AdoptiveParents
+                  </SelectItem>
+                  <SelectItem value="Aunt/Uncle">Aunt/Uncle</SelectItem>
+                  <SelectItem value="Grandparents">Grandparents</SelectItem>
+                  <SelectItem value="Other Family">Other Family</SelectItem>
+                  <SelectItem value="Friends">Friends</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="dreamJob">Dream job</Label>
+              <Input
+                type="text"
+                id="dreamJob"
+                value={dreamJob}
+                onChange={(e) => setDreamJob(e.target.value)}
+                placeholder="Ex: Astronaut"
+              />
+            </div>
+            <div>
+              <Label htmlFor="hobby">Hobby</Label>
+              <Input
+                type="text"
+                id="hobby"
+                value={hobby}
+                onChange={(e) => setHobby(e.target.value)}
+                placeholder="Ex: Football"
+              />
+            </div>
+            <div>
+              <Label htmlFor="favoriteColor">Favorite Color</Label>
+              <Input
+                type="text"
+                id="favoriteColor"
+                value={favoriteColor}
+                onChange={(e) => setFavoriteColor(e.target.value)}
+                placeholder="Ex: Blue"
+              />
+            </div>
+            <div className="flex items-stretch justify-between">
+              <Button variant="destructive" onClick={handleLogout}>
+                Log out
+              </Button>
+              <Link href="/letterhome">
+            <Button onClick={saveProfileData}>Save</Button>
+          </Link>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <BottomNavBar />
+    </div>
+  );
 }

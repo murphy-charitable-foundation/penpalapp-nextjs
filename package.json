@@ -10,11 +10,19 @@
   },
   "dependencies": {
     "@firebase/storage": "^0.12.3",
+    "@radix-ui/react-dialog": "^1.1.1",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-popover": "^1.1.1",
+    "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-slot": "^1.1.0",
     "@sentry/nextjs": "^8.26.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "date-fns": "^3.3.1",
     "dotenv": "^16.4.5",
     "firebase": "^10.8.0",
     "heroicons": "^2.1.1",
+    "lucide-react": "^0.441.0",
     "next": "^14.1.0",
     "next-auth": "^4.24.7",
     "react": "^18",
@@ -22,7 +30,9 @@
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
     "react-icons": "^5.0.1",
-    "react-select": "^5.8.0"
+    "react-select": "^5.8.0",
+    "tailwind-merge": "^2.5.2",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.17",
