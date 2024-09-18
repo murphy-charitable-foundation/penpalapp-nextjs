@@ -62,7 +62,8 @@ export default function Page({ params }) {
       alert("Failed to send your letter, please try again.")
     }
     // TODO: UI FIX we need a message to let the user know we are awaiting approval
-    const messages = await fetchLetterbox(id)
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 10);
+
     setAllMessages(messages)
   };
 
@@ -72,7 +73,8 @@ export default function Page({ params }) {
       setUserRef(userDocRef)
 
       const fetchMessages = async () => {
-        const messages = await fetchLetterbox(id)
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 10);
+
         setAllMessages(messages)
       }
       fetchMessages()

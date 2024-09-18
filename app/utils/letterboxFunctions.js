@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, updateDoc, where } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
 import { auth, db } from "../firebaseConfig"
 
 const DELAY = 1000
@@ -26,7 +26,7 @@ export const fetchLetterboxes = async () => {
   return letterboxes
 }
 
-export const fetchLetterbox = async (id, lim = false) => {
+export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   const retryFetch = () => setTimeout(() => fetchLetterbox(id), DELAY);
 
   if (!auth.currentUser?.uid) {
@@ -39,25 +39,30 @@ export const fetchLetterbox = async (id, lim = false) => {
 
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const lRef = collection(letterboxRef, "letters");
-  const letterboxQuery = lim ?
-    query(
-      lRef,
-      // where("status", "==", "approved"),
-      orderBy("timestamp"),
-      limit(lim),
-    )
-    : query(
-      lRef,
-      // where("status", "==", "approved"),
-      orderBy("timestamp")
-    );
+  let letterboxQuery;
+  if (lim) {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible), limit(lim))
+      : query(lRef, orderBy("timestamp"), limit(lim));
+  } else {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible))
+      : query(lRef, orderBy("timestamp"));
+  }
+
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
 
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
       .filter((letterboxData) => !letterboxData.draft);
-    return messages.length ? messages : []
+
+    const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
+
+    return {
+      messages: messages.length ? messages : [],
+      lastVisible: lastDoc
+    };
   } catch (e) {
     console.log("Error fetching letterbox: ", e)
     return {}

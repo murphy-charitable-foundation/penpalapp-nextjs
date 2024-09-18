@@ -57,7 +57,8 @@ export default function Home() {
 				if (draft?.content?.length) {
 					letterbox.letters = [draft]
 				} else {
-					letterbox.letters = await fetchLetterbox(id, 1)
+					const { messages } = await fetchLetterbox(id, 1);
+					letterbox.letters = messages
 				}
 				letters.push(letterbox)
 			}
