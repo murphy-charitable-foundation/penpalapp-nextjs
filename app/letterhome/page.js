@@ -11,9 +11,11 @@ import * as Sentry from "@sentry/nextjs";
 
 import { FaUserCircle, FaCog, FaBell, FaPen } from 'react-icons/fa';
 import { fetchDraft, fetchLetterbox, fetchLetterboxes, fetchRecipients } from '../utils/letterboxFunctions';
+import ProfileImage from '@/components/general/ProfileImage';
 
 export default function Home() {
 	const [userName, setUserName] = useState('');
+	const [profileImage, setProfileImage] = useState('');
 	const [country, setCountry] = useState('');
 	const [letters, setLetters] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -28,8 +30,10 @@ export default function Home() {
 
 				if (docSnap.exists()) {
 					const userData = docSnap.data();
+					console.log(userData.photo_uri)
 					setUserName(userData.first_name || 'Unknown User');
 					setCountry(userData.country || 'Unknown Country');
+					setProfileImage(userData?.photo_uri || "");
 				} else {
 					console.log("No such document!");
 				}
@@ -37,7 +41,7 @@ export default function Home() {
 		};
 
 		fetchUserData();
-	}, []);
+	}, [auth.currentUser]);
 
 	useEffect(() => {
 		setIsLoading(true);
@@ -80,7 +84,7 @@ export default function Home() {
 
 					<Link href="/profile">
 						<button className="flex items-center text-gray-700">
-							<FaUserCircle className="h-8 w-8" />
+							<ProfileImage photo_uri={profileImage} first_name={userName}/>
 							<div className="ml-3">
 								<div className="font-semibold text-lg">{userName}</div>
 								<div className="text-sm text-gray-600">{country}</div>
@@ -114,15 +118,16 @@ export default function Home() {
 									<div className="flex-grow">
 										{letter.recipients?.map(rec => (
 											<div key={rec.id} className='flex'>
-												<div className="w-12 h-12 relative mr-4">
-													{rec?.profile_picture ? (
-														<img src={rec?.profile_picture} class="w-full h-full object-cover" />
+												{/* <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2"> */}
+													{/* {rec?.photo_uri ? (
+														<img src={rec?.photo_uri} class="w-full h-full object-cover" alt="profile picture" />
 													) : (
 														<span className="text-xl text-gray-600">
 															{rec?.first_name?.[0]}
 														</span>
-													)}
-												</div>
+													)} */}
+													<ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name}/>
+												{/* </div> */}
 												<div className="flex flex-col">
 													<div className='flex'>
 														{letter.letters[0].status === "draft" && <h4 className="mr-2">[DRAFT]</h4>}
