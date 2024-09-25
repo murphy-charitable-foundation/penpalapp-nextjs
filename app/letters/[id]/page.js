@@ -233,7 +233,7 @@ export default function Page({ params }) {
             <span>No messages</span>
           )}
 
-          {hasMoreMessages && !loadingMore &&  (
+          {hasMoreMessages && !loadingMore && (
             <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
               Load More
             </button>
