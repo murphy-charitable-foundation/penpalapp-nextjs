@@ -47,7 +47,7 @@ export default function Page({ params }) {
     const letterData = {
       content: letterContent,
       sent_by: userRef,
-      status: "pending_review",
+      status: "sent",
       created_at: new Date(),
       deleted: null,
     };
