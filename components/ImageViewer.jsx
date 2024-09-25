@@ -2,7 +2,7 @@ import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 import Image from "next/image";
 
-const ImageViwer = ({ imageSources, styleClass }) => {
+const ImageViewer = ({ imageSources, styleClass }) => {
   return (
     <PhotoProvider>
       {imageSources.map((imageSource, index) => (
@@ -20,4 +20,4 @@ const ImageViwer = ({ imageSources, styleClass }) => {
   );
 };
 
-export default ImageViwer;
+export default ImageViewer;

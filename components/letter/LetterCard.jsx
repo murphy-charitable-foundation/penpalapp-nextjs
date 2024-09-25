@@ -11,6 +11,7 @@ const LetterCard = ({
   attachments,
   createdAt,
   content,
+  user,
   unread = false,
 }) => {
   const [showFullMessage, setShowFullMessage] = useState(false);
@@ -55,13 +56,13 @@ const LetterCard = ({
             <Image
               height={100}
               width={100}
-              src="/usericon.png"
+              src={user.photo_uri}
               alt="profile"
               className="rounded-full h-8 w-8 image-cover"
             />
             <div>
-              <h3 className="font-semibold">Louise Palermo</h3>
-              <p className="text-gray-600">Uganda</p>
+              <h3 className="font-semibold">{`${user.first_name} ${user.last_name}`}</h3>
+              <p className="text-gray-600">{user.country}</p>
             </div>
           </div>
           <div>
