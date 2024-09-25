@@ -14,7 +14,7 @@ import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
-import BottomNavBar from '@/components/bottom-nav-bar';
+import BottomNavBar from "@/components/bottom-nav-bar";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import {
   fetchDraft,
@@ -32,13 +32,13 @@ export default function Page({ params }) {
   const [user, setUser] = useState(null);
   const auth = getAuth();
   const [isFileModalOpen, setIsFileModalOpen] = useState(null);
-  const [draft, setDraft] = useState(null)
-  const [userRef, setUserRef] = useState(null)
-  const [allMessages, setAllMessages] = useState([])
-  const [recipients, setRecipients] = useState(null)
-  const [debounce, setDebounce] = useState(0)
-  const [lettersRef, setLettersRef] = useState(null)
-  const [attachments, setAttachments] = useState([])
+  const [draft, setDraft] = useState(null);
+  const [userRef, setUserRef] = useState(null);
+  const [allMessages, setAllMessages] = useState([]);
+  const [recipients, setRecipients] = useState(null);
+  const [debounce, setDebounce] = useState(0);
+  const [lettersRef, setLettersRef] = useState(null);
+  const [attachments, setAttachments] = useState([]);
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -60,16 +60,16 @@ export default function Page({ params }) {
       deleted: null,
     };
 
-    const letterStatus = await sendLetter(letterData, lettersRef, draft.id)
+    const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
     if (letterStatus) {
-      setLetterContent("")
-      setAttachments([])
+      setLetterContent("");
+      setAttachments([]);
     } else {
       alert("Failed to send your letter, please try again.");
     }
     // TODO: UI FIX we need a message to let the user know we are awaiting approval
-    const messages = await fetchLetterbox(id)
-    setAllMessages(messages)
+    const messages = await fetchLetterbox(id);
+    setAllMessages(messages);
   };
 
   useEffect(() => {
@@ -93,10 +93,10 @@ export default function Page({ params }) {
       if (recipients?.length) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
-        setLettersRef(lRef)
+        setLettersRef(lRef);
         const d = await fetchDraft(id, userRef, true);
-        setDraft(d)
-        setLetterContent(d.content)
+        setDraft(d);
+        setLetterContent(d.content);
       }
     };
     getSelectedUser();
@@ -112,11 +112,11 @@ export default function Page({ params }) {
           timestamp: new Date(),
           deleted: null,
           status: "draft",
-          attachments
+          attachments,
         };
-        const draftStatus = await sendLetter(letterData, lettersRef, draft.id)
+        const draftStatus = await sendLetter(letterData, lettersRef, draft.id);
         if (!draftStatus) {
-          console.log("Error updating draft")
+          console.log("Error updating draft");
         }
       }
     };
@@ -218,7 +218,7 @@ export default function Page({ params }) {
       } catch (e) {
         console.error("err fetching members", e);
       }
-    }
+    };
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -280,27 +280,16 @@ export default function Page({ params }) {
           </div>
         </div>
 
-        {isFileModalOpen && <FileModal />}
-
-        <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages.length && allMessages?.map((message, index) => (
-            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''} ${messageIsUsers(recipients, message) ? 'text-right justify-end' : 'text-left'}`} key={`${message.id}_${index}`}>
-              {message.attachments?.length ? (
-                <div className={`flex w-full`}>
-                  {message.attachments?.map((att, i) => (
-                    <div key={i} className="max-h-[80px]">
-                      <img src={att} />
-                    </div>
-                  ))}
-                </div>
-              ) : (<></>)}
-              <div className="flex flex-col">
-                <div key={message.id}>{message.content}</div>
-                <div>{message.created_at.toDate().toDateString()}</div>
-              </div>
-            </div>
-          ))
-          }
+        <div className="h-[calc(100vh-350px)] overflow-y-auto flex flex-col bg-grey bg-[#F5F5F5]">
+          {allMessages?.map((message, index) => (
+            <LetterCard
+              key={`${message.id}_${index}`}
+              content={message.content}
+              createdAt={message.created_at.seconds}
+              attachments={message.attachments}
+              id={message}
+            />
+          ))}
         </div>
       </div>
       <div>
