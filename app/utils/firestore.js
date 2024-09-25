@@ -8,6 +8,16 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 export const fetchData = async () => {
@@ -55,8 +65,7 @@ export const fetchData = async () => {
             (memberRef) => memberRef.id !== auth.currentUser.uid
           ).id,
           content: latestMessage.content,
-          status: latestMessage.status,
-          status: latestMessage.status,
+          draft: latestMessage.draft,
           deleted: latestMessage.deleted_at,
           created_at: latestMessage.created_at,
         });
@@ -65,8 +74,7 @@ export const fetchData = async () => {
           lRef,
           where("content", "!=", ""), // Exclude empty messages
           where("deleted", "==", false),
-          where("status", "==", "approved"),
-          where("status", "==", "approved"),
+          where("draft", "==", false),
           orderBy("timestamp")
         );
 
@@ -82,8 +90,7 @@ export const fetchData = async () => {
               (memberRef) => memberRef.id !== auth.currentUser.uid
             ).id,
             content: latestMessage.content,
-            status: latestMessage.status,
-            status: latestMessage.status,
+            draft: latestMessage.draft,
             deleted: latestMessage.deleted_at,
             created_at: latestMessage.created_at,
           });

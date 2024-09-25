@@ -26,6 +26,7 @@ import ImageViewer from "@/components/ImageViewer";
 
 export default function Page({ params }) {
   const { id } = params;
+  const { id } = params;
 
   const [letterContent, setLetterContent] = useState("");
   const [user, setUser] = useState(null);
@@ -45,6 +46,8 @@ export default function Page({ params }) {
       return;
     }
 
+    if (!auth.currentUser) {
+      // Directly using auth.currentUser for immediate check
     if (!auth.currentUser) {
       // Directly using auth.currentUser for immediate check
       alert("Sender not identified, please log in.");
@@ -88,6 +91,7 @@ export default function Page({ params }) {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
+      setUserRef(userDocRef);
 
       const fetchMessages = async () => {
         const messages = await fetchLetterbox(id);
@@ -98,6 +102,7 @@ export default function Page({ params }) {
   }, [user, id]);
 
   useEffect(() => {
+    setDebounce(debounce + 1);
     setDebounce(debounce + 1);
     const updateDraft = async () => {
       if (userRef && lettersRef) {
@@ -115,7 +120,10 @@ export default function Page({ params }) {
         }
       }
     };
+    };
     if (debounce >= 20) {
+      updateDraft();
+      setDebounce(0);
       updateDraft();
       setDebounce(0);
     }
@@ -163,10 +171,26 @@ export default function Page({ params }) {
           id={id}
         />
       )}
+    <div className="h-screen bg-[#E5E7EB] p-4">
+      {isFileModalOpen && (
+        <FileModal
+          setIsFileModalOpen={setIsFileModalOpen}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          id={id}
+        />
+      )}
       <div className="bg-white shadow rounded-lg">
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">
             <button onClick={() => window.history.back()}>
+              <Image
+                alt="close-icon"
+                height={100}
+                width={100}
+                className="h-4 w-4"
+                src="/closeicon.svg"
+              />
               <Image
                 alt="close-icon"
                 height={100}
@@ -181,7 +205,14 @@ export default function Page({ params }) {
             {attachments.length ? (
               <span className="text-black">{attachments.length} files</span>
             ) : null}
+            {attachments.length ? (
+              <span className="text-black">{attachments.length} files</span>
+            ) : null}
             <div className="space-x-2">
+              <button
+                className="text-black p-2 rounded-full"
+                onClick={() => setIsFileModalOpen(true)}
+              >
               <button
                 className="text-black p-2 rounded-full"
                 onClick={() => setIsFileModalOpen(true)}
@@ -221,6 +252,9 @@ export default function Page({ params }) {
           </div>
         )}
         <textarea
+          className="w-full border p-4 text-black bg-[#ffffff] focus:outline-none resize-none shadow-md"
+          rows="4"
+          placeholder="Reply to the letter..."
           className="w-full border p-4 text-black bg-[#ffffff] focus:outline-none resize-none shadow-md"
           rows="4"
           placeholder="Reply to the letter..."
