@@ -27,7 +27,7 @@ export const fetchLetterboxes = async () => {
 }
 
 export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
-  const retryFetch = () => setTimeout(() => fetchLetterbox(id), DELAY);
+  const retryFetch = () => setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -67,7 +67,6 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     console.log("Error fetching letterbox: ", e)
     return {}
   }
-
 }
 
 export const fetchDraft = async (id, userRef, createNew = false) => {
