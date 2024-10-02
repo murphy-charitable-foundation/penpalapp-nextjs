@@ -41,8 +41,8 @@ export const fetchLetterboxes = async () => {
   return letterboxes;
 };
 
-export const fetchLetterbox = async (id, lim = false) => {
-  const retryFetch = () => setTimeout(() => fetchLetterbox(id), DELAY);
+export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
+  const retryFetch = () => setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -55,14 +55,16 @@ export const fetchLetterbox = async (id, lim = false) => {
 
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const lRef = collection(letterboxRef, "letters");
-  const letterboxQuery = lim
-    ? query(
-        lRef,
-        where("status", "==", "approved"),
-        orderBy("timestamp"),
-        limit(lim)
-      )
-    : query(lRef, where("status", "==", "approved"), orderBy("timestamp"));
+  let letterboxQuery;
+  if (lim) {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible), limit(lim))
+      : query(lRef, orderBy("timestamp"), limit(lim));
+  } else {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible))
+      : query(lRef, orderBy("timestamp"));
+  }
 
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
@@ -125,13 +127,13 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
     const d = await addDoc(lRef, {
       sent_by: userRef,
       content: "",
-      draft: true,
+      status: "draft",
       deleted: null,
     });
     draft = {
       sent_by: userRef,
       content: "",
-      draft: true,
+      status: "draft",
       id: d.id,
       deleted: null,
     };
