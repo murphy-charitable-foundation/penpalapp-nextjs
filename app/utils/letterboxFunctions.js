@@ -87,8 +87,8 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   if (draftSnapshot.docs?.[0]?.data()) {
     draft = { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
   } else if (createNew) {
-    const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true, deleted: null });
-    draft = { sent_by: userRef, content: "", draft: true, id: d.id, deleted: null }
+    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", deleted: null });
+    draft = { sent_by: userRef, content: "", status: "draft", id: d.id, deleted: null }
   }
   return draft
 }

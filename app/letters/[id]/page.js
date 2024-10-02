@@ -20,6 +20,7 @@ export default function Page({ params }) {
   const auth = getAuth();
 
   const [letterContent, setLetterContent] = useState("");
+  const [debounce, setDebounce] = useState(0);
   const [user, setUser] = useState(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -93,6 +94,30 @@ export default function Page({ params }) {
     };
     getSelectedUser();
   }, [recipients]);
+
+  useEffect(() => {
+    setDebounce(debounce + 1)
+    const updateDraft = async () => {
+      if (userRef && lettersRef) {
+        const letterData = {
+          content: letterContent,
+          sent_by: userRef,
+          timestamp: new Date(),
+          deleted: null,
+          status: "draft",
+          attachments
+        };
+        const draftStatus = await sendLetter(letterData, lettersRef, draft.id)
+        if (!draftStatus) {
+          console.log("Error updating draft")
+        }
+      }
+    }
+    if (debounce >= 20) {
+      updateDraft()
+      setDebounce(0)
+    }
+  }, [letterContent])
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
@@ -240,6 +265,17 @@ export default function Page({ params }) {
           )}
 
           {loadingMore && <span>Loading...</span>}
+        </div>
+        <textarea
+          className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
+          rows="8"
+          placeholder="Tap to write letter..."
+          value={letterContent}
+          onChange={(e) => setLetterContent(e.target.value)}
+        />
+
+        <div className="text-right text-sm p-4 mt-8 text-gray-600">
+          {letterContent.length} / 1000
         </div>
       </div>
       <BottomNavBar />
