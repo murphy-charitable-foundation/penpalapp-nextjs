@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, updateDoc, where } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
 import { auth, db } from "../firebaseConfig"
 
 const DELAY = 1000
@@ -7,7 +7,7 @@ const DELAY = 1000
 const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
-  return {userDocRef, userDocSnapshot}
+  return { userDocRef, userDocSnapshot }
 }
 
 export const fetchLetterboxes = async () => {
@@ -17,8 +17,8 @@ export const fetchLetterboxes = async () => {
     retryFetch();
     return
   }
-  const {userDocRef, userDocSnapshot} = await getUserDoc()
-  if(!userDocSnapshot.exists()) return
+  const { userDocRef, userDocSnapshot } = await getUserDoc()
+  if (!userDocSnapshot.exists()) return
 
   const letterboxQuery = query(collection(db, "letterbox"), where("members", "array-contains", userDocRef));
   const letterboxQuerySnapshot = await getDocs(letterboxQuery);
@@ -26,39 +26,47 @@ export const fetchLetterboxes = async () => {
   return letterboxes
 }
 
-export const fetchLetterbox = async (id, lim = false) => {
-  const retryFetch = () => setTimeout(() => fetchLetterbox(id), DELAY);
+export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
+  const retryFetch = () => setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
     return
   }
-  const {userDocSnapshot} = await getUserDoc()
+  const { userDocSnapshot } = await getUserDoc()
 
   if (!userDocSnapshot.exists()) return;
 
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const lRef = collection(letterboxRef, "letters");
-  const letterboxQuery = lim ? 
-    query(
-      lRef,
-      where("draft", "==", false),
-      orderBy("timestamp"),
-      limit(lim),
-    ) 
-    : query(lRef, where("draft", "==", false), orderBy("timestamp"));
+  let letterboxQuery;
+  if (lim) {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible), limit(lim))
+      : query(lRef, orderBy("timestamp"), limit(lim));
+  } else {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible))
+      : query(lRef, orderBy("timestamp"));
+  }
+
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
-  
+
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
       .filter((letterboxData) => !letterboxData.draft);
-    return messages
-  } catch ( e ) { 
+
+    const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
+
+    return {
+      messages: messages.length ? messages : [],
+      lastVisible: lastDoc
+    };
+  } catch (e) {
     console.log("Error fetching letterbox: ", e)
     return {}
-  } 
-
+  }
 }
 
 export const fetchDraft = async (id, userRef, createNew = false) => {
@@ -67,7 +75,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   const letterboxQuery = query(
     lRef,
     where("sent_by", "==", userRef),
-    where("draft", "==", true),
+    where("status", "==", "draft"),
     limit(1)
   );
   const draftSnapshot = await getDocs(letterboxQuery);
@@ -75,12 +83,12 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
     return { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
   }
 
-  let draft
+  let draft;
   if (draftSnapshot.docs?.[0]?.data()) {
     draft = { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
   } else if (createNew) {
-    const d = await addDoc(lRef, { sent_by: userRef, content: "", draft: true, deleted: null });
-    draft = { sent_by: userRef, content: "", draft: true, id: d.id, deleted: null }
+    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", deleted: null });
+    draft = { sent_by: userRef, content: "", status: "draft", id: d.id, deleted: null }
   }
   return draft
 }
@@ -112,14 +120,17 @@ export const fetchRecipients = async (id) => {
   return members;
 };
 
-
+let sendingLetter = false;
 export const sendLetter = async (letterData, letterRef, draftId) => {
+  if (sendingLetter) return;
   try {
+    sendingLetter = true;
     await updateDoc(doc(letterRef, draftId), letterData)
+    sendingLetter = false;
     return true
   } catch (e) {
     console.log("Failed to send letter: ", e)
+    sendingLetter = false;
     return false
   }
-
 }
