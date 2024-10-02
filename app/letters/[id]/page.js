@@ -93,6 +93,7 @@ export default function Page({ params }) {
 
       const fetchMessages = async () => {
         const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        console.log("MESSAGES", messages)
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === 5); // Assuming 10 is the page limit
@@ -133,6 +134,11 @@ export default function Page({ params }) {
         }
       }
     };
+    if (debounce >= 20) {
+      setDebounce(0)
+      updateDraft()
+    }
+  }, [letterContent])
 
     const handleLoadMore = async () => {
       setLoadingMore(true); // Set loading state to true while fetching more messages
@@ -278,7 +284,7 @@ export default function Page({ params }) {
               <LetterCard
                 key={`${message.id}_${index}`}
                 content={message.content}
-                createdAt={message.created_at.seconds}
+                createdAt={message.created_at?.seconds}
                 attachments={message.attachments}
                 user={message.user}
                 id={message}

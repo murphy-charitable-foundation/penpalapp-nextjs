@@ -91,8 +91,12 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     });
 
     const messagesWithUsers = await Promise.all(userFetchPromises);
+    const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
 
-    return messagesWithUsers.length ? messagesWithUsers : [];
+    return messagesWithUsers.length ? {
+      messages: messagesWithUsers,
+      lastVisible: lastDoc
+    } : {messages: [], lastVisible: null };
   } catch (e) {
     console.log("Error fetching letterbox: ", e);
     return [];
