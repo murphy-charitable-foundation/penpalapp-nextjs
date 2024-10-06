@@ -80,32 +80,21 @@ export default function EditProfileUserImage() {
   };
 
 
-  const saveImage = async () => {
-    const uid = auth.currentUser?.uid;
-    if (croppedImage) {
-      const storageRef = ref(storage, `profile/${uid}/profile-image`); // Better to name by UID to avoid conflict
-      const uploadTask = uploadBytesResumable(storageRef, croppedImage); // Use croppedImage which is a Blob
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {},
-        (error) => {
-          console.error("Upload error:", error);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          setStorageUrl(url);
-          console.log("Image Url:" + url);
-          if (url) {
-            await updateDoc(doc(db, "users", uid), {
-              photo_uri: url, // Save the correct URL to Firestore
-            });
+const handleUpload = async (file) => {
+  const id = "some-letterbox-id";
 
-            router.push("/profile");
-          }
-        }
-      );
-    }
-  };
+  if (file) {
+    const path = `uploads/letterbox/${id}/${file.name}`;
+    await uploadFile(
+      file,
+      path,
+      (progress) => setUploadProgress(progress),
+      (url) => onUploadComplete(url),
+      (error) => console.error("Failed to upload letterbox file:", error)
+    );
+  }
+};
+
 
   return (
     <div className="bg-gray-50 min-h-screen">
