@@ -128,26 +128,21 @@ export default function Page({ params }) {
 
   const onUploadComplete = (url) => setAttachments([...attachments, url])
 
-  const handleUpload = async (file) => {
-    if (file) {
-      const storageRef = ref(storage, `uploads/letterbox/${id}/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+const handleUpload = async (file) => {
+  const id = "some-letterbox-id";
 
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error('Upload error:', error);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          onUploadComplete(url)
-        }
-      );
-    }
-  };
+  if (file) {
+    const path = `uploads/letterbox/${id}/${file.name}`;
+    await uploadFile(
+      file,
+      path,
+      (progress) => setUploadProgress(progress),
+      (url) => onUploadComplete(url),
+      (error) => console.error("Failed to upload letterbox file:", error)
+    );
+  }
+};
+
 
 
   const FileModal = () => (
