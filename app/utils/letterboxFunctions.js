@@ -94,8 +94,8 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   if (draftSnapshot.docs?.[0]?.data()) {
     draft = { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
   } else if (createNew) {
-    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", deleted: null });
-    draft = { sent_by: userRef, content: "", status: "draft", id: d.id, deleted: null }
+    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", timestamp: new Date(), deleted: null });
+    draft = { sent_by: userRef, content: "", status: "draft", timestamp: new Date(), id: d.id, deleted: null }
   }
   return draft
 }
@@ -134,6 +134,7 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     sendingLetter = true;
     await updateDoc(doc(letterRef, draftId), letterData)
     sendingLetter = false;
+    console.log('letter sent')
     return true
   } catch (e) {
     console.log("Failed to send letter: ", e)
