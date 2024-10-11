@@ -128,7 +128,7 @@ export default function Page({ params }) {
     const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5, lastVisible);
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
-    setHasMoreMessages(messages.length === 10); // If fewer than 10 messages are returned, no more messages to load
+    setHasMoreMessages(messages.length === 5); // If fewer than 10 messages are returned, no more messages to load
     setLoadingMore(false); // Reset loading state
   };
 
