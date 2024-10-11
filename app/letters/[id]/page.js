@@ -64,6 +64,10 @@ export default function Page({ params }) {
     const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
     setAllMessages(messages);
     setLastVisible(newLastVisible);
+    setDraft(null);
+    const d = await fetchDraft(id, userRef, true);
+    setDraft(d);
+    setLetterContent(d.content);
   };
 
   useEffect(() => {
@@ -238,7 +242,7 @@ export default function Page({ params }) {
         </div>
 
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages.length ? (
+          {allMessages?.length ? (
             allMessages.map((message, index) => (
               <div key={index} className={`w-[90%] flex bg-white p-4 rounded-lg text-gray-600 ${message.sent_by.id === userRef.id && "self-end"}`}>
                 <div className="flex flex-col">

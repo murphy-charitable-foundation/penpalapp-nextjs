@@ -42,30 +42,37 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   let letterboxQuery;
   if (lim) {
     letterboxQuery = lastVisible
-      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible), limit(lim))
-      : query(lRef, orderBy("timestamp"), limit(lim));
+      ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible), limit(lim))
+      : query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), limit(lim));
   } else {
     letterboxQuery = lastVisible
-      ? query(lRef, orderBy("timestamp"), startAfter(lastVisible))
-      : query(lRef, orderBy("timestamp"));
+      ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible))
+    
+      : query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"));
   }
 
   try {
+    console.log(
+      'before'
+    )
     const lettersSnapshot = await getDocs(letterboxQuery);
-
+    console.log('after', lettersSnapshot)
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
       .filter((letterboxData) => !letterboxData.draft);
 
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
-
+    console.log("messages", messages);
     return {
       messages: messages.length ? messages : [],
       lastVisible: lastDoc
     };
   } catch (e) {
     console.log("Error fetching letterbox: ", e)
-    return {}
+    return {
+      messages: [],
+      lastVisible: null
+    }
   }
 }
 
