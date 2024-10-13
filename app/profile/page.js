@@ -61,10 +61,6 @@ export default function EditProfile() {
                 } else {
                     console.log("No such document!");
                 }
-            } else {
-                console.log("No user logged in");
-                // TODO: redirect if everything is loaded and still no user
-                router.push('/login');
             }
         };
 
@@ -101,10 +97,6 @@ export default function EditProfile() {
                 alert("Error saving profile");
                 Sentry.captureException("Error saving profile " + error);
             }
-        } else {
-            alert("No user logged in.");
-            // TODO: we need to handle this (but only once we have attempted to find the user)
-            // router.push('/login');
         }
     };
 
@@ -113,7 +105,6 @@ export default function EditProfile() {
             if (currentUser) {
                 setUser(currentUser);
             } else {
-                // User is signed out
                 setUser(null);
                 router.push("/login"); // Redirect to login page
             }

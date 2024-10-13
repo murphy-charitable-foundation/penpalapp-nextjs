@@ -52,6 +52,7 @@ const InboxPage = () => {
             } else {
                 setError('No user logged in.');
                 setIsLoading(false);
+                router.push("/login");
             }
         });
 
