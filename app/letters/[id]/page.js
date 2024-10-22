@@ -19,6 +19,7 @@ import BottomNavBar from '@/components/bottom-nav-bar';
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
+import { uploadFile } from "@/app/lib/uploadFile";
 
 
 export default function Page({ params }) {

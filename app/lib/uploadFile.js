@@ -36,3 +36,5 @@ const uploadFile = async (
     }
   );
 };
+
+export { uploadFile };

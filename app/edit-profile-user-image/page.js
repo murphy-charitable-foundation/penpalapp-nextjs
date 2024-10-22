@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
+import { uploadFile } from "../lib/uploadFile";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -80,7 +81,7 @@ export default function EditProfileUserImage() {
   };
 
 
-const handleUpload = async (file) => {
+const saveImage = async (file) => {
   const id = "some-letterbox-id";
 
   if (file) {
