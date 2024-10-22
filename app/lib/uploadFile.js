@@ -2,7 +2,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { updateDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { storage } from "../firebaseConfig";
-
+import { StorageReference } from "@firebase/storage";
 // Reusable upload function
 const uploadFile = async (
   file,
@@ -14,9 +14,14 @@ const uploadFile = async (
   if (!file || !path) return;
 
   console.log(path)
+  console.log("Storage initialized:", storage);
 
-  const storageRef = ref(storage, path);
+  const storageRef = ref(storage, `profile/love`);
+
+  console.log('made it here')
   const uploadTask = uploadBytesResumable(storageRef, file);
+
+  console.log("didnt make it hre")
 
   uploadTask.on(
     "state_changed",
@@ -25,7 +30,7 @@ const uploadFile = async (
       if (onUploadProgress) onUploadProgress(progress);
     },
     (error) => {
-      console.error("Upload error:", error);
+      console.error("Upload error:", error.message); // Log the error message
       if (onError) onError(error);
     },
     async () => {
@@ -33,11 +38,11 @@ const uploadFile = async (
         const url = await getDownloadURL(uploadTask.snapshot.ref);
         if (onComplete) onComplete(url);
       } catch (error) {
-        console.error("Error getting download URL:", error);
+        console.error("Error getting download URL:", error.message); // Log error message
         if (onError) onError(error);
       }
     }
-  );
+  );  
 };
 
 export { uploadFile };

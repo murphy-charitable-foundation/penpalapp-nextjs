@@ -86,7 +86,8 @@ const saveImage = async (file) => {
 
   if (file) {
     const uid = auth.currentUser.uid; // Assuming you want to save it under the user ID
-    const path = `profile/${uid}/${Date.now()}.jpg`;
+    const path = `profile/${Date.now()}.jpg`;
+    console.log("File object to upload:", file); 
     await uploadFile(
       file,
       path,
