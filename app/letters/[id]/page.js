@@ -1,42 +1,40 @@
 "use client";
 
-// pages/write-letter.js
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, storage } from "../../firebaseConfig"; // Adjust this path as necessary
-import { collection, addDoc, getDocs, getDoc, doc, query, where, updateDoc } from "firebase/firestore";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { collection, doc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { auth } from '../../firebaseConfig';
-
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
-
 import BottomNavBar from '@/components/bottom-nav-bar';
-// import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
-
+import * as Sentry from "@sentry/nextjs";
 
 export default function Page({ params }) {
-  const { id } = params
+  const { id } = params;
+  const auth = getAuth();
 
   const [letterContent, setLetterContent] = useState("");
+  const [debounce, setDebounce] = useState(0);
   const [user, setUser] = useState(null);
-  const auth = getAuth();
-  const [isFileModalOpen, setIsFileModalOpen] = useState(null);
-  const [draft, setDraft] = useState(null)
-  const [userRef, setUserRef] = useState(null)
-  const [allMessages, setAllMessages] = useState(null)
-  const [recipients, setRecipients] = useState(null)
-  const [debounce, setDebounce] = useState(0)
-  const [lettersRef, setLettersRef] = useState(null)
-  const [attachments, setAttachments] = useState([])
+  const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [userRef, setUserRef] = useState(null);
+  const [allMessages, setAllMessages] = useState([]);
+  const [recipients, setRecipients] = useState(null);
+  const [lettersRef, setLettersRef] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
+  const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
+  const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
+  const PAGINATION_INCREMENT = 20;
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -44,56 +42,65 @@ export default function Page({ params }) {
       return;
     }
 
-    if (!auth.currentUser) { // Directly using auth.currentUser for immediate check
+    if (!auth.currentUser) {
       alert("Sender not identified, please log in.");
       return;
     }
 
     const letterData = {
       content: letterContent,
-      sent_by: userRef, // Directly using the uid from auth.currentUser
-      status: "pending_review",
+      sent_by: userRef,
+      status: "sent",
       created_at: new Date(),
       deleted: null,
-      draft: false
     };
 
-    const letterStatus = await sendLetter(letterData, lettersRef,  draft.id)
-    if(letterStatus) {
-      setLetterContent("")
-      // TODO: refresh the page
+    const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
+    if (letterStatus) {
+      setLetterContent("");
+      setAttachments([]);
     } else {
-      alert("Failed to send your letter, please try again.")
+      Sentry.captureException(e);
+      alert("Failed to send your letter, please try again.");
     }
+
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    setAllMessages(messages);
+    setLastVisible(newLastVisible);
+    setDraft(null);
+    const d = await fetchDraft(id, userRef, true);
+    setDraft(d);
+    setLetterContent(d.content);
   };
 
   useEffect(() => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
-      setUserRef(userDocRef)
+      setUserRef(userDocRef);
 
       const fetchMessages = async () => {
-        const messages = await fetchLetterbox(id)
-        setAllMessages(messages)
-      }
-      fetchMessages()
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        setAllMessages(messages);
+        setLastVisible(newLastVisible); // Store last visible letter for pagination
+        setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
+      };
+      fetchMessages();
     }
-  }, [user])
+  }, [user]);
 
-  // set the recipient user
   useEffect(() => {
     const getSelectedUser = async () => {
       if (recipients?.length) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
-        setLettersRef(lRef)
-        const d = await fetchDraft(id, userRef)
-        setDraft(d)
-        setLetterContent(d.content)
+        setLettersRef(lRef);
+        const d = await fetchDraft(id, userRef, true);
+        setDraft(d);
+        setLetterContent(d.content);
       }
-    }
-    getSelectedUser()
-  }, [recipients])
+    };
+    getSelectedUser();
+  }, [recipients]);
 
   useEffect(() => {
     setDebounce(debounce + 1)
@@ -104,13 +111,10 @@ export default function Page({ params }) {
           sent_by: userRef,
           timestamp: new Date(),
           deleted: null,
-          draft: true,
+          status: "draft",
           attachments
         };
-        const draftStatus = await sendLetter(letterData, lettersRef, draft.id)
-        if(!draftStatus) {
-          console.log("Error updating draft")
-        }
+        await sendLetter(letterData, lettersRef, draft.id)
       }
     }
     if (debounce >= 20) {
@@ -119,14 +123,21 @@ export default function Page({ params }) {
     }
   }, [letterContent])
 
-  const [uploadProgress, setUploadProgress] = useState(null)
+  const handleLoadMore = async () => {
+    setLoadingMore(true); // Set loading state to true while fetching more messages
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    setAllMessages((prevMessages) => [...prevMessages, ...messages]);
+    setLastVisible(newLastVisible); // Update lastVisible with the new last document
+    setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
+    setLoadingMore(false); // Reset loading state
+  };
 
   const handleChange = (event) => {
     const selectedFile = event.target.files[0];
-    handleUpload(selectedFile)
+    handleUpload(selectedFile);
   };
 
-  const onUploadComplete = (url) => setAttachments([...attachments, url])
+  const onUploadComplete = (url) => setAttachments([...attachments, url]);
 
   const handleUpload = async (file) => {
     if (file) {
@@ -143,12 +154,11 @@ export default function Page({ params }) {
         },
         async () => {
           const url = await getDownloadURL(uploadTask.snapshot.ref);
-          onUploadComplete(url)
+          onUploadComplete(url);
         }
       );
     }
   };
-
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -171,36 +181,31 @@ export default function Page({ params }) {
         </label>
 
         <h3 className="font-600 mt-4">Selected</h3>
-        {attachments.map(att, index => (
+        {attachments.map((att, index) => (
           <div key={index}>
-            <img src={att}/>
+            <img src={att} />
           </div>
         ))}
       </div>
     </div>
-  )
-
-  const openFileModal = () => setIsFileModalOpen(!isFileModalOpen)
-
-  const messageIsUsers = (recipients, message) => {
-    return !recipients?.some(r => r.id === message.sent_by?._key?.path?.segments[message.sent_by?._key?.path?.segments?.length - 1])
-  }
+  );
 
   useEffect(() => {
     const populateRecipients = async () => {
       try {
-        const members = await fetchRecipients(id)
-        setRecipients(members)
+        const members = await fetchRecipients(id);
+        setRecipients(members);
       } catch (e) {
-        console.error("err fetching members", e)
+        console.error("err fetching members", e);
       }
-    } 
+    };
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        populateRecipients()
+        populateRecipients();
       } else {
         setUser(null);
+        router.push("/login");
       }
     });
 
@@ -220,7 +225,7 @@ export default function Page({ params }) {
           <div className="flex justify-between items-center p-4">
             <span className="text-black">{attachments.length} files</span>
             <div className="space-x-2">
-              <button className="text-black p-2 rounded-full" onClick={openFileModal}>
+              <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
                 <BsPaperclip className="h-6 w-6 rotate-90" />
               </button>
               <button
@@ -236,46 +241,35 @@ export default function Page({ params }) {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
-          {recipients?.length && recipients.map(recipient => (
-            <div key={recipient?.first_name?.[0]}>
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                {recipient?.profile_picture ? (
-                  <img src={recipient?.profile_picture} class="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xl text-gray-600">
-                    {recipient?.first_name?.[0]}
-                  </span>
-                )}
-              </div>
-              <div key={`${recipient?.first_name?.[0]}_`}>
-                <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
-                <p className="text-sm text-gray-500">{recipient?.country}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {isFileModalOpen && <FileModal />}
-
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages?.map((message, index) => (
-            <div className={`w-[90%] flex bg-white m-8 ${message.status === "pending_review" ? 'opacity-[0.6]' : ''} ${messageIsUsers(recipients, message) ? 'text-right justify-end' : 'text-left'}`} key={`${message.id}_${index}`}>
-              {message.attachments?.length ? (
-                <div className={`flex w-full`}>
-                  {message.attachments?.map((att, i) => (
-                    <div key={i} className="max-h-[80px]">
-                      <img src={att} />
-                    </div>
-                  ))}
+          {allMessages?.length ? (
+            allMessages.map((message, index) => (
+              <div key={index} className={`w-[90%] flex bg-white p-4 rounded-lg text-gray-600 ${message.sent_by.id === userRef.id && "self-end"}`}>
+                <div className="flex flex-col">
+                  {message?.attachments?.length ? (
+                    <Image
+                      alt="attachment"
+                      width={100}
+                      height={100}
+                      src={message.attachments[0]}
+                    />
+                  ) : null}
+                  <span>{message.content}</span>
                 </div>
-              ) : (<></>)}
-              <div key={message.id}>{message.content}</div>
-            </div>
-          ))
-          }
-        </div>
+              </div>
+            ))
+          ) : (
+            <span>No messages</span>
+          )}
 
+          {hasMoreMessages && !loadingMore && (
+            <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
+              Load More
+            </button>
+          )}
+
+          {loadingMore && <span>Loading...</span>}
+        </div>
         <textarea
           className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
           rows="8"
@@ -284,11 +278,12 @@ export default function Page({ params }) {
           onChange={(e) => setLetterContent(e.target.value)}
         />
 
-        <div className="text-right text-sm p-4 text-gray-600">
+        <div className="text-right text-sm p-4 mt-8 text-gray-600">
           {letterContent.length} / 1000
         </div>
       </div>
       <BottomNavBar />
+      {isFileModalOpen && <FileModal />}
     </div>
   );
 }

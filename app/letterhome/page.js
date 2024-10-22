@@ -8,15 +8,17 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
+
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
-// import { fetchData, fetchRecipients } from '../utils/firestore';
+
 import {
   fetchDraft,
   fetchLetterbox,
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
+
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -25,8 +27,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
-  
 
   useEffect(() => {
     setIsLoading(true);
@@ -59,9 +59,9 @@ export default function Home() {
         setLetters(letters);
       }
     });
-
     return () => unsubscribe();
   }, []);
+
 
   useEffect(() => {
     const fetchUserData = async () => {
