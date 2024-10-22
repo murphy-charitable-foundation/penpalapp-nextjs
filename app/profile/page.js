@@ -63,7 +63,6 @@ export default function EditProfile() {
                 }
             }
         };
-
         fetchUserData();
     }, [auth.currentUser]);
 

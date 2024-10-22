@@ -14,6 +14,7 @@ import { MdInsertDriveFile } from "react-icons/md";
 import BottomNavBar from '@/components/bottom-nav-bar';
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+import * as Sentry from "@sentry/nextjs";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -33,6 +34,7 @@ export default function Page({ params }) {
   const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
   const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
   const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
+  const PAGINATION_INCREMENT = 20;
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -58,10 +60,11 @@ export default function Page({ params }) {
       setLetterContent("");
       setAttachments([]);
     } else {
+      Sentry.captureException(e);
       alert("Failed to send your letter, please try again.");
     }
 
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -79,7 +82,7 @@ export default function Page({ params }) {
         const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
-        setHasMoreMessages(messages.length === 5); // Assuming 10 is the page limit
+        setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
       };
       fetchMessages();
     }
@@ -111,10 +114,7 @@ export default function Page({ params }) {
           status: "draft",
           attachments
         };
-        const draftStatus = await sendLetter(letterData, lettersRef, draft.id)
-        if (!draftStatus) {
-          console.log("Error updating draft")
-        }
+        await sendLetter(letterData, lettersRef, draft.id)
       }
     }
     if (debounce >= 20) {
@@ -125,10 +125,10 @@ export default function Page({ params }) {
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5, lastVisible);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
-    setHasMoreMessages(messages.length === 5); // If fewer than 10 messages are returned, no more messages to load
+    setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
     setLoadingMore(false); // Reset loading state
   };
 

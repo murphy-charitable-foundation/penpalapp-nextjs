@@ -1,5 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
 import { auth, db } from "../firebaseConfig"
+import * as Sentry from "@sentry/nextjs";
 
 const DELAY = 1000
 
@@ -52,22 +53,18 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   }
 
   try {
-    console.log(
-      'before'
-    )
     const lettersSnapshot = await getDocs(letterboxQuery);
-    console.log('after', lettersSnapshot)
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
       .filter((letterboxData) => !letterboxData.draft);
 
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
-    console.log("messages", messages);
     return {
       messages: messages.length ? messages : [],
       lastVisible: lastDoc
     };
   } catch (e) {
+    Sentry.captureException(e);
     console.log("Error fetching letterbox: ", e)
     return {
       messages: [],
@@ -121,6 +118,7 @@ export const fetchRecipients = async (id) => {
       const selUser = await getDoc(selectedUserDocRef);
       members.push({ ...selUser.data(), id: selectedUserDocRef.id });
     } catch (e) {
+      Sentry.captureException(e);
       console.error("Error fetching user:", e);
     }
   }
@@ -134,9 +132,9 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     sendingLetter = true;
     await updateDoc(doc(letterRef, draftId), letterData)
     sendingLetter = false;
-    console.log('letter sent')
     return true
   } catch (e) {
+    Sentry.captureException(e);
     console.log("Failed to send letter: ", e)
     sendingLetter = false;
     return false
