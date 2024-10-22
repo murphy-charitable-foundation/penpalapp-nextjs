@@ -1,6 +1,7 @@
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { updateDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/router";
+import { storage } from "../firebaseConfig";
 
 // Reusable upload function
 const uploadFile = async (
@@ -11,6 +12,8 @@ const uploadFile = async (
   onError
 ) => {
   if (!file || !path) return;
+
+  console.log(path)
 
   const storageRef = ref(storage, path);
   const uploadTask = uploadBytesResumable(storageRef, file);

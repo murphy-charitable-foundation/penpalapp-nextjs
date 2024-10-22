@@ -85,7 +85,8 @@ const saveImage = async (file) => {
   const id = "some-letterbox-id";
 
   if (file) {
-    const path = `uploads/letterbox/${id}/${file.name}`;
+    const uid = auth.currentUser.uid; // Assuming you want to save it under the user ID
+    const path = `profile/${uid}/${Date.now()}.jpg`;
     await uploadFile(
       file,
       path,
