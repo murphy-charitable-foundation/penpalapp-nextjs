@@ -29,7 +29,7 @@ const uploadFile = async (file, path, onProgress, onError, onSuccess) => {
     async () => {
       try {
         const url = await getDownloadURL(uploadTask.snapshot.ref);
-        if (onComplete) onSuccess(url);
+        if (onSuccess) onSuccess(url);
       } catch (error) {
         console.error("Error getting download URL:", error.message); // Log error message
         if (onError) onError(error);
