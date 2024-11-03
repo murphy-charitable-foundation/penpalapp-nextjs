@@ -1,7 +1,7 @@
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { updateDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/router";
-import { storage } from "../firebaseConfig";
+import { storage } from "../penpalapp-nextjs/app/firebaseConfig";
 import { StorageReference } from "@firebase/storage";
 // Reusable upload function
 const uploadFile = async (
@@ -12,16 +12,14 @@ const uploadFile = async (
   onError
 ) => {
   if (!file || !path) return;
+  
 
-  console.log(path)
-  console.log("Storage initialized:", storage);
+  const storageRef = ref(storage, path);
 
-  const storageRef = ref(storage, `profile/love`);
-
-  console.log('made it here')
+  
   const uploadTask = uploadBytesResumable(storageRef, file);
 
-  console.log("didnt make it hre")
+  
 
   uploadTask.on(
     "state_changed",

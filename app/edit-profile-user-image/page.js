@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
-import { uploadFile } from "../lib/uploadFile";
+import { uploadFile } from "../../../node-testing/uploadFile";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -15,6 +15,7 @@ export default function EditProfileUserImage() {
   const [croppedImage, setCroppedImage] = useState(null);
   const [storageUrl, setStorageUrl] = useState(null);
   const [user, setUser] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const cropperRef = useRef();
   const router = useRouter();
@@ -64,6 +65,12 @@ export default function EditProfileUserImage() {
     setPreviewURL(URL.createObjectURL(croppedImage));
   };
 
+  const onUploadComplete = (url) => {
+    console.log("Upload complete. File available at:", url);
+    setStorageUrl(url);
+  };
+
+
   const handleCrop = () => {
     if (
       cropperRef.current &&
@@ -85,7 +92,7 @@ const saveImage = async (file) => {
   const id = "some-letterbox-id";
 
   if (file) {
-    const uid = auth.currentUser.uid; // Assuming you want to save it under the user ID
+    //const uid = auth.currentUser.uid; // Assuming you want to save it under the user ID
     const path = `profile/${Date.now()}.jpg`;
     console.log("File object to upload:", file); 
     await uploadFile(
