@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { auth, db, storage } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 import EditProfileImage from "@/components/edit-profile-image";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
-import { uploadFile } from "../../../node-testing/uploadFile";
+import { uploadFile } from "../lib/uploadFile";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -88,23 +87,25 @@ export default function EditProfileUserImage() {
   };
 
 
-const saveImage = async (file) => {
-  const id = "some-letterbox-id";
-
-  if (file) {
-    //const uid = auth.currentUser.uid; // Assuming you want to save it under the user ID
-    const path = `profile/${Date.now()}.jpg`;
-    console.log("File object to upload:", file); 
-    await uploadFile(
-      file,
-      path,
-      (progress) => setUploadProgress(progress),
-      (url) => onUploadComplete(url),
-      (error) => console.error("Failed to upload letterbox file:", error)
+  const saveImage = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;  // Make sure uid is available
+  
+    uploadFile(
+      croppedImage,
+      `profile/${uid}/profile-image`,
+      () => {},
+      (error) => console.error("Upload error:", error),
+      async (url) => {
+        setStorageUrl(url);
+        console.log("Image Url:" + url);
+        if (url) {
+          await updateDoc(doc(db, "users", uid), { photo_uri: url });
+          router.push("/profile");
+        }
+      }
     );
-  }
-};
-
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">

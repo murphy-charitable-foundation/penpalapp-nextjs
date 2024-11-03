@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import { db, storage } from "../../firebaseConfig"; // Adjust this path as necessary
+import { db } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, doc } from "firebase/firestore";
 import { useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -16,7 +16,7 @@ import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
 import BottomNavBar from '@/components/bottom-nav-bar';
-import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
+import { uploadFile } from "@/app/lib/uploadFile";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
 import { uploadFile } from "@/app/lib/uploadFile";
@@ -129,21 +129,15 @@ export default function Page({ params }) {
 
   const onUploadComplete = (url) => setAttachments([...attachments, url])
 
-const handleUpload = async (file) => {
-  const id = "some-letterbox-id";
-
-  if (file) {
-    const path = `uploads/letterbox/${id}/${file.name}`;
-    await uploadFile(
+  const handleUpload = async (file) => {
+    uploadFile(
       file,
-      path,
-      (progress) => setUploadProgress(progress),
-      (url) => onUploadComplete(url),
-      (error) => console.error("Failed to upload letterbox file:", error)
+      `uploads/letterbox/${id}/${file.name}`,
+      setUploadProgress,
+      (error) => console.error('Upload error:', error),
+      onUploadComplete
     );
-  }
-};
-
+  };  
 
 
   const FileModal = () => (
