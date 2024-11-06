@@ -34,7 +34,7 @@ const EditProfileImage = ({ image, handleSave, newProfileImage, previewURL, hand
 						viewMode={1}
 					/>
 					<br />
-					<button className='w-[80%] mx-auto mt-[100px] p-2 bg-[#034792] text-[#ffffff] font-semibold  rounded-[100px]' onClick={handleSave}>Save</button>
+					
 				</div>
 			)}
 		</>

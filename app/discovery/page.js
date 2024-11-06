@@ -69,7 +69,7 @@ export default function ChooseKid() {
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
   
-      const kidsList = await Promise.all(snapshot.docs.map(async (doc) => { //May not need this part anymore if photo_uri is added directly to profile
+      const kidsList = await Promise.all(snapshot.docs.map(async (doc) => { //Still needed as photo_uri is not currently directly stored under profile
         const data = doc.data();
         try {
           if (data.photo_uri) {

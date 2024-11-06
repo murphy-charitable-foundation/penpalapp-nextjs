@@ -12,9 +12,7 @@ export default function ProfileImage({ photo_uri, first_name, size = 8 }) {
             src={photo_uri}
             class="w-full h-full object-cover"
             alt="profile picture"
-            // width={24}
-            // height={24}
-            // layout="responsive"
+            
           />
         ) : (
           <span className="text-xl text-gray-600">{first_name?.[0]}</span>

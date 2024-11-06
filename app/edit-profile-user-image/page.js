@@ -89,6 +89,7 @@ export default function EditProfileUserImage() {
 
   const saveImage = async () => {
     const uid = auth.currentUser?.uid;
+  
     if (!uid) return;  // Make sure uid is available
   
     uploadFile(
