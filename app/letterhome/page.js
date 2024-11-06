@@ -117,16 +117,7 @@ export default function Home() {
 									<div className="flex-grow">
 										{letter.recipients?.map(rec => (
 											<div key={rec.id} className='flex'>
-												{/* <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2"> */}
-													{/* {rec?.photo_uri ? (
-														<img src={rec?.photo_uri} class="w-full h-full object-cover" alt="profile picture" />
-													) : (
-														<span className="text-xl text-gray-600">
-															{rec?.first_name?.[0]}
-														</span>
-													)} */}
-													<ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name}/>
-												{/* </div> */}
+												<ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name}/>
 												<div className="flex flex-col">
 													<div className='flex'>
 														{letter.letters[0].status === "draft" && <h4 className="mr-2">[DRAFT]</h4>}
