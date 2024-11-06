@@ -53,16 +53,7 @@ export default function EditProfileUserImage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleSave = () => {
-    onSave();
-    // Reset state
-    setImage(null);
-  };
-
-  const onSave = () => {
-    setNewProfileImage(croppedImage);
-    setPreviewURL(URL.createObjectURL(croppedImage));
-  };
+  
 
   const onUploadComplete = (url) => {
     console.log("Upload complete. File available at:", url);
@@ -135,7 +126,6 @@ export default function EditProfileUserImage() {
         <div className="flex flex-col items-center">
           <EditProfileImage
             image={image}
-            handleSave={handleSave}
             newProfileImage={newProfileImage}
             previewURL={previewURL}
             handleDrop={handleDrop}
