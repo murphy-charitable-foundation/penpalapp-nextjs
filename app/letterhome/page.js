@@ -1,85 +1,110 @@
-"use client"
+"use client";
 
 // pages/index.js
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { db, auth } from '../firebaseConfig'; // Adjust the import path as necessary
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { db, auth } from "../firebaseConfig"; // Adjust the import path as necessary
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from 'firebase/firestore';
-import BottomNavBar from '@/components/bottom-nav-bar';
+import { doc, getDoc } from "firebase/firestore";
+import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 
-import { FaUserCircle, FaCog, FaBell, FaPen } from 'react-icons/fa';
-import { fetchDraft, fetchLetterbox, fetchLetterboxes, fetchRecipients } from '../utils/letterboxFunctions';
+
+
+import { useRouter } from "next/navigation";
+import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchLetterboxes,
+  fetchRecipients,
+} from "../utils/letterboxFunctions";
 import ProfileImage from '@/components/general/ProfileImage';
 
 export default function Home() {
-	const [userName, setUserName] = useState('');
-	const [profileImage, setProfileImage] = useState('');
-	const [country, setCountry] = useState('');
-	const [letters, setLetters] = useState([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState('');
+  const [userName, setUserName] = useState("");
+  const [country, setCountry] = useState("");
+  const [letters, setLetters] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const router = useRouter();
 
-	useEffect(() => {
-		const fetchUserData = async () => {
-			if (auth.currentUser) {
-				const uid = auth.currentUser.uid;
-				const docRef = doc(db, "users", uid);
-				const docSnap = await getDoc(docRef);
+  useEffect(() => {
+    setIsLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // TODO: redirect if everything is loaded and still no user
+        setError("No user logged in.");
+        setIsLoading(false);
+        router.push("/login");
+      } else {
+        const letterboxes = await fetchLetterboxes();
+        const letterboxIds = letterboxes.map((l) => l.id);
+        let letters = [];
+        for (const id of letterboxIds) {
+          const letterbox = { id };
+          const userRef = doc(db, "users", auth.currentUser.uid);
+          const draft = await fetchDraft(id, userRef, true);
+          if (draft) {
+            letterbox.letters = [draft];
+          } else {
+            letterbox.letters = await fetchLetterbox(id, 1);
+          }
+          letters.push(letterbox);
+        }
+        // this will be slow but may be the only way
+        for await (const l of letters) {
+          const rec = await fetchRecipients(l.id);
+          l.recipients = rec;
+        }
+        setLetters(letters);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
-				if (docSnap.exists()) {
-					const userData = docSnap.data();
-					console.log(userData.photo_uri)
-					setUserName(userData.first_name || 'Unknown User');
-					setCountry(userData.country || 'Unknown Country');
-					setProfileImage(userData?.photo_uri || "");
-				} else {
-					console.log("No such document!");
-				}
-			}
-		};
 
-		fetchUserData();
-	}, [auth.currentUser]);
 
-	useEffect(() => {
-		setIsLoading(true);
-		const unsubscribe = onAuthStateChanged(auth, async (user) => {
-			if (!user) {
-				setError('No user logged in.');
-				setIsLoading(false);
-				router.push("/login");
-			}
-			const letterboxes = await fetchLetterboxes()
-			const letterboxIds = letterboxes.map(l => l.id)
-			let letters = []
-			for (const id of letterboxIds) {
-				const letterbox = { id }
-				const userRef = doc(db, "users", auth.currentUser.uid);
-				const draft = await fetchDraft(id, userRef, true)
-				if (draft?.content?.length) {
-					letterbox.letters = [draft]
-				} else {
-					letterbox.letters = await fetchLetterbox(id, 1)
-				}
-				letters.push(letterbox)
-			}
-			// this will be slow but may be the only way
-			for await (const l of letters) {
-				const rec = await fetchRecipients(l.id)
-				l.recipients = rec
-			}
-			setLetters(letters)
-		});
 
-		return () => unsubscribe();
-	}, []);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
 
-	return (
-		<div className="bg-gray-100 min-h-screen py-6">
-			<div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-				<header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setUserName(userData.first_name || "Unknown User");
+          setCountry(userData.country || "Unknown Country");
+		  setProfileImage(userData?.photo_uri || "");
+        } else {
+          console.log("No such document!");
+        }
+      } else {
+        console.log("No user logged in");
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  return (
+    <div className="bg-gray-100 min-h-screen py-6">
+      <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+        <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
+          <Link href="/profile">
+            <button className="flex items-center text-gray-700">
+              <FaUserCircle className="h-8 w-8" />
+              <div className="ml-3">
+                <div className="font-semibold text-lg">{userName}</div>
+                <div className="text-sm text-gray-600">{country}</div>
+              </div>
+            </button>
+          </Link>
+
 
 					<Link href="/profile">
 						<button className="flex items-center text-gray-700">
@@ -151,4 +176,5 @@ export default function Home() {
 			</div>
 		</div>
 	);
+
 }
