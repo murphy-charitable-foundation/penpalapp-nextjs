@@ -38,6 +38,9 @@ export default function Home() {
         router.push("/login");
       } else {
         const letterboxes = await fetchLetterboxes();
+    		if (!letterboxes) {
+    			router.push("/discovery");
+    		}
         const letterboxIds = letterboxes.map((l) => l.id);
         let letters = [];
         for (const id of letterboxIds) {
