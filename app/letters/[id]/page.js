@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { db, storage } from "../../firebaseConfig"; // Adjust this path as necessary
+import { db } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, doc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -12,8 +12,11 @@ import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 import BottomNavBar from '@/components/bottom-nav-bar';
-import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
+import { uploadFile } from "@/app/lib/uploadFile";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+import ProfileImage from "@/components/general/ProfileImage";
+
+
 import * as Sentry from "@sentry/nextjs";
 
 export default function Page({ params }) {
@@ -140,25 +143,14 @@ export default function Page({ params }) {
   const onUploadComplete = (url) => setAttachments([...attachments, url]);
 
   const handleUpload = async (file) => {
-    if (file) {
-      const storageRef = ref(storage, `uploads/letterbox/${id}/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error('Upload error:', error);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          onUploadComplete(url);
-        }
-      );
-    }
-  };
+    uploadFile(
+      file,
+      `uploads/letterbox/${id}/${file.name}`,
+      setUploadProgress,
+      (error) => console.error('Upload error:', error),
+      onUploadComplete
+    );
+  };  
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -240,6 +232,20 @@ export default function Page({ params }) {
             </div>
           </div>
         </div>
+
+        <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
+          {recipients?.length && recipients.map(recipient => (
+            <div key={recipient?.first_name?.[0]}>
+              <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={12}/>
+              <div key={`${recipient?.first_name?.[0]}_`}>
+                <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
+                <p className="text-sm text-gray-500">{recipient?.country}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {isFileModalOpen && <FileModal />}
 
         <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
           {allMessages?.length ? (
