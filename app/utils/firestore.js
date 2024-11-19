@@ -32,7 +32,7 @@ export const fetchData = async () => {
         limit(1)
       )
       const draftSnapshot = await getDocs(draftQuery);
-      console.log("DRAFT", draftSnapshot)
+
       if (!draftSnapshot.empty) {
         const queryDocumentSnapshots = draftSnapshot.docs;
         const latestMessage = queryDocumentSnapshots[0].data();
@@ -48,7 +48,6 @@ export const fetchData = async () => {
       } else {
         const letterboxQuery = query(
           lRef,
-          where("content", "!=", ''), // Exclude empty messages
           where("deleted", "==", false),
           where("status", "==", "approved"),
           orderBy("timestamp")

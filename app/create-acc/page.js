@@ -20,7 +20,6 @@ export default function CreateAccount() {
   const [birthday, setBirthday] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -58,8 +57,6 @@ export default function CreateAccount() {
             birthday, 
             connected_penpals_count: 0
         });
-
-      setShowCreate(false)
 
       // Redirect to profile page or any other page as needed
       // router.push("/profile");
