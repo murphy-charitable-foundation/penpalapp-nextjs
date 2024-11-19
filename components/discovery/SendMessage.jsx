@@ -25,7 +25,6 @@ export default function SendMessage({ kid }) {
 
           if (docSnap.exists()) {
             const userData = docSnap.data();
-            console.log(userData);
             setUser(userData);
             setUserRef(docRef);
             return userData;

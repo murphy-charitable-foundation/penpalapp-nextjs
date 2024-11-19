@@ -110,18 +110,19 @@ export const fetchRecipients = async (id) => {
   const currentUserUid = auth.currentUser.uid;
 
   const users = letterbox.data().members.filter((m) => m.id !== currentUserUid);
-  const members = [];
-
-  for (const user of users) {
-    try {
-      const selectedUserDocRef = doc(db, "users", user.id);
-      const selUser = await getDoc(selectedUserDocRef);
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id });
-    } catch (e) {
-      Sentry.captureException(e);
-      console.error("Error fetching user:", e);
-    }
-  }
+  const members = await Promise.all(
+    users.map(async (user) => {
+      try {
+        const selectedUserDocRef = doc(db, "users", user.id);
+        const selUser = await getDoc(selectedUserDocRef);
+        return { ...selUser.data(), id: selectedUserDocRef.id };
+      } catch (e) {
+        Sentry.captureException(e);
+        console.error("Error fetching user:", e);
+        return null;
+      }
+    })
+  );
   return members;
 };
 
