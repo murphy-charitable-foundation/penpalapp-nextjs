@@ -45,7 +45,7 @@ export default function EditProfileUserImage() {
       } else {
         // User is signed out
         setUser(null);
-        router.push("/login"); // Redirect to login page
+        router.push(`/login?url=${window.location.href}`); // Redirect to login page
       }
     });
 

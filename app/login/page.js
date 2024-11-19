@@ -30,7 +30,7 @@ export default function Login() {
       if (user) {
         router.push("/letterhome");
       } else {
-        router.push("/login");
+        router.push(`/login?url=${window.location.href}`);
       }
     });
 

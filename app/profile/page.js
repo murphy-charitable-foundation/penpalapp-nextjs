@@ -105,7 +105,7 @@ export default function EditProfile() {
                 setUser(currentUser);
             } else {
                 setUser(null);
-                router.push("/login"); // Redirect to login page
+                router.push(`/login?url=${window.location.href}`); // Redirect to login page
             }
         });
 
@@ -117,7 +117,7 @@ export default function EditProfile() {
         try {
             await signOut(auth);
             // User is signed out
-            router.push("/login");
+            router.push(`/login`);
         } catch (error) {
             console.error("Error signing out: ", error);
         }

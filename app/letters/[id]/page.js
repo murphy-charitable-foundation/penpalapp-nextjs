@@ -197,7 +197,7 @@ export default function Page({ params }) {
         populateRecipients();
       } else {
         setUser(null);
-        router.push("/login");
+        router.push(`/login?url=${window.location.href}`);
       }
     });
 

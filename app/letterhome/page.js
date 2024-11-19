@@ -38,27 +38,33 @@ export default function Home() {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
         setIsLoading(false);
-        router.push("/login");
+        router.push(`/login?url=${window.location.href}`);
       } else {
         const letterboxes = await fetchLetterboxes();
         const letterboxIds = letterboxes.map((l) => l.id);
         let letters = [];
-        for (const id of letterboxIds) {
-          const letterbox = { id };
-          const userRef = doc(db, "users", auth.currentUser.uid);
-          const draft = await fetchDraft(id, userRef, true);
-          if (draft) {
-            letterbox.letters = [draft];
-          } else {
-            letterbox.letters = await fetchLetterbox(id, 1);
-          }
-          letters.push(letterbox);
-        }
+        letters = await Promise.all(
+          letterboxIds.map(async (id) => {
+            const letterbox = { id };
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const draft = await fetchDraft(id, userRef, true);
+        
+            if (draft) {
+              letterbox.letters = [draft];
+            } else {
+              letterbox.letters = await fetchLetterbox(id, 1);
+            }
+        
+            return letterbox;
+          })
+        );
         // this will be slow but may be the only way
-        for await (const l of letters) {
-          const rec = await fetchRecipients(l.id);
-          l.recipients = rec;
-        }
+        letters = await Promise.all(
+          letters.map(async (l) => {
+            const rec = await fetchRecipients(l.id);
+            return { ...l, recipients: rec };
+          })
+        );
         setLetters(letters);
       }
     });

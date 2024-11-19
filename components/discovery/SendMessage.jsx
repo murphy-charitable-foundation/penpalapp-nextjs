@@ -32,7 +32,7 @@ export default function SendMessage({ kid }) {
           }
         } else {
           console.error("No user logged in");
-          router.push("/login");
+          router.push(`/login?url=${window.location.href}`);
         }
       } catch (error) {
         console.error(
