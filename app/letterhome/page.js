@@ -9,8 +9,6 @@ import { doc, getDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 
-
-
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
 
@@ -21,6 +19,9 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 import ProfileImage from '@/components/general/ProfileImage';
+
+import { saveMessagingDeviceToken } from "@/app/firebase/messaging";
+import { FCM_PUSH } from "@/app/utils/sendMessage";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -90,6 +91,11 @@ export default function Home() {
 
     fetchUserData();
   }, []);
+
+  const handleSubmit = async () => {
+    saveMessagingDeviceToken();
+    FCM_PUSH();
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen py-6">
@@ -161,6 +167,7 @@ export default function Home() {
 							<p className="text-gray-500">No letters found.</p>
 						)}
 					</section>
+          <button type="button" color="blue" onClick={handleSubmit}>Click to Allow Notifications</button>
 
 				</main>
 				<BottomNavBar />
