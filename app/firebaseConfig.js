@@ -4,6 +4,7 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
+import { isSupported, getMessaging } from "firebase/messaging";
 
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
@@ -30,6 +31,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app, "gs://penpalmagicapp.appspot.com/");
+export const messaging = async () => await isSupported() && getMessaging(app);
 
 export { db, auth, storage, FieldPath };
 
