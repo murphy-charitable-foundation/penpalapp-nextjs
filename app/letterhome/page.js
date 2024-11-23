@@ -93,8 +93,10 @@ export default function Home() {
   }, []);
 
   const handleSubmit = async () => {
+    const uid = auth.currentUser.uid;
+    console.log(uid)
     saveMessagingDeviceToken();
-    FCM_PUSH();
+    FCM_PUSH(uid);
   };
 
   return (

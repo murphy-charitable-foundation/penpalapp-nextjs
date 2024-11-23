@@ -35,8 +35,7 @@ export async function saveMessagingDeviceToken() {
     const fcmToken = await getToken(msg, { vapidKey: VAPID_KEY });
     if (fcmToken) {
       console.log("Got FCM device token:", fcmToken);
-      // Save device token to
-      // for now, hardcoded. can use a userID or something else you can query
+      // Save device token to database, retrieve by using the currently logged in user
       await addDoc(collection(db, "tokens"), {
         user_id: uid,
         token: fcmToken,

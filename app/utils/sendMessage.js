@@ -2,7 +2,6 @@
 import admin from "firebase-admin";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { getAuth } from "firebase/auth";
 import * as firebaseAdmin from "firebase-admin";
 import serviceAccount from "../../service_key.json";
 
@@ -16,17 +15,9 @@ if (!firebaseAdmin.apps.length) {
   });
 }
 
-async function retrieveUserToken() {
+async function retrieveUserToken(uid) {
   var registrationToken = "";
-  console.log("in retrieve");
-  const auth = getAuth();
-  const user = auth.currentUser;
-  console.log(user);
-  if (typeof user === "undefined") {
-    //TODO: redirect user to login page?
-    console.error("Sender not identified, please log in.");
-  }
-  const uid = user.uid;
+  console.log(uid)
   const q = query(collection(db, "tokens"), where("user_id", "==", uid));
 
   const querySnapshot = await getDocs(q);
@@ -51,8 +42,8 @@ async function retrieveUserToken() {
   return message;
 }
 
-export async function FCM_PUSH() {
-  retrieveUserToken()
+export async function FCM_PUSH(uid) {
+  retrieveUserToken(uid)
     .then((message) => {
       admin
         .messaging()
