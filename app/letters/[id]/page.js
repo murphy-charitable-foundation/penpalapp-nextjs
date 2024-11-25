@@ -233,10 +233,10 @@ export default function Page({ params }) {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 p-4 bg-[#F3F4F6] rounded-t-lg">
+        <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
           {recipients?.length && recipients.map(recipient => (
             <div key={recipient?.first_name?.[0]}>
-              <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={12}/>
+              <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={20}/>
               <div key={`${recipient?.first_name?.[0]}_`}>
                 <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
                 <p className="text-sm text-gray-500">{recipient?.country}</p>
