@@ -11,6 +11,9 @@ import {
   where,
 } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
+import { auth, db } from "../firebaseConfig"
+import * as Sentry from "@sentry/nextjs";
 
 const DELAY = 1000;
 
@@ -41,8 +44,8 @@ export const fetchLetterboxes = async () => {
   return letterboxes;
 };
 
-export const fetchLetterbox = async (id, lim = false) => {
-  const retryFetch = () => setTimeout(() => fetchLetterbox(id), DELAY);
+export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
+  const retryFetch = () => setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -94,6 +97,12 @@ export const fetchLetterbox = async (id, lim = false) => {
   } catch (e) {
     console.log("Error fetching letterbox: ", e);
     return [];
+    Sentry.captureException(e);
+    console.log("Error fetching letterbox: ", e)
+    return {
+      messages: [],
+      lastVisible: null
+    }
   }
 };
 
@@ -160,6 +169,7 @@ export const fetchRecipients = async (id) => {
       const selUser = await getDoc(selectedUserDocRef);
       members.push({ ...selUser.data(), id: selectedUserDocRef.id });
     } catch (e) {
+      Sentry.captureException(e);
       console.error("Error fetching user:", e);
     }
   }
@@ -177,6 +187,7 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     sendingLetter = false;
     return true;
   } catch (e) {
+    Sentry.captureException(e);
     console.log("Failed to send letter: ", e);
     sendingLetter = false;
     return false;

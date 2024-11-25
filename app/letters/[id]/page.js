@@ -1,19 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { db, storage } from "../../firebaseConfig"; // Adjust this path as necessary
+import { db } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, doc } from "firebase/firestore";
-import { useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
-
 import BottomNavBar from "@/components/bottom-nav-bar";
-import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
+import { uploadFile } from "@/app/lib/uploadFile";
 import {
   fetchDraft,
   fetchLetterbox,
@@ -22,22 +19,30 @@ import {
 } from "@/app/utils/letterboxFunctions";
 import LetterCard from "@/components/letter/LetterCard";
 import FileModal from "@/components/letter/FileModal";
-import ImageViewer from "@/components/ImageViewer";
+import ImageViewer from "@/components/ImageViewer";import ProfileImage from "@/components/general/ProfileImage";
+
+
+import * as Sentry from "@sentry/nextjs";
 
 export default function Page({ params }) {
   const { id } = params;
+  const auth = getAuth();
 
   const [letterContent, setLetterContent] = useState("");
+  const [debounce, setDebounce] = useState(0);
   const [user, setUser] = useState(null);
-  const auth = getAuth();
-  const [isFileModalOpen, setIsFileModalOpen] = useState(null);
+  const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [draft, setDraft] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState(null);
-  const [debounce, setDebounce] = useState(0);
   const [lettersRef, setLettersRef] = useState(null);
   const [attachments, setAttachments] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
+  const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
+  const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
+  const PAGINATION_INCREMENT = 20;
 
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -46,32 +51,34 @@ export default function Page({ params }) {
     }
 
     if (!auth.currentUser) {
-      // Directly using auth.currentUser for immediate check
-      if (!auth.currentUser) {
-        // Directly using auth.currentUser for immediate check
-        alert("Sender not identified, please log in.");
-        return;
-      }
-
-      const letterData = {
-        content: letterContent,
-        sent_by: userRef, // Directly using the uid from auth.currentUser
-        status: "pending_review",
-        created_at: new Date(),
-        deleted: null,
-      };
-
-      const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
-      if (letterStatus) {
-        setLetterContent("");
-        setAttachments([]);
-      } else {
-        alert("Failed to send your letter, please try again.");
-      }
-      // TODO: UI FIX we need a message to let the user know we are awaiting approval
-      const messages = await fetchLetterbox(id);
-      setAllMessages(messages);
+      alert("Sender not identified, please log in.");
+      return;
     }
+
+    const letterData = {
+      content: letterContent,
+      sent_by: userRef,
+      status: "sent",
+      created_at: new Date(),
+      deleted: null,
+    };
+
+    const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
+    if (letterStatus) {
+      setLetterContent("");
+      setAttachments([]);
+    } else {
+      Sentry.captureException(e);
+      alert("Failed to send your letter, please try again.");
+    }
+
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    setAllMessages(messages);
+    setLastVisible(newLastVisible);
+    setDraft(null);
+    const d = await fetchDraft(id, userRef, true);
+    setDraft(d);
+    setLetterContent(d.content);
   };
 
   useEffect(() => {
@@ -93,13 +100,28 @@ export default function Page({ params }) {
       setUserRef(userDocRef);
 
       const fetchMessages = async () => {
-        const messages = await fetchLetterbox(id);
-        console.log(messages);
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
         setAllMessages(messages);
+        setLastVisible(newLastVisible); // Store last visible letter for pagination
+        setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
       };
       fetchMessages();
     }
-  }, [user, id]);
+  }, [user]);
+
+  useEffect(() => {
+    const getSelectedUser = async () => {
+      if (recipients?.length) {
+        const letterboxRef = doc(collection(db, "letterbox"), id);
+        const lRef = collection(letterboxRef, "letters");
+        setLettersRef(lRef);
+        const d = await fetchDraft(id, userRef, true);
+        setDraft(d);
+        setLetterContent(d.content);
+      }
+    };
+    getSelectedUser();
+  }, [recipients]);
 
   useEffect(() => {
     setDebounce(debounce + 1);
@@ -113,10 +135,7 @@ export default function Page({ params }) {
           status: "draft",
           attachments,
         };
-        const draftStatus = await sendLetter(letterData, lettersRef, draft.id);
-        if (!draftStatus) {
-          console.log("Error updating draft");
-        }
+        await sendLetter(letterData, lettersRef, draft.id)
       }
     };
 
@@ -126,7 +145,14 @@ export default function Page({ params }) {
     }
   }, [letterContent]);
 
-  const [uploadProgress, setUploadProgress] = useState(null);
+  const handleLoadMore = async () => {
+    setLoadingMore(true); // Set loading state to true while fetching more messages
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    setAllMessages((prevMessages) => [...prevMessages, ...messages]);
+    setLastVisible(newLastVisible); // Update lastVisible with the new last document
+    setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
+    setLoadingMore(false); // Reset loading state
+  };
 
   const handleChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -136,27 +162,66 @@ export default function Page({ params }) {
   const onUploadComplete = (url) => setAttachments([...attachments, url]);
 
   const handleUpload = async (file) => {
-    if (file) {
-      const storageRef = ref(storage, `uploads/letterbox/${id}/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadFile(
+      file,
+      `uploads/letterbox/${id}/${file.name}`,
+      setUploadProgress,
+      (error) => console.error('Upload error:', error),
+      onUploadComplete
+    );
+  };  
 
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error("Upload error:", error);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          onUploadComplete(url);
-        }
-      );
-    }
-  };
+  const FileModal = () => (
+    <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
+        <div className="flex relative">
+          <button
+            onClick={() => setIsFileModalOpen(false)}
+            className="rounded-lg transition-colors duration-150 h-6 w-6 absolute top-0 left-0"
+          >
+            <IoMdClose className="h-full w-full" />
+          </button>
+          <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
+            Files
+          </h3>
+        </div>
+        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
+        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
+          <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
+          Select a file
+        </label>
+
+        <h3 className="font-600 mt-4">Selected</h3>
+        {attachments.map((att, index) => (
+          <div key={index}>
+            <img src={att} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  useEffect(() => {
+    const populateRecipients = async () => {
+      try {
+        const members = await fetchRecipients(id);
+        setRecipients(members);
+      } catch (e) {
+        console.error("err fetching members", e);
+      }
+    };
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        populateRecipients();
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="h-screen bg-[#E5E7EB] p-4">
@@ -187,10 +252,7 @@ export default function Page({ params }) {
               <span className="text-black">{attachments.length} files</span>
             ) : null}
             <div className="space-x-2">
-              <button
-                className="text-black p-2 rounded-full"
-                onClick={() => setIsFileModalOpen(true)}
-              >
+              <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
                 <BsPaperclip className="h-6 w-6 rotate-90" />
               </button>
               <button
@@ -232,8 +294,13 @@ export default function Page({ params }) {
           value={letterContent}
           onChange={(e) => setLetterContent(e.target.value)}
         />
+
+        <div className="text-right text-sm p-4 mt-8 text-gray-600">
+          {letterContent.length} / 1000
+        </div>
       </div>
       <BottomNavBar />
+      {isFileModalOpen && <FileModal />}
     </div>
   );
 }
