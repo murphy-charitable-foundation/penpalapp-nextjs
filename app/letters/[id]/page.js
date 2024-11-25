@@ -11,6 +11,9 @@ import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import { uploadFile } from "@/app/lib/uploadFile";
+import { IoMdClose } from "react-icons/io";
+import { MdInsertDriveFile } from "react-icons/md";
+
 import {
   fetchDraft,
   fetchLetterbox,
@@ -19,8 +22,8 @@ import {
 } from "@/app/utils/letterboxFunctions";
 import LetterCard from "@/components/letter/LetterCard";
 import FileModal from "@/components/letter/FileModal";
-import ImageViewer from "@/components/ImageViewer";import ProfileImage from "@/components/general/ProfileImage";
-
+import ImageViewer from "@/components/ImageViewer";
+import ProfileImage from "@/components/general/ProfileImage";
 
 import * as Sentry from "@sentry/nextjs";
 
@@ -72,7 +75,11 @@ export default function Page({ params }) {
       alert("Failed to send your letter, please try again.");
     }
 
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT
+    );
+
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -100,7 +107,11 @@ export default function Page({ params }) {
       setUserRef(userDocRef);
 
       const fetchMessages = async () => {
-        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+          id,
+          5
+        );
+        console.log(messages, lastVisible);
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
@@ -135,7 +146,7 @@ export default function Page({ params }) {
           status: "draft",
           attachments,
         };
-        await sendLetter(letterData, lettersRef, draft.id)
+        await sendLetter(letterData, lettersRef, draft.id);
       }
     };
 
@@ -147,7 +158,11 @@ export default function Page({ params }) {
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT,
+      lastVisible
+    );
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
     setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
@@ -166,10 +181,10 @@ export default function Page({ params }) {
       file,
       `uploads/letterbox/${id}/${file.name}`,
       setUploadProgress,
-      (error) => console.error('Upload error:', error),
+      (error) => console.error("Upload error:", error),
       onUploadComplete
     );
-  };  
+  };
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -185,8 +200,17 @@ export default function Page({ params }) {
             Files
           </h3>
         </div>
-        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
-        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
+        <input
+          type="file"
+          hidden
+          onChange={handleChange}
+          disabled={uploadProgress > 0 && uploadProgress < 100}
+          id="raised-button-file"
+        />
+        <label
+          htmlFor="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        >
           <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
           Select a file
         </label>
@@ -252,7 +276,10 @@ export default function Page({ params }) {
               <span className="text-black">{attachments.length} files</span>
             ) : null}
             <div className="space-x-2">
-              <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
+              <button
+                className="text-black p-2 rounded-full"
+                onClick={() => setIsFileModalOpen(true)}
+              >
                 <BsPaperclip className="h-6 w-6 rotate-90" />
               </button>
               <button
@@ -273,9 +300,9 @@ export default function Page({ params }) {
             <LetterCard
               key={`${message.id}_${index}`}
               content={message.content}
-              createdAt={message.created_at.seconds}
+              createdAt={message.created_at?.seconds}
               attachments={message.attachments}
-              user={message.user}
+              user={message.sent_by}
               id={message}
             />
           ))}
