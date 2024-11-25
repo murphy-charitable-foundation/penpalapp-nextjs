@@ -2,7 +2,6 @@ import React from "react";
 import Image from "next/image";
 
 export default function ProfileImage({ photo_uri, first_name, size = 12 }) {
-    const sizeClass = `w-${size} h-${size}`;
     const pixelSize = size * 4;
   return (
     <div>
@@ -15,10 +14,9 @@ export default function ProfileImage({ photo_uri, first_name, size = 12 }) {
           <Image
             src={photo_uri}
             alt="profile picture"
-            layout="intrinsic"
-            width={pixelSize} // Dynamically set the width
-            height={pixelSize} // Dynamically set the height
-            className="rounded-full"
+            width={pixelSize}
+            height={pixelSize}
+            className="object-cover rounded-full"
           />
         ) : (
           <span className="text-xl text-gray-600">{first_name?.[0]}</span>
