@@ -1,21 +1,24 @@
 import React from "react";
 import Image from "next/image";
 
-export default function ProfileImage({ photo_uri, first_name, size = 8 }) {
-  const sizeClass = `w-${size} h-${size}`;
-
+export default function ProfileImage({ photo_uri, first_name, size = 12 }) {
+  const pixelSize = size * 4;
   return (
     <div>
       <div
-        className={`${sizeClass} bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2`}
+        className={`bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-2`}
+        style={{
+          width: `${pixelSize}px`,
+          height: `${pixelSize}px`,
+        }}
       >
         {photo_uri && photo_uri.length != 0 ? (
           <Image
             src={photo_uri}
-            className="w-full h-full object-cover"
-            width="100"
-            height="100"
             alt="profile picture"
+            width={pixelSize}
+            height={pixelSize}
+            className="object-cover rounded-full"
           />
         ) : (
           <span className="text-xl text-gray-600">{first_name?.[0]}</span>
