@@ -27,7 +27,7 @@ import { MdInsertDriveFile } from "react-icons/md";
 
 import * as Sentry from "@sentry/nextjs";
 import { FiFileText, FiMic, FiSend } from "react-icons/fi";
-import BottomNavBar from "@/components/bottom-nav-bar";
+import BottomNavBar from "../../components/bottom-nav-bar";
 import { fetchData } from "../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 

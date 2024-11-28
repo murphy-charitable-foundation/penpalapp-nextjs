@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import BottomNavBar from '@/components/bottom-nav-bar';
+import BottomNavBar from "../../components/bottom-nav-bar";
 
 
 export default function Donate() {

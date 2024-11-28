@@ -8,7 +8,7 @@ import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { onAuthStateChanged } from "firebase/auth";
 import { addDoc } from 'firebase/firestore';
 import { getDoc } from 'firebase/firestore';
-import BottomNavBar from '@/components/bottom-nav-bar';
+import BottomNavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 
 

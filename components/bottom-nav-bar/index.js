@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/button";
 import { FaUserAlt, FaPen, FaCompass, FaHandHoldingHeart, FaInfo, FaEnvelopeOpenText, FaHome, FaInbox, FaBars } from 'react-icons/fa';
 import Link from "next/link";
 
 import { useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover";
 
 const navLinks = [
   { href: '/profile', icon: <FaUserAlt className="h-4 w-4" />, label: 'Profile' },
@@ -14,7 +14,7 @@ const navLinks = [
   { href: '/contact', icon: <FaEnvelopeOpenText className="h-4 w-4" />, label: 'Contact' },
 ];
 
-export default function NavBar() {
+export default function BottomNavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (

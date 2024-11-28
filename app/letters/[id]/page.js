@@ -17,10 +17,10 @@ import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 
-import BottomNavBar from '@/components/bottom-nav-bar';
 // import { fetchData, fetchLetters, fetchRecipients } from "../../utils/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
-import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "../../utils/letterboxFunctions";
+import BottomNavBar from "../../../components/bottom-nav-bar";
 
 
 export default function Page({ params }) {
