@@ -119,7 +119,6 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
     lRef,
     where("sent_by", "==", userRef),
     where("status", "==", "draft"),
-    where("status", "==", "draft"),
     limit(1)
   );
   const draftSnapshot = await getDocs(letterboxQuery);

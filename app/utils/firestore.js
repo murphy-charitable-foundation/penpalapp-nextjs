@@ -29,9 +29,7 @@ export const fetchData = async () => {
     return;
   }
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
-  console.log(auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
-  console.log(userDocSnapshot);
 
   if (userDocSnapshot.exists()) {
     const letterboxQuery = query(
@@ -54,7 +52,7 @@ export const fetchData = async () => {
         limit(1)
       );
       const draftSnapshot = await getDocs(draftQuery);
-      console.log("DRAFT", draftSnapshot);
+      
       if (!draftSnapshot.empty) {
         const queryDocumentSnapshots = draftSnapshot.docs;
         const latestMessage = queryDocumentSnapshots[0].data();
@@ -65,7 +63,7 @@ export const fetchData = async () => {
             (memberRef) => memberRef.id !== auth.currentUser.uid
           ).id,
           content: latestMessage.content,
-          draft: latestMessage.draft,
+          status: latestMessage.status,
           deleted: latestMessage.deleted_at,
           created_at: latestMessage.created_at,
         });
@@ -74,7 +72,7 @@ export const fetchData = async () => {
           lRef,
           where("content", "!=", ""), // Exclude empty messages
           where("deleted", "==", false),
-          where("draft", "==", false),
+          where("status", "==", "approved"),
           orderBy("timestamp")
         );
 
@@ -97,7 +95,6 @@ export const fetchData = async () => {
         }
       }
     }
-    console.log("msgs", messages);
     return messages;
   }
 };
@@ -151,7 +148,6 @@ export const fetchRecipients = async (id) => {
       console.log("ERR: ", e);
     }
   }
-  console.log("members to return", members);
   return members;
 };
 

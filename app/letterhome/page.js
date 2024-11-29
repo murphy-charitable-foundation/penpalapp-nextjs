@@ -26,13 +26,13 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  
   const router = useRouter();
 
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
         setIsLoading(false);
         router.push("/login");
@@ -117,6 +117,7 @@ export default function Home() {
             </Link>
           </div>
         </header>
+
         <main className="p-6">
           <section className="mt-8">
             <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
@@ -143,7 +144,7 @@ export default function Home() {
                         />
                         <div className="flex flex-col">
                           <div className="flex">
-                            {letter.letters[0].status === "draft" && (
+                            {letter.letters[0]?.status === "draft" && (
                               <h4 className="mr-2">[DRAFT]</h4>
                             )}
                             <h3 className="font-semibold text-gray-800">
@@ -155,10 +156,10 @@ export default function Home() {
                       </div>
                     ))}
                     <p className="text-gray-600 truncate">
-                      {letter.letters[0].content ?? ""}
+                      {letter.letters[0]?.content ?? ""}
                     </p>
                     <span className="text-xs text-gray-400">
-                      {letter.letters[0].received}
+                      {letter.letters[0]?.read_status}
                     </span>
                   </div>
                 </a>

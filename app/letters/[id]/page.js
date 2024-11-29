@@ -111,7 +111,6 @@ export default function Page({ params }) {
           id,
           5
         );
-        console.log(messages, lastVisible);
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
