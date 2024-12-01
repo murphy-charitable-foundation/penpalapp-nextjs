@@ -7,11 +7,11 @@ sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, subject, message } = body; // Assuming these are sent from the client
+    const { message } = body; // Assuming these are sent from the client
 
     // SendGrid email configuration
     const msg = {
-      to: 'admin@example.com', // Replace with your admin email
+      to: 'connorwhite771@gamil.com', // Replace with your admin email
       from: 'noreply@example.com', // Your verified sender email
       subject: subject || 'New Report Submission',
       text: message || 'No message provided.',

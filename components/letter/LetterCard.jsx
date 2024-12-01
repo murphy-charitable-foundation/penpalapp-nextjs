@@ -41,6 +41,9 @@ const LetterCard = ({
         <ReportPopup
           setShowPopup={setShowReportPopup}
           setShowConfirmReportPopup={setShowConfirmReportPopup}
+          user={user}
+          content={content}
+          id={id}
         />
       )}
       {showConfirmReportPopup && (
