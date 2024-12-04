@@ -16,12 +16,14 @@ import { uploadFile } from "@/app/lib/uploadFile";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
 
+import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
 
 export default function Page({ params }) {
   const { id } = params;
   const auth = getAuth();
+  const router = useRouter();
 
   const [letterContent, setLetterContent] = useState("");
   const [debounce, setDebounce] = useState(0);
