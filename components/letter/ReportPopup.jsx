@@ -1,6 +1,5 @@
 import Button from "../Button";
 import {useEffect, useState} from "react"
-import { useRouter } from 'next/router';
 
 
 
@@ -20,14 +19,13 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
 
   
   const currentUrl = `${window.location.origin}${pathParams}`;
-  console.log("Made it to report pop up");
   
 
   async function handleButtonClick( user, content, id) {
     try {
       const excerpt = content.substring(0, 100) + '...';
       const message = `Hello, the user ${user.firstname} ${user.lastname}, reported this message: ${currentUrl}. Here is a brief excerpt from the reported message, ${excerpt}`
-      console.log(1);
+      
       const response = await fetch('/api/report', {
         method: 'POST',
         headers: {
@@ -35,16 +33,11 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
         },
         body: JSON.stringify({ message }), // Send data as JSON
       });
-      console.log(2);
+      
       if (!response.ok) {
-        console.log("Throw error is working");
         throw new Error(`Error: ${response.statusText}`);
       }
-      console.log(3);
-      const result = await response.json();
-      console.log(4);
-      console.log(result);
-      console.log(5);
+     
     } catch (error) {
       console.error(error);
     }

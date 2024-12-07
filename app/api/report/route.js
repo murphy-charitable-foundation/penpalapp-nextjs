@@ -5,14 +5,12 @@ import sendgrid from '@sendgrid/mail';
 
 export async function POST(request) {
   try {
-    if (!process.env.SENDGRID_KEY) {
-      return NextResponse.json({ message: 'ENV variable not properly grabbed' }, { status: 200 });
-    }
+
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
 
     const body = await request.json();
 
-    //Grabe Message Information
+    //Grab Message Information
     const { message } = body; 
 
     //SendGrid email configuration
@@ -27,8 +25,8 @@ export async function POST(request) {
     // Send the email
     
     await sendgrid.send(msg);
-
     return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
+    
   } catch (error) {
     console.error('Error sending email:', error);
 
