@@ -1,24 +1,31 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 
-// Set your SendGrid API Key (replace with your actual key)
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
+
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { message } = body; // Assuming these are sent from the client
+    if (!process.env.SENDGRID_KEY) {
+      return NextResponse.json({ message: 'ENV variable not properly grabbed' }, { status: 200 });
+    }
+    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
 
-    // SendGrid email configuration
+    const body = await request.json();
+
+    //Grabe Message Information
+    const { message } = body; 
+
+    //SendGrid email configuration
     const msg = {
-      to: 'connorwhite771@gamil.com', // Replace with your admin email
-      from: 'noreply@example.com', // Your verified sender email
-      subject: subject || 'New Report Submission',
+      to: 'connorwhite771@gmail.com', 
+      from: 'connorwhite771@gmail.com', // Your verified sender email
+      subject: "Message Reported",
       text: message || 'No message provided.',
       html: `<p>${message || 'No message provided.'}</p>`,
     };
-
+    
     // Send the email
+    
     await sendgrid.send(msg);
 
     return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });

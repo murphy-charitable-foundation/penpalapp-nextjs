@@ -7,14 +7,27 @@ import { useRouter } from 'next/router';
 const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, id }) => {
 
   const [data, setData] = useState(null);
-  const router = useRouter();
-  const currentUrl = `${window.location.origin}${router.asPath}`;
+  const [isMounted, setIsMounted] = useState(false);
 
+  const [pathParams, setPathParams] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      setPathParams(path); // Get the path parameters
+    }
+  }, []);
+
+  
+  const currentUrl = `${window.location.origin}${pathParams}`;
+  console.log("Made it to report pop up");
+  
 
   async function handleButtonClick( user, content, id) {
     try {
       const excerpt = content.substring(0, 100) + '...';
       const message = `Hello, the user ${user.firstname} ${user.lastname}, reported this message: ${currentUrl}. Here is a brief excerpt from the reported message, ${excerpt}`
+      console.log(1);
       const response = await fetch('/api/report', {
         method: 'POST',
         headers: {
@@ -22,11 +35,16 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
         },
         body: JSON.stringify({ message }), // Send data as JSON
       });
+      console.log(2);
       if (!response.ok) {
+        console.log("Throw error is working");
         throw new Error(`Error: ${response.statusText}`);
       }
+      console.log(3);
       const result = await response.json();
-      setData(result.message);
+      console.log(4);
+      console.log(result);
+      console.log(5);
     } catch (error) {
       console.error(error);
     }
@@ -47,6 +65,7 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
           </Button>
           <Button
             onClick={() => {
+              handleButtonClick(user, content, id);
               setShowPopup(false);
               setShowConfirmReportPopup(true);
             }}
