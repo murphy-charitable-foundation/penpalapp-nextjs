@@ -57,6 +57,8 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   const letterboxRef = doc(collection(db, "letterbox"), id);
   const lRef = collection(letterboxRef, "letters");
   let letterboxQuery;
+
+  /* TODO temporarily disable moderation until it is developed
   if (lim) {
     letterboxQuery = lastVisible
       ? query(
@@ -65,6 +67,17 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
           startAfter(lastVisible),
           limit(lim)
         )
+      : query(lRef, orderBy("timestamp", "desc"), limit(lim));
+  } else {
+    letterboxQuery = lastVisible
+      ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible))
+      : query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"));
+  }
+  */
+
+  if (lim) {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("timestamp", "desc"), startAfter(lastVisible), limit(lim))
       : query(lRef, orderBy("timestamp", "desc"), limit(lim));
   } else {
     letterboxQuery = lastVisible

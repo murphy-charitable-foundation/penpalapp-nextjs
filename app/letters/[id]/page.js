@@ -25,11 +25,14 @@ import FileModal from "@/components/letter/FileModal";
 import ImageViewer from "@/components/ImageViewer";
 import ProfileImage from "@/components/general/ProfileImage";
 
+import { useRouter } from "next/navigation";
+
 import * as Sentry from "@sentry/nextjs";
 
 export default function Page({ params }) {
   const { id } = params;
   const auth = getAuth();
+  const router = useRouter();
 
   const [letterContent, setLetterContent] = useState("");
   const [debounce, setDebounce] = useState(0);
@@ -261,25 +264,14 @@ export default function Page({ params }) {
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">
             <button onClick={() => window.history.back()}>
-              <Image
-                alt="close-icon"
-                height={100}
-                width={100}
-                className="h-4 w-4"
-                src="/closeicon.svg"
-              />
+              <img src="/closeicon.svg" />
             </button>
           </Link>
           <button className="opacity-0">{"<"}</button>
           <div className="flex justify-between items-center p-4">
-            {attachments.length ? (
-              <span className="text-black">{attachments.length} files</span>
-            ) : null}
+            <span className="text-black">{attachments.length} files</span>
             <div className="space-x-2">
-              <button
-                className="text-black p-2 rounded-full"
-                onClick={() => setIsFileModalOpen(true)}
-              >
+              <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
                 <BsPaperclip className="h-6 w-6 rotate-90" />
               </button>
               <button
@@ -295,29 +287,53 @@ export default function Page({ params }) {
           </div>
         </div>
 
-        <div className="h-[calc(100vh-350px)] overflow-y-auto flex flex-col bg-grey bg-[#F5F5F5]">
-          {allMessages?.map((message, index) => (
-            <LetterCard
-              key={`${message.id}_${index}`}
-              content={message.content}
-              createdAt={message.created_at?.seconds}
-              attachments={message.attachments}
-              user={message.sent_by}
-              id={message}
-            />
+        <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
+          {recipients?.length && recipients.map(recipient => (
+            <div key={recipient?.first_name?.[0]}>
+              <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={20}/>
+              <div key={`${recipient?.first_name?.[0]}_`}>
+                <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
+                <p className="text-sm text-gray-500">{recipient?.country}</p>
+              </div>
+            </div>
           ))}
         </div>
-      </div>
-      <div>
-        {attachments?.length > 0 && (
-          <div className="flex gap-2 bg-white p-2">
-            <ImageViewer styleClass="h-12 w-12" imageSources={attachments} />
-          </div>
-        )}
+
+        {isFileModalOpen && <FileModal />}
+
+        <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
+          {allMessages?.length ? (
+            allMessages.map((message, index) => (
+              <div key={index} className={`w-[90%] flex bg-white p-4 rounded-lg text-gray-600 ${message.sent_by.id === userRef.id && "self-end"}`}>
+                <div className="flex flex-col">
+                  {message?.attachments?.length ? (
+                    <Image
+                      alt="attachment"
+                      width={100}
+                      height={100}
+                      src={message.attachments[0]}
+                    />
+                  ) : null}
+                  <span>{message.content}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <span>No messages</span>
+          )}
+
+          {hasMoreMessages && !loadingMore && (
+            <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
+              Load More
+            </button>
+          )}
+
+          {loadingMore && <span>Loading...</span>}
+        </div>
         <textarea
-          className="w-full border p-4 text-black bg-[#ffffff] focus:outline-none resize-none shadow-md"
-          rows="4"
-          placeholder="Reply to the letter..."
+          className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
+          rows="8"
+          placeholder="Tap to write letter..."
           value={letterContent}
           onChange={(e) => setLetterContent(e.target.value)}
         />
