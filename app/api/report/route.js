@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 
 
-
 export async function POST(request) {
   try {
 
@@ -13,6 +12,8 @@ export async function POST(request) {
     //Grab Message Information
     const { message } = body; 
 
+
+    //HTML for Email
     const emailHtml = `
       <html>
         <head>
