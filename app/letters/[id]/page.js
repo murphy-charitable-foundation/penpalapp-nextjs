@@ -9,11 +9,20 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
+import BottomNavBar from "@/components/bottom-nav-bar";
+import { uploadFile } from "@/app/lib/uploadFile";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
-import BottomNavBar from '@/components/bottom-nav-bar';
-import { uploadFile } from "@/app/lib/uploadFile";
-import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchRecipients,
+  sendLetter,
+} from "@/app/utils/letterboxFunctions";
+import LetterCard from "@/components/letter/LetterCard";
+import FileModal from "@/components/letter/FileModal";
+import ImageViewer from "@/components/ImageViewer";
 import ProfileImage from "@/components/general/ProfileImage";
 
 import { useRouter } from "next/navigation";
@@ -69,7 +78,11 @@ export default function Page({ params }) {
       alert("Failed to send your letter, please try again.");
     }
 
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT
+    );
+
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -79,12 +92,29 @@ export default function Page({ params }) {
   };
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
+  useEffect(() => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
 
       const fetchMessages = async () => {
-        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+          id,
+          5
+        );
+        console.log(messages, lastVisible);
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
@@ -108,7 +138,7 @@ export default function Page({ params }) {
   }, [recipients]);
 
   useEffect(() => {
-    setDebounce(debounce + 1)
+    setDebounce(debounce + 1);
     const updateDraft = async () => {
       if (userRef && lettersRef) {
         const letterData = {
@@ -117,20 +147,25 @@ export default function Page({ params }) {
           timestamp: new Date(),
           deleted: null,
           status: "draft",
-          attachments
+          attachments,
         };
-        await sendLetter(letterData, lettersRef, draft.id)
+        await sendLetter(letterData, lettersRef, draft.id);
       }
-    }
+    };
+
     if (debounce >= 20) {
-      updateDraft()
-      setDebounce(0)
+      updateDraft();
+      setDebounce(0);
     }
-  }, [letterContent])
+  }, [letterContent]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT,
+      lastVisible
+    );
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
     setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
@@ -149,10 +184,10 @@ export default function Page({ params }) {
       file,
       `uploads/letterbox/${id}/${file.name}`,
       setUploadProgress,
-      (error) => console.error('Upload error:', error),
+      (error) => console.error("Upload error:", error),
       onUploadComplete
     );
-  };  
+  };
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -168,8 +203,17 @@ export default function Page({ params }) {
             Files
           </h3>
         </div>
-        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
-        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
+        <input
+          type="file"
+          hidden
+          onChange={handleChange}
+          disabled={uploadProgress > 0 && uploadProgress < 100}
+          id="raised-button-file"
+        />
+        <label
+          htmlFor="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        >
           <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
           Select a file
         </label>
@@ -207,7 +251,15 @@ export default function Page({ params }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#E5E7EB] p-4">
+    <div className="h-screen bg-[#E5E7EB] p-4">
+      {isFileModalOpen && (
+        <FileModal
+          setIsFileModalOpen={setIsFileModalOpen}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          id={id}
+        />
+      )}
       <div className="bg-white shadow rounded-lg">
         <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
           <Link href="/">

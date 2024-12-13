@@ -7,9 +7,6 @@ import { db, auth } from "../firebaseConfig"; // Adjust the import path as neces
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
-import * as Sentry from "@sentry/nextjs";
-
-
 
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
@@ -20,7 +17,7 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import ProfileImage from '@/components/general/ProfileImage';
+import ProfileImage from "@/components/general/ProfileImage";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -65,9 +62,6 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-
-
-
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
@@ -79,7 +73,7 @@ export default function Home() {
           const userData = docSnap.data();
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
-		  setProfileImage(userData?.photo_uri || "");
+          setProfileImage(userData?.photo_uri || "");
         } else {
           console.log("No such document!");
         }
@@ -104,17 +98,6 @@ export default function Home() {
               </div>
             </button>
           </Link>
-
-
-					<Link href="/profile">
-						<button className="flex items-center text-gray-700">
-							<ProfileImage photo_uri={profileImage} first_name={userName}/>
-							<div className="ml-3">
-								<div className="font-semibold text-lg">{userName}</div>
-								<div className="text-sm text-gray-600">{country}</div>
-							</div>
-						</button>
-					</Link>
 
 					<div className="flex items-center space-x-4">
 						<Link href="/settings">
