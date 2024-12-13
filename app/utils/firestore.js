@@ -8,17 +8,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
-import { auth, db } from "../firebaseConfig";
+
 
 export const fetchData = async () => {
   if (!auth.currentUser?.uid) {
