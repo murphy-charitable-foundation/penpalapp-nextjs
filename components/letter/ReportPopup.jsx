@@ -1,16 +1,18 @@
 import Button from "../Button";
 import {useEffect, useState} from "react"
+
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig"; // Adjust this path as necessary
+import { db } from "../../app/firebaseConfig"; 
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 
-const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, id }) => {
+const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}) => {
 
   const [data, setData] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
-
   const [pathParams, setPathParams] = useState('');
-
+  const auth = getAuth();
+  console.log("Sender: ", sender);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -18,9 +20,11 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
     }
   }, []);
 
-  const fetchUserData = async (userRef) => {
+  const fetchUserData = async (user) => {
     try {
       // Step 1: Fetch the user document using the reference
+      const userRef = doc(db, "users", user); // Replace "users" with your actual collection name
+    
       const userSnapshot = await getDoc(userRef);
   
       // Step 2: Check if the document exists
@@ -38,14 +42,15 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
       console.error("Error fetching user data:", error);
     }
   };
-  const userInfo = fetchUserData(user);
+  const userInfo = fetchUserData(sender);
+  const receiver_email = auth.currentUser.email;
   const currentUrl = `${window.location.origin}${pathParams}`;
   
 
-  async function handleButtonClick( user, content) {
+  async function handleButtonClick(content) {
     try {
       const excerpt = content.substring(0, 100) + '...';
-      const message = `Hello, the user ${userInfo.first_name} ${userInfo.last_name}, reported this message: ${currentUrl}. Here is a brief excerpt from the reported message, "${excerpt}"`
+      const message = `Hello, the user with the email: ${receiver_email}, reported this message: ${currentUrl} sent by a user with the email: ${userInfo.email}. Here is a brief excerpt from the reported message, "${excerpt}"`
       
       const response = await fetch('/api/report', {
         method: 'POST',
@@ -79,7 +84,7 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, user, content, i
             </Button>
             <Button
               onClick={() => {
-                handleButtonClick(user, content);
+                handleButtonClick(content);
                 setShowPopup(false);
                 setShowConfirmReportPopup(true);
               }}

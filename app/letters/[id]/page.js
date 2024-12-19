@@ -46,8 +46,8 @@ export default function Page({ params }) {
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
+  const [sender, setSender] = useState(null);
   const PAGINATION_INCREMENT = 20;
-
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
       alert("Please fill in the letter content and select a recipient.");
@@ -89,7 +89,6 @@ export default function Page({ params }) {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
-
       const fetchMessages = async () => {
         const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
         setAllMessages(messages);
@@ -219,9 +218,8 @@ export default function Page({ params }) {
         <ReportPopup
           setShowPopup={setShowReportPopup}
           setShowConfirmReportPopup={setShowConfirmReportPopup}
-          user={user}
+          sender={sender}
           content={content}
-          id={id}
         />
       )}
       {showConfirmReportPopup && (
@@ -290,6 +288,8 @@ export default function Page({ params }) {
                         <FaExclamationCircle
                           className="cursor-pointer"
                           onClick={() => {
+                            console.log("This is the message.sent_by: ", message.sent_by)
+                            setSender(message.sent_by.id);
                             setContent(message.content);
                             setShowReportPopup(true);  
                           }}
