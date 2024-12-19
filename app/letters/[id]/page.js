@@ -39,6 +39,8 @@ export default function Page({ params }) {
   const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
   const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
   const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
+  const [showReportPopup, setShowReportPopup] = useState(false);
+  const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const PAGINATION_INCREMENT = 20;
 
   const handleSendLetter = async () => {
@@ -207,91 +209,106 @@ export default function Page({ params }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#E5E7EB] p-4">
-      <div className="bg-white shadow rounded-lg">
-        <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
-          <Link href="/">
-            <button onClick={() => window.history.back()}>
-              <img src="/closeicon.svg" />
-            </button>
-          </Link>
-          <button className="opacity-0">{"<"}</button>
-          <div className="flex justify-between items-center p-4">
-            <span className="text-black">{attachments.length} files</span>
-            <div className="space-x-2">
-              <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
-                <BsPaperclip className="h-6 w-6 rotate-90" />
+    <div>
+      {showReportPopup && (
+        <ReportPopup
+          setShowPopup={setShowReportPopup}
+          setShowConfirmReportPopup={setShowConfirmReportPopup}
+          user={user}
+          content={content}
+          id={id}
+        />
+      )}
+      {showConfirmReportPopup && (
+        <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+      )}
+
+      <div className="min-h-screen bg-[#E5E7EB] p-4">
+        <div className="bg-white shadow rounded-lg">
+          <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
+            <Link href="/">
+              <button onClick={() => window.history.back()}>
+                <img src="/closeicon.svg" />
               </button>
-              <button
-                className="text-black p-2 rounded-full"
-                onClick={handleSendLetter}
-              >
-                <MdSend className="h-6 w-6" />
-              </button>
-              <button className="text-black p-2 rounded-full">
-                <RiDeleteBin6Line className="h-6 w-6" />
-              </button>
+            </Link>
+            <button className="opacity-0">{"<"}</button>
+            <div className="flex justify-between items-center p-4">
+              <span className="text-black">{attachments.length} files</span>
+              <div className="space-x-2">
+                <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
+                  <BsPaperclip className="h-6 w-6 rotate-90" />
+                </button>
+                <button
+                  className="text-black p-2 rounded-full"
+                  onClick={handleSendLetter}
+                >
+                  <MdSend className="h-6 w-6" />
+                </button>
+                <button className="text-black p-2 rounded-full">
+                  <RiDeleteBin6Line className="h-6 w-6" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
-          {recipients?.length && recipients.map(recipient => (
-            <div key={recipient?.first_name?.[0]}>
-              <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={20}/>
-              <div key={`${recipient?.first_name?.[0]}_`}>
-                <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
-                <p className="text-sm text-gray-500">{recipient?.country}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {isFileModalOpen && <FileModal />}
-
-        <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          {allMessages?.length ? (
-            allMessages.map((message, index) => (
-              <div key={index} className={`w-[90%] flex bg-white p-4 rounded-lg text-gray-600 ${message.sent_by.id === userRef.id && "self-end"}`}>
-                <div className="flex flex-col">
-                  {message?.attachments?.length ? (
-                    <Image
-                      alt="attachment"
-                      width={100}
-                      height={100}
-                      src={message.attachments[0]}
-                    />
-                  ) : null}
-                  <span>{message.content}</span>
+          <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
+            {recipients?.length && recipients.map(recipient => (
+              <div key={recipient?.first_name?.[0]}>
+                <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={20}/>
+                <div key={`${recipient?.first_name?.[0]}_`}>
+                  <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
+                  <p className="text-sm text-gray-500">{recipient?.country}</p>
                 </div>
               </div>
-            ))
-          ) : (
-            <span>No messages</span>
-          )}
+            ))}
+          </div>
 
-          {hasMoreMessages && !loadingMore && (
-            <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
-              Load More
-            </button>
-          )}
+          {isFileModalOpen && <FileModal />}
 
-          {loadingMore && <span>Loading...</span>}
+          <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
+            {allMessages?.length ? (
+              allMessages.map((message, index) => (
+                <div key={index} className={`w-[90%] flex bg-white p-4 rounded-lg text-gray-600 ${message.sent_by.id === userRef.id && "self-end"}`}>
+                  <div className="flex flex-col">
+                    {message?.attachments?.length ? (
+                      <Image
+                        alt="attachment"
+                        width={100}
+                        height={100}
+                        src={message.attachments[0]}
+                      />
+                    ) : null}
+                    <span>{message.content}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <span>No messages</span>
+            )}
+
+            {hasMoreMessages && !loadingMore && (
+              <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
+                Load More
+              </button>
+            )}
+
+            {loadingMore && <span>Loading...</span>}
+          </div>
+          <textarea
+            className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
+            rows="8"
+            placeholder="Tap to write letter..."
+            value={letterContent}
+            onChange={(e) => setLetterContent(e.target.value)}
+          />
+
+          <div className="text-right text-sm p-4 mt-8 text-gray-600">
+            {letterContent.length} / 1000
+          </div>
         </div>
-        <textarea
-          className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
-          rows="8"
-          placeholder="Tap to write letter..."
-          value={letterContent}
-          onChange={(e) => setLetterContent(e.target.value)}
-        />
-
-        <div className="text-right text-sm p-4 mt-8 text-gray-600">
-          {letterContent.length} / 1000
-        </div>
+        <BottomNavBar />
+        {isFileModalOpen && <FileModal />}
       </div>
-      <BottomNavBar />
-      {isFileModalOpen && <FileModal />}
     </div>
   );
 }
