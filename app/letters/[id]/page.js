@@ -15,6 +15,10 @@ import BottomNavBar from '@/components/bottom-nav-bar';
 import { uploadFile } from "@/app/lib/uploadFile";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
+import { FaExclamationCircle } from "react-icons/fa";
+import ReportPopup from "../../../components/letter/ReportPopup";
+import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
+
 
 import { useRouter } from "next/navigation";
 
@@ -41,6 +45,7 @@ export default function Page({ params }) {
   const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
+  const [content, setContent] = useState(null);
   const PAGINATION_INCREMENT = 20;
 
   const handleSendLetter = async () => {
@@ -259,6 +264,7 @@ export default function Page({ params }) {
                   <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
                   <p className="text-sm text-gray-500">{recipient?.country}</p>
                 </div>
+                
               </div>
             ))}
           </div>
@@ -279,6 +285,18 @@ export default function Page({ params }) {
                       />
                     ) : null}
                     <span>{message.content}</span>
+                    <section className="px-5">
+                      <div className="flex justify-end mb-2">
+                        <FaExclamationCircle
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setContent(message.content);
+                            setShowReportPopup(true);  
+                          }}
+                        />
+                      </div>
+                      
+                    </section>
                   </div>
                 </div>
               ))
