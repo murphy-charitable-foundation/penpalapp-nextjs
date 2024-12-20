@@ -272,8 +272,8 @@ export default function Page({ params }) {
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
             {allMessages?.length ? (
               allMessages.map((message, index) => (
-                <div key={index} className={`w-[90%] flex bg-white p-4 rounded-lg text-gray-600 ${message.sent_by.id === userRef.id && "self-end"}`}>
-                  <div className="flex flex-col">
+                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"}`}>
+                  <div className="flex flex-col w-[90%]">
                     {message?.attachments?.length ? (
                       <Image
                         alt="attachment"
