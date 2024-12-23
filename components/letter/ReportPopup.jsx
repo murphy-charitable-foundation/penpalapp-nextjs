@@ -4,6 +4,7 @@ import {useEffect, useState} from "react"
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../app/firebaseConfig"; 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import * as Sentry from "@sentry/nextjs";
 
 
 const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}) => {
@@ -12,7 +13,6 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
   const [isMounted, setIsMounted] = useState(false);
   const [pathParams, setPathParams] = useState('');
   const auth = getAuth();
-  console.log("Sender: ", sender);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -29,17 +29,16 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
   
       // Step 2: Check if the document exists
       if (!userSnapshot.exists()) {
-        console.error("User document does not exist");
+        Sentry.captureException("User document does not exist");
         return;
       }
   
       
       const userData = userSnapshot.data();
-      console.log("User Data:", userData);
   
       return userData; 
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      Sentry.captureException(error);
     }
   };
   const userInfo = fetchUserData(sender);
@@ -65,7 +64,7 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
       }
      
     } catch (error) {
-      console.error(error);
+      Sentry.captureException("Could not send request to SendGrid" + error);
     }
   }
 

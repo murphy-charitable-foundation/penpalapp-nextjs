@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
+import * as Sentry from "@sentry/nextjs";
 
 
 export async function POST(request) {
@@ -69,7 +70,6 @@ export async function POST(request) {
       from: 'connorwhite771@gmail.com', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
-      html: `<p>${message || 'No message provided.'}</p>`,
       html:  emailHtml,
     };
 
@@ -80,7 +80,7 @@ export async function POST(request) {
     
 
   } catch (error) {
-    console.error('Error sending email:', error);
+    Sentry.captureException(error);
 
     return NextResponse.json(
         { message: 'Failed to send email.', error: error.message },
