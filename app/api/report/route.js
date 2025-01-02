@@ -66,8 +66,8 @@ export async function POST(request) {
 
     //SendGrid email configuration
     const msg = {
-      to: 'connorwhite771@gmail.com', 
-      from: 'connorwhite771@gmail.com', // Your verified sender email
+      to: 'penpal@murphycharity.org', 
+      from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
       html:  emailHtml,

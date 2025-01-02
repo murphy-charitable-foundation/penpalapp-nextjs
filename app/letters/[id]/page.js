@@ -288,7 +288,6 @@ export default function Page({ params }) {
                         <FaExclamationCircle
                           className="cursor-pointer"
                           onClick={() => {
-                            console.log("This is the message.sent_by: ", message.sent_by)
                             setSender(message.sent_by.id);
                             setContent(message.content);
                             setShowReportPopup(true);  
