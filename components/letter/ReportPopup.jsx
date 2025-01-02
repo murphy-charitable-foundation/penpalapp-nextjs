@@ -9,8 +9,6 @@ import * as Sentry from "@sentry/nextjs";
 
 const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}) => {
 
-  const [data, setData] = useState(null);
-  const [isMounted, setIsMounted] = useState(false);
   const [pathParams, setPathParams] = useState('');
   const auth = getAuth();
   useEffect(() => {
