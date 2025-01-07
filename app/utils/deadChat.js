@@ -1,9 +1,12 @@
 import { db } from "../../lib/firebase"; // Firestore database object
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 
+
+
+
 async function deadChat(chatId) {
   try {
-    const lettersRef = collection(db, "letterboxes", chatId, "letters");
+    const lettersRef = collection(db, "letterbox", chatId, "letters");
 
     const q = query(lettersRef, orderBy("createdTime", "desc"));
 
@@ -33,8 +36,20 @@ async function deadChat(chatId) {
     console.error("Error fetching chats:", error);
   }
  
-  
+}
+
+const iterateLetterBoxes = async () => {
+    const boxRef = collection(db, "letterbox")
+
+    const q = query(boxRef);
+
+    const querySnapshot = await getDocs(q, limit(5))
+
+    querySnapshot.forEach(doc => {
+        deadChat(doc);
+        }
+    )
 }
 
 
-export default deadChat;
+export default iterateLetterBoxes;
