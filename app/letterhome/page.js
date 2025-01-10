@@ -20,6 +20,10 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
+
+import {
+  iterateLetterBoxes
+} from "../utils/deadChat";
 import ProfileImage from '@/components/general/ProfileImage';
 
 export default function Home() {
@@ -165,6 +169,8 @@ export default function Home() {
 				</main>
 				<BottomNavBar />
 			</div>
+      
+      <button className="flex bg-black rounded py-[1rem] px-[1rem]" onClick={iterateLetterBoxes}>Check for dead chats.</button>
 		</div>
 	);
 
