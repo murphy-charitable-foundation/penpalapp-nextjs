@@ -1,13 +1,13 @@
 import { db } from "../firebaseConfig";
 import { limit } from "firebase/firestore";
-import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, getDoc} from "firebase/firestore";
 import {useEffect, useState} from "react";
 import * as Sentry from "@sentry/nextjs";
 
 
-const apiRequest = async (user1, user2) => {
+const apiRequest = async (emails, id) => {
   try {
-      const message = `Hello, it seems that the chat between the user ${user1} and the user ${user2} has stalled. Consider contacting them to see if the chat can be reignited.`
+      const message = `Hello, it seems that the chat in letterbox with id ${id}, containing the users: ${emails}, has stalled. Consider contacting them to see if the chat can be reignited.`
         
       const response = await fetch('/api/deadchat', {
         method: 'POST',
@@ -26,15 +26,28 @@ const apiRequest = async (user1, user2) => {
   }
 }
 
-async function deadChat(chatId) {
+function getDateFromTimestamp(timestamp) {
+  // Check if the timestamp is a Firestore Timestamp object
+  if (timestamp && timestamp.toDate) {
+      return timestamp.toDate();
+  }
+  // If not, return an invalid date (optional safety check)
+  return new Date(NaN);
+}
+
+const deadChat = async (chat) => {
   console.log("we have entered deadchat");
   try {
-    const lettersRef = collection(db, "letterbox", chatId, "letters");
+    const chatData = chat.data()
+    const lettersRef = collection(db, "letterbox", chat.id, "letters");
 
     const q = query(lettersRef, orderBy("created_at", "desc"));
 
     const querySnapshot = await getDocs(q);
-    console.log("querySnapshot:", querySnapshot);
+    if (querySnapshot.empty) {
+      Sentry.captureException("Letters documents do not exist");
+      return;
+    }
     // Process the data
     const chats = [];
     querySnapshot.forEach(doc => {
@@ -43,20 +56,36 @@ async function deadChat(chatId) {
     
     
     const mostRecentChat = chats.reduce((latest, current) => {
-        return new Date(current.createdTime) > new Date(latest.createdTime) ? current : latest;
+        return new Date(getDateFromTimestamp(current.created_at)) > new Date(getDateFromTimestamp(latest.created_at)) ? current : latest;
     }, chats[0]);
 
-    const mostRecentDate = new Date(mostRecentChat.created_at);
+    const mostRecentDate = new Date(getDateFromTimestamp(mostRecentChat.created_at))
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     if (mostRecentDate < oneMonthAgo) {
-      const user1 = "Bob";
-      const user2 = "Jill";
+      console.log(1);
+      console.log("most recent date:", mostRecentDate);
+      console.log(mostRecentChat.created_at)
       console.log("The most recent message is more than a month old.");
-      await apiRequest(user1, user2);
+      console.log(1);
+      const members = chatData.members
+      const emails = [];
+      for (const member of members) {
+        const userSnapshot = await getDoc(member);
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.data();
+          emails.push(userData.email);
+        }
+      }
+      console.log("emails", emails);
+      await apiRequest(emails, chat.id);
     } else {
+      console.log(1);
+      console.log("most recent date:", mostRecentDate);
+      console.log(mostRecentChat.created_at)
       console.log("The most recent message is within the last month.");
+      console.log(1);
     }
   } catch (error) {
     console.error("Error fetching chats:", error);
@@ -73,8 +102,8 @@ export const iterateLetterBoxes = async () => {
     const querySnapshot = await getDocs(q, limit(5))
     
     querySnapshot.forEach(doc => {
-        console.log("this is the chatId", doc.id);
-        deadChat(doc.id);
+        // console.log("this is the chatId", doc.id);
+        deadChat(doc);
       }
     )
 }

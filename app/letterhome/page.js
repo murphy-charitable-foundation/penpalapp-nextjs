@@ -28,6 +28,7 @@ import ProfileImage from '@/components/general/ProfileImage';
 
 export default function Home() {
   const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
   const [letters, setLetters] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +84,7 @@ export default function Home() {
           const userData = docSnap.data();
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
+          setUserType(userData.user_type || "Unknown Type")
 		  setProfileImage(userData?.photo_uri || "");
         } else {
           console.log("No such document!");
@@ -169,8 +171,9 @@ export default function Home() {
 				</main>
 				<BottomNavBar />
 			</div>
-      
-      <button className="flex bg-black rounded py-[1rem] px-[1rem]" onClick={iterateLetterBoxes}>Check for dead chats.</button>
+      { userType == "admin" ? (
+        <button className="flex bg-black rounded py-[1rem] px-[1rem]" onClick={iterateLetterBoxes}>Check for dead chats.</button>
+        ) : (<></>)}  
 		</div>
 	);
 
