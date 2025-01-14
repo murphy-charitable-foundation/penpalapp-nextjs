@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
-import { updateDoc } from "firebase/firestore";
-import { doc, getDoc } from "firebase/firestore";
+import { addDoc, doc, updateDoc, arrayUnion,getDoc,setDoc,getDocs,query,collection,where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
@@ -49,41 +48,102 @@ export default function SendMessage({ kid }) {
     try {
       console.log("Kid:", kid);
       console.log("User:", user);
+
       if (kid != null && user != null) {
         if (kid.connected_penpals_count < 3) {
-          const connectedUserPenpals = user.connected_penpals || [];
-          const connectedKidPenpals = kid.connected_penpals || [];
-
+          // Define references for user and kid
           const userDocRef = doc(db, "users", auth.currentUser.uid);
           const kidDocRef = doc(db, "users", kid.id);
 
-          const updatedUserConnectedPenpals = [
-            ...connectedUserPenpals,
-            doc(db, "users", kid.id),
-          ];
+          
+          const letterboxQuery = query(
+            collection(db, "letterbox"),
+            where("members", "array-contains", userDocRef) // Use reference, not string
+          );
 
-          const updatedKidConnectedPenpals = [
-            ...connectedKidPenpals,
-            doc(db, "users", auth.currentUser.uid),
-          ];
+          const querySnapshot = await getDocs(letterboxQuery);
 
-          const updateUser = await updateDoc(userDocRef, {
-            connected_penpals: updatedUserConnectedPenpals,
+          let letterboxRef;
+
+          if (!querySnapshot.empty) {
+            //If a document exists, update it
+            letterboxRef = querySnapshot.docs[0].ref;
+
+            await updateDoc(letterboxRef, {
+              members: arrayUnion(kidDocRef) // Add reference instead of string
+            });
+
+            console.log("Existing letterbox updated with new member.");
+          } else {
+            
+            letterboxRef = await addDoc(collection(db, "letterbox"), {
+              members: [
+                userDocRef, 
+                kidDocRef   
+              ],
+              letters: [],
+              created_at: new Date().toISOString(),
+              archived_at: null
+            });
+
+            console.log("New letterbox created with ID:", letterboxRef.id);
+          }
+
+          // Add a new letter to the `letters` subcollection
+          const lettersCollectionRef = collection(letterboxRef, "letters");
+
+          await addDoc(lettersCollectionRef, {
+            attachments: [],
+            created_at: new Date().toISOString(),
+            deleted_at: null,
+            letter: "Hello, nice to meet you!", 
+            sent_by: userDocRef, // Use reference
+            status: "draft"
           });
 
-          const updateKid = await updateDoc(kidDocRef, {
-            connected_penpals: updatedKidConnectedPenpals,
+          console.log("New letter created in the letters subcollection.");
+
+          // Update User and Kid documents
+          await updateDoc(userDocRef, {
+            connected_penpals: arrayUnion(kidDocRef),
           });
 
-          const kidConnectedPenPalCount = kid.connected_penpals_count;
-
-          const updatedKidConnectedPenPalCount = kidConnectedPenPalCount + 1;
-
-          const updateConnectedPenpalsCount = await updateDoc(kidDocRef, {
-            connected_penpals_count: updatedKidConnectedPenPalCount,
+          await updateDoc(kidDocRef, {
+            connected_penpals: arrayUnion(userDocRef),
+            connected_penpals_count: kid.connected_penpals_count + 1,
           });
 
+          console.log("User and Kid connected_penpals updated.");
           router.push("/letterhome");
+        
+
+          // const updatedUserConnectedPenpals = [
+          //   ...connectedUserPenpals,
+          //   doc(db, "users", kid.id),
+          // ];
+
+          // const updatedKidConnectedPenpals = [
+          //   ...connectedKidPenpals,
+          //   doc(db, "users", auth.currentUser.uid),
+          // ];
+
+          // const updateUser = await updateDoc(userDocRef, {
+          //   connected_penpals: updatedUserConnectedPenpals,
+          // });
+
+          // const updateKid = await updateDoc(kidDocRef, {
+          //   connected_penpals: updatedKidConnectedPenpals,
+          // });
+
+          // const kidConnectedPenPalCount = kid.connected_penpals_count;
+
+          // const updatedKidConnectedPenPalCount = kidConnectedPenPalCount + 1;
+
+          // const updateConnectedPenpalsCount = await updateDoc(kidDocRef, {
+          //   connected_penpals_count: updatedKidConnectedPenPalCount,
+          // });
+
+          // router.push("/letterhome");
         } else {
           console.log("Kid has exceeded penpal limit");
         }

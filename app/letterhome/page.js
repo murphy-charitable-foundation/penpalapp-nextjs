@@ -41,6 +41,7 @@ export default function Home() {
         router.push("/login");
       } else {
         const letterboxes = await fetchLetterboxes();
+        
         const letterboxIds = letterboxes.map((l) => l.id);
         let letters = [];
         for (const id of letterboxIds) {
@@ -79,7 +80,8 @@ export default function Home() {
           const userData = docSnap.data();
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
-		  setProfileImage(userData?.photo_uri || "");
+		      setProfileImage(userData?.photo_uri || "");
+          
         } else {
           console.log("No such document!");
         }
