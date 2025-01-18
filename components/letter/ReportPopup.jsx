@@ -1,8 +1,5 @@
 import Button from "../Button";
-import {useEffect, useState} from "react"
-
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig"; 
+import {useEffect, useState} from "react" 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import * as Sentry from "@sentry/nextjs";
 
@@ -18,28 +15,6 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
     }
   }, []);
 
-  const fetchUserData = async (user) => {
-    try {
-      // Step 1: Fetch the user document using the reference
-      const userRef = doc(db, "users", user); // Replace "users" with your actual collection name
-    
-      const userSnapshot = await getDoc(userRef);
-  
-      // Step 2: Check if the document exists
-      if (!userSnapshot.exists()) {
-        Sentry.captureException("User document does not exist");
-        return;
-      }
-  
-      
-      const userData = userSnapshot.data();
-  
-      return userData; 
-    } catch (error) {
-      Sentry.captureException(error);
-    }
-  };
-  
 
   async function handleButtonClick(content) {
     try {

@@ -1,7 +1,5 @@
 import { db } from "../firebaseConfig";
-import { limit } from "firebase/firestore";
 import { collection, query, orderBy, getDocs, getDoc} from "firebase/firestore";
-import {useEffect, useState} from "react";
 import * as Sentry from "@sentry/nextjs";
 
 
