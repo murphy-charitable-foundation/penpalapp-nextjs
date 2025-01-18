@@ -172,8 +172,9 @@ export default function Home() {
 				<BottomNavBar />
 			</div>
       { userType == "admin" ? (
-        <button className="flex bg-black rounded py-[1rem] px-[1rem]" onClick={iterateLetterBoxes}>Check For Inactive Chats.</button>
-        ) : (<></>)}  
+        <button className="flex bg-black rounded py-[1rem] px-[1rem] mt-4 mx-auto" onClick={iterateLetterBoxes}>Check For Inactive Chats.</button>
+        ) : (<></>)
+      }  
 		</div>
 	);
 

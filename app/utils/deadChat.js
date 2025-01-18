@@ -35,7 +35,6 @@ function getDateFromTimestamp(timestamp) {
 }
 
 const deadChat = async (chat) => {
-  console.log("we have entered deadchat");
   try {
     const chatData = chat.data()
     const lettersRef = collection(db, "letterbox", chat.id, "letters");
@@ -58,12 +57,11 @@ const deadChat = async (chat) => {
         return new Date(getDateFromTimestamp(current.created_at)) > new Date(getDateFromTimestamp(latest.created_at)) ? current : latest;
     }, chats[0]);
 
-    const mostRecentDate = new Date(getDateFromTimestamp(mostRecentChat.created_at))
+    const mostRecentDate = new Date(getDateFromTimestamp(mostRecentChat.created_at));
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     if (mostRecentDate < oneMonthAgo) {
-      console.log("Ready to send API request");
       await apiRequest(chatData.members, chat.id);
     } 
   } catch (error) {
@@ -73,11 +71,12 @@ const deadChat = async (chat) => {
 }
 
 export const iterateLetterBoxes = async () => {
+    //Grab letter boxes and iterate through them
     const boxRef = collection(db, "letterbox")
 
     const q = query(boxRef);
 
-    const querySnapshot = await getDocs(q, limit(5))
+    const querySnapshot = await getDocs(q)
     
     querySnapshot.forEach(doc => {
         deadChat(doc);

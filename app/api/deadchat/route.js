@@ -16,7 +16,6 @@ export async function POST(request) {
           const pathSegments = user._key?.path?.segments;
           const uid = pathSegments[pathSegments.length - 1];
           const userRecord = await auth.getUser(uid); // Fetch user record by UID
-          console.log("userRecord:", userRecord);
           return userRecord.email; // Return the email
         } catch (error) {
           Sentry.captureException(error);
