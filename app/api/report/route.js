@@ -2,14 +2,17 @@ import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import * as Sentry from "@sentry/nextjs";
 
+import { auth } from '../../firebaseAdmin';
 
 export async function POST(request) {
   try {
+
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { message } = body; 
-
+    const {receiver_email, currentUrl, sender, excerpt } = body; 
+    const userRecord = await auth.getUser(sender); 
+    const message = `Hello, the user with the email: ${receiver_email}, reported this message: ${currentUrl} sent by a user with the email: ${userRecord.email}. Here is a brief excerpt from the reported message, "${excerpt}"`;
     const emailHtml = `
       <html>
         <head>
@@ -74,7 +77,6 @@ export async function POST(request) {
     };
 
     // Send the email
-
     await sendgrid.send(msg);
     return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
     

@@ -39,22 +39,19 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
       Sentry.captureException(error);
     }
   };
-  const userInfo = fetchUserData(sender);
-  const receiver_email = auth.currentUser.email;
-  const currentUrl = `${window.location.origin}${pathParams}`;
   
 
   async function handleButtonClick(content) {
     try {
       const excerpt = content.substring(0, 100) + '...';
-      const message = `Hello, the user with the email: ${receiver_email}, reported this message: ${currentUrl} sent by a user with the email: ${userInfo.email}. Here is a brief excerpt from the reported message, "${excerpt}"`
-      
+      const receiver_email = auth.currentUser.email;
+      const currentUrl = `${window.location.origin}${pathParams}`;
       const response = await fetch('/api/report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }), // Send data as JSON
+        body: JSON.stringify({ receiver_email, currentUrl, sender, excerpt }), // Send data as JSON
       });
       
       if (!response.ok) {

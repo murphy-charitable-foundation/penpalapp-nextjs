@@ -15,12 +15,11 @@ export async function POST(request) {
         try {
           const pathSegments = user._key?.path?.segments;
           const uid = pathSegments[pathSegments.length - 1];
-          console.log("uid:", uid);
           const userRecord = await auth.getUser(uid); // Fetch user record by UID
           console.log("userRecord:", userRecord);
           return userRecord.email; // Return the email
         } catch (error) {
-          console.error(`Error fetching user with UID: ${user}`, error);
+          Sentry.captureException(error);
           return null; // Handle failure by returning null or skipping
         }
       })
