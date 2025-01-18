@@ -19,6 +19,7 @@
 # misc
 .DS_Store
 *.pem
+penpalmagicapp-firebase-adminsdk-czr2x-7f1623a3ac.json
 
 # debug
 npm-debug.log*

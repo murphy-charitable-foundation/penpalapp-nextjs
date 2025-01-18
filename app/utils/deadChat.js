@@ -5,16 +5,15 @@ import {useEffect, useState} from "react";
 import * as Sentry from "@sentry/nextjs";
 
 
-const apiRequest = async (emails, id) => {
+const apiRequest = async (users, id) => {
   try {
-      const message = `Hello, it seems that the chat in letterbox with id ${id}, containing the users: ${emails}, has stalled. Consider contacting them to see if the chat can be reignited.`
         
       const response = await fetch('/api/deadchat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }), // Send data as JSON
+        body: JSON.stringify({ users, id  }), // Send data as JSON
       });
         
       if (!response.ok) {
@@ -64,37 +63,16 @@ const deadChat = async (chat) => {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     if (mostRecentDate < oneMonthAgo) {
-      console.log(1);
-      console.log("most recent date:", mostRecentDate);
-      console.log(mostRecentChat.created_at)
-      console.log("The most recent message is more than a month old.");
-      console.log(1);
-      const members = chatData.members
-      const emails = [];
-      for (const member of members) {
-        const userSnapshot = await getDoc(member);
-        if (userSnapshot.exists()) {
-          const userData = userSnapshot.data();
-          emails.push(userData.email);
-        }
-      }
-      console.log("emails", emails);
-      await apiRequest(emails, chat.id);
-    } else {
-      console.log(1);
-      console.log("most recent date:", mostRecentDate);
-      console.log(mostRecentChat.created_at)
-      console.log("The most recent message is within the last month.");
-      console.log(1);
-    }
+      console.log("Ready to send API request");
+      await apiRequest(chatData.members, chat.id);
+    } 
   } catch (error) {
-    console.error("Error fetching chats:", error);
+    Sentry.captureException("Error checking the dates of chats");
   }
  
 }
 
 export const iterateLetterBoxes = async () => {
-    console.log("We have entered iterateLetterBoxes")
     const boxRef = collection(db, "letterbox")
 
     const q = query(boxRef);
@@ -102,7 +80,6 @@ export const iterateLetterBoxes = async () => {
     const querySnapshot = await getDocs(q, limit(5))
     
     querySnapshot.forEach(doc => {
-        // console.log("this is the chatId", doc.id);
         deadChat(doc);
       }
     )

@@ -2,14 +2,34 @@ import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import * as Sentry from "@sentry/nextjs";
 
+import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
   try {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { message } = body; 
+    const { users, id } = body; 
+    const emails = await Promise.all(
+      users.map(async (user) => {
+        try {
+          const pathSegments = user._key?.path?.segments;
+          const uid = pathSegments[pathSegments.length - 1];
+          console.log("uid:", uid);
+          const userRecord = await auth.getUser(uid); // Fetch user record by UID
+          console.log("userRecord:", userRecord);
+          return userRecord.email; // Return the email
+        } catch (error) {
+          console.error(`Error fetching user with UID: ${user}`, error);
+          return null; // Handle failure by returning null or skipping
+        }
+      })
+    );
+    
+    // Remove null values (failed fetches)
+    const validEmails = emails.filter((email) => email !== null);
 
+    const message = `Hello, it seems that the chat in letterbox with id: ${id}, containing the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
     const emailHtml = `
       <html>
         <head>
@@ -74,9 +94,9 @@ export async function POST(request) {
     };
 
     // Send the email
-
     await sendgrid.send(msg);
-    return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
+    //await sendgrid.send(msg);
+    return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
     
 
   } catch (error) {
