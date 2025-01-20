@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 //import serviceAccount from '../penpalmagicapp-firebase-adminsdk-czr2x-7f1623a3ac.json';
 
 const serviceAccount = {
-  projectId: process.env.FIREBASE_PROJECT_ID,
+  projectId: "penpalmagicapp",
   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Handle line breaks in private key
 };

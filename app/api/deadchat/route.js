@@ -82,18 +82,15 @@ export async function POST(request) {
     `;
 
 
-    //SendGrid email configuration
     const msg = {
       to: 'penpal@murphycharity.org', 
       from: 'penpal@murphycharity.org', // Your verified sender email
-      subject: "Inactive Chat Found",
+      subject: "Message Reported",
       text: message || 'No message provided.',
       html:  emailHtml,
     };
-
     // Send the email
     await sendgrid.send(msg);
-    //await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
     
 
