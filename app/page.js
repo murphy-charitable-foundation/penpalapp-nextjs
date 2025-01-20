@@ -2,7 +2,7 @@
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
-import Button from "@/components/general/Button";
+import Button from "../components/Button";
 
 export default function Home() {
   return (

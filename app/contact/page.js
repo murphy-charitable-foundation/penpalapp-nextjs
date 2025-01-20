@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import logo from '/public/murphylogo.png';
 import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from 'react-icons/fa';
-import BottomNavBar from '@/components/bottom-nav-bar';
+import BottomNavBar from '../../components/bottom-nav-bar';
 
 
 export default function Contact() {

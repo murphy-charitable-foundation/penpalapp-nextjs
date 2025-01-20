@@ -10,7 +10,6 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from '../firebaseConfig';
 
 import { updateDoc } from "firebase/firestore";
-import HobbySelect from "@/components/general/HobbySelect";
 import * as Sentry from "@sentry/nextjs";
 
 export default function EditProfile() {

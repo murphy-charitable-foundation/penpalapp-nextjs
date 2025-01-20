@@ -2,9 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { FaUserAlt, FaPen, FaCompass, FaHandHoldingHeart, FaInfo, FaEnvelopeOpenText, FaHome, FaInbox } from 'react-icons/fa';
 
-
-
-const NavBar = () => {
+const BottomNavBar = () => {
     return(
         <nav className="fixed inset-x-0 bottom-0 bg-[#cfe899] p-3 flex justify-around items-center text-[#333333] border-t border-[#E6E6E6] shadow-md">
             <Link href="/profile">
@@ -53,4 +51,4 @@ const NavBar = () => {
     );
 };
 
-export default NavBar;
+export default BottomNavBar;

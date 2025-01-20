@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "@/app/firebaseConfig";
 import CreatableSelect from "react-select/creatable";
+import { db } from "../../app/firebaseConfig";
 
 const HobbySelect = ({ setHobbies, hobbies, wantBorder = true }) => {
   const [isLoading, setIsLoading] = useState(true);

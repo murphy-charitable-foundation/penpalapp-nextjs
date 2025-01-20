@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FiFile, FiSend, FiTrash } from "react-icons/fi";
-import BottomNavBar from "@/components/bottom-nav-bar";
+import BottomNavBar from "../../components/bottom-nav-bar";
 import { FaFile } from "react-icons/fa";
 import dynamic from "next/dynamic";
 

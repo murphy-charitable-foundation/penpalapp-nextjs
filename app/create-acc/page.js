@@ -10,7 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
-import EditProfileImage from "@/components/edit-profile";
+import EditProfileImage from "../../components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
 import PasswordChecklist from "react-password-checklist";
 

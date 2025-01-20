@@ -11,10 +11,6 @@ import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
-import BottomNavBar from '@/components/bottom-nav-bar';
-import { uploadFile } from "@/app/lib/uploadFile";
-import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
-import ProfileImage from "@/components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
@@ -23,6 +19,10 @@ import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
+import { uploadFile } from "../../lib/uploadFile";
+import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter  } from "../../utils/letterboxFunctions";
+import BottomNavBar from "../../../components/bottom-nav-bar";
+import ProfileImage from "../../../components/general/ProfileImage";
 
 export default function Page({ params }) {
   const { id } = params;
