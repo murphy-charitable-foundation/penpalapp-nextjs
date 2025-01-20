@@ -12,6 +12,7 @@ import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "@/components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
+import PasswordChecklist from "react-password-checklist";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -55,7 +56,7 @@ export default function CreateAccount() {
             created_at: new Date(),
             first_name: firstName,
             last_name: lastName,
-            birthday, 
+            birthday,
             connected_penpals_count: 0
         });
 
@@ -101,7 +102,7 @@ export default function CreateAccount() {
               height={150}
             />
           </div>
-          
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="flex gap-4">
                 <div className="w-1/2">
@@ -189,6 +190,14 @@ export default function CreateAccount() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+              <PasswordChecklist
+                rules={["minLength", "specialChar", "number", "capital", "match"]}
+                minLength={8}
+                value={password}
+                valueAgain={repeatPassword}
+                onChange={(isValid) => {}}
+                className="text-black"
+              />
               <div>
                 <label
                   htmlFor="repeat-password"
