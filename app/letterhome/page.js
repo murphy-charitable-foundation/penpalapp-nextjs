@@ -22,6 +22,7 @@ import {
 } from "../utils/letterboxFunctions";
 
 import {
+  deadChat,
   iterateLetterBoxes
 } from "../utils/deadChat";
 import ProfileImage from '@/components/general/ProfileImage';

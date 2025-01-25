@@ -1,11 +1,10 @@
 import { db } from "../firebaseConfig";
-import { collection, query, orderBy, getDocs, getDoc} from "firebase/firestore";
+import { collection, getDocs, getDoc, query, where, orderBy, Timestamp, limit} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 
 
 const apiRequest = async (users, id) => {
-  try {
-        
+  try {     
       const response = await fetch('/api/deadchat', {
         method: 'POST',
         headers: {
@@ -28,58 +27,61 @@ function getDateFromTimestamp(timestamp) {
   if (timestamp && timestamp.toDate) {
       return timestamp.toDate();
   }
-  // If not, return an invalid date (optional safety check)
+  // If not, return an invalid date
   return new Date(NaN);
 }
 
+
+  
 const deadChat = async (chat) => {
-  try {
-    const chatData = chat.data()
-    const lettersRef = collection(db, "letterbox", chat.id, "letters");
+    console.log("we have entered deadchat");
+    try {
+      const chatData = chat.data()
+      const lettersRef = collection(db, "letterbox", chat.id, "letters");
+  
+      const q = query(lettersRef, orderBy("created_at", "desc"));
+  
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        Sentry.captureException("Letters documents do not exist");
+        return;
+      }
+      // Process the data
+      
+      const chats = [];
+      querySnapshot.forEach(doc => {
+        chats.push({ id: doc.id, ...doc.data() });
+      });
 
-    const q = query(lettersRef, orderBy("created_at", "desc"));
-
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-      Sentry.captureException("Letters documents do not exist");
-      return;
+     
+      const mostRecentDate = new Date(getDateFromTimestamp(chats[0].created_at));
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  
+      if (mostRecentDate < oneMonthAgo) {
+        await apiRequest(chatData.members, chat.id);
+      } 
+    } catch (error) {
+      Sentry.captureException(error);
     }
-    // Process the data
-    const chats = [];
-    querySnapshot.forEach(doc => {
-      chats.push({ id: doc.id, ...doc.data() });
-    });
-    
-    
-    const mostRecentChat = chats.reduce((latest, current) => {
-        return new Date(getDateFromTimestamp(current.created_at)) > new Date(getDateFromTimestamp(latest.created_at)) ? current : latest;
-    }, chats[0]);
-
-    const mostRecentDate = new Date(getDateFromTimestamp(mostRecentChat.created_at));
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    if (mostRecentDate < oneMonthAgo) {
-      await apiRequest(chatData.members, chat.id);
-    } 
-  } catch (error) {
-    Sentry.captureException("Error checking the dates of chats");
+  
   }
- 
-}
 
 export const iterateLetterBoxes = async () => {
-    //Grab letter boxes and iterate through them
-    const boxRef = collection(db, "letterbox")
+      console.log("We have entered iterateLetterBoxes");
+      const boxRef = collection(db, "letterbox");
+      const q = query(boxRef);
+      const querySnapshot = await getDocs(q, limit(5))
+  
+      querySnapshot.forEach(doc => {
+          // console.log("this is the chatId", doc.id);
+          deadChat(doc);
+        }
+      )
+  }
+  
+ 
 
-    const q = query(boxRef);
 
-    const querySnapshot = await getDocs(q)
-    
-    querySnapshot.forEach(doc => {
-        deadChat(doc);
-      }
-    )
-}
 
 

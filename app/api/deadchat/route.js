@@ -81,7 +81,6 @@ export async function POST(request) {
       </html>
     `;
 
-
     const msg = {
       to: 'penpal@murphycharity.org', 
       from: 'penpal@murphycharity.org', // Your verified sender email
@@ -89,6 +88,7 @@ export async function POST(request) {
       text: message || 'No message provided.',
       html:  emailHtml,
     };
+
     // Send the email
     await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
