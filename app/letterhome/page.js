@@ -6,7 +6,7 @@ import Link from "next/link";
 import { db, auth } from "../firebaseConfig"; // Adjust the import path as necessary
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import BottomNavBar from "@/components/bottom-nav-bar";
+import BottomNavBar from '../../components/bottom-nav-bar';
 import * as Sentry from "@sentry/nextjs";
 
 
@@ -20,7 +20,7 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import ProfileImage from '@/components/general/ProfileImage';
+import ProfileImage from '../../components/general/ProfileImage';
 
 export default function Home() {
   const [userName, setUserName] = useState("");

@@ -2,7 +2,7 @@
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
-import Button from "@/components/general/Button";
+import Button from "../components/Button";
 
 export default function Home() {
   return (
@@ -47,20 +47,16 @@ export default function Home() {
             />
           </div>
           <div className="flex flex-col gap-10 jsu mb-36 items-center">
-            <Link href="/login">
-              <Button
-                color={"bg-green-700"}
-                hoverColor={"hover:bg-green-800"}
-                btnText={"Log in"}
-              />
-            </Link>
-            <Link href="https://calendly.com/murphycharity/60min">
-              <Button
-                color={"bg-blue-700"}
-                hoverColor={"hover:bg-blue-800"}
-                btnText={"Become a Pen Pal Volunteer"}
-              />
-            </Link>
+          <Link href="/login">
+        <button className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded">
+          Log in
+        </button>
+      </Link>
+      <Link href="https://calendly.com/murphycharity/60min">
+        <button className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">
+          Become a Pen Pal Volunteer
+        </button>
+      </Link>
           </div>
         </div>
       </div>

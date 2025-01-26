@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import SelectProfileImage from './select-profile-image-wrapper';
 import SelectProfileLocation from './select-location';
-import { auth, db, storage } from '@/app/firebaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
+import { auth, db, storage } from '../app/firebaseConfig';
 
 const EditProfileImage = ({ router }) => {
 	const [image, setImage] = useState(null);
