@@ -1,16 +1,16 @@
 import { db } from "../firebaseConfig";
-import { collection, getDocs, getDoc, query, where, orderBy, Timestamp, limit} from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 
 
-const apiRequest = async (users, id) => {
+const apiRequest = async (sender, users, id) => {
   try {     
       const response = await fetch('/api/deadchat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ users, id  }), // Send data as JSON
+        body: JSON.stringify({ sender, users, id  }), // Send data as JSON
       });
         
       if (!response.ok) {
@@ -34,12 +34,11 @@ function getDateFromTimestamp(timestamp) {
 
   
 const deadChat = async (chat) => {
-    console.log("we have entered deadchat");
     try {
       const chatData = chat.data()
       const lettersRef = collection(db, "letterbox", chat.id, "letters");
   
-      const q = query(lettersRef, orderBy("created_at", "desc"));
+      const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
   
       const querySnapshot = await getDocs(q);
       if (querySnapshot.empty) {
@@ -47,19 +46,15 @@ const deadChat = async (chat) => {
         return;
       }
       // Process the data
-      
-      const chats = [];
-      querySnapshot.forEach(doc => {
-        chats.push({ id: doc.id, ...doc.data() });
-      });
-
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
      
-      const mostRecentDate = new Date(getDateFromTimestamp(chats[0].created_at));
+      const mostRecentDate = new Date(getDateFromTimestamp(data.created_at));
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
   
       if (mostRecentDate < oneMonthAgo) {
-        await apiRequest(chatData.members, chat.id);
+        await apiRequest(data.sent_by, chatData.members, chat.id);
       } 
     } catch (error) {
       Sentry.captureException(error);
@@ -68,7 +63,6 @@ const deadChat = async (chat) => {
   }
 
 export const iterateLetterBoxes = async () => {
-      console.log("We have entered iterateLetterBoxes");
       const boxRef = collection(db, "letterbox");
       const q = query(boxRef);
       const querySnapshot = await getDocs(q, limit(5))

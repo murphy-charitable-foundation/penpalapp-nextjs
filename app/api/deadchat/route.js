@@ -9,25 +9,29 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { users, id } = body; 
+    const { sender, users, id } = body; 
+    const senderSegments = sender._key?.path?.segments;
+    const sender_id = senderSegments[senderSegments.length - 1];
+    //const filtered = users.filter(element => element !== sender);
     const emails = await Promise.all(
       users.map(async (user) => {
         try {
           const pathSegments = user._key?.path?.segments;
           const uid = pathSegments[pathSegments.length - 1];
-          const userRecord = await auth.getUser(uid); // Fetch user record by UID
-          return userRecord.email; // Return the email
+          if (uid !== sender_id ){
+            const userRecord = await auth.getUser(uid); // Fetch user record by UID
+            return userRecord.email; // Return the email
+          }
         } catch (error) {
           Sentry.captureException(error);
-          return null; // Handle failure by returning null or skipping
+          return null; 
         }
       })
     );
     
     // Remove null values (failed fetches)
-    const validEmails = emails.filter((email) => email !== null);
-
-    const message = `Hello, it seems that the chat in letterbox with id: ${id}, containing the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
+    const validEmails = emails.filter((email) => email !== null && email !== undefined);
+    const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
     const emailHtml = `
       <html>
         <head>
@@ -82,7 +86,7 @@ export async function POST(request) {
     `;
 
     const msg = {
-      to: 'penpal@murphycharity.org', 
+      to: validEmails[0], 
       from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
