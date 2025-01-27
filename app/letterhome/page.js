@@ -12,7 +12,7 @@ import * as Sentry from "@sentry/nextjs";
 
 
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import { FaUserCircle, FaCog, FaBell, FaPen, FaPaperPlane } from "react-icons/fa";
 
 import {
   fetchDraft,
@@ -126,6 +126,38 @@ export default function Home() {
 						<Link href="/letterwrite">
 							<button className="text-gray-700 hover:text-blue-600"><FaPen className="h-7 w-7" /></button>
 						</Link>
+            <button
+              className="text-gray-700 hover:text-blue-600"
+
+              onClick={async () => {
+                // this button is for development purposes only and will be removed
+                try {
+                  const response = await fetch('/api/notify', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      email: 'conwebert@gmail.com', // replace with actual recipient email
+                      title: 'Notification Title',
+                      body: 'Notification Body',
+                      data: { key: 'value' }
+                    }),
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to send notification.');
+                  }
+
+                  const result = await response.json();
+                  console.log('Notification sent successfully:', result);
+                } catch (error) {
+                  console.error('Error sending notification:', error);
+                }
+              }}
+            >
+            <FaPaperPlane className="h-7 w-7"/>
+          </button>
 					</div>
 				</header>
 				<main className="p-6">

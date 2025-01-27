@@ -9,12 +9,12 @@ import {
   setPersistence,
 } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import Link from "next/link";
+import { doc, getDoc } from "firebase/firestore";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import Button from "@/components/general/Button";
+import { initializeNotifications } from '../utils/notification'
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -26,8 +26,9 @@ export default function Login() {
 
   useEffect(() => {
     // Check if the user is already logged in and retrieve the email
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         router.push("/login");
@@ -54,6 +55,7 @@ export default function Login() {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
