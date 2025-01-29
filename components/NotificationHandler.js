@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { auth } from 'firebase/auth';
-import { messaging } from '../app/firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
+import { messaging, auth } from '../app/firebaseConfig';
 import { onMessage } from 'firebase/messaging'
 
 export function NotificationHandler({ children }) {
