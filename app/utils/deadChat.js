@@ -1,6 +1,7 @@
 import { db } from "../firebaseConfig";
 import { collection, getDocs, query, orderBy, limit} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
+import { getDateFromTimestamp, timestampToDate } from "./timestampToDate";
 
 
 const apiRequest = async (sender, users, id) => {
@@ -22,14 +23,7 @@ const apiRequest = async (sender, users, id) => {
   }
 }
 
-function getDateFromTimestamp(timestamp) {
-  // Check if the timestamp is a Firestore Timestamp object
-  if (timestamp && timestamp.toDate) {
-      return timestamp.toDate();
-  }
-  // If not, return an invalid date
-  return new Date(NaN);
-}
+
 
 
   
@@ -49,7 +43,7 @@ const deadChat = async (chat) => {
       const doc = querySnapshot.docs[0];
       const data = doc.data();
      
-      const mostRecentDate = new Date(getDateFromTimestamp(data.created_at));
+      const mostRecentDate = new Date(timestampToDate(data.created_at));
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
   
