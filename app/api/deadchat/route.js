@@ -2,17 +2,36 @@ import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import * as Sentry from "@sentry/nextjs";
 
-import { auth } from '../../firebaseAdmin';
+import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
   try {
-
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const {receiver_email, currentUrl, sender, excerpt } = body; 
-    const userRecord = await auth.getUser(sender); 
-    const message = `Hello, the user with the email: ${receiver_email}, reported this message: ${currentUrl} sent by a user with the email: ${userRecord.email}. Here is a brief excerpt from the reported message, "${excerpt}"`;
+    const { sender, users, id } = body; 
+    const senderSegments = sender._key?.path?.segments;
+    const sender_id = senderSegments[senderSegments.length - 1];
+    //const filtered = users.filter(element => element !== sender);
+    const emails = await Promise.all(
+      users.map(async (user) => {
+        try {
+          const pathSegments = user._key?.path?.segments;
+          const uid = pathSegments[pathSegments.length - 1];
+          if (uid !== sender_id ){
+            const userRecord = await auth.getUser(uid); // Fetch user record by UID
+            return userRecord.email; // Return the email
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+          return null; 
+        }
+      })
+    );
+    
+    // Remove null values (failed fetches)
+    const validEmails = emails.filter((email) => email !== null && email !== undefined);
+    const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
     const emailHtml = `
       <html>
         <head>
@@ -55,7 +74,7 @@ export async function POST(request) {
         </head>
         <body>
           <div class="email-container">
-            <h1>Message Reported</h1>
+            <h1>Chat Found Inactive</h1>
             <p><strong>Reported Message:</strong></p>
             <p class="message-content">${message || 'No message provided.'}</p>
             <footer>
@@ -66,10 +85,8 @@ export async function POST(request) {
       </html>
     `;
 
-
-    //SendGrid email configuration
     const msg = {
-      to: 'penpal@murphycharity.org', 
+      to: validEmails[0], 
       from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
@@ -78,7 +95,7 @@ export async function POST(request) {
 
     // Send the email
     await sendgrid.send(msg);
-    return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
+    return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
     
 
   } catch (error) {

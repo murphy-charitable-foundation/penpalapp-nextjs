@@ -20,10 +20,16 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
+
+import {
+  deadChat,
+  iterateLetterBoxes
+} from "../utils/deadChat";
 import ProfileImage from '@/components/general/ProfileImage';
 
 export default function Home() {
   const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
   const [letters, setLetters] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,6 +85,7 @@ export default function Home() {
           const userData = docSnap.data();
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
+          setUserType(userData.user_type || "Unknown Type")
 		  setProfileImage(userData?.photo_uri || "");
         } else {
           console.log("No such document!");
@@ -165,6 +172,10 @@ export default function Home() {
 				</main>
 				<BottomNavBar />
 			</div>
+      { userType == "admin" ? (
+        <button className="flex bg-black rounded py-[1rem] px-[1rem] mt-4 mx-auto" onClick={iterateLetterBoxes}>Check For Inactive Chats.</button>
+        ) : (<></>)
+      }  
 		</div>
 	);
 
