@@ -138,11 +138,12 @@ export const fetchRecipients = async (id) => {
 };
 
 let sendingLetter = false;
-export const sendLetter = async (letterData, letterRef, draftId) => {
+export const sendLetter = async (letterData, letterRef, draftId, letterboxRef) => {
   if (sendingLetter) return;
   try {
     sendingLetter = true;
     await updateDoc(doc(letterRef, draftId), letterData);
+    sendingLetter = false;
 
     const response = await fetch('/api/notify', {
       method: 'POST',
@@ -150,10 +151,8 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        fcmToken: letterData.recipientEmail,
-        title: 'Letter Sent',
-        body: 'Your letter has been successfully sent!',
-        data: { draftId },
+        letterboxRef: letterboxRef,
+        currentUserId: auth.currentUser.uid
       }),
     });
 
@@ -161,7 +160,6 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
       throw new Error('Failed to send notification.');
     }
 
-    sendingLetter = false;
     return true;
   } catch (e) {
     Sentry.captureException(e);
