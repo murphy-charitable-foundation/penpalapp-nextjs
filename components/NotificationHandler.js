@@ -9,16 +9,14 @@ export function NotificationHandler({ children }) {
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
-          console.log("adding listener");
           onMessage(messaging, (payload) => {
-            console.log('Foreground message received: ', payload);
+            // handle foreground notification
             const { title, body } = payload.notification;
             new Notification(title, { body });
           });
         }
       });
       return () => {
-        console.log("removing listener");
         unsubscribe();
       };
     }, []);

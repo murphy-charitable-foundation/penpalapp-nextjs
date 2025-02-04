@@ -4,7 +4,8 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath, getDoc } from "firebase/firestore";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken } from "firebase/messaging";
+import { doc, setDoc } from "firebase/firestore";
 
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
@@ -22,6 +23,8 @@ const firebaseConfig = {
   measurementId: "G-FG3MPZ8JV6"
 };
 
+const VAPID_KEY = 'BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc';
+
 // // Initialize Firebase
 // const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
@@ -37,18 +40,13 @@ if (typeof window !== "undefined") {
   // Initialize Messaging in the browser only
   messaging = getMessaging(app);
 }
-
-export { db, auth, storage, messaging, FieldPath };
-
 // Initialize Firebase Authentication and export
-
-
-import { doc, setDoc } from "firebase/firestore";
+export { db, auth, storage, messaging, FieldPath };
 
 export const requestForToken = async () => {
   try {
     const token = await getToken(messaging, {
-      vapidKey: 'BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc',
+      vapidKey: VAPID_KEY,
     });
     if (token) {
       const user = auth.currentUser;
@@ -56,22 +54,35 @@ export const requestForToken = async () => {
       if (user) {
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
+        let userGroup;
+
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-          const userGroup = userData.userGroup;
+          userGroup = userData.userGroup;
 
-          if (userGroup) {
+          if (!userGroup) {
             const tokenDocRef = doc(db, "fcmTokens", token);
-            await setDoc(tokenDocRef, {
-              userGroup: userGroup,
-              fcmToken: token,
-              createdAt: new Date(),
-            });
+            const tokenDocSnap = await getDoc(tokenDocRef);
 
-            console.log('FCM token and userGroup stored in Firestore successfully.');
-          } else {
-            console.log('No userGroup found for the user.');
+            if (tokenDocSnap.exists()) {
+              userGroup = tokenDocSnap.data().userGroup;
+              await updateDoc(userDocRef, { userGroup: userGroup });
+            } else {
+              const fcmTokensQuery = query(collection(db, "fcmTokens"), orderBy("userGroup", "desc"));
+              const fcmTokensSnapshot = await getDocs(fcmTokensQuery);
+              const highestUserGroup = fcmTokensSnapshot.docs.length > 0 ? fcmTokensSnapshot.docs[0].data().userGroup : 0;
+              userGroup = highestUserGroup + 1;
+
+              await setDoc(tokenDocRef, {
+                userGroup: userGroup,
+                fcmToken: token,
+                createdAt: new Date(),
+              });
+              await updateDoc(userDocRef, { userGroup: userGroup });
+            }
           }
+
+          console.log('FCM token and userGroup stored in Firestore successfully.');
         } else {
           console.log('User document does not exist.');
         }
