@@ -1,7 +1,6 @@
 "use client";
 
-// pages/create-acc.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -21,8 +20,16 @@ export default function CreateAccount() {
   const [birthday, setBirthday] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [showPasswordChecklist, setShowPasswordChecklist] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
+
+  // Pre-populate email from auth.currentUser
+  useEffect(() => {
+    if (auth.currentUser?.email) {
+      setEmail(auth.currentUser.email);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,7 +72,7 @@ export default function CreateAccount() {
       // Redirect to profile page or any other page as needed
       // router.push("/profile");
     } catch (error) {
-      Sentry.captureException(error);  //need to add password checks for size, and etc to make this defualt
+      Sentry.captureException(error);
       console.error("Error creating account:", error);
       alert(error.message);
     }
@@ -167,9 +174,9 @@ export default function CreateAccount() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  disabled
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 bg-gray-100 text-gray-900 rounded-b-md focus:outline-none sm:text-sm"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div>
@@ -187,17 +194,22 @@ export default function CreateAccount() {
                   required
                   className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setShowPasswordChecklist(e.target.value.length > 0);
+                  }}
                 />
               </div>
-              <PasswordChecklist
-                rules={["minLength", "specialChar", "number", "capital", "match"]}
-                minLength={8}
-                value={password}
-                valueAgain={repeatPassword}
-                onChange={(isValid) => {}}
-                className="text-black"
-              />
+              {showPasswordChecklist && (
+                <PasswordChecklist
+                  rules={["minLength", "specialChar", "number", "capital", "match"]}
+                  minLength={8}
+                  value={password}
+                  valueAgain={repeatPassword}
+                  onChange={(isValid) => {}}
+                  className="text-black"
+                />
+              )}
               <div>
                 <label
                   htmlFor="repeat-password"
@@ -232,7 +244,6 @@ export default function CreateAccount() {
                 Create Account
               </button>
             </form>
-          {/* <EditProfileImage router={router} /> */}
       </div>
     </div>
   );

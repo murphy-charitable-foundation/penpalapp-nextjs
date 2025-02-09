@@ -21,27 +21,31 @@ export default function ChangePassword() {
   const handleSubmit = async (e) => {
         e.preventDefault();
 
-        //if(password !== repeatPassword){
-          //return;
-        //}
-        //setError('');
-        try{
+        try {
           const user = auth.currentUser;
           const uid = user.uid;
-          updatePassword(user, password)
-          
-          setShowModal(true); 
+          await updatePassword(user, password);
+          setShowModal(true);
              
-        }catch(error) {
+        } catch (error) {
+          if (error.code === 'auth/requires-recent-login') {
+            setError('For security, please sign in again before changing your password');
+            router.push('/login');
+          } else if (error.code === 'auth/weak-password') {
+            setError('Please choose a stronger password');
+          } else if (error.code === 'auth/user-disabled') {
+            setError('This account has been disabled. Please contact support.');
+          } else {
+            Sentry.captureException(error);
+            setError('An unexpected error occurred. Please try again later.');
+          }
           console.error(error);
-        }           
-        //Redirect to profile page or any other page as needed
-        //router.push('/login'); 
+        }
   }
  
   function closeModal() {
     setShowModal(false);
-    router.push('/login'); 
+    router.push('/login');
   }
 
 

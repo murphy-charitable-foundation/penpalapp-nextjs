@@ -98,7 +98,18 @@ export default function WriteLetter() {
       setIsSending(false);
     } catch (error) {
       console.error("Error sending letter: ", error);
-      alert("Failed to send the letter.");
+      
+      if (error.code === 'permission-denied') {
+        alert("Your account is currently locked. Please contact support.");
+      } else if (error.code === 'quota-exceeded') {
+        alert("You've reached your daily letter limit. Please try again tomorrow.");
+      } else if (error.code === 'invalid-argument') {
+        alert("Invalid letter format. Please check your content and try again.");
+      } else {
+        Sentry.captureException(error);
+        alert("Failed to send the letter. Our team has been notified.");
+      }
+
       setIsSending(false);
     }
   };

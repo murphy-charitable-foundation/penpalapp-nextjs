@@ -1,6 +1,6 @@
 "use client"
 
-// pages/reset-password.js
+{/* pages/reset-password.js */}
 import { db, auth } from '../firebaseConfig'; 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,10 +27,9 @@ export default function ResetPassword() {
     setShowModal(false);
     router.push('/login');
   }
-
   return (
-    //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
-    <div className="w-full max-w-md space-y-8 bg-white p-8 min-h-screen">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
     <div style={{ textAlign: 'center', padding: '0px', background: 'white' }}>
         <div className="flex flex-row items-center justify-between mb-4">
                     <svg
@@ -67,8 +66,6 @@ export default function ResetPassword() {
           width: '80%',
           margin: '50px auto',
           display: 'block',
-          //backgroundColor: '#48801c',
-          //color: 'white',
           border: 'none',
           borderRadius: '20px',
           marginTop:"160px",
@@ -113,7 +110,7 @@ export default function ResetPassword() {
         </div>
       )}
     </div>
+    </div>
   </div>
-    //</div>
   );
 }

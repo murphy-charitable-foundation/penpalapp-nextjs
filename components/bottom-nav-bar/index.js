@@ -1,54 +1,122 @@
-import React from 'react';
-import Link from 'next/link';
-import { FaUserAlt, FaPen, FaCompass, FaHandHoldingHeart, FaInfo, FaEnvelopeOpenText, FaHome, FaInbox } from 'react-icons/fa';
+"use client";
 
-const BottomNavBar = () => {
-    return(
-        <nav className="fixed inset-x-0 bottom-0 bg-[#cfe899] p-3 flex justify-around items-center text-[#333333] border-t border-[#E6E6E6] shadow-md">
-            <Link href="/profile">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaUserAlt className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">Profile</span>
-                </button>
-            </Link>
-            <Link href="/letterhome">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaHome className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">Home</span>
-                </button>
-            </Link>
-            <Link href="/letterwrite">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaPen className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">Write Letter</span>
-                </button>
-            </Link>
-            <Link href="/discovery">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaCompass className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">Discover</span>
-                </button>
-            </Link>
-            <Link href="/donate">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaHandHoldingHeart className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">Donate</span>
-                </button>
-            </Link>
-            <Link href="/about">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaInfo className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">About</span>
-                </button>
-            </Link>
-            <Link href="/contact">
-                <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-[#a3d98d] rounded-lg">
-                    <FaEnvelopeOpenText className="h-6 w-6 hover:text-[#666666]" />
-                    <span className="text-xs">Contact</span>
-                </button>
-            </Link>
-        </nav>
-    );
-};
+import {
+  FaUserAlt,
+  FaPen,
+  FaCompass,
+  FaHandHoldingHeart,
+  FaInfo,
+  FaEnvelopeOpenText,
+  FaHome,
+  FaInbox,
+  FaBars,
+  FaSignOutAlt,
+} from "react-icons/fa";
+import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "../../app/firebaseConfig";
 
-export default BottomNavBar;
+export default function NavBar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  };
+
+  const navLinks = [
+    {
+      href: "/profile",
+      icon: <FaUserAlt className="h-4 w-4" />,
+      label: "Profile",
+    },
+    {
+      href: "/letterhome",
+      icon: <FaHome className="h-4 w-4" />,
+      label: "Home",
+    },
+    {
+      href: "/letterwrite",
+      icon: <FaPen className="h-4 w-4" />,
+      label: "Write",
+    },
+    {
+      href: "/discovery",
+      icon: <FaCompass className="h-4 w-4" />,
+      label: "Discover",
+    },
+    { 
+      href: "/about", 
+      icon: <FaInfo className="h-4 w-4" />, 
+      label: "About" 
+    },
+    {
+      href: "/contact",
+      icon: <FaEnvelopeOpenText className="h-4 w-4" />,
+      label: "Contact",
+    },
+    {
+      onClick: handleLogout,
+      icon: <FaSignOutAlt className="h-4 w-4" />,
+      label: "Logout",
+    },
+  ];
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 bg-blue-600 p-3 flex justify-around items-center text-white border-t border-[#E6E6E6] shadow-md">
+      <Link href="/myletters">
+        <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-700 rounded-lg p-2">
+          <FaInbox className="h-4 w-4" />
+          <span className="text-xs">Letters</span>
+        </button>
+      </Link>
+      <Link href="/donate">
+        <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-700 rounded-lg p-2">
+          <FaHandHoldingHeart className="h-4 w-4" />
+          <span className="text-xs">Donate</span>
+        </button>
+      </Link>
+      <div className="relative">
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-700 rounded-lg p-2"
+        >
+          <FaBars className="h-4 w-4" />
+          <span className="text-xs">Menu</span>
+        </button>
+        {isMenuOpen && (
+          <div className="absolute bottom-full right-0 mb-2 w-48 bg-blue-600 rounded-lg shadow-lg p-2">
+            <div className="flex flex-col gap-2">
+              {navLinks.map((link) =>
+                link.onClick ? (
+                  <button
+                    key={link.label}
+                    onClick={link.onClick}
+                    className="flex items-center gap-2 p-2 hover:bg-blue-700 rounded-lg w-full"
+                  >
+                    {link.icon}
+                    <span className="text-xs">{link.label}</span>
+                  </button>
+                ) : (
+                  <Link key={link.href} href={link.href}>
+                    <button className="flex items-center gap-2 p-2 hover:bg-blue-700 rounded-lg w-full">
+                      {link.icon}
+                      <span className="text-xs">{link.label}</span>
+                    </button>
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+}
