@@ -52,7 +52,7 @@ export default function Home() {
         for (const id of letterboxIds) {
           const letterbox = { id };
           const userRef = doc(db, "users", auth.currentUser.uid);
-          const draft = await fetchDraft(id, userRef, true);
+          const draft = await fetchDraft(id, userRef);
           if (draft) {
             letterbox.letters = [draft];
           } else {
@@ -66,6 +66,7 @@ export default function Home() {
           l.recipients = rec;
         }
         setLetters(letters);
+	      
       }
     });
     return () => unsubscribe();
@@ -102,7 +103,7 @@ export default function Home() {
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
         <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
-          <Link href="/profile">
+          {/* <Link href="/profile">
             <button className="flex items-center text-gray-700">
               <FaUserCircle className="h-8 w-8" />
               <div className="ml-3">
@@ -110,7 +111,7 @@ export default function Home() {
                 <div className="text-sm text-gray-600">{country}</div>
               </div>
             </button>
-          </Link>
+          </Link>*/}
 
 
 					<Link href="/profile">
@@ -123,7 +124,7 @@ export default function Home() {
 						</button>
 					</Link>
 
-					<div className="flex items-center space-x-4">
+					{/* <div className="flex items-center space-x-4">
 						<Link href="/settings">
 							<button className="text-gray-700 hover:text-blue-600"><FaCog className="h-7 w-7" /></button>
 						</Link>
@@ -133,34 +134,39 @@ export default function Home() {
 						<Link href="/letterwrite">
 							<button className="text-gray-700 hover:text-blue-600"><FaPen className="h-7 w-7" /></button>
 						</Link>
-					</div>
+					</div>*/}
 				</header>
 				<main className="p-6">
 					<section className="mt-8">
-						<h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
+						{/* <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
 							Last letters
 							<Link href="/letterhome">
 								<button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">Show more</button>
 							</Link>
-						</h2>
+						</h2>*/}
 						{letters.length > 0 ? (
 							letters.map((letter, i) => (
-								<a key={letter.id + '_' + i} href={`/letters/${letter.id}`} className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+								<a key={letter.id + '_' + i} href={`/letters/${letter.id}`} className={i== 0 ? "flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer bgcolorLatest" : "flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer "}>
 									<div className="flex-grow">
 										{letter.recipients?.map(rec => (
-											<div key={rec.id} className='flex mt-3'>
-												<ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name}/>
-												<div className="flex flex-col">
+											<><div key={rec.id} className='flex'>
+                        								<ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name} />
+                      										<div className="flex flex-col">
 													<div className='flex'>
-														{letter.letters[0].status === "draft" && <h4 className="mr-2">[DRAFT]</h4>}
-														<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
+														{letter.letters.messages[0].status === "draft" && <h4 className="mr-2 colorRed">[DRAFT]</h4>}
+                            											<h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
 													</div>
-													<div>{rec.country}</div>
-												</div>
-											</div>
+													 <div className="text-gray-400">{rec.country}</div>
+
+                       											 </div>
+
+										                      </div><div className="flex flex-col letterRec">
+										                          <p className="text-gray-600 truncate truncateText">{letter.letters.messages[0].content ?? ''}</p>
+										                          
+										                          <span className="text-xs text-gray-400">{letter.letters.messages[0].received}</span>
+										                        </div></>
+										                      
 										))}
-										<p className="text-gray-600 truncate">{letter.letters[0].content ?? ''}</p>
-										<span className="text-xs text-gray-400">{letter.letters[0].received}</span>
 									</div>
 								</a>
 							))
