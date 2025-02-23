@@ -22,7 +22,7 @@ if (hasValidCredentials == true) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-    console.log("Firebase Admin SDK initialized successfully.");
+    
   }
 } else {
   const errorMessage = "Firebase Admin SDK is not initialized due to missing credentials.";
