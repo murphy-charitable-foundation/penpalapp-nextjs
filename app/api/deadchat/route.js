@@ -5,6 +5,12 @@ import * as Sentry from "@sentry/nextjs";
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
+  if (auth == null) {
+    return NextResponse.json(
+      { message: 'Admin is null.', },
+      { status: 500 }
+    );
+  }
   try {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
