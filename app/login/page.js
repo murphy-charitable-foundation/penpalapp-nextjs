@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import logo from '/public/murphylogo.png';
 import { useRouter } from 'next/navigation';
+import Button from "../../components/general/Button";
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -20,11 +21,13 @@ export default function Login() {
         e.preventDefault();
         setError('');
         setLoading(true);
+        
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            const uid = auth.currentUser.uid;
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const uid = userCredential.user.uid;
             const userRef = doc(db, "users", uid);
-            const userSnap = await getDoc(userRef)
+            const userSnap = await getDoc(userRef);
+            
             if (userSnap.exists()) {
                 router.push('/letterhome');
             } else {
@@ -58,14 +61,18 @@ export default function Login() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
             <div className="w-full max-w-md space-y-8 bg-white rounded-lg shadow-md p-8">
                 <div className="relative">
-                    <button 
-                        className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full"
+                    <Button
+                        btnText={
+                            <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        }
+                        color="bg-transparent"
+                        hoverColor="hover:bg-gray-100"
+                        textColor="text-gray-600"
+                        rounded="rounded-full"
                         onClick={() => router.push("/")}
-                    >
-                        <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
+                    />
                     <div className="flex justify-center">
                         <Image src={logo} alt="Murphy Charitable Foundation Uganda" width={150} height={150} />
                     </div>
@@ -78,6 +85,7 @@ export default function Login() {
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                         <input
+                            id="email"
                             type="email"
                             value={email}
                             autoComplete="email"
@@ -94,6 +102,7 @@ export default function Login() {
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
                         <input
+                            id="password"
                             type="password"
                             value={password}
                             autoComplete="current-password"
@@ -107,41 +116,44 @@ export default function Login() {
                         />
                     </div>
 
-                    <div className="text-sm">
-                        <a href="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
+                    <div className="text-sm text-center">
+                        <Link href="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
                             Forgot your password?
-                        </a>
+                        </Link>
                     </div>
 
-                    {error && <div className="text-red-500 text-sm">{error}</div>}
+                    <div className="flex items-center justify-center">
+                        <input
+                            id="remember-me"
+                            name="remember-me"
+                            type="checkbox"
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                            Remember me
+                        </label>
+                    </div>
 
-                    <div>
-                        <button
-                            type="submit"
+                    {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+
+                    <div className="flex justify-center">
+                        <Button
+                            btnType="submit"
+                            btnText={
+                                loading ? (
+                                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
+                                ) : (
+                                    'Log in'
+                                )
+                            }
+                            color="bg-green-800"
+                            hoverColor="hover:bg-[#48801c]"
+                            textColor="text-gray-200"
                             disabled={loading}
-                            style={{
-                                width: "80%",
-                                display: "block",
-                                borderRadius: "20px", 
-                                cursor: "pointer",
-                                margin: "0 auto"
-                            }}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium text-gray-200 bg-green-800 hover:bg-[#48801c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
-                            ) : (
-                                'Log in'
-                            )}
-                        </button>
+                            rounded="rounded-full"
+                        />
                     </div>
                 </form>
-
-                <Link href="/create-acc">
-                    <button className="w-full mt-4 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Create Account
-                    </button>
-                </Link>
             </div>
         </div>
     );

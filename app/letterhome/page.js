@@ -1,222 +1,165 @@
 "use client";
 
-import Image from "next/image";
+// pages/index.js
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { db, auth } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig"; // Adjust the import path as necessary
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { useRouter } from 'next/navigation';
-import { FaUserCircle } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";
-import { fetchLetterboxes, fetchDraft, fetchLetterbox, fetchRecipients } from "../utils/letterUtils";
+import * as Sentry from "@sentry/nextjs";
+import { useRouter } from "next/navigation";
+import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchLetterboxes,
+  fetchRecipients,
+} from "../utils/letterboxFunctions";
+import {
+  deadChat,
+  iterateLetterBoxes
+} from "../utils/deadChat";
+import ProfileImage from '/components/general/ProfileImage';
+import Button from '../../components/general/Button';
 
 export default function Home() {
   const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
-  const [profileImage, setProfileImage] = useState("");
   const [letters, setLetters] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeLetter, setActiveLetter] = useState(null);
+  const [profileImage, setProfileImage] = useState("");
   const router = useRouter();
 
   useEffect(() => {
+    setIsLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // TODO: redirect if everything is loaded and still no user
+        setError("No user logged in.");
+        setIsLoading(false);
+        router.push("/login");
+      } else {
+        const letterboxes = await fetchLetterboxes();
+        const letterboxIds = letterboxes.map((l) => l.id);
+        let letters = [];
+        for (const id of letterboxIds) {
+          const letterbox = { id };
+          const userRef = doc(db, "users", auth.currentUser.uid);
+          const draft = await fetchDraft(id, userRef, true);
+          if (draft) {
+            letterbox.letters = [draft];
+          } else {
+            letterbox.letters = await fetchLetterbox(id, 1);
+          }
+          letters.push(letterbox);
+        }
+        // this will be slow but may be the only way
+        for await (const l of letters) {
+          const rec = await fetchRecipients(l.id);
+          l.recipients = rec;
+        }
+        setLetters(letters);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const fetchUserData = async () => {
-      if (!auth.currentUser) return;
-      
-      try {
-        const docRef = doc(db, "users", auth.currentUser.uid);
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
+          setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+        } else {
+          console.log("No such document!");
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setError("Failed to load user data");
+      } else {
+        console.log("No user logged in");
       }
     };
 
     fetchUserData();
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const letterboxes = await fetchLetterboxes();
-        const letterboxIds = letterboxes.map((l) => l.id);
-        
-        const letterPromises = letterboxIds.map(async (id) => {
-          const letterbox = { id };
-          const userRef = doc(db, "users", auth.currentUser.uid);
-          
-          const draft = await fetchDraft(id, userRef, true);
-          letterbox.letters = draft ? [draft] : await fetchLetterbox(id, 1);
-          
-          const recipients = await fetchRecipients(id);
-          letterbox.recipients = recipients;
-          
-          return letterbox;
-        });
-
-        const fetchedLetters = await Promise.all(letterPromises);
-        setLetters(fetchedLetters);
-      } catch (error) {
-        console.error("Error fetching letters:", error);
-        setError("Failed to load letters");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        setError("No user logged in.");
-        router.push("/login");
-        return;
-      }
-      
-      fetchData();
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleLetterClick = (letter) => {
-    setActiveLetter(letter);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="flex justify-between items-center bg-gray-100 p-5 border-b border-gray-200">
+        <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
           <Link href="/profile">
-            <button className="flex items-center text-gray-700 hover:bg-gray-200 rounded-lg p-2 transition-colors">
-              <FaUserCircle className="h-8 w-8" />
+            <button className="flex items-center text-gray-700">
+              <ProfileImage photo_uri={profileImage} first_name={userName} />
               <div className="ml-3">
                 <div className="font-semibold text-lg">{userName}</div>
                 <div className="text-sm text-gray-600">{country}</div>
               </div>
             </button>
           </Link>
-        </div>
-        <div className="p-6">
+
+        </header>
+        <main className="p-6">
           <section className="mt-8">
-            <h2 className="font-bold text-xl mb-4 text-gray-800">Recent Letters</h2>
+            <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+              Recent letters
+            </h2>
             {letters.length > 0 ? (
-              letters.map((letter) => (
-                <div
-                  key={letter.id}
-                  className="flex items-center p-4 mb-3 bg-white hover:shadow-lg hover:bg-[#cfe899] border-b border-gray-400 transition-shadow duration-300 cursor-pointer"
-                  onClick={() => handleLetterClick(letter)}
-                >
-                  <div className="w-12 h-12 relative mr-4">
-                    <Image
-                      src="/usericon.png"
-                      alt="Sender"
-                      width={48}
-                      height={48}
-                      className="rounded-full"
-                    />
-                  </div>
+              letters.map((letter, i) => (
+                <a key={letter.id + '_' + i} href={`/letters/${letter.id}`} className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
                   <div className="flex-grow">
-                    <h3 className="font-semibold text-gray-800">
-                      From: {letter.senderName}
-                      <span className="text-xs text-gray-400 ml-2">
-                        {letter.received}
-                      </span>
-                    </h3>
-                    <p className="text-gray-600 truncate">{letter.content}</p>
+                    {letter.recipients?.map(rec => (
+                      <div key={rec.id} className='flex mt-3'>
+                        <ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name} />
+                        <div className="flex flex-col">
+                          <div className='flex'>
+                            {letter.letters[0].status === "draft" && <h4 className="mr-2">[DRAFT]</h4>}
+                            <h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
+                          </div>
+                          <div>{rec.country}</div>
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-gray-600 truncate">{letter.letters[0].content ?? ''}</p>
+                    <span className="text-xs text-gray-400">{letter.letters[0].received}</span>
                   </div>
-                </div>
+                </a>
               ))
             ) : (
-              <p className="text-gray-500">No letters found.</p>
-            )}
-            <button 
-              className="mt-4 w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-              onClick={() => router.push('/myletters')}
-            >
-              View All Letters
-            </button>
-          </section>
-
-          <section className="mt-8">
-            <h2 className="font-bold text-xl mb-4 text-gray-800">Your Contacts</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {letters.map((letter) => (
-                <div key={letter.id} className="p-4 border rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold">{letter.senderName}</h3>
-                  <p className="text-gray-600">{letter.senderCountry}</p>
+              <div className="flex flex-col items-center justify-center py-12 px-4">
+                <div className="w-24 h-24 bg-green-700 rounded-full flex items-center justify-center mb-6">
+                  <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
                 </div>
-              ))}
-            </div>
+                <h3 className="text-2xl font-semibold text-green-700 mb-2">
+                  New friends are coming!
+                </h3>
+                <p className="text-gray-600 text-center">
+                  Many friends are coming hang tight!
+                </p>
+              </div>
+            )}
           </section>
-        </div>
+        </main>
         <BottomNavBar />
       </div>
-
-      {activeLetter && (
-        <div 
-          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${!!activeLetter ? '' : 'hidden'}`}
-          onClick={() => setActiveLetter(null)}
-        >
-          <div 
-            className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-semibold">Letter from {activeLetter.senderName}</h2>
-              <button 
-                onClick={() => setActiveLetter(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500">Received: {activeLetter.received}</p>
-              <p className="mt-4">{activeLetter.content}</p>
-              {activeLetter.attachments && activeLetter.attachments.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-semibold">Attachments:</h4>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {activeLetter.attachments.map((url, index) => (
-                      <Image
-                        key={index}
-                        src={url}
-                        alt={`Attachment ${index + 1}`}
-                        width={100}
-                        height={100}
-                        className="object-cover rounded"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {userType == "admin" && (
+        <Button
+          btnText="Check For Inactive Chats"
+          color="bg-black"
+          textColor="text-white"
+          rounded="rounded-md"
+          onClick={iterateLetterBoxes}
+        />
       )}
     </div>
   );
 }
-

@@ -10,6 +10,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { File, X, Video, Play, Pause, Volume2, VolumeX, Settings } from "lucide-react";
 import Compressor from 'compressorjs';
+import Button from "../../components/general/Button";
+
 
 export default function WriteLetter() {
   const [letterContent, setLetterContent] = useState("");
@@ -485,12 +487,13 @@ export default function WriteLetter() {
             </>
           ) : (
             <div className="relative">
-              <button
-                onClick={() => setIsModalOpen(!isModalOpen)}
-                className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                Select a Recipient
-              </button>
+              <Button
+                btnText="Select a Recipient"
+                color="bg-blue-700"
+                hoverColor="hover:bg-blue-600"
+                textColor="text-white"
+                disabled={false}
+              />
               {isModalOpen && (
                 <div className="absolute left-0 mt-2 bg-white p-6 rounded-lg shadow-xl max-w-md w-full z-10">
                   <h3 className="font-semibold text-xl text-gray-800 mb-4">
@@ -507,12 +510,14 @@ export default function WriteLetter() {
                       </li>
                     ))}
                   </ul>
-                  <button
+                  <Button
+                    btnText="Close"
+                    color="bg-blue-500"
+                    hoverColor="hover:bg-blue-600"
+                    textColor="text-white"
+                    disabled={false}
                     onClick={() => setIsModalOpen(false)}
-                    className="mt-2 p-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-150"
-                  >
-                    Close
-                  </button>
+                  />
                 </div>
               )}
             </div>
@@ -529,13 +534,19 @@ export default function WriteLetter() {
   
         <div className="space-x-2 flex p-4">
           <div className="flex items-center gap-2">
-            <button 
+            <Button
+              btnText={
+                <div className="flex items-center">
+                  <File className="mr-2 h-4 w-4" />
+                  Attach Files
+                </div>
+              }
+              color="bg-blue-500"
+              hoverColor="hover:bg-blue-600"
+              textColor="text-white"
+              disabled={false}
               onClick={handleFileIconClick}
-              className="flex items-center px-4 py-2 border bg-blue-500 border-gray-300 rounded-lg hover:bg-blue-600"
-            >
-              <File className="mr-2 h-4 w-4" />
-              Attach Files
-            </button>
+            />
             <button
               onClick={() => setIsCompressionSettingsOpen(true)}
               className="p-2 hover:bg-gray-100 rounded-lg"
@@ -550,48 +561,55 @@ export default function WriteLetter() {
             onChange={handleFileChange}
             multiple
           />
-          <button
-            onClick={handleSendLetter}
+          <Button
+            btnText={
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4l8 8-8 8-8-8 8-8z"
+                ></path>
+              </svg>
+            }
+            color="bg-gray-200"
+            hoverColor="hover:bg-gray-300"
+            textColor="text-gray-800"
             disabled={isSending}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4l8 8-8 8-8-8 8-8z"
-              ></path>
-            </svg>
-          </button>
-          <button
+            onClick={handleSendLetter}
+          />
+          <Button
+            btnText={
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z"
+                ></path>
+              </svg>
+            }
+            color="bg-gray-200"
+            hoverColor="hover:bg-gray-300"
+            textColor="text-gray-800"
+            disabled={false}
             onClick={() => {
               setLetterContent("");
               setAttachments([]);
             }}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z"
-              ></path>
-            </svg>
-          </button>
+          />
         </div>
   
         {/* Display selected attachments */}

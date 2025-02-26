@@ -2,16 +2,29 @@
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
-import Button from "../components/Button";
+import Button from "../components/general/Button";
+
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <Link href="/cover" className="inline-block">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
+      <div className="w-full max-w-md space-y-8">
+        <div
+          style={{
+            textAlign: "left",
+            padding: "20px",
+            background: "white",
+            height: "80%",
+          }}
+        >
+          <Link href="/cover">
+            <button
+              style={{
+                border: "none",
+                background: "none",
+              }}
+            >
               <svg
-                className="h-6 w-6 text-gray-600" 
+                className="h-6 w-6 text-gray-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -25,34 +38,30 @@ export default function Home() {
               </svg>
             </button>
           </Link>
-
-          <div className="flex flex-col items-center my-12">
+          <div className="flex justify-center mb-40">
             <Image
               src={logo}
               alt="Murphy Charitable Foundation Uganda"
-              width={120}
-              height={120}
-              className="drop-shadow-md"
+              width={150}
+              height={150}
             />
-            <h1 className="text-3xl font-bold mt-6 text-gray-900 text-center">
-              Welcome to the Pen Pal App
-            </h1>
-            <p className="text-lg text-gray-600 mt-3 text-center">
-              Write, connect and inspire children in Uganda
-            </p>
           </div>
-
-          <div className="flex flex-col gap-4 mt-12">
-            <Link href="/login" className="w-full">
-              <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg">
-                Log in
-              </button>
+          <div className="flex flex-col gap-10 jsu mb-36 items-center">
+            <Link href="/login">
+              <Button
+                color={"bg-green-700"}
+                hoverColor={"hover:bg-green-800"}
+                btnText={"Log in"}
+                rounded={"rounded-3xl"}
+              />
             </Link>
-            
-            <Link href="https://calendly.com/murphycharity/60min" className="w-full">
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg">
-                Become a Pen Pal Volunteer
-              </button>
+            <Link href="https://calendly.com/murphycharity/60min">
+              <Button
+                color={"bg-blue-900"}
+                hoverColor={"hover:bg-blue-700"}
+                btnText={"Become a Pen Pal Volunteer"}
+                rounded={"rounded-3xl"}
+              />
             </Link>
           </div>
         </div>
