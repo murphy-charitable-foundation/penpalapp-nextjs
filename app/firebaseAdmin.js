@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 
+
 // Trying to different approaches to get Firebase credentials
 let serviceAccount;
 
@@ -54,3 +55,4 @@ if (!admin.apps.length) {
 export const auth = admin.auth();
 export const db = admin.firestore();
 export const storage = admin.storage();
+
