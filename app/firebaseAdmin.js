@@ -1,35 +1,3 @@
-// import * as admin from "firebase-admin";
-
-// //import serviceAccount from '../penpalmagicapp-firebase-adminsdk-czr2x-7f1623a3ac.json';
-
-// const serviceAccount = {
-//   projectId: "penpalmagicapp",
-//   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-//   privateKey: process.env.FIREBASE_PRIVATE_KEY
-//     ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
-//     : undefined, // Handle line breaks in private key
-// };
-
-// if (!serviceAccount.privateKey) {
-//   console.error(
-//     "Firebase private key is missing. Check your environment variables."
-//   );
-// }
-
-// if (!admin.apps.length) {
-//   try {
-//     admin.initializeApp({
-//       credential: admin.credential.cert(serviceAccount),
-//     });
-//   } catch (error) {
-//     console.error("Firebase admin initialization error:", error);
-//   }
-// }
-
-// export const auth = admin.auth();
-// export const db = admin.firestore();
-// export const storage = admin.storage();
-
 import * as admin from "firebase-admin";
 
 // Trying to different approaches to get Firebase credentials
