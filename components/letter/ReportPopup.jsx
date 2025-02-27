@@ -1,4 +1,4 @@
-import Button from "../Button";
+import Button from "../general/Button";
 import {useEffect, useState} from "react"
 
 import { doc, getDoc } from "firebase/firestore";

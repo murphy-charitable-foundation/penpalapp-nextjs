@@ -31,6 +31,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -80,6 +81,14 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+          
+          // Show welcome message
+          setShowWelcome(true);
+          
+          // Hide welcome message after 5 seconds
+          setTimeout(() => {
+            setShowWelcome(false);
+          }, 5000);
         } else {
           console.log("No such document!");
         }
@@ -92,19 +101,45 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-gray-100 min-h-screen py-6">
+    <div className="bg-gray-100 min-h-screen py-6 relative">
+      {/* Welcome Message */}
+      {showWelcome && (
+        <div className="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-lg border border-green-200 p-4 max-w-xs animate-slide-in">
+          <div className="flex items-start">
+            <div className="bg-green-100 rounded-full p-2 mr-3">
+              <svg className="w-6 h-6 text-green-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Welcome back, {userName}!</h3>
+              <p className="text-sm text-gray-600">Check out your recent letters and stay connected.</p>
+            </div>
+            <button 
+              onClick={() => setShowWelcome(false)}
+              className="ml-2 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
         <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
           <Link href="/profile">
             <button className="flex items-center text-gray-700">
-              <ProfileImage photo_uri={profileImage} first_name={userName} />
-              <div className="ml-3">
-                <div className="font-semibold text-lg">{userName}</div>
-                <div className="text-sm text-gray-600">{country}</div>
+              <div className="flex items-center">
+                <ProfileImage photo_uri={profileImage} first_name={userName} />
+                <div className="ml-3">
+                  <div className="font-semibold text-lg">{userName}</div>
+                  <div className="text-sm text-gray-600">{country}</div>
+                </div>
               </div>
             </button>
           </Link>
-
         </header>
         <main className="p-6">
           <section className="mt-8">
@@ -160,6 +195,23 @@ export default function Home() {
           onClick={iterateLetterBoxes}
         />
       )}
+      
+      {/* Add animation keyframes */}
+      <style jsx global>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }

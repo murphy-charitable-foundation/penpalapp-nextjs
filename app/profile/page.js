@@ -24,6 +24,8 @@ import {
   Palette,
 } from "lucide-react";
 import Button from "../../components/general/Button";
+import Input from "../../components/general/Input";
+import Dialog from "../../components/general/Dialog";
 
 export default function EditProfile() {
   // State initializations
@@ -44,6 +46,13 @@ export default function EditProfile() {
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Dialog state
+  const [isEducationDialogOpen, setIsEducationDialogOpen] = useState(false);
+  const [isGuardianDialogOpen, setIsGuardianDialogOpen] = useState(false);
+  const [isOrphanDialogOpen, setIsOrphanDialogOpen] = useState(false);
+  const [isBioDialogOpen, setIsBioDialogOpen] = useState(false);
+  const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
 
@@ -135,8 +144,208 @@ export default function EditProfile() {
     }
   };
 
+  // Education options
+  const educationOptions = [
+    "Elementary",
+    "Middle",
+    "High School",
+    "College/University",
+    "No Grade"
+  ];
+
+  // Guardian options
+  const guardianOptions = [
+    "Parents",
+    "Adoptive Parents",
+    "Aunt/Uncle",
+    "Grandparents",
+    "Other Family",
+    "Friends",
+    "Other"
+  ];
+
+  // Education dialog content
+  const educationDialogContent = (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500 mb-4">Select your education level:</p>
+      <div className="grid grid-cols-1 gap-3">
+        {educationOptions.map((option) => (
+          <button
+            key={option}
+            className={`p-3 rounded-lg text-left ${
+              educationLevel === option
+                ? "bg-green-100 border border-green-500"
+                : "bg-gray-50 hover:bg-gray-100"
+            }`}
+            onClick={() => {
+              setEducationLevel(option);
+              setIsEducationDialogOpen(false);
+            }}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Guardian dialog content
+  const guardianDialogContent = (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500 mb-4">Select your guardian:</p>
+      <div className="grid grid-cols-1 gap-3">
+        {guardianOptions.map((option) => (
+          <button
+            key={option}
+            className={`p-3 rounded-lg text-left ${
+              guardian === option
+                ? "bg-green-100 border border-green-500"
+                : "bg-gray-50 hover:bg-gray-100"
+            }`}
+            onClick={() => {
+              setGuardian(option);
+              setIsGuardianDialogOpen(false);
+            }}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Orphan dialog content
+  const orphanDialogContent = (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500 mb-4">Are you an orphan?</p>
+      <div className="grid grid-cols-2 gap-3">
+        {["Yes", "No"].map((option) => (
+          <button
+            key={option}
+            className={`p-3 rounded-lg text-center ${
+              isOrphan === option
+                ? "bg-green-100 border border-green-500"
+                : "bg-gray-50 hover:bg-gray-100"
+            }`}
+            onClick={() => {
+              setIsOrphan(option);
+              setIsOrphanDialogOpen(false);
+            }}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Bio dialog content
+  const bioDialogContent = (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500 mb-2">Share your challenges or a brief bio:</p>
+      <textarea
+        value={tempBio}
+        onChange={(e) => setTempBio(e.target.value)}
+        className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+        placeholder="Write about yourself or challenges you've faced..."
+        maxLength={200}
+      />
+      <div className="flex justify-between items-center">
+        <span className="text-xs text-gray-500">
+          {tempBio.length}/200 characters
+        </span>
+        <Button
+          btnText="Save"
+          color="bg-green-800"
+          hoverColor="hover:bg-[#48801c]"
+          textColor="text-white"
+          rounded="rounded-lg"
+          size="w-24"
+          onClick={() => {
+            setBio(tempBio);
+            setIsBioDialogOpen(false);
+          }}
+        />
+      </div>
+    </div>
+  );
+
+  // Open bio dialog and set temp bio
+  const handleOpenBioDialog = () => {
+    setTempBio(bio);
+    setIsBioDialogOpen(true);
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
+      {/* Education Level Dialog */}
+      <Dialog
+        isOpen={isEducationDialogOpen}
+        onClose={() => setIsEducationDialogOpen(false)}
+        title="Education Level"
+        content={educationDialogContent}
+        bgColor="bg-white"
+        textColor="text-gray-800"
+        titleColor="text-green-800"
+        overlayColor="bg-black bg-opacity-50"
+        borderColor="border border-gray-200"
+        shadow="shadow-xl"
+        width="max-w-sm w-full"
+        padding="p-6"
+        rounded="rounded-xl"
+      />
+
+      {/* Guardian Dialog */}
+      <Dialog
+        isOpen={isGuardianDialogOpen}
+        onClose={() => setIsGuardianDialogOpen(false)}
+        title="Guardian"
+        content={guardianDialogContent}
+        bgColor="bg-white"
+        textColor="text-gray-800"
+        titleColor="text-green-800"
+        overlayColor="bg-black bg-opacity-50"
+        borderColor="border border-gray-200"
+        shadow="shadow-xl"
+        width="max-w-sm w-full"
+        padding="p-6"
+        rounded="rounded-xl"
+      />
+
+      {/* Orphan Dialog */}
+      <Dialog
+        isOpen={isOrphanDialogOpen}
+        onClose={() => setIsOrphanDialogOpen(false)}
+        title="Orphan Status"
+        content={orphanDialogContent}
+        bgColor="bg-white"
+        textColor="text-gray-800"
+        titleColor="text-green-800"
+        overlayColor="bg-black bg-opacity-50"
+        borderColor="border border-gray-200"
+        shadow="shadow-xl"
+        width="max-w-sm w-full"
+        padding="p-6"
+        rounded="rounded-xl"
+      />
+
+      {/* Bio Dialog */}
+      <Dialog
+        isOpen={isBioDialogOpen}
+        onClose={() => setIsBioDialogOpen(false)}
+        title="Bio/Challenges"
+        content={bioDialogContent}
+        bgColor="bg-white"
+        textColor="text-gray-800"
+        titleColor="text-green-800"
+        overlayColor="bg-black bg-opacity-50"
+        borderColor="border border-gray-200"
+        shadow="shadow-xl"
+        width="max-w-md w-full"
+        padding="p-6"
+        rounded="rounded-xl"
+      />
+
       <div className="max-w-lg mx-auto p-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
@@ -219,13 +428,16 @@ export default function EditProfile() {
                 <User className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">First name</p>
-                <input
+                <Input
                   type="text"
                   id="firstName"
+                  name="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                  label="First name"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -235,13 +447,16 @@ export default function EditProfile() {
                 <User className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Last name</p>
-                <input
+                <Input
                   type="text"
                   id="lastName"
+                  name="lastName"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                  label="Last name"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -251,14 +466,17 @@ export default function EditProfile() {
                 <MapPin className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Country</p>
-                <input
+                <Input
                   type="text"
                   id="country"
+                  name="country"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                  label="Country"
                   placeholder="Ex: Country"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -268,14 +486,17 @@ export default function EditProfile() {
                 <Home className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Village</p>
-                <input
+                <Input
                   type="text"
                   id="village"
+                  name="village"
                   value={village}
                   onChange={(e) => setVillage(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                  label="Village"
                   placeholder="Ex: Village"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -286,14 +507,33 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Bio/Challenges faced</p>
-                <textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0 resize-none"
-                  placeholder="Bio"
-                  maxLength="50"
-                />
+                <button
+                  onClick={handleOpenBioDialog}
+                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
+                >
+                  <span className="truncate">
+                    {bio ? bio : "Add your bio or challenges..."}
+                  </span>
+                  <svg
+                    className="h-5 w-5 text-gray-400 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -302,13 +542,16 @@ export default function EditProfile() {
                 <Calendar className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Birthday</p>
-                <input
+                <Input
                   type="date"
                   id="birthday"
+                  name="birthday"
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                  label="Birthday"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -326,18 +569,25 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Education level</p>
-                <select
-                  id="educationLevel"
-                  value={educationLevel}
-                  onChange={(e) => setEducationLevel(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                <button
+                  onClick={() => setIsEducationDialogOpen(true)}
+                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
-                  <option value="Elementary">Elementary</option>
-                  <option value="Middle">Middle</option>
-                  <option value="High School">High School</option>
-                  <option value="College/University">College/University</option>
-                  <option value="No Grade">No Grade</option>
-                </select>
+                  <span>{educationLevel || "Select education level"}</span>
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -347,20 +597,25 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Guardian</p>
-                <select
-                  id="guardian"
-                  value={guardian}
-                  onChange={(e) => setGuardian(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                <button
+                  onClick={() => setIsGuardianDialogOpen(true)}
+                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
-                  <option value="Parents">Parents</option>
-                  <option value="AdoptiveParents">Adoptive Parents</option>
-                  <option value="Aunt/Uncle">Aunt/Uncle</option>
-                  <option value="Grandparents">Grandparents</option>
-                  <option value="Other Family">Other Family</option>
-                  <option value="Friends">Friends</option>
-                  <option value="Other">Other</option>
-                </select>
+                  <span>{guardian || "Select guardian"}</span>
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -370,15 +625,25 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Is orphan</p>
-                <select
-                  id="isOrphan"
-                  value={isOrphan}
-                  onChange={(e) => setIsOrphan(e.target.value)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                <button
+                  onClick={() => setIsOrphanDialogOpen(true)}
+                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
-                  <option value="No">No</option>
-                  <option value="Yes">Yes</option>
-                </select>
+                  <span>{isOrphan || "Select option"}</span>
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -391,15 +656,18 @@ export default function EditProfile() {
               <div className="p-2 bg-gray-100 rounded-lg">
                 <Briefcase className="w-5 h-5 text-gray-600" />
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Dream job</p>
-                <input
+              <div className="flex-1">
+                <Input
                   type="text"
                   id="dreamjob"
+                  name="dreamjob"
                   value={dreamJob}
                   onChange={(e) => setDreamJob(e.target.value)}
-                  className="font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
-                  placeholder="Airplane pilote"
+                  label="Dream job"
+                  placeholder="Airplane pilot"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -408,15 +676,18 @@ export default function EditProfile() {
               <div className="p-2 bg-gray-100 rounded-lg">
                 <Square className="w-5 h-5 text-gray-600" />
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Hobby</p>
-                <input
+              <div className="flex-1">
+                <Input
                   type="text"
                   id="hobby"
+                  name="hobby"
                   value={hobby}
                   onChange={(e) => setHobby(e.target.value)}
-                  className="font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                  label="Hobby"
                   placeholder="Dancing"
+                  borderColor="border-gray-300"
+                  focusBorderColor="focus:border-green-800"
+                  bgColor="bg-transparent"
                 />
               </div>
             </div>
@@ -428,14 +699,17 @@ export default function EditProfile() {
               <Palette className="w-5 h-5 text-gray-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-gray-500">Favorite Color</p>
-              <input
+              <Input
                 type="text"
                 id="favoriteColor"
+                name="favoriteColor"
                 value={favoriteColor}
                 onChange={(e) => setFavoriteColor(e.target.value)}
-                className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 focus:ring-0"
+                label="Favorite Color"
                 placeholder="Ex: Blue"
+                borderColor="border-gray-300"
+                focusBorderColor="focus:border-green-800"
+                bgColor="bg-transparent"
               />
             </div>
           </div>

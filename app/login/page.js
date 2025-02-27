@@ -9,6 +9,7 @@ import Image from 'next/image';
 import logo from '/public/murphylogo.png';
 import { useRouter } from 'next/navigation';
 import Button from "../../components/general/Button";
+import Input from "../../components/general/Input";
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -83,36 +84,40 @@ export default function Login() {
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            id="email"
+                        <Input
                             type="email"
                             value={email}
-                            autoComplete="email"
-                            required
                             onChange={(e) => {
                                 setEmail(e.target.value);
                                 handleInputChange();
                             }}
                             placeholder="Ex. user@gmail.com"
-                            className="mt-1 block w-full px-3 py-2 border-b border-gray-300 rounded-md shadow-sm text-gray-700"
+                            id="email"
+                            name="email"
+                            required
+                            label="Email"
+                            borderColor="border-b border-gray-300"
+                            focusBorderColor="focus:border-green-800"
+                            error={error && error.includes('email') ? error : ''}
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                        <input
-                            id="password"
+                        <Input
                             type="password"
                             value={password}
-                            autoComplete="current-password"
-                            required
                             onChange={(e) => {
                                 setPassword(e.target.value);
                                 handleInputChange();
                             }}
                             placeholder="******"
-                            className="mt-1 block w-full px-3 py-2 border-b border-gray-300 rounded-md shadow-sm text-gray-700"
+                            id="password"
+                            name="password"
+                            required
+                            label="Password"
+                            borderColor="border-gray-300"
+                            focusBorderColor="focus:border-green-800"
+                            error={error && error.includes('password') ? error : ''}
                         />
                     </div>
 
