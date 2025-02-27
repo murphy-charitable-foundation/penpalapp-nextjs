@@ -27,7 +27,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "components/general/Popover.jsx"  ],
   "exclude": [
     "node_modules"
   ]

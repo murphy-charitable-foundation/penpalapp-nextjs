@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import BottomNavBar from '../../components/bottom-nav-bar';
-
+import Button from '../../components/general/Button';
 
 export default function Donate() {
     const details = [
@@ -15,15 +15,22 @@ export default function Donate() {
         { label: "Swift Code", value: "DFCUUGKA" },
     ];
 
-
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
             <div className="max-w-2xl w-full mb-8">
-            <button onClick={() => window.history.back()}>
-                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
+                <Link href="letterhome">
+                    <Button
+                    btnText={
+                        <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    }
+                    color="bg-transparent"
+                    textColor="text-gray-600"
+                    hoverColor="hover:bg-gray-200"
+                    rounded="rounded-full"
+                />
+                </Link>
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div className="p-6">
                         <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">Donate</h2>
@@ -34,9 +41,14 @@ export default function Donate() {
 
                         <div className="mt-6 text-center">
                             <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
-                                <button className="inline-block text-white bg-blue-600 hover:bg-blue-700 font-semibold py-3 px-6 rounded-md transition duration-300">
-                                    Make a Donation
-                                </button>
+                                <Button
+                                    btnText="Make a Donation"
+                                    color="bg-blue-600"
+                                    textColor="text-white"
+                                    hoverColor="hover:bg-blue-700"
+                                    rounded="rounded-md"
+                                    font="font-semibold"
+                                />
                             </Link>
                         </div>
                     </div>
