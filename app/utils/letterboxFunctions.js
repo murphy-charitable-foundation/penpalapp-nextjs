@@ -142,7 +142,7 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
   if (sendingLetter) return;
   try {
     sendingLetter = true;
-    await updateDoc(doc(letterRef, draftId), letterData)
+    await updateDoc(doc(letterRef, draftId), letterData);
     sendingLetter = false;
     return true
   } catch (e) {

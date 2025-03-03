@@ -39,7 +39,7 @@ export default function ChooseKid() {
   
     try {
       const kidsCollectionRef = collection(db, "users");
-      let q = query(kidsCollectionRef)
+      let q = query(kidsCollectionRef);
   
       // Apply filters
       if (age > 0) {
@@ -129,7 +129,10 @@ export default function ChooseKid() {
   
 
   function calculateAge(birthdayTimestamp) {
-    const birthdayDate = birthdayTimestamp.toDate(); // Convert Timestamp to Date
+    const timestamp = Date.parse(birthdayTimestamp);
+    const birthdayDate = new Date(timestamp);
+    console.log("birthdayTimestamp", birthdayDate);
+    //const birthdayDate = birthdayTimestamp.toDate(); // Convert Timestamp to Date
     const currentDate = new Date();
     
     // Calculate the difference in years
