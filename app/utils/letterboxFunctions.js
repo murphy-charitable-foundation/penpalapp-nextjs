@@ -42,7 +42,7 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   const lRef = collection(letterboxRef, "letters");
   let letterboxQuery;
 
-  /* TODO temporarily disable moderation until it is developed
+  // TODO temporarily disable moderation until it is developed
   if (lim) {
     letterboxQuery = lastVisible
       ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible), limit(lim))
@@ -52,9 +52,9 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
       ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible))
       : query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"));
   }
-  */
+  
 
-  if (lim) {
+  /*if (lim) {
     letterboxQuery = lastVisible
       ? query(lRef, orderBy("timestamp", "desc"), startAfter(lastVisible), limit(lim))
       : query(lRef, orderBy("timestamp", "desc"), limit(lim));
@@ -62,7 +62,7 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     letterboxQuery = lastVisible
       ? query(lRef, orderBy("timestamp", "desc"), startAfter(lastVisible))
       : query(lRef, orderBy("timestamp", "desc"));
-  }
+  }*/
 
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
@@ -142,7 +142,7 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
   if (sendingLetter) return;
   try {
     sendingLetter = true;
-    await updateDoc(doc(letterRef, draftId), letterData)
+    await updateDoc(doc(letterRef, draftId), letterData);
     sendingLetter = false;
     return true
   } catch (e) {
