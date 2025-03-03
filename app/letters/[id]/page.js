@@ -58,10 +58,10 @@ export default function Page({ params }) {
       alert("Sender not identified, please log in.");
       return;
     }
-
+    const letterUserRef =  userRef ?? doc(db, "users", auth.currentUser.uid);
     const letterData = {
       content: letterContent,
-      sent_by: userRef,
+      sent_by: letterUserRef,
       status: "sent",
       created_at: new Date(),
       deleted: null,
