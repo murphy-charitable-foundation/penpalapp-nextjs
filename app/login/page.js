@@ -1,20 +1,20 @@
+// app/login/page.js
 "use client";
 
-// pages/login.js
-import {useState, useEffect} from "react";
+import {useEffect, useState} from "react";
 import {
-    signInWithEmailAndPassword,
     browserLocalPersistence,
     browserSessionPersistence,
     setPersistence,
+    signInWithEmailAndPassword,
 } from "firebase/auth";
-import {db, auth} from "../firebaseConfig";
-import {doc, getDoc, setDoc} from "firebase/firestore";
-import Link from "next/link";
+import {auth, db} from "../firebaseConfig";
+import {doc, getDoc} from "firebase/firestore";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import {useRouter} from "next/navigation";
 import Button from "@/components/general/Button";
+import LoadingSpinner from "@/components/loadingSpinner/LoadingSpinner";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -24,26 +24,23 @@ export default function Login() {
     const router = useRouter();
     const [rememberMe, setRememberMe] = useState(false);
     const isFormFilled = email && password;
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Check if the user is already logged in and retrieve the email
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user) {
-                router.push("/letterhome");
-            } else {
-                router.push("/login");
+                router.push("/login-profiles");
             }
+            setIsLoading(false);
         });
-
-        return () => unsubscribe(); // Clean up the listener on component unmount
-    }, []);
+        return () => unsubscribe();
+    }, [router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
 
         try {
-            // Set persistence based on "Remember Me" checkbox
             const persistenceType = rememberMe
                 ? browserLocalPersistence
                 : browserSessionPersistence;
@@ -55,7 +52,7 @@ export default function Login() {
             const userRef = doc(db, "users", uid);
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
-                router.push("/letterhome");
+                router.push("/login-profiles");
             } else {
                 router.push("/create-acc");
             }
@@ -82,6 +79,10 @@ export default function Login() {
         setShowModal(false);
     }
 
+    if (isLoading) {
+        return <LoadingSpinner/>;
+    }
+
     return (
         <div className="flex flex-col items-center min-h-screen bg-white px-6">
             <div className="w-full max-w-md flex flex-col justify-between min-h-screen py-6">
@@ -89,7 +90,7 @@ export default function Login() {
                     <div className="relative">
                         <button
                             className="absolute left-0 top-1/2 -translate-y-1/2 bg-transparent border-none"
-                            onClick={() => window.history.back()}
+                            onClick={() => router.push("/")}
                         >
                             <svg
                                 className="h-6 w-6 text-gray-600"
@@ -106,8 +107,8 @@ export default function Login() {
                             </svg>
                         </button>
                         <span className="block text-center text-2xl font-bold text-gray-800">
-          Login
-        </span>
+              Login
+            </span>
                     </div>
                     <div className="flex justify-center mt-4">
                         <Image

@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { db, auth } from "../firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import {useEffect, useState} from "react";
+import {auth} from "../firebaseConfig";
+import {onAuthStateChanged} from "firebase/auth";
+import {useRouter} from "next/navigation";
 import Link from "next/link";
 import ProfileImage from "@/components/general/ProfileImage";
-import BottomNavBar from "@/components/bottom-nav-bar";
-import {
-    fetchLetterboxes,
-    fetchRecipients,
-} from "../utils/letterboxFunctions";
+import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from "../utils/letterboxFunctions"; // Импорт новой функции
+import LoadingSpinner from "@/components/loadingSpinner/LoadingSpinner";
 
 export default function LoginProfiles() {
     const [users, setUsers] = useState([]);
@@ -20,7 +17,6 @@ export default function LoginProfiles() {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            console.log("Auth state:", user ? "Logged in" : "No user");
             if (!user) {
                 setError("No user logged in.");
                 setIsLoading(false);
@@ -37,16 +33,18 @@ export default function LoginProfiles() {
 
                     for (const id of letterboxIds) {
                         const recipients = await fetchRecipients(id);
-                        console.log(`Recipients for ${id}:`, recipients);
-                        recipients.forEach((rec) => {
+
+                        const letterCount = await fetchLetterCountForLetterbox(id);
+
+                        for (const rec of recipients) {
                             if (!seenIds.has(rec.id)) {
                                 seenIds.add(rec.id);
-                                allRecipients.push(rec);
+                                allRecipients.push({...rec, letterCount});
                             }
-                        });
+                        }
                     }
 
-                    console.log("All unique recipients:", allRecipients);
+                    console.log("All unique recipients with letterCount:", allRecipients);
                     setUsers(allRecipients);
                 } catch (err) {
                     console.error("Error fetching users:", err.message);
@@ -60,7 +58,7 @@ export default function LoginProfiles() {
     }, [router]);
 
     if (isLoading) {
-        return <div className="text-center py-10">Loading...</div>;
+        return <LoadingSpinner/>;
     }
 
     if (error) {
@@ -89,18 +87,28 @@ export default function LoginProfiles() {
                                 >
                                     <div className="relative mt-4">
                                         <Link href={`/profile/${user.id}`} className="flex justify-center">
-                                            <div className="h-[75.09px] rounded-full overflow-hidden flex items-center justify-center">
+                                            <div
+                                                className="h-[75.09px] rounded-full overflow-hidden flex items-center justify-center"
+                                            >
                                                 <ProfileImage
                                                     photo_uri={user.photo_uri}
                                                     first_name={user.first_name}
                                                 />
                                             </div>
                                         </Link>
+                                        {user.letterCount > 0 && (
+                                            <span
+                                                className="absolute top-0 right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full"
+                                            >
+                                                {user.letterCount}
+                                            </span>
+                                        )}
                                         <div
                                             className="min-w-[60px] h-[20px] rounded-[15px] bg-[#4E802A] px-[8px] flex items-center justify-center whitespace-nowrap absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10"
                                         >
                                             <h3 className="font-semibold text-[14px] leading-[20px] tracking-[-0.5%] text-white text-center">
-                                                {user.first_name.split(" ")[0]} {user.last_name.charAt(0)}.
+                                                {user.first_name.split(" ")[0]}{" "}
+                                                {user.last_name.charAt(0)}.
                                             </h3>
                                         </div>
                                     </div>
@@ -114,8 +122,10 @@ export default function LoginProfiles() {
                     </div>
 
                     <div className="flex justify-center mt-6">
-                        <Link href="/user-data-import">
-                            <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-400 transition">
+                        <Link href="#">
+                            <div
+                                className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-400 transition"
+                            >
                                 <span className="text-gray-700 font-bold">+</span>
                             </div>
                         </Link>
