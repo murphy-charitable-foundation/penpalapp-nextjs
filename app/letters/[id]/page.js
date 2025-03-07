@@ -38,6 +38,7 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState(null);
   const [lettersRef, setLettersRef] = useState(null);
+  const [letterboxRef, setLetterboxRef] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
@@ -67,7 +68,7 @@ export default function Page({ params }) {
       deleted: null,
     };
 
-    const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
+    const letterStatus = await sendLetter(letterData, lettersRef, draft.id, letterboxRef);
     if (letterStatus) {
       setLetterContent("");
       setAttachments([]);
@@ -102,7 +103,8 @@ export default function Page({ params }) {
   useEffect(() => {
     const getSelectedUser = async () => {
       if (recipients?.length) {
-        const letterboxRef = doc(collection(db, "letterbox"), id);
+        const lboxRef = doc(collection(db, "letterbox"), id);
+        setLetterboxRef(lboxRef)
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
         const d = await fetchDraft(id, userRef, true);
@@ -125,7 +127,7 @@ export default function Page({ params }) {
           status: "draft",
           attachments
         };
-        await sendLetter(letterData, lettersRef, draft.id)
+        await sendLetter(letterData, lettersRef, draft.id, letterboxRef)
       }
     }
     if (debounce >= 20) {
