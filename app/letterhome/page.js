@@ -12,7 +12,7 @@ import * as Sentry from "@sentry/nextjs";
 
 
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import { FaUserCircle, FaCog, FaBell, FaPen, FaPaperPlane } from "react-icons/fa";
 
 import {
   fetchDraft,
