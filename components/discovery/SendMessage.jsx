@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
-import { updateDoc } from "firebase/firestore";
-import { doc, getDoc } from "firebase/firestore";
+import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
@@ -49,41 +48,49 @@ export default function SendMessage({ kid }) {
     try {
       console.log("Kid:", kid);
       console.log("User:", user);
+
       if (kid != null && user != null) {
         if (kid.connected_penpals_count < 3) {
-          const connectedUserPenpals = user.connected_penpals || [];
-          const connectedKidPenpals = kid.connected_penpals || [];
-
+          // Define references for user and kid
           const userDocRef = doc(db, "users", auth.currentUser.uid);
           const kidDocRef = doc(db, "users", kid.id);
 
-          const updatedUserConnectedPenpals = [
-            ...connectedUserPenpals,
-            doc(db, "users", kid.id),
-          ];
+          // query DB to check for existing letterbox
+          const letterboxQuery = query(
+            collection(db, "letterbox"),
+            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
+          );
 
-          const updatedKidConnectedPenpals = [
-            ...connectedKidPenpals,
-            doc(db, "users", auth.currentUser.uid),
-          ];
+          const querySnapshot = await getDocs(letterboxQuery);
+          console.log(querySnapshot);
+          let letterboxRef;
 
-          const updateUser = await updateDoc(userDocRef, {
-            connected_penpals: updatedUserConnectedPenpals,
-          });
+          if (querySnapshot.empty) { // if there's no letterbox, create one.
+            letterboxRef = await addDoc(collection(db, "letterbox"), {
+              members: [
+                userDocRef, 
+                kidDocRef   
+              ],
+              created_at: new Date(),
+              archived_at: null
+            });
+            console.log(letterboxRef);
 
-          const updateKid = await updateDoc(kidDocRef, {
-            connected_penpals: updatedKidConnectedPenpals,
-          });
+            // Update User and Kid documents
+            await updateDoc(userDocRef, {
+              connected_penpals: arrayUnion(kidDocRef),
+            });
 
-          const kidConnectedPenPalCount = kid.connected_penpals_count;
+            await updateDoc(kidDocRef, {
+              connected_penpals: arrayUnion(userDocRef),
+              connected_penpals_count: kid.connected_penpals_count + 1,
+            });
 
-          const updatedKidConnectedPenPalCount = kidConnectedPenPalCount + 1;
-
-          const updateConnectedPenpalsCount = await updateDoc(kidDocRef, {
-            connected_penpals_count: updatedKidConnectedPenPalCount,
-          });
-
-          router.push("/letterhome");
+            router.push("letters/" + letterboxRef.id);
+          } else {
+            router.push("/letters/" + querySnapshot.docs[0].id);
+            console.log("Letterbox already exists");
+          }
         } else {
           console.log("Kid has exceeded penpal limit");
         }
