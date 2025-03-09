@@ -45,31 +45,32 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   // TODO temporarily disable moderation until it is developed
   if (lim) {
     letterboxQuery = lastVisible
-      ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible), limit(lim))
-      : query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), limit(lim));
+      ? query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), startAfter(lastVisible), limit(lim))
+      : query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), limit(lim));
   } else {
     letterboxQuery = lastVisible
-      ? query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"), startAfter(lastVisible))
-      : query(lRef, where("status", "==", "sent"), orderBy("timestamp", "desc"));
+      ? query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), startAfter(lastVisible))
+      : query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"));
   }
   
 
   /*if (lim) {
     letterboxQuery = lastVisible
-      ? query(lRef, orderBy("timestamp", "desc"), startAfter(lastVisible), limit(lim))
-      : query(lRef, orderBy("timestamp", "desc"), limit(lim));
+      ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible), limit(lim))
+      : query(lRef, orderBy("created_at", "desc"), limit(lim));
   } else {
     letterboxQuery = lastVisible
-      ? query(lRef, orderBy("timestamp", "desc"), startAfter(lastVisible))
-      : query(lRef, orderBy("timestamp", "desc"));
+      ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible))
+      : query(lRef, orderBy("created_at", "desc"));
   }*/
 
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
     const messages = lettersSnapshot.docs
       .map((doc) => doc.data())
-      .filter((letterboxData) => !letterboxData.draft);
+      .filter((letterboxData) => letterboxData.status != "draft");
 
+    print(messages)
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
     return {
       messages: messages.length ? messages : [],
@@ -103,8 +104,8 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   if (draftSnapshot.docs?.[0]?.data()) {
     draft = { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
   } else if (createNew) {
-    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", timestamp: new Date(), deleted: null });
-    draft = { sent_by: userRef, content: "", status: "draft", timestamp: new Date(), id: d.id, deleted: null }
+    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", created_at: new Date(), deleted: null });
+    draft = { sent_by: userRef, content: "", status: "draft", created_at: new Date(), id: d.id, deleted: null }
   }
   return draft
 }
