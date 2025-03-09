@@ -120,11 +120,12 @@ export default function Page({ params }) {
         const letterData = {
           content: letterContent,
           sent_by: userRef,
-          timestamp: new Date(),
+          created_at: new Date(),
           deleted: null,
           status: "draft",
           attachments
         };
+        print(attachments)
         await sendLetter(letterData, lettersRef, draft.id)
       }
     }

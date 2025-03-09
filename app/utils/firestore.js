@@ -28,7 +28,7 @@ export const fetchData = async () => {
         lRef,
         where("status", "==", "draft"),
         where('sent_by', "==", userDocRef),
-        orderBy("timestamp"),
+        orderBy("created_at"),
         limit(1)
       )
       const draftSnapshot = await getDocs(draftQuery);
@@ -51,7 +51,7 @@ export const fetchData = async () => {
           where("content", "!=", ''), // Exclude empty messages
           where("deleted", "==", false),
           where("status", "==", "approved"),
-          orderBy("timestamp")
+          orderBy("created_at")
         );
   
         const snapshot = await getDocs(letterboxQuery);
@@ -94,7 +94,7 @@ export const fetchLetters = async (id) => {
     const letterboxQuery = query(
       lRef,
       // where("status", "==", "sent"),
-      orderBy("timestamp")
+      orderBy("created_at")
     );
 
     const draftSnapshot = await getDocs(letterboxQuery);
@@ -102,7 +102,7 @@ export const fetchLetters = async (id) => {
 
     for (const doc of draftSnapshot.docs) {
       const letterboxData = doc.data();
-      if(!letterboxData.draft){
+      if(letterboxData.status != "draft"t){
         messages.push(letterboxData)
       }
     }
