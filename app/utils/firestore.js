@@ -102,7 +102,7 @@ export const fetchLetters = async (id) => {
 
     for (const doc of draftSnapshot.docs) {
       const letterboxData = doc.data();
-      if(letterboxData.status != "draft"t){
+      if(letterboxData.status != "draft"){
         messages.push(letterboxData)
       }
     }
