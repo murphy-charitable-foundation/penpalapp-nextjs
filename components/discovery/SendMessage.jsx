@@ -62,7 +62,7 @@ export default function SendMessage({ kid }) {
           );
 
           const querySnapshot = await getDocs(letterboxQuery);
-          console.log(querySnapshot);
+          
           let letterboxRef;
 
           if (querySnapshot.empty) { // if there's no letterbox, create one.
@@ -74,7 +74,6 @@ export default function SendMessage({ kid }) {
               created_at: new Date(),
               archived_at: null
             });
-            console.log(letterboxRef);
 
             // Update User and Kid documents
             await updateDoc(userDocRef, {
