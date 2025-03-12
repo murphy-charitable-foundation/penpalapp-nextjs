@@ -1,4 +1,4 @@
-import Button from "../general/Button";
+import Button from "../Button";
 import { FaExclamationCircle } from "react-icons/fa";
 
 const ConfirmReportPopup = ({ setShowPopup }) => {

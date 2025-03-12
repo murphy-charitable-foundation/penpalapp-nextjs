@@ -12,8 +12,8 @@ import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
-import ReportPopup from "../../../components/letter/ReportPopup";
-import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
+import ReportPopup from "../../../components/general/letter/ReportPopup";
+import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 
 
 import { useRouter } from "next/navigation";
@@ -23,6 +23,9 @@ import { uploadFile } from "../../lib/uploadFile";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter  } from "../../utils/letterboxFunctions";
 import BottomNavBar from "../../../components/bottom-nav-bar";
 import ProfileImage from "../../../components/general/ProfileImage";
+import LetterHeader from "../../../components/general/letter/LetterHeader";
+import RecipientList from "../../../components/general/letter/RecipientList";
+import MessageBubble from "../../../components/general/letter/MessageBubble";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -228,76 +231,30 @@ export default function Page({ params }) {
 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg">
-          <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
-            <Link href="/">
-              <button onClick={() => window.history.back()}>
-                <img src="/closeicon.svg" />
-              </button>
-            </Link>
-            <button className="opacity-0">{"<"}</button>
-            <div className="flex justify-between items-center p-4">
-              <span className="text-black">{attachments.length} files</span>
-              <div className="space-x-2">
-                <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
-                  <BsPaperclip className="h-6 w-6 rotate-90" />
-                </button>
-                <button
-                  className="text-black p-2 rounded-full"
-                  onClick={handleSendLetter}
-                >
-                  <MdSend className="h-6 w-6" />
-                </button>
-                <button className="text-black p-2 rounded-full">
-                  <RiDeleteBin6Line className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <LetterHeader
+            attachmentsCount={attachments.length}
+            onAttach={() => setIsFileModalOpen(true)}
+            onSend={handleSendLetter}
+            onDelete={() => {/* implement delete handler */}}
+          />
 
-          <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
-            {recipients?.length && recipients.map(recipient => (
-              <div key={recipient?.first_name?.[0]}>
-                <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={20}/>
-                <div key={`${recipient?.first_name?.[0]}_`}>
-                  <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
-                  <p className="text-sm text-gray-500">{recipient?.country}</p>
-                </div>
-                
-              </div>
-            ))}
-          </div>
+          <RecipientList recipients={recipients} />
 
           {isFileModalOpen && <FileModal />}
 
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
             {allMessages?.length ? (
               allMessages.map((message, index) => (
-                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"}`}>
-                  <div className="flex flex-col w-[90%]">
-                    {message?.attachments?.length ? (
-                      <Image
-                        alt="attachment"
-                        width={100}
-                        height={100}
-                        src={message.attachments[0]}
-                      />
-                    ) : null}
-                    <span>{message.content}</span>
-                    <section className="px-5">
-                      <div className="flex justify-end mb-2">
-                        <FaExclamationCircle
-                          className="cursor-pointer"
-                          onClick={() => {
-                            setSender(message.sent_by.id);
-                            setContent(message.content);
-                            setShowReportPopup(true);  
-                          }}
-                        />
-                      </div>
-                      
-                    </section>
-                  </div>
-                </div>
+                <MessageBubble
+                  key={index}
+                  message={message}
+                  isOwnMessage={message.sent_by.id === userRef?.id}
+                  onReport={() => {
+                    setSender(message.sent_by.id);
+                    setContent(message.content);
+                    setShowReportPopup(true);
+                  }}
+                />
               ))
             ) : (
               <span>No messages</span>

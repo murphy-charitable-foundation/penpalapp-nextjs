@@ -22,6 +22,10 @@ import {
 } from "../utils/deadChat";
 import ProfileImage from '/components/general/ProfileImage';
 import Button from '../../components/general/Button';
+import WelcomeToast from "../../components/general/WelcomeToast";
+import ProfileHeader from "../../components/general/letter/ProfileHeader";
+import LetterCard from "../../components/general/letter/LetterCard";
+import EmptyState from "../../components/general/EmptyState";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -102,45 +106,19 @@ export default function Home() {
 
   return (
     <div className="bg-gray-100 min-h-screen py-6 relative">
-      {/* Welcome Message */}
-      {showWelcome && (
-        <div className="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-lg border border-green-200 p-4 max-w-xs animate-slide-in">
-          <div className="flex items-start">
-            <div className="bg-green-100 rounded-full p-2 mr-3">
-              <svg className="w-6 h-6 text-green-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-1">Welcome back, {userName}!</h3>
-              <p className="text-sm text-gray-600">Check out your recent letters and stay connected.</p>
-            </div>
-            <button 
-              onClick={() => setShowWelcome(false)}
-              className="ml-2 text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      <WelcomeToast 
+        userName={userName}
+        isVisible={showWelcome}
+        onClose={() => setShowWelcome(false)}
+      />
 
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-        <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
-          <Link href="/profile">
-            <button className="flex items-center text-gray-700">
-              <div className="flex items-center">
-                <ProfileImage photo_uri={profileImage} first_name={userName} />
-                <div className="ml-3">
-                  <div className="font-semibold text-lg">{userName}</div>
-                  <div className="text-sm text-gray-600">{country}</div>
-                </div>
-              </div>
-            </button>
-          </Link>
-        </header>
+        <ProfileHeader 
+          userName={userName}
+          country={country}
+          profileImage={profileImage}
+        />
+
         <main className="p-6">
           <section className="mt-8">
             <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
@@ -148,45 +126,20 @@ export default function Home() {
             </h2>
             {letters.length > 0 ? (
               letters.map((letter, i) => (
-                <a key={letter.id + '_' + i} href={`/letters/${letter.id}`} className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-                  <div className="flex-grow">
-                    {letter.recipients?.map(rec => (
-                      <div key={rec.id} className='flex mt-3'>
-                        <ProfileImage photo_uri={rec?.photo_uri} first_name={rec?.first_name} />
-                        <div className="flex flex-col">
-                          <div className='flex'>
-                            {letter.letters[0].status === "draft" && <h4 className="mr-2">[DRAFT]</h4>}
-                            <h3 className="font-semibold text-gray-800">{rec.first_name} {rec.last_name}</h3>
-                          </div>
-                          <div>{rec.country}</div>
-                        </div>
-                      </div>
-                    ))}
-                    <p className="text-gray-600 truncate">{letter.letters[0].content ?? ''}</p>
-                    <span className="text-xs text-gray-400">{letter.letters[0].received}</span>
-                  </div>
-                </a>
+                <LetterCard key={letter.id + '_' + i} letter={letter} />
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 px-4">
-                <div className="w-24 h-24 bg-green-700 rounded-full flex items-center justify-center mb-6">
-                  <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-semibold text-green-700 mb-2">
-                  New friends are coming!
-                </h3>
-                <p className="text-gray-600 text-center">
-                  Many friends are coming hang tight!
-                </p>
-              </div>
+              <EmptyState 
+                title="New friends are coming!"
+                description="Many friends are coming hang tight!"
+              />
             )}
           </section>
         </main>
         <BottomNavBar />
       </div>
-      {userType == "admin" && (
+
+      {userType === "admin" && (
         <Button
           btnText="Check For Inactive Chats"
           color="bg-black"
