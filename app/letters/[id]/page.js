@@ -125,7 +125,6 @@ export default function Page({ params }) {
           status: "draft",
           attachments
         };
-        print(attachments)
         await sendLetter(letterData, lettersRef, draft.id)
       }
     }

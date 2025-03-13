@@ -70,7 +70,6 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
       .map((doc) => doc.data())
       .filter((letterboxData) => letterboxData.status != "draft");
 
-    print(messages)
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
     return {
       messages: messages.length ? messages : [],
