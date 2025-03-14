@@ -1,7 +1,6 @@
-
 // Import the functions you need from the SDKs you need
 import { getStorage } from "@firebase/storage";
-import { initializeApp } from "firebase/app";
+import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath, getDoc } from "firebase/firestore";
 import { getMessaging, getToken } from "firebase/messaging";
@@ -20,7 +19,7 @@ const firebaseConfig = {
   storageBucket: "penpalmagicapp.appspot.com",
   messagingSenderId: "45289060638",
   appId: "1:45289060638:web:33121bc47d40ceef83f10f",
-  measurementId: "G-FG3MPZ8JV6"
+  measurementId: "G-FG3MPZ8JV6",
 };
 
 const VAPID_KEY = 'BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc';

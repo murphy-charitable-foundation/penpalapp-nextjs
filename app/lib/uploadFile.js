@@ -14,16 +14,16 @@ const uploadFile = async (file, path, onProgress, onError, onSuccess) => {
 
   const storageRef = ref(storage, path);
 
-  
   const uploadTask = uploadBytesResumable(storageRef, file);
 
-  uploadTask.on('state_changed',
+  uploadTask.on(
+    "state_changed",
     (snapshot) => {
       const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
       onProgress(progress);
     },
     (error) => {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       onError(error);
     },
     async () => {
@@ -35,7 +35,7 @@ const uploadFile = async (file, path, onProgress, onError, onSuccess) => {
         if (onError) onError(error);
       }
     }
-  );  
+  );
 };
 
 export { uploadFile };
