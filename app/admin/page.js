@@ -5,10 +5,9 @@ import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
-
+import { getFirestore, collectionGroup, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
 import {
   fetchDraft,
   fetchLetterbox,
@@ -39,12 +38,7 @@ export default function Admin() {
             return;
           }
           
-          if (user.user_type !== "admin") {
-            setError("Not Admin");
-            setIsLoading(false);
-            router.push("/letterhome");
-            return;
-          }
+
           try {
             // Fetch user data
             const uid = user.uid;
@@ -63,32 +57,18 @@ export default function Admin() {
             }
     
             // Fetch letterboxes
-            const letterboxes = await fetchLetterboxes();
-            if (letterboxes && letterboxes.length > 0) {
-              const letterboxIds = letterboxes.map((l) => l.id);
-              let fetchedLetters = [];
-    
-              for (const id of letterboxIds) {
-                const letterbox = { id };
-                const userRef = doc(db, "users", user.uid);
-                const draft = await fetchDraft(id, userRef, true);
-    
-                if (draft) {
-                  letterbox.letters = [draft];
-                } else {
-                  letterbox.letters = await fetchLetterbox(id, 1);
-                }
-                fetchedLetters.push(letterbox);
-              }
-    
-              // Fetch recipients for each letterbox
-              for await (const l of fetchedLetters) {
-                const rec = await fetchRecipients(l.id);
-                l.recipients = rec;
-              }
-    
-              setLetters(fetchedLetters);
-            }
+            const commentsQuery = query(
+              collectionGroup(db, "letters"), 
+              where("status", "==", "draft"),
+              limit(5) // Example filter
+            );
+            
+            getDocs(commentsQuery).then((querySnapshot) => {
+              querySnapshot.forEach((doc) => {
+                console.log(doc.id, " => ", doc.data());
+              });
+            });
+
           } catch (err) {
             console.error("Error fetching data:", err);
             Sentry.captureException(err);
