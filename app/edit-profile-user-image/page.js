@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
+import Button from "../../components/general/Button";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -104,21 +105,27 @@ export default function EditProfileUserImage() {
       <div className="max-w-lg mx-auto p-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <button onClick={() => window.history.back()}>
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
+            <Button
+              btnType="button"
+              btnText={
+                <svg
+                  className="h-6 w-6 text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              }
+              color="bg-transparent"
+              textColor="text-gray-600"
+              onClick={() => window.history.back()}
+            />
 
             <h1 className="ml-4 text-xl font-bold text-gray-800">Edit image</h1>
           </div>
@@ -133,12 +140,15 @@ export default function EditProfileUserImage() {
             cropperRef={cropperRef}
           />
           <i>Click to edit</i>
-          <button
-            className="w-[80%] mx-auto mt-[100px] p-2 bg-[#4E802A] text-white font-semibold  rounded-[100px]"
+          <Button
+            btnType="button"
+            btnText="Save New Profile Picture"
+            color="bg-[#4E802A]"
+            textColor="text-white"
+            font="font-semibold"
+            rounded="rounded-[100px]"
             onClick={saveImage}
-          >
-            Save New Profile Picture
-          </button>
+          />
         </div>
       </div>
     </div>

@@ -12,12 +12,12 @@ import {
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { db } from "../firebaseConfig"; // Ensure this path is correct
 import { differenceInCalendarYears, parseISO } from "date-fns";
-import KidCard from "../../components/general/KidCard";
+import KidCard from "../../components/discovery/KidCard";
 import KidFilter from "../../components/discovery/KidFilter";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import Header from "../../components/general/Header";
-import KidsList from "../../components/general/KidsList";
+import KidsList from "../../components/discovery/KidsList";
 
 const PAGE_SIZE = 10; // Number of kids per page
 

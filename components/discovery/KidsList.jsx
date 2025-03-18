@@ -1,4 +1,5 @@
-import KidCard from "../general/KidCard";
+import KidCard from "./KidCard";
+import Button from "../general/Button";
 
 export default function KidsList({ kids, calculateAge, lastKidDoc, loadMoreKids, loading }) {
   return (
@@ -15,12 +16,15 @@ export default function KidsList({ kids, calculateAge, lastKidDoc, loadMoreKids,
       </div>
       {lastKidDoc && (
         <div className="flex justify-center">
-          <button
+          <Button
             onClick={loadMoreKids}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
-          >
-            {loading ? "Loading..." : "Load More"}
-          </button>
+            btnText={loading ? "Loading..." : "Load More"}
+            color="bg-blue-500"
+            textColor="text-white"
+            font="font-bold"
+            rounded="rounded-full"
+            size="w-full px-4 py-2 rounded-full text-center text-xs"
+          />
         </div>
       )}
     </div>

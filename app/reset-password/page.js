@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import logo from '/public/murphylogo.png';
 import Image from 'next/image';
 import { sendPasswordResetEmail } from 'firebase/auth';
-
+import Button from '../../components/general/Button';
+import Input from '../../components/general/Input'; 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -51,31 +52,38 @@ export default function ResetPassword() {
       <div style={{ display: 'inline-block', width: '80%', maxWidth: '500px', textAlign: 'left', marginTop:"80px"}}>
       <label htmlFor="email" style={{padding:"10px"}} className="text-sm font-medium text-gray-700 block">Write your e-mail registered</label>
       </div>
-      <input
+      <Input
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Ex: user@gmail.com"
-        style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '80%', margin: '0 auto', display: 'block', color: 'black' }}
-        className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+        name="email"
+        id="email"
+        required
+        bgColor="bg-white"
+        textColor="text-black"
+        borderColor="border-gray-300"
+        focusBorderColor="focus:border-blue-500"
+        placeholderColor="placeholder:text-gray-500"
+        rounded="rounded-none"
+        size="w-4/5 mx-auto"
+        padding="px-3 py-2"
+        label="Write your e-mail registered"
+        labelColor="text-gray-700"
       />
-      <button
+      <Button
+        btnType="button"
+        btnText="Reset"
+        color="bg-gray-200"
+        textColor="text-gray-400"
+        hoverColor="hover:bg-[#48801c]"
+        hoverTextClr="hover:text-white"
+        font="font-medium"
+        rounded="rounded-full"
+        size="w-full"
         onClick={resetPassword}
-        style={{
-          padding: '10px 20px',
-          width: '80%',
-          margin: '50px auto',
-          display: 'block',
-          border: 'none',
-          borderRadius: '20px',
-          marginTop:"160px",
-          cursor: 'pointer'
-        }}
-        className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#48801c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
+      />
         Reset
-      </button>
-
       {showModal && (
         <div style={{
           position: 'absolute',

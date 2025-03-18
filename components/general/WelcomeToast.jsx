@@ -1,3 +1,5 @@
+import Button from "./Button";
+
 export default function WelcomeToast({ userName, onClose, isVisible }) {
   if (!isVisible) return null;
 
@@ -13,14 +15,19 @@ export default function WelcomeToast({ userName, onClose, isVisible }) {
           <h3 className="font-semibold text-gray-800 mb-1">Welcome back, {userName}!</h3>
           <p className="text-sm text-gray-600">Check out your recent letters and stay connected.</p>
         </div>
-        <button 
+        <Button
           onClick={onClose}
-          className="ml-2 text-gray-400 hover:text-gray-600"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+          btnText={
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          }
+          color="bg-transparent"
+          textColor="text-gray-400"
+          hoverColor="hover:text-gray-600"
+          rounded="rounded-full"
+          size="w-4 h-4 flex items-center justify-center"
+        />
       </div>
     </div>
   );

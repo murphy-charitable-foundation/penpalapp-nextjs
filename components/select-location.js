@@ -1,3 +1,5 @@
+import Button from "./general/Button";
+
 const SelectProfileLocation = ({ updateStage, countries, location, setLocation }) => {
 	const buttonClasses = () => {
 		if (!location) { 
@@ -21,8 +23,19 @@ const SelectProfileLocation = ({ updateStage, countries, location, setLocation }
 					))}
 				</select>
 			</div>
-			<button className={buttonClasses()} onClick={() => updateStage(3, false)}>Continue</button>
-			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(3, true)}>Skip for now</button>
+			<Button
+				btnType="button"
+				btnText="Continue"
+				color={buttonClasses()}
+				onClick={() => updateStage(3, false)}
+			/>
+			<Button
+				btnType="button"
+				btnText="Skip for now"
+				color="bg-transparent"
+				textColor="text-black"
+				onClick={() => updateStage(3, true)}
+			/>
 		</div>
 	);
 };

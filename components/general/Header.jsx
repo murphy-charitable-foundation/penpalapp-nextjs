@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Button from "./Button";
 
 export default function Header({ activeFilter, setActiveFilter }) {
   return (
@@ -34,21 +35,28 @@ export default function Header({ activeFilter, setActiveFilter }) {
 function FilterButton({ activeFilter, setActiveFilter }) {
   return (
     <div className="p-4 bg-[#E6EDF4] sm:bg-[#034078]">
-      <button
-        className="text-black sm:text-white w-full px-3 py-1 rounded-full text-sm flex items-center justify-between sm:justify-center sm:bg-[#022f5b] text-[15px] sm:text-[18px]"
+      <Button
+        btnText="Filters"
+        color="bg-transparent"
+        textColor="text-black"
+        hoverColor="hover:text-gray-500"
+        rounded="rounded-full"
+        size="w-full px-3 py-1 rounded-full text-sm flex items-center justify-between sm:justify-center sm:bg-[#022f5b] text-[15px] sm:text-[18px]"
         onClick={() => setActiveFilter(!activeFilter)}
       >
-        <p>Filters</p>
-        {!activeFilter ? (
-          <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-            <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
-          </svg>
-        ) : (
-          <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-            <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
-          </svg>
-        )}
-      </button>
+        <span className="flex items-center">
+          <p>Filters</p>
+          {!activeFilter ? (
+            <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
+              <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
+              <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
+            </svg>
+          )}
+        </span>
+      </Button>
     </div>
   );
 }

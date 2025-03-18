@@ -5,6 +5,7 @@ import { db, auth } from "../../app/firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import Button from "../general/Button";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
@@ -101,13 +102,15 @@ export default function SendMessage({ kid }) {
 
   return (
     <div>
-      <button
-        className="w-28 py-2 rounded-3xl text-center text-xs"
-        style={{ backgroundColor: "#034792", color: "white" }}
+      <Button
+        btnText="Send a message"
+        color="bg-[#034792]"
+        textColor="text-white"
+        font="font-bold"
+        rounded="rounded-3xl"
+        size="w-28 py-2 rounded-3xl text-center text-xs"
         onClick={handleClick}
-      >
-        Send a message
-      </button>
+      />
     </div>
   );
 }

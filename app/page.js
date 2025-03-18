@@ -17,26 +17,15 @@ export default function Home() {
           }}
         >
           <Link href="/cover">
-            <button
-              style={{
-                border: "none",
-                background: "none",
-              }}
-            >
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
+            <Button
+              btnType="button"
+              btnText="←"
+              color="bg-transparent"
+              textColor="text-gray-600"
+              onClick={() => router.push("/cover")}
+              size="w-auto"
+              rounded="rounded-lg"
+            />
           </Link>
           <div className="flex justify-center mb-40">
             <Image

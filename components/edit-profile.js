@@ -4,6 +4,7 @@ import SelectProfileLocation from './select-location';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
 import { auth, db, storage } from '../app/firebaseConfig';
+import Button from './general/Button';
 
 const EditProfileImage = ({ router }) => {
 	const [image, setImage] = useState(null);
@@ -127,9 +128,15 @@ const EditProfileImage = ({ router }) => {
 						<h2 className='text-[32px]'>Welcome {user?.firstName}</h2>
 						<p>We are so happy to be here, thanks for your support and help.
 							You are part of the family now. </p>
-						<button className='w-[80%] max-w-[240px] mx-auto mt-8 p-2 bg-white text-[#111] font-semibold  rounded-[100px]'
+						<Button
+							btnType="button"
+							btnText="Continue"
+							color="bg-white"
+							textColor="text-[#111]"
+							font="font-semibold"
+							rounded="rounded-[100px]"
 							onClick={() => updateStage(1)}
-						>Continue</button>
+						/>
 					</div>
 				</div>
 			)}

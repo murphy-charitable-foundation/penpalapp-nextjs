@@ -1,24 +1,28 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Button from "./Button";
 
 export default function Dialog({
   isOpen,
   onClose,
   title,
   content,
-  bgColor,
-  textColor,
-  titleColor,
-  overlayColor,
-  borderColor,
-  shadow,
-  width,
-  padding,
-  rounded,
+  bgColor = "bg-white",
+  textColor = "text-gray-800",
+  titleColor = "text-green-800",
+  overlayColor = "bg-black bg-opacity-50",
+  borderColor = "border border-gray-200",
+  shadow = "shadow-xl",
+  width = "max-w-sm w-full",
+  padding = "p-6",
+  rounded = "rounded-xl",
   closeOnOverlay = true,
   showCloseButton = true,
 }) {
+  // Add debugging
+  console.log("Dialog render:", { isOpen, title });
+
   const dialogRef = useRef(null);
 
   useEffect(() => {
@@ -35,33 +39,21 @@ export default function Dialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
       <div
-        className={`fixed inset-0 ${overlayColor} transition-opacity`}
+        className={`fixed inset-0 ${overlayColor} transition-opacity z-[1001]`}
         onClick={() => closeOnOverlay && onClose()}
       />
       <div
         ref={dialogRef}
-        className={`relative ${width} ${bgColor} ${rounded} ${shadow} ${padding} ${textColor} ${borderColor} transform transition-all`}
+        className={`relative ${width} ${bgColor} ${rounded} ${shadow} ${padding} ${textColor} ${borderColor} transform transition-all z-[1002]`}
       >
         {showCloseButton && (
-          <button
+          <button 
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            ✕
           </button>
         )}
         {title && (

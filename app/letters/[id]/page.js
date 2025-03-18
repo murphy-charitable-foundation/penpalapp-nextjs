@@ -14,6 +14,9 @@ import { MdInsertDriveFile } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
+import Button from "../../../components/general/Button";
+import TextArea from "../../../components/general/TextArea";
+import Input from "../../../components/general/Input";
 
 
 import { useRouter } from "next/navigation";
@@ -167,17 +170,29 @@ export default function Page({ params }) {
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
         <div className="flex relative">
-          <button
+          <Button
+            btnText=""
+            color="bg-transparent"
+            textColor="text-gray-600"
+            hoverColor="hover:bg-gray-100"
+            rounded="rounded-full"
+            size="w-8 h-8"
             onClick={() => setIsFileModalOpen(false)}
-            className="rounded-lg transition-colors duration-150 h-6 w-6 absolute top-0 left-0"
           >
             <IoMdClose className="h-full w-full" />
-          </button>
+          </Button>
           <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
             Files
           </h3>
         </div>
-        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
+        <Input
+          type="file"
+          hidden
+          onChange={handleChange}
+          disabled={uploadProgress > 0 && uploadProgress < 100}
+          id="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        />
         <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
           <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
           Select a file
@@ -261,19 +276,28 @@ export default function Page({ params }) {
             )}
 
             {hasMoreMessages && !loadingMore && (
-              <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
-                Load More
-              </button>
+              <Button
+                btnText="Load More"
+                color="bg-blue-500"
+                textColor="text-white"
+                rounded="rounded"
+                size="py-2 px-4 mt-4 mb-8"
+                onClick={handleLoadMore}
+              />
             )}
 
             {loadingMore && <span>Loading...</span>}
           </div>
-          <textarea
-            className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
-            rows="8"
-            placeholder="Tap to write letter..."
+          <TextArea
             value={letterContent}
             onChange={(e) => setLetterContent(e.target.value)}
+            placeholder="Tap to write letter..."
+            rows={8}
+            bgColor="bg-[#ffffff]"
+            textColor="text-black"
+            rounded="rounded-lg"
+            padding="p-4"
+            borderColor="border-teal-500"
           />
 
           <div className="text-right text-sm p-4 mt-8 text-gray-600">

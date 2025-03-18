@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { updatePassword, signOut } from "firebase/auth";
 //import { handleLogout } from '../profile/page'; 
 import PasswordChecklist from "react-password-checklist";
+import Button from '../../components/general/Button';
 
 export default function ChangePassword() {
   const [password, setPassword] = useState('');
@@ -102,25 +103,17 @@ export default function ChangePassword() {
              </div>
 
         <div>
-        <button
-            type="submit"
-            style={{
-            padding: '10px 20px',
-            width: '80%',
-            margin: '50px auto',
-            display: 'block',
-            //backgroundColor: '#48801c',
-            //color: 'white',
-            border: 'none',
-            borderRadius: '20px',
-            marginTop:'50px',
-            cursor: 'pointer'
-            }}
-            className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200  hover:text-white hover:bg-[#48801c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-
-        >
-            Done
-        </button>
+        <Button
+            btnType="submit"
+            btnText="Done"
+            color="bg-gray-200"
+            textColor="text-gray-400"
+            hoverColor="hover:bg-[#48801c]"
+            hoverTextClr="hover:text-white"
+            font="font-medium"
+            rounded="rounded-full"
+            size="w-full"
+        />
         </div>
     </form>
 
