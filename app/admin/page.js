@@ -25,6 +25,7 @@ export default function Admin() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [profileImage, setProfileImage] = useState("");
+    const [documents, setDocuments] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -63,11 +64,13 @@ export default function Admin() {
               limit(5) // Example filter
             );
             
-            getDocs(commentsQuery).then((querySnapshot) => {
-              querySnapshot.forEach((doc) => {
-                console.log(doc.id, " => ", doc.data());
-              });
-            });
+
+            const querySnapshot = await getDocs(commentsQuery);
+            const documents = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setDocuments(documents);
 
           } catch (err) {
             console.error("Error fetching data:", err);
@@ -80,11 +83,23 @@ export default function Admin() {
     
         return () => unsubscribe();
       }, [router]);
+
+    if (documents == null) {
+      return <p>Loading....</p>
+    }
+    
     return (
         <>
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
                 <p>Hello</p>
-
+                
+                {documents.map((doc) => (
+                      <div key={doc.id} className="letter" style={{backgroundColor: '#F1F8EB', padding: '1rem', color: 'black'}}>
+                          <h3>{doc.id || "Untitled"}</h3>
+                          <p>{doc.letter || "No content available."}</p>
+                      </div>
+                ))}
+          
                 <BottomNavBar />
             </div>
         </>
