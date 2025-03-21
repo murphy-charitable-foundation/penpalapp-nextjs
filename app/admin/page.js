@@ -68,6 +68,7 @@ export default function Admin() {
             const querySnapshot = await getDocs(commentsQuery);
             const documents = querySnapshot.docs.map(doc => ({
                 id: doc.id,
+                //sender: getDoc(doc.sent_by).first_name,
                 ...doc.data()
             }));
             setDocuments(documents);
