@@ -13,7 +13,6 @@ export async function POST(request) {
     );
   }
   try {
-    console.log("Inside of the try catch");
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
@@ -21,7 +20,6 @@ export async function POST(request) {
     const senderSegments = sender._key?.path?.segments;
     const sender_id = senderSegments[senderSegments.length - 1];
     //const filtered = users.filter(element => element !== sender);
-    console.log("before emails");
     const emails = await Promise.all(
       users.map(async (user) => {
         try {
@@ -29,7 +27,6 @@ export async function POST(request) {
           const uid = pathSegments[pathSegments.length - 1];
           if (uid !== sender_id ){
             const userRecord = await auth.getUser(uid); // Fetch user record by UID
-            console.log("Was able to getUser");
             return userRecord.email; // Return the email
           }
         } catch (error) {
@@ -38,7 +35,6 @@ export async function POST(request) {
         }
       })
     );
-    console.log("Doesn't happen within user promise ");
     // Remove null values (failed fetches)
     const validEmails = emails.filter((email) => email !== null && email !== undefined);
     const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
