@@ -28,29 +28,14 @@ const apiRequest = async (sender, users, id) => {
 
   
 const deadChat = async (chat) => {
-    //Given the chat in this function store the letterbox and information of the document in an object. Access object later to sift through each letterbox and find most recent document.
+    //If letterbox ID not a key in letterboxes object call apiRequest to send out an email.
     try {
-      //const chatData = chat.data()
-      //const lettersRef = collection(db, "letterbox", chat.id, "letters");
-  
-      //const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
-  
-      //const querySnapshot = await getDocs(q);
-      /*if (querySnapshot.empty) {
-        Sentry.captureException("Letters documents do not exist");
-        return;
-      }*/
-      // Process the data
-      const doc = querySnapshot.docs[0];
-      const data = doc.data();
-     
-      const mostRecentDate = new Date(timestampToDate(data.created_at));
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  
-      if (mostRecentDate < oneMonthAgo) {
-        await apiRequest(data.sent_by, chatData.members, chat.id);
-      } 
+    
+      const requests = letterboxDocuments
+         .filter(document => !letterboxes.hasOwnProperty(document.id))
+         .map(document => apiRequest(document.members, chat.id));
+
+      await Promise.all(requests);
     } catch (error) {
       Sentry.captureException(error);
     }
