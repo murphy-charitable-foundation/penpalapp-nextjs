@@ -1,7 +1,7 @@
 import { db } from "../firebaseConfig";
 import { collection, collectionGroup, getDocs, query, orderBy, limit, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
-import { getDateFromTimestamp, timestampToDate } from "./timestampToDate";
+import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
 const apiRequest = async (sender, users, id) => {
@@ -58,13 +58,22 @@ const deadChat = async (chat) => {
   }
 
   export const iterateLetterBoxes = async () => {
+
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Convert oneMonthAgo to Firestore Timestamp using dateToTimestamp
+    const oneMonthAgoTimestamp = dateToTimestamp(oneMonthAgo);
+
+    //Two indexes needed for this query but keeps read calls down.
     const allLettersQuery = query(
         collectionGroup(db, "letters"), 
         where("status", "==", "sent"),
+        where("created_at", ">=", oneMonthAgoTimestamp) // Use Firestore Timestamp here
     );
 
     const querySnapshot = await getDocs(allLettersQuery);
-    const letterboxes = {}; // Correct object initialization
+    const letterboxes = {}; 
 
     const documents = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -81,9 +90,17 @@ const deadChat = async (chat) => {
         }
         letterboxes[letterboxId].push(doc);
     });
-
+    //Grab letterboxes to compare if they had letters more recent than a month.
+    const allLetterboxes = query(
+      collection("db", "letterbox"),
+    )
+    const letterboxSnapshot = await getDocs(allLetterboxes);
+    const letterboxDocuments = letterboxSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
     for (const [letterboxId, letters] of Object.entries(letterboxes)) {
         console.log(`Letterbox ${letterboxId}:`, letters);
-        // deadchat(letters);
+        // deadchat(letterboxes, letterboxDocuments);
     }
 };
