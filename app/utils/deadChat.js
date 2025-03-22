@@ -1,5 +1,5 @@
 import { db } from "../firebaseConfig";
-import { collection, getDocs, query, orderBy, limit} from "firebase/firestore";
+import { collection, collectionGroup, getDocs, query, orderBy, limit, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import { getDateFromTimestamp, timestampToDate } from "./timestampToDate";
 
@@ -28,17 +28,18 @@ const apiRequest = async (sender, users, id) => {
 
   
 const deadChat = async (chat) => {
+    //Given the chat in this function store the letterbox and information of the document in an object. Access object later to sift through each letterbox and find most recent document.
     try {
-      const chatData = chat.data()
-      const lettersRef = collection(db, "letterbox", chat.id, "letters");
+      //const chatData = chat.data()
+      //const lettersRef = collection(db, "letterbox", chat.id, "letters");
   
-      const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
+      //const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
   
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
+      //const querySnapshot = await getDocs(q);
+      /*if (querySnapshot.empty) {
         Sentry.captureException("Letters documents do not exist");
         return;
-      }
+      }*/
       // Process the data
       const doc = querySnapshot.docs[0];
       const data = doc.data();
@@ -56,20 +57,33 @@ const deadChat = async (chat) => {
   
   }
 
-export const iterateLetterBoxes = async () => {
-      const boxRef = collection(db, "letterbox");
-      const q = query(boxRef);
-      const querySnapshot = await getDocs(q, limit(5))
-  
-      querySnapshot.forEach(doc => {
-          // console.log("this is the chatId", doc.id);
-          deadChat(doc);
+  export const iterateLetterBoxes = async () => {
+    const allLettersQuery = query(
+        collectionGroup(db, "letters"), 
+        where("status", "==", "sent"),
+    );
+
+    const querySnapshot = await getDocs(allLettersQuery);
+    const letterboxes = {}; // Correct object initialization
+
+    const documents = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        refPath: doc.ref.path, // Store path explicitly
+        ...doc.data()
+    }));
+
+    documents.forEach(doc => {
+        const pathSegments = doc.refPath.split("/"); 
+        const letterboxId = pathSegments[1]; 
+        
+        if (!letterboxes[letterboxId]) {
+            letterboxes[letterboxId] = [];
         }
-      )
-  }
-  
- 
+        letterboxes[letterboxId].push(doc);
+    });
 
-
-
-
+    for (const [letterboxId, letters] of Object.entries(letterboxes)) {
+        console.log(`Letterbox ${letterboxId}:`, letters);
+        // deadchat(letters);
+    }
+};
