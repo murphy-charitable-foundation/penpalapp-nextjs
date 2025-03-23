@@ -65,7 +65,6 @@ export default function ChooseKid() {
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
-  
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
   
@@ -130,7 +129,8 @@ export default function ChooseKid() {
   
 
   function calculateAge(birthdayTimestamp) {
-    const birthdayDate = birthdayTimestamp.toDate(); // Convert Timestamp to Date
+    const timestamp = Date.parse(birthdayTimestamp);
+    const birthdayDate = new Date(timestamp);
     const currentDate = new Date();
     
     // Calculate the difference in years
