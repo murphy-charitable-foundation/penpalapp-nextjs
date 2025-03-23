@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import * as Sentry from "@sentry/nextjs";
-
+import { collection, query, getDoc } from 'firebase/firestore';
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
@@ -16,9 +16,7 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { sender, users, id } = body; 
-    const senderSegments = sender._key?.path?.segments;
-    const sender_id = senderSegments[senderSegments.length - 1];
+    const { users, id } = body; 
     //const filtered = users.filter(element => element !== sender);
     const emails = await Promise.all(
       users.map(async (user) => {
@@ -29,9 +27,12 @@ export async function POST(request) {
             const userRecord = await auth.getUser(uid); // Fetch user record by UID
             return userRecord.email; // Return the email
           }
+         
         } catch (error) {
           Sentry.captureException(error);
-          return null; 
+          return NextResponse.json(
+            { message: 'Emails could not be properly grabbed', },
+            { status: 500 })
         }
       })
     );
@@ -92,7 +93,10 @@ export async function POST(request) {
     `;
 
     const msg = {
-      to: validEmails[0], 
+      to: [
+        { email: validEmails[0] },
+        { email: validEmails[1] },
+      ],
       from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
@@ -100,7 +104,7 @@ export async function POST(request) {
     };
 
     // Send the email
-    await sendgrid.send(msg);
+    //await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
     
 

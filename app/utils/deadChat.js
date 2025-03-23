@@ -4,14 +4,14 @@ import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
-const apiRequest = async (sender, users, id) => {
+const apiRequest = async (letterbox) => {
   try {     
       const response = await fetch('/api/deadchat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sender, users, id  }), // Send data as JSON
+        body: JSON.stringify({ members: letterbox.members, id: letterbox.id  }), // Send data as JSON
       });
         
       if (!response.ok) {
@@ -23,24 +23,6 @@ const apiRequest = async (sender, users, id) => {
   }
 }
 
-
-
-
-  
-const deadChat = async (chat) => {
-    //If letterbox ID not a key in letterboxes object call apiRequest to send out an email.
-    try {
-    
-      const requests = letterboxDocuments
-         .filter(document => !letterboxes.hasOwnProperty(document.id))
-         .map(document => apiRequest(document.members, chat.id));
-
-      await Promise.all(requests);
-    } catch (error) {
-      Sentry.captureException(error);
-    }
-  
-  }
 
   export const iterateLetterBoxes = async () => {
 
@@ -75,17 +57,22 @@ const deadChat = async (chat) => {
         }
         letterboxes[letterboxId].push(doc);
     });
+    
     //Grab letterboxes to compare if they had letters more recent than a month.
     const allLetterboxes = query(
-      collection("db", "letterbox"),
+      collection(db, "letterbox"),
     )
     const letterboxSnapshot = await getDocs(allLetterboxes);
     const letterboxDocuments = letterboxSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
     }));
-    for (const [letterboxId, letters] of Object.entries(letterboxes)) {
-        console.log(`Letterbox ${letterboxId}:`, letters);
-        // deadchat(letterboxes, letterboxDocuments);
+
+    for (let key in letterboxDocuments) {    
+      if (!letterboxes[letterboxDocuments[key].id]){
+        console.log("No recent letters");
+        await apiRequest(letterboxDocuments[key]);
+      }
+        
     }
-};
+}; 
