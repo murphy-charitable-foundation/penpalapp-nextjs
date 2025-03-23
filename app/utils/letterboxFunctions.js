@@ -157,7 +157,7 @@ export const sendLetter = async (letterData, letterRef, draftId, letterboxRef) =
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send notification.');
+      console.log("Error sending notification")
     }
 
     return true;

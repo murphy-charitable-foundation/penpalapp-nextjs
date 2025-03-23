@@ -105,7 +105,7 @@ export default function Page({ params }) {
       if (recipients?.length) {
         const lboxRef = doc(collection(db, "letterbox"), id);
         setLetterboxRef(lboxRef)
-        const lRef = collection(letterboxRef, "letters");
+        const lRef = collection(lboxRef, "letters");
         setLettersRef(lRef);
         const d = await fetchDraft(id, userRef, true);
         setDraft(d);
