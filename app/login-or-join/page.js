@@ -6,9 +6,9 @@ import Button from "@/components/general/Button";
 
 export default function LoginOrJoin() {
     return (
-        <div className="flex flex-col items-center justify-between min-h-screen bg-white px-6">
-            <div className="flex flex-col mt-[82px]">
-                <div className="flex justify-center mb-40">
+        <div className="flex flex-col items-center justify-around min-h-screen bg-white px-6">
+            <div>
+                <div className="flex justify-center mb-24">
                     <Image
                         src={logo}
                         alt="Murphy Charitable Foundation Uganda"
@@ -17,7 +17,7 @@ export default function LoginOrJoin() {
                     />
                 </div>
 
-                <div className="text-center mb-10">
+                <div className="text-center">
                     <h1 className="font-bold text-2xl text-black py-1">
                         Welcome to Pen Pal App
                     </h1>
@@ -27,7 +27,7 @@ export default function LoginOrJoin() {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-2 items-center pb-10">
+            <div className="flex flex-col gap-2 items-center mb-11">
                 <Link href="/login">
                     <Button
                         color={"bg-green-700"}

@@ -84,7 +84,7 @@ export default function Login() {
     }
 
     return (
-        <div className="flex flex-col items-center min-h-screen bg-white px-6">
+        <div className="flex flex-col items-center min-h-screen bg-white px-6 mt-6">
             <div className="w-full max-w-md flex flex-col justify-between min-h-screen py-6">
                 <div>
                     <div className="relative">
@@ -162,7 +162,7 @@ export default function Login() {
                             Forgot your password?
                         </a>
                     </div>
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex justify-center">
+                    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex justify-center">
                         <Button
                             btnText="Log in"
                             btnType="submit"
