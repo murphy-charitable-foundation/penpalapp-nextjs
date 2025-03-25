@@ -9,12 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@firebase/storage": "^0.12.3",
+    "@firebase/storage": "^0.13.7",
     "@sendgrid/mail": "^8.1.4",
     "@sentry/nextjs": "^8.26.0",
     "date-fns": "^3.3.1",
     "dotenv": "^16.4.5",
-    "firebase": "^10.14.1",
+    "firebase": "^11.5.0",
     "firebase-admin": "^13.0.2",
     "heroicons": "^2.1.1",
     "install": "^0.13.0",
