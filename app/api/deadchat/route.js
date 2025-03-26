@@ -5,7 +5,6 @@ import { collection, query, getDoc } from 'firebase/firestore';
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
-  console.log("hello");
   if (auth == null) {
     return NextResponse.json(
       { message: 'Admin is null.', },
@@ -16,28 +15,28 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { users, id } = body; 
+    const { members, id } = body; 
     //const filtered = users.filter(element => element !== sender);
     const emails = await Promise.all(
-      users.map(async (user) => {
+      members.map(async (member) => {
         try {
-          const pathSegments = user._key?.path?.segments;
+          const pathSegments = member._key?.path?.segments;
           const uid = pathSegments[pathSegments.length - 1];
-          if (uid !== sender_id ){
-            const userRecord = await auth.getUser(uid); // Fetch user record by UID
-            return userRecord.email; // Return the email
-          }
+          
+          const userRecord = await auth.getUser(uid); // Fetch user record by UID
+          return userRecord.email; // Return the email
+          
          
         } catch (error) {
           Sentry.captureException(error);
-          return NextResponse.json(
-            { message: 'Emails could not be properly grabbed', },
-            { status: 500 })
+          console.error("Error:", error);
+          return null;
         }
       })
     );
     // Remove null values (failed fetches)
     const validEmails = emails.filter((email) => email !== null && email !== undefined);
+    console.log("validEmails", validEmails);
     const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
     const emailHtml = `
       <html>
@@ -91,12 +90,13 @@ export async function POST(request) {
         </body>
       </html>
     `;
-
+    console.log("made it to the message");
     const msg = {
-      to: [
+      /*to: [
         { email: validEmails[0] },
         { email: validEmails[1] },
-      ],
+      ],*/
+      to: "connorwhite771@gmail.com",
       from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
