@@ -26,64 +26,68 @@ export default function Admin() {
     const [error, setError] = useState("");
     const [profileImage, setProfileImage] = useState("");
     const [documents, setDocuments] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [selectedStatus, setSelectedStatus] = useState("draft"); // Default filter
+    const [selectedDate, setSelectedDate] = useState(""); // Optional category filter
     const router = useRouter();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          setIsLoading(true);
-    
-          if (!user) {
-            setError("No user logged in.");
-            setIsLoading(false);
-            router.push("/login");
-            return;
-          }
-          
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setIsLoading(true);
+  
+        if (!user) {
+          setError("No user logged in.");
+          setIsLoading(false);
+          router.push("/login");
+          return;
+        }
+  
+        try {
+          // Fetch initial batch of letters
+          await fetchLetters();
+        } catch (err) {
+          console.error("Error fetching data:", err);
+          setError("Failed to load data.");
+        } finally {
+          setIsLoading(false);
+        }
+      });
+  
+      return () => unsubscribe();
+    }, [router]);
 
-          try {
-            // Fetch user data
-            const uid = user.uid;
-            const docRef = doc(db, "users", uid);
-            const docSnap = await getDoc(docRef);
     
-            if (docSnap.exists()) {
-              const userData = docSnap.data();
-              setUserName(userData.first_name || "Unknown User");
-              setCountry(userData.country || "Unknown Country");
-              setUserType(userData.user_type || "Unknown Type");
-              setProfileImage(userData?.photo_uri || "");
-            } else {
-              console.log("No such document!");
-              setError("User data not found.");
-            }
-    
-            // Fetch letterboxes
-            const commentsQuery = query(
-              collectionGroup(db, "letters"), 
-              where("status", "==", "draft"),
-              limit(5) // Example filter
-            );
-            
+  const fetchLetters = async (nextPage = false) => {
+    try {
+      let lettersQuery = collectionGroup(db, "letters");
 
-            const querySnapshot = await getDocs(commentsQuery);
-            const documents = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                //sender: getDoc(doc.sent_by).first_name,
-                ...doc.data()
-            }));
-            setDocuments(documents);
+      // 🔹 Apply Filters Dynamically
+      const queryConstraints = [where("status", "==", selectedStatus), limit(PAGE_SIZE)];
+      
+      if (nextPage && lastDoc) {
+        queryConstraints.push(startAfter(lastDoc));
+      }
 
-          } catch (err) {
-            console.error("Error fetching data:", err);
-            Sentry.captureException(err);
-            setError("Failed to load data.");
-          } finally {
-            setIsLoading(false);
-          }
-        });
-    
-        return () => unsubscribe();
-      }, [router]);
+      lettersQuery = query(lettersQuery, ...queryConstraints);
+
+      const querySnapshot = await getDocs(lettersQuery);
+
+      if (!querySnapshot.empty) {
+        const newDocs = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setDocuments((prev) => [...prev, ...newDocs]);
+        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
+      } else {
+        setHasMore(false); // No more documents to load
+      }
+    } catch (err) {
+      console.error("Error fetching more letters:", err);
+      setError("Failed to load more data.");
+    }
+  };
 
     if (documents == null) {
       return <p>Loading....</p>
@@ -100,7 +104,16 @@ export default function Admin() {
                           <p>{doc.letter || "No content available."}</p>
                       </div>
                 ))}
-          
+                
+                {/* Load More Button */}
+                {hasMore && !isLoading && (
+                  <button
+                    onClick={() => fetchLetters(true)}
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+                  >
+                    Load More
+                  </button>
+                )}
                 <BottomNavBar />
             </div>
         </>
