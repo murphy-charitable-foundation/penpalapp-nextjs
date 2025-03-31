@@ -60,7 +60,7 @@ export default function ChooseKid() {
       }
   
       q = query(q, where("user_type", "==", "child"));
-      q = query(q, where("connected_penpals_count", "<=", 3));
+      q = query(q, where("connected_penpals_count", "<", 3));
   
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));

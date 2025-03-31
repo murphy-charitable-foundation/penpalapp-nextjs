@@ -24,7 +24,6 @@ export default function SendMessage({ kid }) {
 
           if (docSnap.exists()) {
             const userData = docSnap.data();
-            console.log(userData);
             setUser(userData);
             setUserRef(docRef);
             return userData;
@@ -72,7 +71,17 @@ export default function SendMessage({ kid }) {
                 kidDocRef   
               ],
               created_at: new Date(),
-              archived_at: null
+              archived_at: null,
+            });
+
+            console.log("Letterbox created");
+
+            await addDoc(collection(letterboxRef, "letters"), {
+              sent_by: userRef,
+              content: "Please complete your first letter here...",
+              status: "draft",
+              timestamp: new Date(),
+              deleted: null
             });
 
             // Update User and Kid documents
@@ -85,7 +94,7 @@ export default function SendMessage({ kid }) {
               connected_penpals_count: kid.connected_penpals_count + 1,
             });
 
-            router.push("letters/" + letterboxRef.id);
+            router.push("/letters/" + letterboxRef.id);
           } else {
             router.push("/letters/" + querySnapshot.docs[0].id);
             console.log("Letterbox already exists");
