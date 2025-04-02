@@ -14,10 +14,16 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+
 import ProfileImage from "@/components/general/ProfileImage";
+import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 
 export default function Admin() {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
+
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
     const [userName, setUserName] = useState("");
     const [userType, setUserType] = useState("");
     const [country, setCountry] = useState("");
@@ -25,10 +31,12 @@ export default function Admin() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [profileImage, setProfileImage] = useState("");
-    const [documents, setDocuments] = useState(null);
+    const [lastDoc, setLastDoc] = useState(null);
+    const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("draft"); // Default filter
-    const [selectedDate, setSelectedDate] = useState(""); // Optional category filter
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null); // Optional category filter
     const router = useRouter();
 
     useEffect(() => {
@@ -62,14 +70,20 @@ export default function Admin() {
       let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
-      const queryConstraints = [where("status", "==", selectedStatus), limit(PAGE_SIZE)];
+      const queryConstraints = [where("status", "==", selectedStatus), limit(5)];
       
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
       }
+      if (startDate) {
+        queryConstraints.push(where("created_at", ">=", startDate));
+      }
+      if (endDate) {
+        queryConstraints.push(where("created_at", "<=", endDate));
+      }
 
+      
       lettersQuery = query(lettersQuery, ...queryConstraints);
-
       const querySnapshot = await getDocs(lettersQuery);
 
       if (!querySnapshot.empty) {
@@ -114,6 +128,12 @@ export default function Admin() {
                     Load More
                   </button>
                 )}
+
+                <button
+                  className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
+                  onClick={iterateLetterBoxes}>
+                  Check For Inactive Chats
+                </button>
                 <BottomNavBar />
             </div>
         </>
