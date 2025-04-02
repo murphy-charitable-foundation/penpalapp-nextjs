@@ -4,7 +4,7 @@
 import { db, auth } from '../firebaseConfig'; 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import logo from '/public/murphylogo.png';
+import logo from '/public/murphylogo.png'; 
 import Image from 'next/image';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import Button from '../../components/general/Button';
