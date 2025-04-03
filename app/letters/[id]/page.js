@@ -372,7 +372,7 @@ export default function Page({ params }) {
       }
 
       // Clear states
-
+      // TODO: SEND NOTIFICATION
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
