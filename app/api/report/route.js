@@ -5,9 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 
 export async function POST(request) {
-  
   try {
-
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
@@ -15,7 +13,7 @@ export async function POST(request) {
     const userRef = doc(db, "users", sender);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
-    const message = `Hello, the user with the name: ${userData.first_name} ${userData.last_name}, reported this message: ${currentUrl} sent by a user with the email: ${userRecord.email}. Here is a brief excerpt from the reported message, "${excerpt}"`;
+    const message = `Hello, the user with the uid: ${receiver_email} , reported this message: ${currentUrl} sent by a user with the name: ${userData.first_name} ${userData.last_name}. Here is a brief excerpt from the reported message, "${excerpt}"`;
     const emailHtml = `
       <html>
         <head>
