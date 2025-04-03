@@ -29,7 +29,6 @@ export async function POST(request) {
          
         } catch (error) {
           Sentry.captureException(error);
-          console.error("Error:", error);
           return null;
         }
       })
@@ -90,13 +89,9 @@ export async function POST(request) {
         </body>
       </html>
     `;
-    console.log("made it to the message");
     const msg = {
-      /*to: [
-        { email: validEmails[0] },
-        { email: validEmails[1] },
-      ],*/
-      to: "connorwhite771@gmail.com",
+      to: validEmails[0] ,
+      /*to: "connorwhite771@gmail.com",*/
       from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
@@ -104,7 +99,7 @@ export async function POST(request) {
     };
 
     // Send the email
-    //await sendgrid.send(msg);
+    await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
     
 
