@@ -120,7 +120,7 @@ export default function Page({ params }) {
         const letterData = {
           content: letterContent,
           sent_by: userRef,
-          timestamp: new Date(),
+          created_at: new Date(),
           deleted: null,
           status: "draft",
           attachments
