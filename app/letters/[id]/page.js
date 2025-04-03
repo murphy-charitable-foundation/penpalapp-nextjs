@@ -68,7 +68,7 @@ export default function Page({ params }) {
       deleted: null,
     };
 
-    const letterStatus = await sendLetter(letterData, lettersRef, draft.id, letterboxRef);
+    const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
     if (letterStatus) {
       setLetterContent("");
       setAttachments([]);
@@ -127,7 +127,7 @@ export default function Page({ params }) {
           status: "draft",
           attachments
         };
-        await sendLetter(letterData, lettersRef, draft.id, letterboxRef)
+        await sendLetter(letterData, lettersRef, draft.id)
       }
     }
     if (debounce >= 20) {
