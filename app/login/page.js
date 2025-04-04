@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from '../firebaseConfig';
 import { doc, getDoc } from "firebase/firestore";
@@ -10,6 +10,7 @@ import logo from '/public/murphylogo.png';
 import { useRouter } from 'next/navigation';
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
+import LoadingSpinner from "@/components/loading/LoadinSpinner";
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -60,6 +62,7 @@ export default function Login() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
+            {isPending && <LoadingAnimation isPending={isPending} />}
             <div className="w-full max-w-md space-y-8 bg-white rounded-lg shadow-md p-8">
                 <div className="relative">
                     <Button
