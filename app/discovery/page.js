@@ -67,7 +67,6 @@ export default function ChooseKid() {
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
-  
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
   

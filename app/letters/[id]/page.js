@@ -64,10 +64,10 @@ export default function Page({ params }) {
       alert("Sender not identified, please log in.");
       return;
     }
-
+    const letterUserRef =  userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
     const letterData = {
       content: letterContent,
-      sent_by: userRef,
+      sent_by: letterUserRef,
       status: "sent",
       created_at: new Date(),
       deleted: null,
@@ -126,7 +126,7 @@ export default function Page({ params }) {
         const letterData = {
           content: letterContent,
           sent_by: userRef,
-          timestamp: new Date(),
+          created_at: new Date(),
           deleted: null,
           status: "draft",
           attachments

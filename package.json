@@ -20,6 +20,8 @@
     "dotenv": "^16.4.5",
     "firebase": "^10.8.0",
     "framer-motion": "^12.4.1",
+    "firebase": "^10.14.1",
+    "firebase-admin": "^13.0.2",
     "heroicons": "^2.1.1",
     "install": "^0.13.0",
     "lucide-react": "^0.475.0",
