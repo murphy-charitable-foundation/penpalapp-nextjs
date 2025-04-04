@@ -8,7 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import { FaUserCircle, FaCog, FaBell, FaPen, FaPaperPlane } from "react-icons/fa";
 import {
   fetchDraft,
   fetchLetterbox,
@@ -148,7 +148,8 @@ export default function Home() {
                   <a
                     key={letter.id + "_" + i}
                     href={`/letters/${letter.id}`}
-                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  >
                     <div className="flex-grow">
                       {letter.recipients?.map((rec) => (
                         <div key={rec.id} className="flex mt-3">
@@ -189,7 +190,8 @@ export default function Home() {
       {userType === "admin" && (
         <button
           className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-          onClick={iterateLetterBoxes}>
+          onClick={iterateLetterBoxes}
+        >
           Check For Inactive Chats
         </button>
       )}
