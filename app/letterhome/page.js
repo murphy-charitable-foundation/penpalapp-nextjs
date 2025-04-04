@@ -30,7 +30,6 @@ import EmptyState from "../../components/general/EmptyState";
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
-  const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
   const [letters, setLetters] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
