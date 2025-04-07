@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
 import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
@@ -55,13 +56,21 @@ export default function SendMessage({ kid }) {
           const kidDocRef = doc(db, "users", kid.id);
 
           // query DB to check for existing letterbox
-          const letterboxQuery = query(
+          let letterboxQuery = query(
             collection(db, "letterbox"),
             where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
           );
 
-          const querySnapshot = await getDocs(letterboxQuery);
+          let querySnapshot = await getDocs(letterboxQuery);
           
+          if (querySnapshot.empty) {
+            letterboxQuery = query(
+              collection(db, "letterbox"),
+              where("members", "==", [kidDocRef, userDocRef])
+            );
+            querySnapshot = await getDocs(letterboxQuery);
+          }
+
           let letterboxRef;
 
           if (querySnapshot.empty) { // if there's no letterbox, create one.
@@ -80,7 +89,7 @@ export default function SendMessage({ kid }) {
               sent_by: userRef,
               content: "Please complete your first letter here...",
               status: "draft",
-              timestamp: new Date(),
+              created_at: new Date(),
               deleted: null
             });
 
@@ -98,6 +107,7 @@ export default function SendMessage({ kid }) {
           } else {
             router.push("/letters/" + querySnapshot.docs[0].id);
             console.log("Letterbox already exists");
+            Sentry.captureException("Penpal filter error -- Letterbox already exists.", "debug");
           }
         } else {
           console.log("Kid has exceeded penpal limit");
