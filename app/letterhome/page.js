@@ -9,6 +9,8 @@ import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
 import {
   fetchDraft,
   fetchLetterbox,
@@ -27,8 +29,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const router = useRouter();
-
+  usePageAnalytics("/letterhome");
   useEffect(() => {
+    const startTime = performance.now();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsLoading(true);
 
@@ -82,6 +85,15 @@ export default function Home() {
           }
 
           setLetters(fetchedLetters);
+
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/letterhome", loadTime);
+            }, 0);
+          });
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -116,17 +128,32 @@ export default function Home() {
 
             <div className="flex items-center space-x-4">
               <Link href="/settings">
-                <button className="text-gray-700 hover:text-blue-600">
+                <button
+                  onClick={() =>
+                    logButtonEvent("Settings clicked!", "/letterhome")
+                  }
+                  className="text-gray-700 hover:text-blue-600"
+                >
                   <FaCog className="h-7 w-7" />
                 </button>
               </Link>
               <Link href="/discover">
-                <button className="text-gray-700 hover:text-blue-600">
+                <button
+                  onClick={() =>
+                    logButtonEvent("Discover clicked!", "/letterhome")
+                  }
+                  className="text-gray-700 hover:text-blue-600"
+                >
                   <FaBell className="h-7 w-7" />
                 </button>
               </Link>
               <Link href="/letterwrite">
-                <button className="text-gray-700 hover:text-blue-600">
+                <button
+                  onClick={() =>
+                    logButtonEvent("Write letter clicked!", "/letterhome")
+                  }
+                  className="text-gray-700 hover:text-blue-600"
+                >
                   <FaPen className="h-7 w-7" />
                 </button>
               </Link>
@@ -138,7 +165,12 @@ export default function Home() {
               <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
                 Last letters
                 <Link href="/letterhome">
-                  <button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                  <button
+                    onClick={() =>
+                      logButtonEvent("Show more clicked!", "/letterhome")
+                    }
+                    className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                  >
                     Show more
                   </button>
                 </Link>
@@ -148,7 +180,8 @@ export default function Home() {
                   <a
                     key={letter.id + "_" + i}
                     href={`/letters/${letter.id}`}
-                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  >
                     <div className="flex-grow">
                       {letter.recipients?.map((rec) => (
                         <div key={rec.id} className="flex mt-3">
@@ -189,7 +222,11 @@ export default function Home() {
       {userType === "admin" && (
         <button
           className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-          onClick={iterateLetterBoxes}>
+          onClick={() => {
+            logButtonEvent("Check For Inactive Chats clicked!", "/letterhome");
+            iterateLetterBoxes();
+          }}
+        >
           Check For Inactive Chats
         </button>
       )}

@@ -11,14 +11,20 @@ import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
-import BottomNavBar from '@/components/bottom-nav-bar';
+import BottomNavBar from "@/components/bottom-nav-bar";
 import { uploadFile } from "@/app/lib/uploadFile";
-import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchRecipients,
+  sendLetter,
+} from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
-
+import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 import { useRouter } from "next/navigation";
 
@@ -48,6 +54,7 @@ export default function Page({ params }) {
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
   const PAGINATION_INCREMENT = 20;
+  usePageAnalytics(`/letters/letterId`);
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
       alert("Please fill in the letter content and select a recipient.");
@@ -58,7 +65,7 @@ export default function Page({ params }) {
       alert("Sender not identified, please log in.");
       return;
     }
-    const letterUserRef =  userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
+    const letterUserRef = userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
     const letterData = {
       content: letterContent,
       sent_by: letterUserRef,
@@ -76,7 +83,10 @@ export default function Page({ params }) {
       alert("Failed to send your letter, please try again.");
     }
 
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT
+    );
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -86,16 +96,28 @@ export default function Page({ params }) {
   };
 
   useEffect(() => {
+    const startTime = performance.now();
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
       const fetchMessages = async () => {
-        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+          id,
+          5
+        );
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
       };
       fetchMessages();
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const endTime = performance.now();
+          const loadTime = endTime - startTime;
+          console.log(`Page render time: ${loadTime}ms`);
+          logLoadingTime("/letters/[id]", loadTime);
+        }, 0);
+      });
     }
   }, [user]);
 
@@ -114,7 +136,7 @@ export default function Page({ params }) {
   }, [recipients]);
 
   useEffect(() => {
-    setDebounce(debounce + 1)
+    setDebounce(debounce + 1);
     const updateDraft = async () => {
       if (userRef && lettersRef) {
         const letterData = {
@@ -123,20 +145,24 @@ export default function Page({ params }) {
           created_at: new Date(),
           deleted: null,
           status: "draft",
-          attachments
+          attachments,
         };
-        await sendLetter(letterData, lettersRef, draft.id)
+        await sendLetter(letterData, lettersRef, draft.id);
       }
-    }
+    };
     if (debounce >= 20) {
-      updateDraft()
-      setDebounce(0)
+      updateDraft();
+      setDebounce(0);
     }
-  }, [letterContent])
+  }, [letterContent]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT,
+      lastVisible
+    );
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
     setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
@@ -155,10 +181,10 @@ export default function Page({ params }) {
       file,
       `uploads/letterbox/${id}/${file.name}`,
       setUploadProgress,
-      (error) => console.error('Upload error:', error),
+      (error) => console.error("Upload error:", error),
       onUploadComplete
     );
-  };  
+  };
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -174,8 +200,17 @@ export default function Page({ params }) {
             Files
           </h3>
         </div>
-        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
-        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
+        <input
+          type="file"
+          hidden
+          onChange={handleChange}
+          disabled={uploadProgress > 0 && uploadProgress < 100}
+          id="raised-button-file"
+        />
+        <label
+          htmlFor="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        >
           <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
           Select a file
         </label>
@@ -238,7 +273,10 @@ export default function Page({ params }) {
             <div className="flex justify-between items-center p-4">
               <span className="text-black">{attachments.length} files</span>
               <div className="space-x-2">
-                <button className="text-black p-2 rounded-full" onClick={() => setIsFileModalOpen(true)}>
+                <button
+                  className="text-black p-2 rounded-full"
+                  onClick={() => setIsFileModalOpen(true)}
+                >
                   <BsPaperclip className="h-6 w-6 rotate-90" />
                 </button>
                 <button
@@ -255,16 +293,24 @@ export default function Page({ params }) {
           </div>
 
           <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
-            {recipients?.length && recipients.map(recipient => (
-              <div key={recipient?.first_name?.[0]}>
-                <ProfileImage photo_uri={recipient?.photo_uri} first_name={recipient?.first_name} size={20}/>
-                <div key={`${recipient?.first_name?.[0]}_`}>
-                  <h2 className="font-bold text-black">{recipient?.first_name} {recipient?.last_name}</h2>
-                  <p className="text-sm text-gray-500">{recipient?.country}</p>
+            {recipients?.length &&
+              recipients.map((recipient) => (
+                <div key={recipient?.first_name?.[0]}>
+                  <ProfileImage
+                    photo_uri={recipient?.photo_uri}
+                    first_name={recipient?.first_name}
+                    size={20}
+                  />
+                  <div key={`${recipient?.first_name?.[0]}_`}>
+                    <h2 className="font-bold text-black">
+                      {recipient?.first_name} {recipient?.last_name}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {recipient?.country}
+                    </p>
+                  </div>
                 </div>
-                
-              </div>
-            ))}
+              ))}
           </div>
 
           {isFileModalOpen && <FileModal />}
@@ -272,7 +318,12 @@ export default function Page({ params }) {
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
             {allMessages?.length ? (
               allMessages.map((message, index) => (
-                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"}`}>
+                <div
+                  key={index}
+                  className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${
+                    message.sent_by.id === userRef.id && "self-end"
+                  }`}
+                >
                   <div className="flex flex-col w-[90%]">
                     {message?.attachments?.length ? (
                       <Image
@@ -290,11 +341,10 @@ export default function Page({ params }) {
                           onClick={() => {
                             setSender(message.sent_by.id);
                             setContent(message.content);
-                            setShowReportPopup(true);  
+                            setShowReportPopup(true);
                           }}
                         />
                       </div>
-                      
                     </section>
                   </div>
                 </div>
@@ -304,7 +354,10 @@ export default function Page({ params }) {
             )}
 
             {hasMoreMessages && !loadingMore && (
-              <button onClick={handleLoadMore} className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded">
+              <button
+                onClick={handleLoadMore}
+                className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded"
+              >
                 Load More
               </button>
             )}

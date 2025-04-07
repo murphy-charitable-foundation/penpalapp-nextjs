@@ -12,6 +12,8 @@ import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "@/components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
+import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -22,7 +24,18 @@ export default function CreateAccount() {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
-
+  usePageAnalytics("/create-acc");
+  useEffect(() => {
+    const startTime = performance.now();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/create-acc", loadTime);
+      }, 0);
+    });
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -77,6 +90,8 @@ export default function CreateAccount() {
     }
   };
 
+  logButtonEvent("Create Account button clicked!", "/create-acc");
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative min-h-[80vh]">
@@ -87,7 +102,8 @@ export default function CreateAccount() {
             className="h-6 w-6 cursor-pointer"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="black">
+            stroke="black"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -113,7 +129,8 @@ export default function CreateAccount() {
             <div className="w-1/2">
               <label
                 htmlFor="first-name"
-                className="text-sm font-medium text-gray-700 block mb-2">
+                className="text-sm font-medium text-gray-700 block mb-2"
+              >
                 First name
               </label>
               <input
@@ -128,7 +145,8 @@ export default function CreateAccount() {
             <div className="w-1/2">
               <label
                 htmlFor="last-name"
-                className="text-sm font-medium text-gray-700 block mb-2">
+                className="text-sm font-medium text-gray-700 block mb-2"
+              >
                 Last name
               </label>
               <input
@@ -144,7 +162,8 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="birthday"
-              className="text-sm font-medium text-gray-700 block mb-2">
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
               Birthday
             </label>
             <input
@@ -159,7 +178,8 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="email"
-              className="text-sm font-medium text-gray-700 block mb-2">
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
               Email
             </label>
             <input
@@ -176,7 +196,8 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="password"
-              className="text-sm font-medium text-gray-700 block mb-2">
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
               New Password
             </label>
             <input
@@ -193,7 +214,8 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="repeat-password"
-              className="text-sm font-medium text-gray-700 block mb-2">
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
               Repeat Password
             </label>
             <input
@@ -218,7 +240,8 @@ export default function CreateAccount() {
               border: "none",
               borderRadius: "20px",
               cursor: "pointer",
-            }}>
+            }}
+          >
             Create Account
           </button>
         </form>

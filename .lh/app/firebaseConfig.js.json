@@ -1,0 +1,30 @@
+{
+    "sourceFile": "app/firebaseConfig.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1743608988752,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1743609424747,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,10 +5,8 @@\n import { getFirestore, FieldPath } from \"firebase/firestore\";\n import { getAnalytics, logEvent } from \"firebase/analytics\";\n import {\n   getRemoteConfig,\n-  fetchAndActivate,\n-  getValue,\n } from \"firebase/remote-config\";\n \n // import { getAnalytics } from \"firebase/analytics\";\n // todo Add SDKs for Firebase products that you want to use\n"
+                },
+                {
+                    "date": 1743609434189,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,9 @@\n import { initializeApp } from \"@firebase/app\";\n import { getAuth } from \"firebase/auth\";\n import { getFirestore, FieldPath } from \"firebase/firestore\";\n import { getAnalytics, logEvent } from \"firebase/analytics\";\n-import { getRemoteConfig } from \"firebase/remote-config\";\n+import remoteConfig from '@react-native-firebase/remote-config'\n \n // import { getAnalytics } from \"firebase/analytics\";\n // todo Add SDKs for Firebase products that you want to use\n // https://firebase.google.com/docs/web/setup#available-libraries\n"
+                },
+                {
+                    "date": 1743609546685,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,9 +29,8 @@\n // Initialize Firebase\n const app = initializeApp(firebaseConfig);\n const db = getFirestore(app);\n const auth = getAuth(app);\n-const remoteConfig = getRemoteConfig(app);\n const storage = getStorage(app, \"gs://penpalmagicapp.appspot.com/\");\n \n // Initialize Firebase Analytics\n const analytics = typeof window !== \"undefined\" ? getAnalytics(app) : null; // Only run on the client side\n"
+                }
+            ],
+            "date": 1743608988752,
+            "name": "Commit-0",
+            "content": "// Import the functions you need from the SDKs you need\nimport { getStorage } from \"@firebase/storage\";\nimport { initializeApp } from \"@firebase/app\";\nimport { getAuth } from \"firebase/auth\";\nimport { getFirestore, FieldPath } from \"firebase/firestore\";\nimport { getAnalytics, logEvent } from \"firebase/analytics\";\nimport {\n  getRemoteConfig,\n  fetchAndActivate,\n  getValue,\n} from \"firebase/remote-config\";\n\n// import { getAnalytics } from \"firebase/analytics\";\n// todo Add SDKs for Firebase products that you want to use\n// https://firebase.google.com/docs/web/setup#available-libraries\n\n// Your web app's Firebase configuration\n// For Firebase JS SDK v7.20.0 and later, measurementId is optional\nconst firebaseConfig = {\n  apiKey: \"AIzaSyBpYg-KAzwWGaT3g7J8smjnNqP8N8Nj8vQ\",\n  authDomain: \"penpalmagicapp.firebaseapp.com\",\n  projectId: \"penpalmagicapp\",\n  storageBucket: \"penpalmagicapp.appspot.com\",\n  messagingSenderId: \"45289060638\",\n  appId: \"1:45289060638:web:33121bc47d40ceef83f10f\",\n  measurementId: \"G-FG3MPZ8JV6\",\n};\n\n// // Initialize Firebase\n// const app = initializeApp(firebaseConfig);\n// const analytics = getAnalytics(app);\n\n// Initialize Firebase\nconst app = initializeApp(firebaseConfig);\nconst db = getFirestore(app);\nconst auth = getAuth(app);\nconst remoteConfig = getRemoteConfig(app);\nconst storage = getStorage(app, \"gs://penpalmagicapp.appspot.com/\");\n\n// Initialize Firebase Analytics\nconst analytics = typeof window !== \"undefined\" ? getAnalytics(app) : null; // Only run on the client side\n\n// Function to track page views\nconst logPageView = (pagePath, viewTime) => {\n  console.log(\"Logging page view\", pagePath, viewTime);\n  if (analytics) {\n    logEvent(analytics, \"page_view\", {\n      page_path: pagePath,\n      page_title: pagePath,\n      screen_time: viewTime, // seconds\n    });\n  }\n};\n\nconst logButtonEvent = (buttonName, pagePath) => {\n  if (analytics) {\n    logEvent(analytics, \"button_click\", {\n      button_name: buttonName,\n      page_path: pagePath,\n    });\n  }\n};\n\n// status is either \"success\" or \"failure\"\nconst logInEvent = (status, message) => {\n  if (analytics) {\n    logEvent(analytics, \"login\", {\n      status: status,\n    });\n  }\n};\n\nconst fetchConfig = async () => {\n  await remoteConfig().setConfigSettings({\n    isDeveloperModeEnabled: __DEV__,\n    minimumFetchInterval: 0\n  })\n  await remoteConfig().fetchAndActivate()\n}\n\nconst refreshConfig = async () => await remoteConfig().fetchAndActivate()\n\nconst getRemoteValue = key => remoteConfig().getValue(key).value\n\nexport {\n  db,\n  auth,\n  storage,\n  FieldPath,\n  logPageView,\n  logButtonEvent,\n  logInEvent,\n  fetchConfig,\n  refreshConfig,\n  getRemoteValue,\n};\n\n// Initialize Firebase Authentication and export\n"
+        }
+    ]
+}

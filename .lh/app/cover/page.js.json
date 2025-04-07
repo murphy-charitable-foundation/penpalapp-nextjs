@@ -1,0 +1,22 @@
+{
+    "sourceFile": "app/cover/page.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1744068321223,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1744068340246,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,23 +2,9 @@\n import Image from \"next/image\";\n import logo from \"/public/murphylogo.png\";\n import Link from \"next/link\";\n import bgImage from \"/public/cover.png\";\n-import { logLoadingTime } from \"@/app/firebaseConfig\";\n-import { usePageAnalytics } from \"@/app/utils/useAnalytics\";\n export default function Cover() {\n-  usePageAnalytics(\"/cover\");\n-  useEffect(() => {\n-    const startTime = performance.now();\n-    requestAnimationFrame(() => {\n-      setTimeout(() => {\n-        const endTime = performance.now();\n-        const loadTime = endTime - startTime;\n-        console.log(`Page render time: ${loadTime}ms`);\n-        logLoadingTime(\"/donate\", loadTime);\n-      }, 0);\n-    });\n-  }, []);\n   return (\n     <div className=\"flex flex-col min-h-screen bg-gray-100\">\n       <Image\n         src={bgImage}\n"
+                }
+            ],
+            "date": 1744068321223,
+            "name": "Commit-0",
+            "content": "// pages/cover.js\nimport Image from \"next/image\";\nimport logo from \"/public/murphylogo.png\";\nimport Link from \"next/link\";\nimport bgImage from \"/public/cover.png\";\nimport { logLoadingTime } from \"@/app/firebaseConfig\";\nimport { usePageAnalytics } from \"@/app/utils/useAnalytics\";\nexport default function Cover() {\n  usePageAnalytics(\"/cover\");\n  useEffect(() => {\n    const startTime = performance.now();\n    requestAnimationFrame(() => {\n      setTimeout(() => {\n        const endTime = performance.now();\n        const loadTime = endTime - startTime;\n        console.log(`Page render time: ${loadTime}ms`);\n        logLoadingTime(\"/donate\", loadTime);\n      }, 0);\n    });\n  }, []);\n  return (\n    <div className=\"flex flex-col min-h-screen bg-gray-100\">\n      <Image\n        src={bgImage}\n        alt=\"Murphy Charitable Foundation Uganda\"\n        layout=\"fill\"\n        objectFit=\"cover\"\n      />\n\n      <div className=\"mb-6 mt-9 items-center flex justify-center\">\n        <div className=\"relative w-40 h-40 md:w-48 md:h-48\">\n          <Image\n            src={logo}\n            alt=\"Murphy Charitable Foundation Uganda\"\n            layout=\"fill\"\n            objectFit=\"contain\"\n          />\n        </div>\n      </div>\n    </div>\n  );\n}\n"
+        }
+    ]
+}
