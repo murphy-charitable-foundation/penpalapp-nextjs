@@ -69,7 +69,7 @@ export default function CreateAccount() {
       setShowCreate(false);
 
       // Redirect to profile page or any other page as needed
-      // router.push("/profile");
+      router.push(`/welcome/${firstName}`);
     } catch (error) {
       Sentry.captureException(error); //need to add password checks for size, and etc to make this defualt
       console.error("Error creating account:", error);
