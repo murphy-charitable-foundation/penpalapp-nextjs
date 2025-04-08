@@ -2,9 +2,7 @@ import { Timestamp } from "firebase/firestore";
 
 
 export const dateToTimestamp = (date) => {
-    const adjustedDate = new Date(date); // Create a new Date instance
-    adjustedDate.setMonth(adjustedDate.getMonth() - 1); // Subtract one month
-    return Timestamp.fromDate(adjustedDate); // Convert back to Firestore Timestamp
+    return Timestamp.fromDate(date); // Convert back to Firestore Timestamp
 };
 
 

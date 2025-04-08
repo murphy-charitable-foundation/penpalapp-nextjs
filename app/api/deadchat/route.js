@@ -90,7 +90,7 @@ export async function POST(request) {
       </html>
     `;
     const msg = {
-      to: validEmails[0] ,
+      to: validEmails[0],
       /*to: "connorwhite771@gmail.com",*/
       from: 'penpal@murphycharity.org', // Your verified sender email
       subject: "Message Reported",
