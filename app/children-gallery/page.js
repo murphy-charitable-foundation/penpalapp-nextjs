@@ -8,18 +8,20 @@ import ProfileImage from "@/components/general/ProfileImage";
 import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from "../utils/letterboxFunctions";
 import LoadingSpinner from "@/components/loadingSpinner/LoadingSpinner";
 import Button from "@/components/general/Button";
+import bcrypt from "bcryptjs";
 
-export default function LoginProfiles() {
+export default function ChildrenGallery() {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [selectedUser, setSelectedUser] = useState(null);
-    const [passwordVisible, setPasswordVisible] = useState(false); // State for password visibility
+    const [passwordVisible, setPasswordVisible] = useState(false);
+    const [passwordInput, setPasswordInput] = useState(""); // Add state for password input
     const router = useRouter();
 
     const maskEmail = (email) => {
-        const [localPart, domain] = email.split('@');
-        const maskedLocal = localPart[0] + '*'.repeat(localPart.length - 1);
+        const [localPart, domain] = email.split("@");
+        const maskedLocal = localPart[0] + "*".repeat(localPart.length - 1);
         return `${maskedLocal}@${domain}`;
     };
 
@@ -44,14 +46,19 @@ export default function LoginProfiles() {
                         const letterCount = await fetchLetterCountForLetterbox(id);
 
                         for (const rec of recipients) {
-                            if (!seenIds.has(rec.id)) {
+                            console.log("Recipient data:", rec);
+                            if (
+                                !seenIds.has(rec.id) &&
+                                rec.user_type === "child" &&
+                                rec.localVolunteerId === auth.currentUser.uid
+                            ) {
                                 seenIds.add(rec.id);
                                 allRecipients.push({...rec, letterCount});
                             }
                         }
                     }
 
-                    console.log("All unique recipients with letterCount:", allRecipients);
+                    console.log("All unique child recipients for this volunteer:", allRecipients);
                     setUsers(allRecipients);
                 } catch (err) {
                     console.error("Error fetching users:", err.message);
@@ -64,12 +71,37 @@ export default function LoginProfiles() {
         return () => unsubscribe();
     }, [router]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const internationalBuddyPassword = e.target.internationalBuddyPassword.value;
-        console.log("Device Owner's Email:", maskEmail(auth.currentUser.email));
-        console.log("International Buddy Password:", internationalBuddyPassword);
-        setSelectedUser(null); // Close the popup
+
+        try {
+            if (selectedUser.user_type !== "child") {
+                alert("This profile is not a child. Please select a child profile.");
+                return;
+            }
+
+            const isMatch = await bcrypt.compare(passwordInput, selectedUser.passwordHash);
+            if (!isMatch) {
+                alert("Incorrect password. Please try again.");
+                setPasswordInput(""); // Clear the input for retry
+                return;
+            }
+
+            if (selectedUser.localVolunteerId !== auth.currentUser.uid) {
+                alert("You are not authorized to log in as this child.");
+                setSelectedUser(null); // Close modal if unauthorized
+                return;
+            }
+
+            console.log("Login successful for child:", selectedUser.first_name);
+            setSelectedUser(null);
+            setError("");
+            router.push("/letterhome");
+        } catch (err) {
+            console.error("Error during login:", err.message);
+            alert("Login failed: " + err.message);
+            setPasswordInput(""); // Clear input on error
+        }
     };
 
     if (isLoading) {
@@ -89,7 +121,7 @@ export default function LoginProfiles() {
                             Have you used this device to log in before?
                         </h1>
                         <p className="text-black max-w-[300px] text-center font-size-[16px]">
-                            Choose a profile
+                            Choose a child profile
                         </p>
                     </div>
 
@@ -122,7 +154,7 @@ export default function LoginProfiles() {
                                 </div>
                             ))
                         ) : (
-                            <p className="text-gray-500 col-span-3 text-center">No users found.</p>
+                            <p className="text-gray-500 col-span-3 text-center">No child profiles found.</p>
                         )}
                     </div>
                 </section>
@@ -168,15 +200,18 @@ export default function LoginProfiles() {
                                     />
                                 </div>
                                 <div className="mb-4 relative">
-                                    <label htmlFor="internationalBuddyPassword"
-                                           className="block text-sm font-medium text-gray-700">
-                                        Password
+                                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                        Child Password
                                     </label>
                                     <input
                                         type={passwordVisible ? "text" : "password"}
-                                        id="internationalBuddyPassword"
+                                        id="password"
+                                        name="password"
+                                        value={passwordInput}
+                                        onChange={(e) => setPasswordInput(e.target.value)}
                                         className="w-full border-0 border-b border-black py-2 px-3 text-black focus:outline-none focus:border-[#4E802A]"
                                         placeholder="Password"
+                                        required
                                     />
                                     <button
                                         type="button"
@@ -199,12 +234,6 @@ export default function LoginProfiles() {
                                             </svg>
                                         )}
                                     </button>
-                                </div>
-                                <div className="text-left text-sm w-full">
-                                    <a href="/reset-password"
-                                       className="font-medium text-gray-600 underline hover:text-blue-500">
-                                        Forgot your password?
-                                    </a>
                                 </div>
                                 <div className="mt-6 flex justify-center">
                                     <Button

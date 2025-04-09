@@ -1,73 +1,48 @@
-// pages/cover.js
-
-// app/page.js
-"use client";
-
-import { useEffect } from "react";
+// page.js
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import logo from "/public/murphylogo.png";
-import bgImage from "/public/cover.png";
+import Link from "next/link";
+import Button from "@/components/general/Button";
 
-export default function Home() {
-    const router = useRouter();
-
-    useEffect(() => {
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        const handleTouchStart = (e) => {
-            touchStartX = e.touches[0].clientX;
-        };
-
-        const handleTouchMove = (e) => {
-            touchEndX = e.touches[0].clientX;
-        };
-
-        const handleTouchEnd = () => {
-            const swipeDistance = touchEndX - touchStartX;
-            const minSwipeDistance = 50; // Минимальная дистанция для свайпа
-
-            if (Math.abs(swipeDistance) > minSwipeDistance) {
-                router.push("/login-or-join");
-            }
-        };
-
-        window.addEventListener("touchstart", handleTouchStart);
-        window.addEventListener("touchmove", handleTouchMove);
-        window.addEventListener("touchend", handleTouchEnd);
-
-        return () => {
-            window.removeEventListener("touchstart", handleTouchStart);
-            window.removeEventListener("touchmove", handleTouchMove);
-            window.removeEventListener("touchend", handleTouchEnd);
-        };
-    }, [router]);
-
+export default function LoginOrJoin() {
     return (
-        <Link href="/login-or-join" className="block">
-            <div className="flex flex-col bg-gray-100">
-                <Image
-                    src={bgImage}
-                    alt="Murphy Charitable Foundation Uganda"
-                    layout="fill"
-                />
+        <div className="flex flex-col items-center justify-around min-h-screen bg-white px-6">
+            <div>
+                <div className="flex justify-center mb-24">
+                    <Image
+                        src={logo}
+                        alt="Murphy Charitable Foundation Uganda"
+                        width={150}
+                        height={150}
+                    />
+                </div>
 
-                <div className="mb-6 mt-9 items-center flex justify-center z-10">
-                    <div className="relative w-40 h-40 md:w-48 md:h-48 animate-fade-in">
-                        <Image
-                            src={logo}
-                            alt="Murphy Charitable Foundation Uganda"
-                            layout="fill"
-                            objectFit="contain"
-                        />
-                    </div>
+                <div className="text-center">
+                    <h1 className="font-bold text-2xl text-black py-1">
+                        Welcome to Pen Pal App
+                    </h1>
+                    <p className="font-semibold text-lg text-black max-w-[260px] m-auto">
+                        Write, connect, and inspire children in Uganda
+                    </p>
                 </div>
             </div>
-        </Link>
+
+            <div className="flex flex-col gap-2 items-center mb-11">
+                <Link href="/login">
+                    <Button
+                        color={"bg-green-700"}
+                        hoverColor={"hover:bg-green-800"}
+                        btnText={"Log in"}
+                    />
+                </Link>
+                <Link href="https://calendly.com/murphycharity/60min">
+                    <Button
+                        color={"bg-blue-700"}
+                        hoverColor={"hover:bg-blue-800"}
+                        btnText={"Become a Pen Pal Volunteer"}
+                    />
+                </Link>
+            </div>
+        </div>
     );
 }
-
-
-

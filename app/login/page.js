@@ -29,7 +29,7 @@ export default function Login() {
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user) {
-                router.push("/login-profiles");
+                router.push("/children-gallery");
             }
             setIsLoading(false);
         });
@@ -52,7 +52,7 @@ export default function Login() {
             const userRef = doc(db, "users", uid);
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
-                router.push("/login-profiles");
+                router.push("/children-gallery");
             } else {
                 router.push("/create-acc");
             }
