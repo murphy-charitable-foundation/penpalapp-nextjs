@@ -1,5 +1,5 @@
 //temporary
-//node generateHash.js
+//node generateHash.js for testing
 
 const bcrypt = require('bcryptjs');
 
