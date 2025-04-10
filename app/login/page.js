@@ -1,13 +1,7 @@
-// app/login/page.js
 "use client";
 
 import {useEffect, useState} from "react";
-import {
-    browserLocalPersistence,
-    browserSessionPersistence,
-    setPersistence,
-    signInWithEmailAndPassword,
-} from "firebase/auth";
+import {browserSessionPersistence, setPersistence, signInWithEmailAndPassword,} from "firebase/auth";
 import {auth, db} from "../firebaseConfig";
 import {doc, getDoc} from "firebase/firestore";
 import Image from "next/image";
@@ -22,7 +16,6 @@ export default function Login() {
     const [error, setError] = useState("");
     const [showModal, setShowModal] = useState(false);
     const router = useRouter();
-    const [rememberMe, setRememberMe] = useState(false);
     const isFormFilled = email && password;
     const [isLoading, setIsLoading] = useState(true);
 
@@ -41,11 +34,7 @@ export default function Login() {
         setError("");
 
         try {
-            const persistenceType = rememberMe
-                ? browserLocalPersistence
-                : browserSessionPersistence;
-
-            await setPersistence(auth, persistenceType);
+            await setPersistence(auth, browserSessionPersistence);
             await signInWithEmailAndPassword(auth, email, password);
 
             const uid = auth.currentUser.uid;

@@ -1,5 +1,3 @@
-//temporary import
-
 "use client";
 
 import {useEffect, useState} from "react";
@@ -80,8 +78,7 @@ export default function UserDataImport() {
             } else if (userType === "child") {
                 uid = `child_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
                 const salt = await bcrypt.genSalt(10);
-                const passwordHash = await bcrypt.hash(password, salt);
-                userData.passwordHash = passwordHash;
+                userData.passwordHash = await bcrypt.hash(password, salt);
                 userData.localVolunteerId = volunteerId;
                 userData.connected_penpals = [""];
             }
@@ -214,7 +211,9 @@ export default function UserDataImport() {
                                         </option>
                                     ))
                                 ) : (
-                                    <option value="" disabled>No volunteers available</option>
+                                    <option value="" disabled>
+                                        No volunteers available
+                                    </option>
                                 )}
                             </select>
                             <div
