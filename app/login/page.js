@@ -1,7 +1,7 @@
 "use client";
 
 // pages/login.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
   signInWithEmailAndPassword,
   browserLocalPersistence,
@@ -15,6 +15,7 @@ import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import Button from "@/components/general/Button";
+import LoadingSpinner from "@/components/loading/loadingSpinner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,12 +24,15 @@ export default function Login() {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
   const [rememberMe, setRememberMe] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     // Check if the user is already logged in and retrieve the email
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        router.push("/letterhome");
+        startTransition(() => {
+          router.push("/letterhome");
+        })
       } else {
         router.push("/login");
       }
@@ -54,7 +58,9 @@ export default function Login() {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
-        router.push("/letterhome");
+        startTransition(() => {
+          router.push("/letterhome");
+        })
       } else {
         router.push("/create-acc");
       }
@@ -82,7 +88,8 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
+      {isPending && <LoadingSpinner isPending={isPending} />}
       <div className="w-full max-w-md space-y-8">
         <div
           style={{
