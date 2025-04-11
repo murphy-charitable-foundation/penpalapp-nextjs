@@ -44,31 +44,3 @@ body {
   max-width: 500px; 
 }
 
-<<<<<<< Updated upstream
-=======
-.centered-thing {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-right: -50%;
-  transform: translate(-50%, -50%);
-}
-
-.spinner-circle {
-  border: 8px solid #f3f3f3;
-  border-top: 8px solid #3498db;
-  border-radius: 50%;
-  width: 70px;
-  height: 70px;
-  animation: spin 1.5s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
->>>>>>> Stashed changes

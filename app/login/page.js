@@ -18,7 +18,6 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-<<<<<<< Updated upstream
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -54,20 +53,6 @@ export default function Login() {
             setLoading(false);
         }
     };
-=======
-  useEffect(() => {
-    // Check if the user is already logged in and retrieve the email
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        // Add a loading spinner from login page to letterhome page.
-        startTransition(() => {
-          router.push("/letterhome");
-        })
-      } else {
-        router.push("/login");
-      }
-    });
->>>>>>> Stashed changes
 
     const handleInputChange = () => {
         setError('');
