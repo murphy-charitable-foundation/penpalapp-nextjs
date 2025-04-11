@@ -23,6 +23,7 @@ import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
+import FirstTimeChatGuide from "@/components/tooltip/FirstTimeChatGuide";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -227,7 +228,7 @@ export default function Page({ params }) {
       )}
 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white shadow rounded-lg w-full max-w-md m-auto relative">
           <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
             <Link href="/">
               <button onClick={() => window.history.back()}>
@@ -270,9 +271,10 @@ export default function Page({ params }) {
           {isFileModalOpen && <FileModal />}
 
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
+          <FirstTimeChatGuide messages={allMessages} hasReplied={false} />
             {allMessages?.length ? (
               allMessages.map((message, index) => (
-                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"}`}>
+                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"} ${ index === 0 && 'first-letter'}`}>
                   <div className="flex flex-col w-[90%]">
                     {message?.attachments?.length ? (
                       <Image
