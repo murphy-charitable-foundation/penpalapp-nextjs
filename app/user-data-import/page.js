@@ -1,3 +1,5 @@
+//temporary file for testing
+
 "use client";
 
 import {useEffect, useState} from "react";
@@ -31,8 +33,8 @@ export default function UserDataImport() {
                 router.push("/login");
                 return;
             }
-
-            console.log("Current user UID:", user.uid); // Debug UID
+            // Debug UID
+            console.log("Current user UID:", user.uid);
 
             try {
                 const q = query(collection(db, "users"), where("user_type", "==", "local_volunteer"));

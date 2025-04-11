@@ -1,9 +1,10 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {auth} from "../firebaseConfig";
+import {auth, db} from "../firebaseConfig";
 import {onAuthStateChanged} from "firebase/auth";
 import {useRouter} from "next/navigation";
+import {collection, getDocs, query, where} from "firebase/firestore";
 import ProfileImage from "@/components/general/ProfileImage";
 import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from "../utils/letterboxFunctions";
 import LoadingSpinner from "@/components/loadingSpinner/LoadingSpinner";
@@ -16,7 +17,7 @@ export default function ChildrenGallery() {
     const [error, setError] = useState("");
     const [selectedUser, setSelectedUser] = useState(null);
     const [passwordVisible, setPasswordVisible] = useState(false);
-    const [passwordInput, setPasswordInput] = useState(""); // Add state for password input
+    const [passwordInput, setPasswordInput] = useState("");
     const router = useRouter();
 
     const maskEmail = (email) => {
@@ -28,46 +29,55 @@ export default function ChildrenGallery() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
-                setError("No user logged in.");
+                setError("You must be logged in to access this page.");
                 setIsLoading(false);
                 router.push("/login");
-            } else {
-                try {
-                    console.log("Fetching letterboxes...");
-                    const letterboxes = await fetchLetterboxes();
-                    const letterboxIds = letterboxes.map((l) => l.id);
-                    console.log("Letterbox IDs:", letterboxIds);
+                return;
+            }
 
-                    const allRecipients = [];
-                    const seenIds = new Set();
+            const volunteerId = user.uid;
+            console.log("volunteerId:", volunteerId);
 
+            try {
+                const childrenQuery = query(
+                    collection(db, "users"),
+                    where("user_type", "==", "child"),
+                    where("localVolunteerId", "==", volunteerId)
+                );
+                const childrenSnapshot = await getDocs(childrenQuery);
+                const allChildren = childrenSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                console.log("Все дети волонтёра:", allChildren);
+
+                const letterboxes = await fetchLetterboxes();
+                const letterboxIds = letterboxes.map((l) => l.id);
+                const childrenWithLetters = [];
+
+                for (const child of allChildren) {
+                    let letterCount = 0;
                     for (const id of letterboxIds) {
                         const recipients = await fetchRecipients(id);
-                        const letterCount = await fetchLetterCountForLetterbox(id);
-
-                        for (const rec of recipients) {
-                            console.log("Recipient data:", rec);
-                            if (
-                                !seenIds.has(rec.id) &&
-                                rec.user_type === "child" &&
-                                rec.localVolunteerId === auth.currentUser.uid
-                            ) {
-                                seenIds.add(rec.id);
-                                allRecipients.push({...rec, letterCount});
-                            }
+                        if (recipients.some((rec) => rec.id === child.id)) {
+                            letterCount = await fetchLetterCountForLetterbox(id);
+                            break;
                         }
                     }
-
-                    console.log("All unique child recipients for this volunteer:", allRecipients);
-                    setUsers(allRecipients);
-                } catch (err) {
-                    console.error("Error fetching users:", err.message);
-                    setError(`Failed to fetch users: ${err.message}`);
-                } finally {
-                    setIsLoading(false);
+                    childrenWithLetters.push({...child, letterCount});
                 }
+
+                console.log("Children with letters:", childrenWithLetters);
+                setUsers(childrenWithLetters);
+            } catch (err) {
+                console.error("Error fetching children:", err.message);
+                setError(`Error fetching children: ${err.message}`);
+            } finally {
+                setIsLoading(false);
             }
         });
+
         return () => unsubscribe();
     }, [router]);
 
@@ -76,31 +86,31 @@ export default function ChildrenGallery() {
 
         try {
             if (selectedUser.user_type !== "child") {
-                alert("This profile is not a child. Please select a child profile.");
+                alert("This user is not a child.");
                 return;
             }
 
             const isMatch = await bcrypt.compare(passwordInput, selectedUser.passwordHash);
             if (!isMatch) {
-                alert("Incorrect password. Please try again.");
-                setPasswordInput(""); // Clear the input for retry
+                alert("Wrong password. Please try again.");
+                setPasswordInput("");
                 return;
             }
 
             if (selectedUser.localVolunteerId !== auth.currentUser.uid) {
-                alert("You are not authorized to log in as this child.");
-                setSelectedUser(null); // Close modal if unauthorized
+                alert("This user is not associated with your account.");
+                setSelectedUser(null);
                 return;
             }
 
-            console.log("Login successful for child:", selectedUser.first_name);
+            console.log("Selected user:", selectedUser.first_name);
             setSelectedUser(null);
             setError("");
             router.push("/letterhome");
         } catch (err) {
-            console.error("Error during login:", err.message);
-            alert("Login failed: " + err.message);
-            setPasswordInput(""); // Clear input on error
+            console.error("Error logging in:", err.message);
+            alert("Error logging in: " + err.message);
+            setPasswordInput("");
         }
     };
 
@@ -121,7 +131,7 @@ export default function ChildrenGallery() {
                             Have you used this device to log in before?
                         </h1>
                         <p className="text-black max-w-[300px] text-center font-size-[16px]">
-                            Choose a child profile
+                            Choose a profile
                         </p>
                     </div>
 
@@ -154,7 +164,7 @@ export default function ChildrenGallery() {
                                 </div>
                             ))
                         ) : (
-                            <p className="text-gray-500 col-span-3 text-center">No child profiles found.</p>
+                            <p className="text-gray-500 col-span-3 text-center">No children found</p>
                         )}
                     </div>
                 </section>
@@ -189,7 +199,7 @@ export default function ChildrenGallery() {
                             <form className="w-full" onSubmit={handleSubmit}>
                                 <div className="mb-4">
                                     <label htmlFor="volunteerEmail" className="block text-sm font-medium text-gray-700">
-                                        Device owner’s email
+                                        Email владельца устройства
                                     </label>
                                     <input
                                         type="text"
@@ -201,7 +211,7 @@ export default function ChildrenGallery() {
                                 </div>
                                 <div className="mb-4 relative">
                                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                        Child Password
+                                        Password
                                     </label>
                                     <input
                                         type={passwordVisible ? "text" : "password"}
@@ -230,18 +240,14 @@ export default function ChildrenGallery() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                                                       d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542-7z"/>
                                             </svg>
                                         )}
                                     </button>
                                 </div>
                                 <div className="mt-6 flex justify-center">
-                                    <Button
-                                        color={"bg-[#4E802A]"}
-                                        btnText={"Log in"}
-                                        textColor={"text-white"}
-                                        btnType="submit"
-                                    />
+                                    <Button color={"bg-[#4E802A]"} btnText={"Войти"} textColor={"text-white"}
+                                            btnType="submit"/>
                                 </div>
                             </form>
                         </div>
