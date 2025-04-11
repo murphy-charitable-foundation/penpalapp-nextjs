@@ -1,0 +1,18 @@
+.speechbubble.top::after {
+    content: '';
+    position: absolute;
+    border-style: solid;
+    border-color: var(--primary-green) transparent;
+    display: block;
+    width: 0;
+    z-index: 1;
+    top: -10px;
+  }
+
+  .top::after {
+    border-width: 0 10px 10px;
+  }
+
+  .bottom::after {
+    border-width: 10px 10px 0;
+  }
