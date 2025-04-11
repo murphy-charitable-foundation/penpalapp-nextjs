@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { db } from "../../firebaseConfig"; // Adjust this path as necessary
+import { db } from "../../firebaseConfig";
 import { collection, doc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -19,10 +19,10 @@ import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 
-
 import { useRouter } from "next/navigation";
-
 import * as Sentry from "@sentry/nextjs";
+
+const cache = new Map();
 
 export default function Page({ params }) {
   const { id } = params;
@@ -40,14 +40,15 @@ export default function Page({ params }) {
   const [lettersRef, setLettersRef] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
-  const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
-  const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
-  const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
+  const [lastVisible, setLastVisible] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
   const PAGINATION_INCREMENT = 20;
+
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
       alert("Please fill in the letter content and select a recipient.");
@@ -58,7 +59,8 @@ export default function Page({ params }) {
       alert("Sender not identified, please log in.");
       return;
     }
-    const letterUserRef =  userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
+
+    const letterUserRef = userRef ?? doc(db, "users", auth.currentUser.uid);
     const letterData = {
       content: letterContent,
       sent_by: letterUserRef,
@@ -76,7 +78,9 @@ export default function Page({ params }) {
       alert("Failed to send your letter, please try again.");
     }
 
+    const cacheKey = `messages-${id}-page1`;
     const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    cache.set(cacheKey, { messages, lastVisible: newLastVisible });
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -90,10 +94,19 @@ export default function Page({ params }) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
       const fetchMessages = async () => {
-        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
-        setAllMessages(messages);
-        setLastVisible(newLastVisible); // Store last visible letter for pagination
-        setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
+        const cacheKey = `messages-${id}-page1`;
+        if (cache.has(cacheKey)) {
+          const { messages, lastVisible } = cache.get(cacheKey);
+          setAllMessages(messages);
+          setLastVisible(lastVisible);
+          setHasMoreMessages(messages.length === PAGINATION_INCREMENT);
+        } else {
+          const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+          setAllMessages(messages);
+          setLastVisible(newLastVisible);
+          setHasMoreMessages(messages.length === PAGINATION_INCREMENT);
+          cache.set(cacheKey, { messages, lastVisible: newLastVisible });
+        }
       };
       fetchMessages();
     }
@@ -105,16 +118,24 @@ export default function Page({ params }) {
         const letterboxRef = doc(collection(db, "letterbox"), id);
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
-        const d = await fetchDraft(id, userRef, true);
-        setDraft(d);
-        setLetterContent(d.content);
+        const draftKey = `draft-${id}`;
+        if (cache.has(draftKey)) {
+          const d = cache.get(draftKey);
+          setDraft(d);
+          setLetterContent(d.content);
+        } else {
+          const d = await fetchDraft(id, userRef, true);
+          setDraft(d);
+          setLetterContent(d.content);
+          cache.set(draftKey, d);
+        }
       }
     };
     getSelectedUser();
   }, [recipients]);
 
   useEffect(() => {
-    setDebounce(debounce + 1)
+    setDebounce(debounce + 1);
     const updateDraft = async () => {
       if (userRef && lettersRef) {
         const letterData = {
@@ -123,24 +144,24 @@ export default function Page({ params }) {
           created_at: new Date(),
           deleted: null,
           status: "draft",
-          attachments
+          attachments,
         };
-        await sendLetter(letterData, lettersRef, draft.id)
+        await sendLetter(letterData, lettersRef, draft.id);
       }
-    }
+    };
     if (debounce >= 20) {
-      updateDraft()
-      setDebounce(0)
+      updateDraft();
+      setDebounce(0);
     }
-  }, [letterContent])
+  }, [letterContent]);
 
   const handleLoadMore = async () => {
-    setLoadingMore(true); // Set loading state to true while fetching more messages
+    setLoadingMore(true);
     const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
-    setLastVisible(newLastVisible); // Update lastVisible with the new last document
-    setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
-    setLoadingMore(false); // Reset loading state
+    setLastVisible(newLastVisible);
+    setHasMoreMessages(messages.length === PAGINATION_INCREMENT);
+    setLoadingMore(false);
   };
 
   const handleChange = (event) => {
@@ -158,43 +179,19 @@ export default function Page({ params }) {
       (error) => console.error('Upload error:', error),
       onUploadComplete
     );
-  };  
-
-  const FileModal = () => (
-    <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
-        <div className="flex relative">
-          <button
-            onClick={() => setIsFileModalOpen(false)}
-            className="rounded-lg transition-colors duration-150 h-6 w-6 absolute top-0 left-0"
-          >
-            <IoMdClose className="h-full w-full" />
-          </button>
-          <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
-            Files
-          </h3>
-        </div>
-        <input type="file" hidden onChange={handleChange} disabled={uploadProgress > 0 && uploadProgress < 100} id="raised-button-file" />
-        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
-          <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
-          Select a file
-        </label>
-
-        <h3 className="font-600 mt-4">Selected</h3>
-        {attachments.map((att, index) => (
-          <div key={index}>
-            <img src={att} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  };
 
   useEffect(() => {
     const populateRecipients = async () => {
       try {
-        const members = await fetchRecipients(id);
-        setRecipients(members);
+        const recipientKey = `recipients-${id}`;
+        if (cache.has(recipientKey)) {
+          setRecipients(cache.get(recipientKey));
+        } else {
+          const members = await fetchRecipients(id);
+          setRecipients(members);
+          cache.set(recipientKey, members);
+        }
       } catch (e) {
         console.error("err fetching members", e);
       }
@@ -211,6 +208,9 @@ export default function Page({ params }) {
 
     return () => unsubscribe();
   }, []);
+
+  // The rest of the return UI rendering remains unchanged...
+
 
   return (
     <div>
