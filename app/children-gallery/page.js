@@ -51,20 +51,38 @@ export default function ChildrenGallery() {
                 }));
 
                 const letterboxes = await fetchLetterboxes();
-                const letterboxIds = letterboxes.map((l) => l.id);
-                const childrenWithLetters = [];
+                console.log("Letterboxes:", letterboxes);
 
-                for (const child of allChildren) {
-                    let letterCount = 0;
-                    for (const id of letterboxIds) {
-                        const recipients = await fetchRecipients(id);
-                        if (recipients.some((rec) => rec.id === child.id)) {
-                            letterCount = await fetchLetterCountForLetterbox(id);
-                            break;
-                        }
+                // Create a map of letterboxId to recipients
+                const letterboxRecipientMap = {};
+                for (const letterbox of letterboxes) {
+                    const recipients = await fetchRecipients(letterbox.id);
+                    console.log(`Recipients for ${letterbox.id}:`, recipients);
+
+                    for (const recipient of recipients) {
+                        letterboxRecipientMap[recipient.id] = {
+                            letterboxId: letterbox.id,
+                        };
                     }
-                    childrenWithLetters.push({...child, letterCount});
                 }
+
+                // Fetch children with their letter counts
+                const childrenWithLetters = await Promise.all(
+                    allChildren.map(async (child) => {
+                        const match = letterboxRecipientMap[child.id];
+                        let letterCount = 0;
+
+                        if (match) {
+                            letterCount = await fetchLetterCountForLetterbox(match.letterboxId);
+                            console.log(`Letter count for ${child.first_name}:`, letterCount);
+                        }
+
+                        return {
+                            ...child,
+                            letterCount,
+                        };
+                    })
+                );
 
                 console.log("Children with letters:", childrenWithLetters);
                 setUsers(childrenWithLetters);
@@ -149,8 +167,8 @@ export default function ChildrenGallery() {
                                         {user.letterCount > 0 && (
                                             <span
                                                 className="absolute top-0 right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                        {user.letterCount}
-                      </span>
+                                                {user.letterCount}
+                                            </span>
                                         )}
                                         <div
                                             className="min-w-[60px] h-[20px] rounded-[15px] bg-[#4E802A] px-[8px] flex items-center justify-center whitespace-nowrap absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10">

@@ -186,19 +186,16 @@ export const fetchLetterCountForLetterbox = async (letterboxId, status = "sent")
         console.log("User not authenticated");
         return 0;
     }
-
     try {
         const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
         const lRef = collection(letterboxRef, "letters");
-
         const letterQuery = query(
             lRef,
             where("status", "==", status),
             where("deleted", "==", null)
         );
-
         const letterSnapshot = await getDocs(letterQuery);
-        console.log(letterSnapshot);
+        console.log(`Letters for ${letterboxId}:`, letterSnapshot.docs.map(d => d.data()));
         const count = letterSnapshot.docs.length;
         console.log(`Letter count for letterbox ${letterboxId} with status "${status}": ${count}`);
         return count;
