@@ -50,8 +50,6 @@ export default function ChildrenGallery() {
                     ...doc.data(),
                 }));
 
-                console.log("Все дети волонтёра:", allChildren);
-
                 const letterboxes = await fetchLetterboxes();
                 const letterboxIds = letterboxes.map((l) => l.id);
                 const childrenWithLetters = [];
@@ -199,7 +197,7 @@ export default function ChildrenGallery() {
                             <form className="w-full" onSubmit={handleSubmit}>
                                 <div className="mb-4">
                                     <label htmlFor="volunteerEmail" className="block text-sm font-medium text-gray-700">
-                                        Email владельца устройства
+                                        Email
                                     </label>
                                     <input
                                         type="text"
@@ -246,7 +244,7 @@ export default function ChildrenGallery() {
                                     </button>
                                 </div>
                                 <div className="mt-6 flex justify-center">
-                                    <Button color={"bg-[#4E802A]"} btnText={"Войти"} textColor={"text-white"}
+                                    <Button color={"bg-[#4E802A]"} btnText={"Log in"} textColor={"text-white"}
                                             btnType="submit"/>
                                 </div>
                             </form>
