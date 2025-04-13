@@ -27,7 +27,7 @@ import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
-
+import { PageContainer } from "../../components/general/PageContainer";
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
@@ -107,6 +107,7 @@ export default function Home() {
 
   return (
     <div className="bg-gray-100 min-h-screen py-6 relative">
+      <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <BackButton />
       <WelcomeToast 
         userName={userName}
@@ -167,6 +168,7 @@ export default function Home() {
           animation: slideIn 0.3s ease-out forwards;
         }
       `}</style>
+      </PageContainer>
     </div>
   );
 }

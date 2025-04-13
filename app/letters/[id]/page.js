@@ -29,6 +29,8 @@ import ProfileImage from "../../../components/general/ProfileImage";
 import LetterHeader from "../../../components/general/letter/LetterHeader";
 import RecipientList from "../../../components/general/letter/RecipientList";
 import MessageBubble from "../../../components/general/letter/MessageBubble";
+import { PageContainer } from "../../../components/general/PageContainer";
+import { BackButton } from "../../../components/general/BackButton";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -231,7 +233,7 @@ export default function Page({ params }) {
   }, []);
 
   return (
-    <div>
+    <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <BackButton />
       {showReportPopup && (
         <ReportPopup
@@ -308,6 +310,6 @@ export default function Page({ params }) {
         <BottomNavBar />
         {isFileModalOpen && <FileModal />}
       </div>
-    </div>
+    </PageContainer>
   );
 }

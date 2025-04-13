@@ -27,6 +27,7 @@ import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import Dialog from "../../components/general/Dialog";
 import { BackButton } from "../../components/general/BackButton";
+import { PageContainer } from "../../components/general/PageContainer";
 
 export default function EditProfile() {
   // State initializations
@@ -279,8 +280,9 @@ export default function EditProfile() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <BackButton />
-      <div className="max-w-lg mx-auto p-6 pt-20">
+      <div className="max-w-lg mx-auto p-6 pt-4">
         <div className="flex justify-end">
           <Button
             onClick={handleLogout}
@@ -724,6 +726,7 @@ export default function EditProfile() {
           </div>
         </div>
       </div>
+      </PageContainer>
     </div>
   );
 }

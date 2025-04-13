@@ -18,7 +18,8 @@ import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import Header from "../../components/general/Header";
 import KidsList from "../../components/discovery/KidsList";
-
+import { PageContainer } from "../../components/general/PageContainer";
+import { BackButton } from "../../components/general/BackButton";
 const PAGE_SIZE = 10; // Number of kids per page
 
 export default function ChooseKid() {
@@ -189,10 +190,11 @@ export default function ChooseKid() {
   };
 
   return (
-    <div className="min-h-screen p-4 bg-white">
-      <div className="bg-white">
-        <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
-
+    <PageContainer maxWidth="lg" padding="p-6 pt-20">
+      <BackButton />
+      <div className="min-h-screen p-4 bg-white">
+        <div className="bg-white">
+          <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
         {activeFilter ? (
           <div className="h-auto">
             <KidFilter
@@ -215,6 +217,7 @@ export default function ChooseKid() {
           />
         )}
       </div>
-    </div>
+      </div>
+    </PageContainer>
   );
 }
