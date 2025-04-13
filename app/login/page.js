@@ -10,6 +10,7 @@ import logo from '/public/murphylogo.png';
 import { useRouter } from 'next/navigation';
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
+import { BackButton } from '../../components/general/BackButton';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -62,18 +63,7 @@ export default function Login() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
             <div className="w-full max-w-md space-y-8 bg-white rounded-lg shadow-md p-8">
                 <div className="relative">
-                    <Button
-                        btnText={
-                            <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        }
-                        color="bg-transparent"
-                        hoverColor="hover:bg-gray-100"
-                        textColor="text-gray-600"
-                        rounded="rounded-full"
-                        onClick={() => router.push("/")}
-                    />
+                    <BackButton href="/" />
                     <div className="flex justify-center">
                         <Image src={logo} alt="Murphy Charitable Foundation Uganda" width={150} height={150} />
                     </div>

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import BottomNavBar from '../../components/bottom-nav-bar';
 import Button from '../../components/general/Button';
-
+import { BackButton } from '../../components/general/BackButton';
 export default function Donate() {
     const details = [
         { label: "Account Name", value: "Murphy Charitable Foundation" },
@@ -19,17 +19,7 @@ export default function Donate() {
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
             <div className="max-w-2xl w-full mb-8">
                 <Link href="letterhome">
-                    <Button
-                    btnText={
-                        <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    }
-                    color="bg-transparent"
-                    textColor="text-gray-600"
-                    hoverColor="hover:bg-gray-200"
-                    rounded="rounded-full"
-                />
+                    <BackButton />
                 </Link>
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div className="p-6">

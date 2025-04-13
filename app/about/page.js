@@ -5,16 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import BottomNavBar from '../../components/bottom-nav-bar';
-
+import { BackButton } from '../../components/general/BackButton';
 export default function About() {
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-2xl w-full">
-                <button onClick={() => window.history.back()}>
-                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
+                <BackButton />
                 <div className="p-6">
                     <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">About Us</h2>
                     <Image src="/aboutimage.png" alt="About Us" width={640} height={360} className="rounded-lg mb-6" />

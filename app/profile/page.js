@@ -26,6 +26,7 @@ import {
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import Dialog from "../../components/general/Dialog";
+import { BackButton } from "../../components/general/BackButton";
 
 export default function EditProfile() {
   // State initializations
@@ -278,98 +279,9 @@ export default function EditProfile() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Education Level Dialog */}
-      <Dialog
-        isOpen={isEducationDialogOpen}
-        onClose={() => setIsEducationDialogOpen(false)}
-        title="Education Level"
-        content={educationDialogContent}
-        bgColor="bg-white"
-        textColor="text-gray-800"
-        titleColor="text-green-800"
-        overlayColor="bg-black bg-opacity-50"
-        borderColor="border border-gray-200"
-        shadow="shadow-xl"
-        width="max-w-sm w-full"
-        padding="p-6"
-        rounded="rounded-xl"
-      />
-
-      {/* Guardian Dialog */}
-      <Dialog
-        isOpen={isGuardianDialogOpen}
-        onClose={() => setIsGuardianDialogOpen(false)}
-        title="Guardian"
-        content={guardianDialogContent}
-        bgColor="bg-white"
-        textColor="text-gray-800"
-        titleColor="text-green-800"
-        overlayColor="bg-black bg-opacity-50"
-        borderColor="border border-gray-200"
-        shadow="shadow-xl"
-        width="max-w-sm w-full"
-        padding="p-6"
-        rounded="rounded-xl"
-      />
-
-      {/* Orphan Dialog */}
-      <Dialog
-        isOpen={isOrphanDialogOpen}
-        onClose={() => setIsOrphanDialogOpen(false)}
-        title="Orphan Status"
-        content={orphanDialogContent}
-        bgColor="bg-white"
-        textColor="text-gray-800"
-        titleColor="text-green-800"
-        overlayColor="bg-black bg-opacity-50"
-        borderColor="border border-gray-200"
-        shadow="shadow-xl"
-        width="max-w-sm w-full"
-        padding="p-6"
-        rounded="rounded-xl"
-      />
-
-      {/* Bio Dialog */}
-      <Dialog
-        isOpen={isBioDialogOpen}
-        onClose={() => setIsBioDialogOpen(false)}
-        title="Bio/Challenges"
-        content={bioDialogContent}
-        bgColor="bg-white"
-        textColor="text-gray-800"
-        titleColor="text-green-800"
-        overlayColor="bg-black bg-opacity-50"
-        borderColor="border border-gray-200"
-        shadow="shadow-xl"
-        width="max-w-md w-full"
-        padding="p-6"
-        rounded="rounded-xl"
-      />
-
-      <div className="max-w-lg mx-auto p-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <button onClick={() => router.push("/letterhome")}>
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-
-            <h1 className="ml-4 text-xl font-bold text-gray-800">
-              Edit profile
-            </h1>
-          </div>
-          {/* Logout Button */}
+      <BackButton />
+      <div className="max-w-lg mx-auto p-6 pt-20">
+        <div className="flex justify-end">
           <Button
             onClick={handleLogout}
             color="bg-red-500"
@@ -381,6 +293,74 @@ export default function EditProfile() {
             size="w-24"
           />
         </div>
+
+        {/* Education Level Dialog */}
+        <Dialog
+          isOpen={isEducationDialogOpen}
+          onClose={() => setIsEducationDialogOpen(false)}
+          title="Education Level"
+          content={educationDialogContent}
+          bgColor="bg-white"
+          textColor="text-gray-800"
+          titleColor="text-green-800"
+          overlayColor="bg-black bg-opacity-50"
+          borderColor="border border-gray-200"
+          shadow="shadow-xl"
+          width="max-w-sm w-full"
+          padding="p-6"
+          rounded="rounded-xl"
+        />
+
+        {/* Guardian Dialog */}
+        <Dialog
+          isOpen={isGuardianDialogOpen}
+          onClose={() => setIsGuardianDialogOpen(false)}
+          title="Guardian"
+          content={guardianDialogContent}
+          bgColor="bg-white"
+          textColor="text-gray-800"
+          titleColor="text-green-800"
+          overlayColor="bg-black bg-opacity-50"
+          borderColor="border border-gray-200"
+          shadow="shadow-xl"
+          width="max-w-sm w-full"
+          padding="p-6"
+          rounded="rounded-xl"
+        />
+
+        {/* Orphan Dialog */}
+        <Dialog
+          isOpen={isOrphanDialogOpen}
+          onClose={() => setIsOrphanDialogOpen(false)}
+          title="Orphan Status"
+          content={orphanDialogContent}
+          bgColor="bg-white"
+          textColor="text-gray-800"
+          titleColor="text-green-800"
+          overlayColor="bg-black bg-opacity-50"
+          borderColor="border border-gray-200"
+          shadow="shadow-xl"
+          width="max-w-sm w-full"
+          padding="p-6"
+          rounded="rounded-xl"
+        />
+
+        {/* Bio Dialog */}
+        <Dialog
+          isOpen={isBioDialogOpen}
+          onClose={() => setIsBioDialogOpen(false)}
+          title="Bio/Challenges"
+          content={bioDialogContent}
+          bgColor="bg-white"
+          textColor="text-gray-800"
+          titleColor="text-green-800"
+          overlayColor="bg-black bg-opacity-50"
+          borderColor="border border-gray-200"
+          shadow="shadow-xl"
+          width="max-w-md w-full"
+          padding="p-6"
+          rounded="rounded-xl"
+        />
 
         {/* Profile Image */}
         <div className="my-6">

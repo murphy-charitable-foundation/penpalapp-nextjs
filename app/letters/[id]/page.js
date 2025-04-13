@@ -232,6 +232,7 @@ export default function Page({ params }) {
 
   return (
     <div>
+      <BackButton />
       {showReportPopup && (
         <ReportPopup
           setShowPopup={setShowReportPopup}

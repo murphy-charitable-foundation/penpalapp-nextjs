@@ -26,6 +26,7 @@ import WelcomeToast from "../../components/general/WelcomeToast";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/EmptyState";
+import { BackButton } from "../../components/general/BackButton";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -106,6 +107,7 @@ export default function Home() {
 
   return (
     <div className="bg-gray-100 min-h-screen py-6 relative">
+      <BackButton />
       <WelcomeToast 
         userName={userName}
         isVisible={showWelcome}
