@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import Dialog from "../../components/general/Dialog";
+import Modal from "../../components/general/Modal";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 
@@ -49,11 +49,11 @@ export default function EditProfile() {
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Dialog state
-  const [isEducationDialogOpen, setIsEducationDialogOpen] = useState(false);
-  const [isGuardianDialogOpen, setIsGuardianDialogOpen] = useState(false);
-  const [isOrphanDialogOpen, setIsOrphanDialogOpen] = useState(false);
-  const [isBioDialogOpen, setIsBioDialogOpen] = useState(false);
+  // Modal state
+  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
+  const [isGuardianModalOpen, setIsGuardianModalOpen] = useState(false);
+  const [isOrphanModalOpen, setIsOrphanModalOpen] = useState(false);
+  const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
@@ -166,8 +166,8 @@ export default function EditProfile() {
     "Other"
   ];
 
-  // Education dialog content
-  const educationDialogContent = (
+  // Education Modal content
+  const educationModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-4">Select your education level:</p>
       <div className="grid grid-cols-1 gap-3">
@@ -181,7 +181,7 @@ export default function EditProfile() {
             }`}
             onClick={() => {
               setEducationLevel(option);
-              setIsEducationDialogOpen(false);
+              setIsEducationModalOpen(false);
             }}
           >
             {option}
@@ -191,8 +191,8 @@ export default function EditProfile() {
     </div>
   );
 
-  // Guardian dialog content
-  const guardianDialogContent = (
+  // Guardian Modal content
+  const guardianModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-4">Select your guardian:</p>
       <div className="grid grid-cols-1 gap-3">
@@ -206,7 +206,7 @@ export default function EditProfile() {
             }`}
             onClick={() => {
               setGuardian(option);
-              setIsGuardianDialogOpen(false);
+              setIsGuardianModalOpen(false);
             }}
           >
             {option}
@@ -216,8 +216,8 @@ export default function EditProfile() {
     </div>
   );
 
-  // Orphan dialog content
-  const orphanDialogContent = (
+  // Orphan Modal content
+  const orphanModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-4">Are you an orphan?</p>
       <div className="grid grid-cols-2 gap-3">
@@ -231,7 +231,7 @@ export default function EditProfile() {
             }`}
             onClick={() => {
               setIsOrphan(option);
-              setIsOrphanDialogOpen(false);
+              setIsOrphanModalOpen(false);
             }}
           >
             {option}
@@ -241,8 +241,8 @@ export default function EditProfile() {
     </div>
   );
 
-  // Bio dialog content
-  const bioDialogContent = (
+  // Bio Modal content
+  const bioModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-2">Share your challenges or a brief bio:</p>
       <textarea
@@ -265,17 +265,17 @@ export default function EditProfile() {
           size="w-24"
           onClick={() => {
             setBio(tempBio);
-            setIsBioDialogOpen(false);
+            setIsBioModalOpen(false);
           }}
         />
       </div>
     </div>
   );
 
-  // Open bio dialog and set temp bio
-  const handleOpenBioDialog = () => {
+  // Open bio Modal and set temp bio
+  const handleOpenBioModal = () => {
     setTempBio(bio);
-    setIsBioDialogOpen(true);
+    setIsBioModalOpen(true);
   };
 
   return (
@@ -296,12 +296,12 @@ export default function EditProfile() {
           />
         </div>
 
-        {/* Education Level Dialog */}
-        <Dialog
-          isOpen={isEducationDialogOpen}
-          onClose={() => setIsEducationDialogOpen(false)}
+        {/* Education Level Modal */}
+        <Modal
+          isOpen={isEducationModalOpen}
+          onClose={() => setIsEducationModalOpen(false)}
           title="Education Level"
-          content={educationDialogContent}
+          content={educationModalContent}
           bgColor="bg-white"
           textColor="text-gray-800"
           titleColor="text-green-800"
@@ -313,12 +313,12 @@ export default function EditProfile() {
           rounded="rounded-xl"
         />
 
-        {/* Guardian Dialog */}
-        <Dialog
-          isOpen={isGuardianDialogOpen}
-          onClose={() => setIsGuardianDialogOpen(false)}
+        {/* Guardian Modal */}
+        <Modal
+          isOpen={isGuardianModalOpen}
+          onClose={() => setIsGuardianModalOpen(false)}
           title="Guardian"
-          content={guardianDialogContent}
+          content={guardianModalContent}
           bgColor="bg-white"
           textColor="text-gray-800"
           titleColor="text-green-800"
@@ -330,12 +330,12 @@ export default function EditProfile() {
           rounded="rounded-xl"
         />
 
-        {/* Orphan Dialog */}
-        <Dialog
-          isOpen={isOrphanDialogOpen}
-          onClose={() => setIsOrphanDialogOpen(false)}
+        {/* Orphan Modal */}
+        <Modal
+          isOpen={isOrphanModalOpen}
+          onClose={() => setIsOrphanModalOpen(false)}
           title="Orphan Status"
-          content={orphanDialogContent}
+          content={orphanModalContent}
           bgColor="bg-white"
           textColor="text-gray-800"
           titleColor="text-green-800"
@@ -347,12 +347,12 @@ export default function EditProfile() {
           rounded="rounded-xl"
         />
 
-        {/* Bio Dialog */}
-        <Dialog
-          isOpen={isBioDialogOpen}
-          onClose={() => setIsBioDialogOpen(false)}
+        {/* Bio Modal */}
+        <Modal
+          isOpen={isBioModalOpen}
+          onClose={() => setIsBioModalOpen(false)}
           title="Bio/Challenges"
-          content={bioDialogContent}
+          content={bioModalContent}
           bgColor="bg-white"
           textColor="text-gray-800"
           titleColor="text-green-800"
@@ -490,7 +490,7 @@ export default function EditProfile() {
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Bio/Challenges faced</p>
                 <button
-                  onClick={handleOpenBioDialog}
+                  onClick={handleOpenBioModal}
                   className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
                   <span className="truncate">
@@ -552,7 +552,7 @@ export default function EditProfile() {
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Education level</p>
                 <button
-                  onClick={() => setIsEducationDialogOpen(true)}
+                  onClick={() => setIsEducationModalOpen(true)}
                   className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
                   <span>{educationLevel || "Select education level"}</span>
@@ -580,7 +580,7 @@ export default function EditProfile() {
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Guardian</p>
                 <button
-                  onClick={() => setIsGuardianDialogOpen(true)}
+                  onClick={() => setIsGuardianModalOpen(true)}
                   className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
                   <span>{guardian || "Select guardian"}</span>
@@ -608,7 +608,7 @@ export default function EditProfile() {
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Is orphan</p>
                 <button
-                  onClick={() => setIsOrphanDialogOpen(true)}
+                  onClick={() => setIsOrphanModalOpen(true)}
                   className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
                 >
                   <span>{isOrphan || "Select option"}</span>
