@@ -15,8 +15,15 @@ import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import Button from "@/components/general/Button";
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import {
+  logInEvent,
+  logButtonEvent,
+  logLoadingTime,
+} from "@/app/firebaseConfig";
 
 export default function Login() {
+  usePageAnalytics("/login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,6 +38,15 @@ export default function Login() {
         router.push("/letterhome");
       } else {
         router.push("/login");
+
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const endTime = performance.now();
+            const loadTime = endTime - startTime;
+            console.log(`Page render time: ${loadTime}ms`);
+            logLoadingTime("/login", loadTime);
+          }, 0);
+        });
       }
     });
 
@@ -40,7 +56,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+    logButtonEvent("Log in clicked!", "/login");
     try {
       // Set persistence based on "Remember Me" checkbox
       const persistenceType = rememberMe
@@ -54,6 +70,7 @@ export default function Login() {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
+        logInEvent("success", "Existed User logged");
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
@@ -63,22 +80,27 @@ export default function Login() {
       switch (error.code) {
         case "auth/user-not-found":
           setError("The email is not correct.");
+          logInEvent("failure", "The email is not correct.");
           break;
         case "auth/wrong-password":
           setError("The password is not correct.");
+          logInEvent("failure", "The password is not correct.");
           break;
         case "auth/too-many-requests":
           setError("Too many attempts. Your account was blocked.");
+          logInEvent("failure", "Too many attempts. Your account was blocked.");
           setShowModal(true);
           break;
         default:
           setError("Failed to log in.");
+          logInEvent("failure", "Failed to log in.");
       }
     }
   };
 
   function closeModal() {
     setShowModal(false);
+    logButtonEvent("Close modal clicked!", "/login");
   }
 
   return (
