@@ -4,14 +4,18 @@ import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
-const apiRequest = async (letterbox) => {
-  try {     
+const apiRequest = async (letterbox, emailId) => {
+  try { 
+      const ids = letterbox.members.map((member) => {
+        const segments = member._key?.path?.segments;
+        return segments?.[segments.length - 1];
+      });
       const response = await fetch('/api/deadchat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ members: letterbox.members, id: letterbox.id  }), // Send data as JSON
+        body: JSON.stringify({ members: ids, id: letterbox.id, emailId}), // Send data as JSON
       });
         
       if (!response.ok) {
@@ -48,31 +52,49 @@ const apiRequest = async (letterbox) => {
         ...doc.data()
     }));
 
-    documents.forEach(doc => {
-        const pathSegments = doc.refPath.split("/"); 
-        const letterboxId = pathSegments[1]; 
-        
-        if (!letterboxes[letterboxId]) {
-            letterboxes[letterboxId] = [];
-        }
-        letterboxes[letterboxId].push(doc);
+    documents.forEach((doc) => {
+      const pathSegments = doc.refPath.split("/");
+      const letterboxId = pathSegments[1];
+  
+      if (!letterboxes[letterboxId]) {
+        letterboxes[letterboxId] = {};
+      }
+  
+      if (!letterboxes[letterboxId][doc.sent_by]) {
+        letterboxes[letterboxId][doc.sent_by] = [];
+      }
+  
+      letterboxes[letterboxId][doc.sent_by].push(doc);
     });
-    
-    //Grab letterboxes to compare if they had letters more recent than a month.
-    const allLetterboxes = query(
-      collection(db, "letterbox"),
-    )
-    const letterboxSnapshot = await getDocs(allLetterboxes);
-    const letterboxDocuments = letterboxSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+  
+    const letterboxSnapshot = await getDocs(collection(db, "letterbox"));
+    const letterboxDocuments = letterboxSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
     }));
 
-    for (let key in letterboxDocuments) {    
-      if (!letterboxes[letterboxDocuments[key].id]){
-        console.log("No recent letters");
-        await apiRequest(letterboxDocuments[key]);
+    const now = new Date();
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(now.getDate() - 14);
+  
+    for (const letterbox of letterboxDocuments) {
+      const id = letterbox.id;
+      const members = letterbox.members || [];
+  
+      const activityMap = letterboxes[id] || {};
+  
+      for (const member of members) {
+        const lettersByMember = activityMap[member] || [];
+  
+        const lastSentDate = lettersByMember
+          .map((letter) => letter.created_at?.toDate?.())
+          .filter((d) => !!d)
+          .sort((a, b) => b - a)[0]; // Most recent
+  
+        if (!lastSentDate || lastSentDate < twoWeeksAgo) {
+          // Member has not sent a letter in the last 2 weeks
+          await apiRequest(letterbox, member); // Pass letterbox and inactive member
+        }
       }
-        
     }
 }; 
