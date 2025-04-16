@@ -23,7 +23,6 @@ export default function ResetPassword() {
       setTimeout(() => {
         const endTime = performance.now();
         const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
         logLoadingTime("/reset-password", loadTime);
       }, 0);
     });
