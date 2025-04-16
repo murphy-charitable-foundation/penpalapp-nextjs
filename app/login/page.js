@@ -121,22 +121,18 @@ export default function Login() {
                     <Button
                         btnType="button"
                         btnText="Terms"
-                        color="bg-transparent" 
-                        hoverColor="hover:bg-gray-100"
-                        textColor="text-blue-600"
+                        variant="blue"
+                        size="small"
+                        rounded="medium"
                         onClick={() => router.push('/terms-conditions')}
-                        rounded="rounded-lg"
-                        size="w-24"
                     />
                     <Button
-                        btnType="button"
+                        btnType="button" 
                         btnText="Privacy Policy"
-                        color="bg-transparent"
-                        hoverColor="hover:bg-gray-100" 
-                        textColor="text-blue-600"
+                        variant="blue"
+                        size="small"
+                        rounded="medium"
                         onClick={() => router.push('/privacy-policy')}
-                        rounded="rounded-lg"
-                        size="w-32"
                     />
                 </div>
 
