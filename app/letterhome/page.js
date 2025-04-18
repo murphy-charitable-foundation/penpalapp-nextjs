@@ -4,29 +4,99 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  orderBy,
+  limit,
+} from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import ProfileImage from "@/components/general/ProfileImage";
+import ConversationList from "@/components/ConversationList";
 import {
   fetchDraft,
-  fetchLetterbox,
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "@/components/general/ProfileImage";
+
+const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+  const draft = await fetchDraft(letterboxId, userRef, true);
+  if (draft) return draft;
+
+  const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
+  const q = query(lettersRef, orderBy("timestamp", "desc"), limit(1));
+  const letterSnapshot = await getDocs(q);
+  let letter;
+  letterSnapshot.forEach((doc) => {
+    letter = { id: doc.id, ...doc.data() };
+  });
+  return letter;
+};
 
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
-  const [letters, setLetters] = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const router = useRouter();
+
+  const getUserData = async (uid) => {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      setError("User data not found.");
+      throw new Error("No user document found.");
+    }
+  };
+
+  const getConversations = async (uid) => {
+    try {
+      const letterboxes = await fetchLetterboxes();
+      if (letterboxes && letterboxes.length > 0) {
+        const letterboxIds = letterboxes.map((l) => l.id);
+
+        const fetchedConversations = await Promise.all(
+          letterboxIds.map(async (id) => {
+            const userRef = doc(db, "users", uid);
+            const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const rec = await fetchRecipients(id);
+            const recipient = rec?.[0] ?? {};
+
+            return {
+              id,
+              profileImage: recipient?.photo_uri || "",
+              name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
+              country: recipient.country ?? "Unknown",
+              lastMessage: letter.content || "",
+              lastMessageDate: letter.timestamp || "",
+              status: letter.status || "",
+              letterboxId: id || "",
+            };
+          })
+        );
+
+        return fetchedConversations;
+      } else {
+        setError("No conversations found.");
+        throw new Error("No letterboxes found.");
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      Sentry.captureException(err);
+      setError("Failed to load data.");
+      throw err;
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -40,53 +110,19 @@ export default function Home() {
       }
 
       try {
-        // Fetch user data
         const uid = user.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setUserName(userData.first_name || "Unknown User");
-          setCountry(userData.country || "Unknown Country");
-          setUserType(userData.user_type || "Unknown Type");
-          setProfileImage(userData?.photo_uri || "");
-        } else {
-          console.log("No such document!");
-          setError("User data not found.");
-        }
+        const userData = await getUserData(uid);
+        setUserName(userData.first_name || "Unknown User");
+        setCountry(userData.country || "Unknown Country");
+        setUserType(userData.user_type || "Unknown Type");
+        setProfileImage(userData?.photo_uri || "");
 
-        // Fetch letterboxes
-        const letterboxes = await fetchLetterboxes();
-        if (letterboxes && letterboxes.length > 0) {
-          const letterboxIds = letterboxes.map((l) => l.id);
-          let fetchedLetters = [];
-
-          for (const id of letterboxIds) {
-            const letterbox = { id };
-            const userRef = doc(db, "users", user.uid);
-            const draft = await fetchDraft(id, userRef, true);
-
-            if (draft) {
-              letterbox.letters = [draft];
-            } else {
-              letterbox.letters = await fetchLetterbox(id, 1);
-            }
-            fetchedLetters.push(letterbox);
-          }
-
-          // Fetch recipients for each letterbox
-          for await (const l of fetchedLetters) {
-            const rec = await fetchRecipients(l.id);
-            l.recipients = rec;
-          }
-
-          setLetters(fetchedLetters);
-        }
+        const userConversations = await getConversations(uid);
+        setConversations(userConversations);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        Sentry.captureException(err);
-        setError("Failed to load data.");
+        setError("Error fetching user data or conversations.");
+        console.error(err);
       } finally {
         setIsLoading(false);
       }
@@ -102,8 +138,8 @@ export default function Home() {
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : (
-        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-          <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
+        <div className="max-w-lg mx-auto shadow-md rounded-lg overflow-hidden">
+          <header className="flex justify-between items-center p-5 border-b border-gray-200">
             <Link href="/profile">
               <button className="flex items-center text-gray-700">
                 <ProfileImage photo_uri={profileImage} first_name={userName} />
@@ -113,83 +149,27 @@ export default function Home() {
                 </div>
               </button>
             </Link>
-
-            <div className="flex items-center space-x-4">
-              <Link href="/settings">
-                <button className="text-gray-700 hover:text-blue-600">
-                  <FaCog className="h-7 w-7" />
-                </button>
-              </Link>
-              <Link href="/discover">
-                <button className="text-gray-700 hover:text-blue-600">
-                  <FaBell className="h-7 w-7" />
-                </button>
-              </Link>
-              <Link href="/letterwrite">
-                <button className="text-gray-700 hover:text-blue-600">
-                  <FaPen className="h-7 w-7" />
-                </button>
-              </Link>
-            </div>
           </header>
 
-          <main className="p-6">
+          <main className="p-6 bg-white">
             <section className="mt-8">
-              <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
-                Last letters
-                <Link href="/letterhome">
-                  <button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                    Show more
-                  </button>
-                </Link>
-              </h2>
-              {letters.length > 0 ? (
-                letters.map((letter, i) => (
-                  <a
-                    key={letter.id + "_" + i}
-                    href={`/letters/${letter.id}`}
-                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-                    <div className="flex-grow">
-                      {letter.recipients?.map((rec) => (
-                        <div key={rec.id} className="flex mt-3">
-                          <ProfileImage
-                            photo_uri={rec?.photo_uri}
-                            first_name={rec?.first_name}
-                          />
-                          <div className="flex flex-col">
-                            <div className="flex">
-                              {letter.letters[0].status === "draft" && (
-                                <h4 className="mr-2">[DRAFT]</h4>
-                              )}
-                              <h3 className="font-semibold text-gray-800">
-                                {rec.first_name} {rec.last_name}
-                              </h3>
-                            </div>
-                            <div>{rec.country}</div>
-                          </div>
-                        </div>
-                      ))}
-                      <p className="text-gray-600 truncate">
-                        {letter.letters[0].content ?? ""}
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        {letter.letters[0].received}
-                      </span>
-                    </div>
-                  </a>
-                ))
+              {conversations.length > 0 ? (
+                <ConversationList conversations={conversations} />
               ) : (
                 <p className="text-gray-500">No letters found.</p>
               )}
             </section>
           </main>
+
           <BottomNavBar />
         </div>
       )}
+
       {userType === "admin" && (
         <button
           className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-          onClick={iterateLetterBoxes}>
+          onClick={() => console.log("Check For Inactive Chats")}
+        >
           Check For Inactive Chats
         </button>
       )}
