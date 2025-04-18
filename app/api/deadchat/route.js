@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import * as Sentry from "@sentry/nextjs";
-import { collection, query, getDoc, doc } from 'firebase/firestore';
-import { db } from '@/app/firebaseConfig';
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
@@ -16,20 +14,15 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { members, id, emailId } = body; 
-    console.log("members", members);
+    const { sender, id, emailId } = body; 
     console.log("emailId", emailId)
     //const filtered = users.filter(element => element !== sender);
     const pathSegments = emailId._key?.path?.segments;
     const uid = pathSegments[pathSegments.length - 1]; 
     const userRecord = await auth.getUser(uid); // Fetch user record by UID
-    const user1 = await getDoc(doc(db, "users", members[0]));
-    const user2 = await getDoc(doc(db, "users", members[1]));
-    const user1Data = user1.data();
-    const user2Data = user2.data();
-
+    
     // Remove null values (failed fetches)
-    const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the users: ${user1Data.first_name} ${user1Data.last_name}, ${user2Data.first_name} ${user2Data.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
+    const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
     const emailHtml = `
       <html>
         <head>
@@ -90,7 +83,7 @@ export async function POST(request) {
       text: message || 'No message provided.',
       html:  emailHtml,
     };
-    
+    console.log("msg", msg);
     // Send the email
     await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });

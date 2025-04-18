@@ -1,21 +1,25 @@
 import { db } from "../firebaseConfig";
-import { collection, collectionGroup, getDocs, query, orderBy, limit, where} from "firebase/firestore";
+import { collection, collectionGroup, getDocs, getDoc, doc, query, orderBy, limit, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
 const apiRequest = async (letterbox, emailId) => {
-  try { 
+  try {
       const ids = letterbox.members.map((member) => {
         const segments = member._key?.path?.segments;
-        return segments?.[segments.length - 1];
+        if (segments?.[segments.length - 1] != emailId) {
+          return segments?.[segments.length - 1];
+        }
       });
+      const sender = await getDoc(doc(db, "users", ids[0]));
+      
       const response = await fetch('/api/deadchat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ members: ids, id: letterbox.id, emailId}), // Send data as JSON
+        body: JSON.stringify({ sender: sender, id: letterbox.id, emailId}), // Send data as JSON
       });
         
       if (!response.ok) {
@@ -29,7 +33,6 @@ const apiRequest = async (letterbox, emailId) => {
 
 
   export const iterateLetterBoxes = async () => {
-
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
@@ -40,7 +43,8 @@ const apiRequest = async (letterbox, emailId) => {
     const allLettersQuery = query(
         collectionGroup(db, "letters"), 
         where("status", "==", "sent"),
-        where("created_at", ">=", oneMonthAgoTimestamp) // Use Firestore Timestamp here
+        where("created_at", ">=", oneMonthAgoTimestamp),
+        limit(5) // Use Firestore Timestamp here
     );
 
     const querySnapshot = await getDocs(allLettersQuery);
