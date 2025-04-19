@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import SendMessage from "../discovery/SendMessage";
+import SendMessage from "./SendMessage";
 
 //Card for kid
 export default function KidCard({ kid, calculateAge }) {
