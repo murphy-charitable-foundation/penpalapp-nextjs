@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styles from './Tooltip.module.css';
+import TemplateModal from './TemplateModal';
 
-export default function FirstTimeChatGuide({ messages = [], hasReplied = false }) {
+export default function FirstTimeChatGuide({ messages = [], hasReplied = false, onComplete, onUseTemplate }) {
   const [showGuide, setShowGuide] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState("");
   const tooltipRef = useRef(null);
+  const typingTimerRef = useRef(null);
 
-  const messageTemplates = [
-    "Hi there! I've reviewed your request and would like to help you with this issue.",
-    "Hello! Thanks for reaching out. I understand you need assistance with this matter.",
-    "Good day! I appreciate your patience. Let me address your concerns."
-  ];
+  const defaultTemplate = 
+    `Dear Angel,
+    Thank you fpr you for your tme and effort to contact me!
+    I am so happy that we can communicate wth someone outside  of my village`;
   
   console.log(hasReplied);
   const steps = [
@@ -21,7 +21,6 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
       content: 'Tap with your finger to open the letter ',
       position: 'right', // @todo: change this to array?
       arrowDirection: 'top',
-      action: 'click',
       advanceOn: 'click', // The event on the target that will advance the tour
     },
     {
@@ -29,7 +28,6 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
       content: 'Tap to reply',
       position: 'top',
       arrowDirection: 'bottom',
-      action: 'focus',
       advanceOn: 'focus'
     },
     {
@@ -37,22 +35,79 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
       content: 'Write the name of the person',
       position: 'top',
       arrowDirection: 'bottom',
-      action: 'input',
-      advanceOn: 'input'
+      advanceOn: 'null',
+      setupListeners: (targetElement, nextStepFn) => {
+        const handleInput = () => {
+          // Clear any existing timer
+          if (typingTimerRef.current) {
+            clearTimeout(typingTimerRef.current);
+          }
+          
+          // Set a new timer - will trigger 1.5 seconds after user stops typing
+          typingTimerRef.current = setTimeout(() => {
+            const value = targetElement.value || targetElement.textContent;
+            if (value && value.trim().length > 0) {
+              // If there's actually text entered, show the template modal
+              setShowTemplateModal(true);
+              // Don't advance to next step yet - we'll do that after template decision
+            }
+          }, 1500);
+        };
+
+        targetElement.addEventListener('input', handleInput);
+        return () => {
+          targetElement.removeEventListener('input', handleInput);
+          if (typingTimerRef.current) {
+            clearTimeout(typingTimerRef.current);
+            setCurrentStep(currentStep + 1);
+          }
+        };
+      }
+    },
+    {
+      target: '#use-template',
+      content: 'Use the template',
+      arrowDirection: 'top',
+      position: 'bottom',
+      advanceOn: null,
+      setupListeners: () => {
+        console.log('next');
+      }
+    },
+    {
+      target: '#cancle-template',
+      content: 'Don\'t Use the template',
+      arrowDirection: 'bottom',
+      position: 'bottom',
+      advanceOn: null,
+    },
+    {
+      target: '#use-template',
+      content: 'Start Typing',
+      arrowDirection: 'top',
+      position: 'bottom',
+    },
+    {
+      target: '#use-template',
+      content: 'When you are ready, click the button',
+      arrowDirection: 'top',
+      position: 'bottom',
     },
     {
       target: '#settings-button',
-      content: 'Use the template',
+      content: 'Use the We have drafted a template for you to respond to your international buddy',
       position: 'left',
-      arrowDirection: 'top',
-      action: 'click',
-      advanceOn: 'click'
+    },
+    {
+      target: '#settings-button',
+      content: 'You can see your message now, how it is send',
+      position: 'top',
     }
   ];
 
   useEffect(() => {
+    // Check if we need to show the guide
     if (messages.length > 0 && !hasReplied) {
-      // Check if we've already dismissed this guide before
       const savedStep = localStorage.getItem('chatGuideStep');
       const isGuideCompleted = localStorage.getItem('hasSeenChatGuide') === 'true';
       
@@ -66,6 +121,7 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
   }, [messages, hasReplied]);
 
   useEffect(() => {
+    console.log(`show guide: ${showGuide}, current step: ${currentStep}`)
     // Save current step to localStorage whenever it changes
     if (showGuide) {
       localStorage.setItem('chatGuideStep', currentStep.toString());
@@ -74,7 +130,7 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
 
   useEffect(() => {
     // Set up event listeners for the current step target
-    if (!showGuide) return;
+    if (!showGuide || showTemplateModal) return;
     
     const currentStepData = steps[currentStep];
     const targetElement = document.querySelector(currentStepData.target);
@@ -84,18 +140,35 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
     // Position the tooltip relative to the target
     positionTooltip(targetElement, currentStepData.position);
     
-    // Set up event listener for the target element
-    const handleTargetAction = () => {
-      nextStep();
-    };
+    let cleanupFn = () => {};
     
-    targetElement.addEventListener(currentStepData.advanceOn, handleTargetAction);
+    // Check if step has custom listener setup
+    if (currentStepData.setupListeners) {
+      cleanupFn = currentStepData.setupListeners(targetElement, nextStep);
+    } 
+    else if (currentStepData.advanceOn) {
+      // Set up event listener for the target element
+      const handleTargetAction = () => {
+        if (currentStepData.onComplete) {
+          const shouldAdvance = currentStepData.onComplete();
+          if (shouldAdvance !== false) {
+            nextStep();
+          }
+        } else {
+          nextStep();
+        }
+      };
+
+      targetElement.addEventListener(currentStepData.advanceOn, handleTargetAction);
+
+      cleanupFn = () => {
+        targetElement.removeEventListener(currentStepData.advanceOn, handleTargetAction);
+      };
+    }
     
     // Clean up event listener
-    return () => {
-      targetElement.removeEventListener(currentStepData.advanceOn, handleTargetAction);
-    };
-  }, [currentStep, showGuide]);
+    return cleanupFn;
+  }, [currentStep, showGuide, showTemplateModal]);
 
   // Function to position tooltip relative to target element
   const positionTooltip = (targetElement, position) => {
@@ -155,7 +228,7 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
   const handleUseTemplate = () => {
     setShowTemplateModal(false);
     if (onUseTemplate) {
-      onUseTemplate(selectedTemplate);
+      onUseTemplate(defaultTemplate);
     }
     nextStep(); // Move to the next step after using template
   };
@@ -172,66 +245,12 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
 
   const currentStepData = showGuide ? steps[currentStep] : null;
 
-
-  // Template Modal Component
-  const TemplateModal = () => {
-    if (!showTemplateModal) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 shadow-xl max-w-lg w-full">
-          <h3 className="text-lg font-medium mb-4">Choose a Message Template</h3>
-          
-          <div className="mb-4">
-            <textarea 
-              className="w-full border border-gray-300 rounded p-3 h-32"
-              value={selectedTemplate}
-              onChange={(e) => setSelectedTemplate(e.target.value)}
-              placeholder="Select a template or write your own message"
-            />
-          </div>
-          
-          <div className="mb-4">
-            <p className="text-sm text-gray-500 mb-2">Quick templates:</p>
-            <div className="space-y-2">
-              {messageTemplates.map((template, index) => (
-                <div 
-                  key={index}
-                  onClick={() => setSelectedTemplate(template)}
-                  className="cursor-pointer p-2 hover:bg-gray-100 rounded border border-gray-200"
-                >
-                  {template.length > 60 ? template.substring(0, 60) + "..." : template}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <button 
-              onClick={handleCancelTemplate}
-              className="px-4 py-2 border border-gray-300 rounded"
-            >
-              Cancel Template
-            </button>
-            <button 
-              onClick={handleUseTemplate}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
-              disabled={!selectedTemplate.trim()}
-            >
-              Use This Template
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
       {showGuide && currentStepData && (
       <div 
         ref={tooltipRef}
-        className={`absolute bg-[#65B427] rounded-lg p-4 shadow-lg w-max z-50 ${styles.speechbubble} ${styles[currentStepData.arrowDirection]}`}
+        className={`absolute bg-[#65B427] rounded-lg p-4 shadow-lg w-max z-[51] ${styles.speechbubble} ${styles[currentStepData.arrowDirection]}`}
       >
         <p className="text-white font-medium text-center text-lg">{currentStepData.content}</p>
         <div className="flex justify-between">
@@ -250,6 +269,15 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false }
         </div>
       </div>
       )}
+
+      {
+        showTemplateModal && 
+        <TemplateModal  
+          defaultTemplate={defaultTemplate}
+          onCancleClick={handleCancelTemplate}
+          onUseClick={handleUseTemplate}
+        />
+      }
     </>
   );
 }

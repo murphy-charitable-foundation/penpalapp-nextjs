@@ -28,7 +28,7 @@ export default function Page({ params }) {
   const auth = getAuth();
   const router = useRouter();
 
-  const [letterContent, setLetterContent] = useState("");
+  const [letterContent, setLetterContent] = useState("Tap to write letter...");
   const [debounce, setDebounce] = useState(0);
   const [user, setUser] = useState(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
@@ -211,6 +211,14 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, []);
 
+  const handleUseTemplate = (template) => {
+    setLetterContent(template);
+    setTimeout(() => {
+      const messageInput = document.querySelector('#message-input');
+      if (messageInput) messageInput.focus();
+    }, 100);
+  }
+
   return (
     <div>
       {showReportPopup && (
@@ -269,10 +277,9 @@ export default function Page({ params }) {
           {isFileModalOpen && <FileModal />}
 
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
-          <FirstTimeChatGuide messages={allMessages} hasReplied={false} />
             {allMessages?.length ? (
               allMessages.map((message, index) => (
-                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"} ${ index === 0 && 'first-letter'}`}>
+                <div key={index} className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${message.sent_by.id === userRef.id && "self-end"}`}>
                   <div className="flex flex-col w-[90%]">
                     {message?.attachments?.length ? (
                       <Image
@@ -312,11 +319,19 @@ export default function Page({ params }) {
             {loadingMore && <span>Loading...</span>}
           </div>
           <textarea
+            id="message-input"
             className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
             rows="8"
             placeholder="Tap to write letter..."
             value={letterContent}
             onChange={(e) => setLetterContent(e.target.value)}
+          />
+
+          <FirstTimeChatGuide 
+            messages={allMessages} 
+            hasReplied={false}
+            onComplete={() => console.log('Guide completed')}
+            onUseTemplate={handleUseTemplate}
           />
 
           <div className="text-right text-sm p-4 mt-8 text-gray-600">

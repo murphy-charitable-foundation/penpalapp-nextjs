@@ -17,6 +17,7 @@ import {
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "@/components/general/ProfileImage";
+import FirstTimeChatGuide from "@/components/tooltip/FirstTimeChatGuide";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -148,7 +149,7 @@ export default function Home() {
                   <a
                     key={letter.id + "_" + i}
                     href={`/letters/${letter.id}`}
-                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                    className={`flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer ${ i === 0 && 'first-letter'}`}>
                     <div className="flex-grow">
                       {letter.recipients?.map((rec) => (
                         <div key={rec.id} className="flex mt-3">

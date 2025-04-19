@@ -1,4 +1,8 @@
-.speechbubble.top::after {
+.medium-green-btn {
+  background-color: #4E802A;
+}
+
+.speechbubble::after {
     content: '';
     position: absolute;
     border-style: solid;
@@ -6,13 +10,14 @@
     display: block;
     width: 0;
     z-index: 1;
-    top: -10px;
   }
 
   .top::after {
+    top: -10px;
     border-width: 0 10px 10px;
   }
 
   .bottom::after {
+    bottom: -10px;
     border-width: 10px 10px 0;
   }
