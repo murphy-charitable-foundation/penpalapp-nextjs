@@ -89,7 +89,7 @@ export default function Login() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
-      {isPending && <LoadingSpinner isPending={isPending} />}
+      
       <div className="w-full max-w-md space-y-8">
         <div
           style={{

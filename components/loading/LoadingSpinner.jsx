@@ -1,12 +1,11 @@
 import React from 'react';
 import styles from './LoadingSpinner.module.css';
 
-export default function LoadingSpinner({isPending}) {
+export default function LoadingSpinner() {
   return (
     
     <>
-        {
-            isPending &&
+        
             <div className='fixed top-0 right-0 left-0 bottom-0 bg-white z-20'>
             {/* <div className='fixed top-0 right-0 left-0 bottom-0 bg-white bg-opacity-95 z-20'> */}
                 <div className='centered-thing z-50'>
@@ -21,7 +20,7 @@ export default function LoadingSpinner({isPending}) {
                     </div>
                 </div>
             </div>
-        }
+        
     </>
     
   )

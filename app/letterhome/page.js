@@ -97,108 +97,103 @@ export default function Home() {
   }, [router]);
 
   return (
-    <>
-    <LoadingSpinner isPending={true} />
-    <p>Test</p>
-    </>
-    // <div className="bg-gray-100 min-h-screen py-6">
-    //   <LoadingSpinner isLoading={true} />
-    //   {isLoading ? (
-    //     <LoadingSpinner isLoading={isLoading} />
-    //   ) : error ? (
-    //     <p className="text-red-500">{error}</p>
-    //   ) : (
-    //     <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-    //       <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
-    //         <Link href="/profile">
-    //           <button className="flex items-center text-gray-700">
-    //             <ProfileImage photo_uri={profileImage} first_name={userName} />
-    //             <div className="ml-3">
-    //               <div className="font-semibold text-lg">{userName}</div>
-    //               <div className="text-sm text-gray-600">{country}</div>
-    //             </div>
-    //           </button>
-    //         </Link>
+    <div className="bg-gray-100 min-h-screen py-6">
+      {isLoading ? (
+        <LoadingSpinner isLoading={isLoading} />
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : (
+        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+          <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
+            <Link href="/profile">
+              <button className="flex items-center text-gray-700">
+                <ProfileImage photo_uri={profileImage} first_name={userName} />
+                <div className="ml-3">
+                  <div className="font-semibold text-lg">{userName}</div>
+                  <div className="text-sm text-gray-600">{country}</div>
+                </div>
+              </button>
+            </Link>
 
-    //         <div className="flex items-center space-x-4">
-    //           <Link href="/settings">
-    //             <button className="text-gray-700 hover:text-blue-600">
-    //               <FaCog className="h-7 w-7" />
-    //             </button>
-    //           </Link>
-    //           <Link href="/discover">
-    //             <button className="text-gray-700 hover:text-blue-600">
-    //               <FaBell className="h-7 w-7" />
-    //             </button>
-    //           </Link>
-    //           <Link href="/letterwrite">
-    //             <button className="text-gray-700 hover:text-blue-600">
-    //               <FaPen className="h-7 w-7" />
-    //             </button>
-    //           </Link>
-    //         </div>
-    //       </header>
+            <div className="flex items-center space-x-4">
+              <Link href="/settings">
+                <button className="text-gray-700 hover:text-blue-600">
+                  <FaCog className="h-7 w-7" />
+                </button>
+              </Link>
+              <Link href="/discover">
+                <button className="text-gray-700 hover:text-blue-600">
+                  <FaBell className="h-7 w-7" />
+                </button>
+              </Link>
+              <Link href="/letterwrite">
+                <button className="text-gray-700 hover:text-blue-600">
+                  <FaPen className="h-7 w-7" />
+                </button>
+              </Link>
+            </div>
+          </header>
 
-    //       <main className="p-6">
-    //         <section className="mt-8">
-    //           <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
-    //             Last letters
-    //             <Link href="/letterhome">
-    //               <button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
-    //                 Show more
-    //               </button>
-    //             </Link>
-    //           </h2>
-    //           {letters.length > 0 ? (
-    //             letters.map((letter, i) => (
-    //               <a
-    //                 key={letter.id + "_" + i}
-    //                 href={`/letters/${letter.id}`}
-    //                 className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-    //                 <div className="flex-grow">
-    //                   {letter.recipients?.map((rec) => (
-    //                     <div key={rec.id} className="flex mt-3">
-    //                       <ProfileImage
-    //                         photo_uri={rec?.photo_uri}
-    //                         first_name={rec?.first_name}
-    //                       />
-    //                       <div className="flex flex-col">
-    //                         <div className="flex">
-    //                           {letter.letters[0].status === "draft" && (
-    //                             <h4 className="mr-2">[DRAFT]</h4>
-    //                           )}
-    //                           <h3 className="font-semibold text-gray-800">
-    //                             {rec.first_name} {rec.last_name}
-    //                           </h3>
-    //                         </div>
-    //                         <div>{rec.country}</div>
-    //                       </div>
-    //                     </div>
-    //                   ))}
-    //                   <p className="text-gray-600 truncate">
-    //                     {letter.letters[0].content ?? ""}
-    //                   </p>
-    //                   <span className="text-xs text-gray-400">
-    //                     {letter.letters[0].received}
-    //                   </span>
-    //                 </div>
-    //               </a>
-    //             ))
-    //           ) : (
-    //             <p className="text-gray-500">No letters found.</p>
-    //           )}
-    //         </section>
-    //       </main>
-    //       <BottomNavBar />
-    //     </div>
-    //   )}
-    //   {userType === "admin" && (
-    //     <button
-    //       className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-    //       onClick={iterateLetterBoxes}>
-    //       Check For Inactive Chats
-    //     </button>
-    //   )}
-    // </div>
+          <main className="p-6">
+            <section className="mt-8">
+              <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
+                Last letters
+                <Link href="/letterhome">
+                  <button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                    Show more
+                  </button>
+                </Link>
+              </h2>
+              {letters.length > 0 ? (
+                letters.map((letter, i) => (
+                  <a
+                    key={letter.id + "_" + i}
+                    href={`/letters/${letter.id}`}
+                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                    <div className="flex-grow">
+                      {letter.recipients?.map((rec) => (
+                        <div key={rec.id} className="flex mt-3">
+                          <ProfileImage
+                            photo_uri={rec?.photo_uri}
+                            first_name={rec?.first_name}
+                          />
+                          <div className="flex flex-col">
+                            <div className="flex">
+                              {letter.letters[0].status === "draft" && (
+                                <h4 className="mr-2">[DRAFT]</h4>
+                              )}
+                              <h3 className="font-semibold text-gray-800">
+                                {rec.first_name} {rec.last_name}
+                              </h3>
+                            </div>
+                            <div>{rec.country}</div>
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-gray-600 truncate">
+                        {letter.letters[0].content ?? ""}
+                      </p>
+                      <span className="text-xs text-gray-400">
+                        {letter.letters[0].received}
+                      </span>
+                    </div>
+                  </a>
+                ))
+              ) : (
+                <p className="text-gray-500">No letters found.</p>
+              )}
+            </section>
+          </main>
+          <BottomNavBar />
+        </div>
+      )}
+      {userType === "admin" && (
+        <button
+          className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
+          onClick={iterateLetterBoxes}>
+          Check For Inactive Chats
+        </button>
+      )}
+    </div>
   );
 }
