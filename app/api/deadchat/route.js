@@ -14,15 +14,20 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { sender, id, emailId } = body; 
-    console.log("emailId", emailId)
+    const { sender, id, emailId, reason} = body; 
     //const filtered = users.filter(element => element !== sender);
     const pathSegments = emailId._key?.path?.segments;
     const uid = pathSegments[pathSegments.length - 1]; 
     const userRecord = await auth.getUser(uid); // Fetch user record by UID
-    
+    let message;
+    if (reason == "richard") {
+      message = `Hello Richard, it seems that a chat in a letterbox with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`
+    }
+    else {
+      message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
+    }
     // Remove null values (failed fetches)
-    const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
+    
     const emailHtml = `
       <html>
         <head>
@@ -75,15 +80,27 @@ export async function POST(request) {
         </body>
       </html>
     `;
-    const msg = {
-      to: userRecord.email,
-      /*to: "connorwhite771@gmail.com",*/
-      from: 'penpal@murphycharity.org', // Your verified sender email
-      subject: "Message Reported",
-      text: message || 'No message provided.',
-      html:  emailHtml,
-    };
-    console.log("msg", msg);
+    let msg;
+    if (reason == "richard") {
+      msg = {
+        to: 'penpal@murphycharity.org',
+        /*to: "connorwhite771@gmail.com",*/
+        from: 'penpal@murphycharity.org', // Your verified sender email
+        subject: "Message Reported",
+        text: message || 'No message provided.',
+        html:  emailHtml,
+      };
+    } else {
+      msg = {
+        to: userRecord.email,
+        /*to: "connorwhite771@gmail.com",*/
+        from: 'penpal@murphycharity.org', // Your verified sender email
+        subject: "Message Reported",
+        text: message || 'No message provided.',
+        html:  emailHtml,
+      };
+    }
+    
     // Send the email
     await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });

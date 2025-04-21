@@ -4,23 +4,45 @@ import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
-const apiRequest = async (letterbox, emailId) => {
+const apiRequest = async (letterbox, emailId, reason) => {
   try {
-      const ids = letterbox.members.map((member) => {
-        const segments = member._key?.path?.segments;
-        if (segments?.[segments.length - 1] != emailId) {
+      if (reason == "richard") {
+        const ids = letterbox.members.map((member) => {
+          const segments = member._key?.path?.segments;
           return segments?.[segments.length - 1];
-        }
-      });
-      const sender = await getDoc(doc(db, "users", ids[0]));
+          
+        });
+        let userData = [];
+        const sender = await getDoc(doc(db, "users", ids[0]));
+        userData.push(sender.data());
+        const sender2 = await getDoc(doc(db, "users", ids[1]))
+        userData.push(sender2.data());
+        
+        const response = await fetch('/api/deadchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+        });
+      } else {
+        const ids = letterbox.members.map((member) => {
+          const segments = member._key?.path?.segments;
+          if (segments?.[segments.length - 1] != emailId) {
+            return segments?.[segments.length - 1];
+          }
+        });
+        const sender = await getDoc(doc(db, "users", ids[0]));
+        
+        const response = await fetch('/api/deadchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+        });
+      }
       
-      const response = await fetch('/api/deadchat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sender: sender, id: letterbox.id, emailId}), // Send data as JSON
-      });
         
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
@@ -43,8 +65,7 @@ const apiRequest = async (letterbox, emailId) => {
     const allLettersQuery = query(
         collectionGroup(db, "letters"), 
         where("status", "==", "sent"),
-        where("created_at", ">=", oneMonthAgoTimestamp),
-        limit(5) // Use Firestore Timestamp here
+        where("created_at", ">=", oneMonthAgoTimestamp), // Use Firestore Timestamp here
     );
 
     const querySnapshot = await getDocs(allLettersQuery);
@@ -95,10 +116,14 @@ const apiRequest = async (letterbox, emailId) => {
           .filter((d) => !!d)
           .sort((a, b) => b - a)[0]; // Most recent
   
-        if (!lastSentDate || lastSentDate < twoWeeksAgo) {
-          // Member has not sent a letter in the last 2 weeks
-          await apiRequest(letterbox, member); // Pass letterbox and inactive member
-        }
+          if (!lastSentDate) {
+            // User has sent nothing in the last month
+            await apiRequest(letterbox, member, "user");
+            await apiRequest(letterbox, member, "richard");
+          } else if (lastSentDate < twoWeeksAgo) {
+            // User sent something between 2 weeks ago to 1 month ago 
+            await apiRequest(letterbox, member, "user");
+          }
       }
     }
 }; 
