@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {auth, db} from "../firebaseConfig";
 import {onAuthStateChanged} from "firebase/auth";
 import {useRouter} from "next/navigation";
-import {collection, getDocs, query, where} from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import ProfileImage from "@/components/general/ProfileImage";
 import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from "../utils/letterboxFunctions";
 import LoadingSpinner from "@/components/loadingSpinner/LoadingSpinner";
@@ -18,13 +18,9 @@ export default function ChildrenGallery() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [passwordInput, setPasswordInput] = useState("");
+    const [volunteerName, setVolunteerName] = useState("");
     const router = useRouter();
 
-    const maskEmail = (email) => {
-        const [localPart, domain] = email.split("@");
-        const maskedLocal = localPart[0] + "*".repeat(localPart.length - 1);
-        return `${maskedLocal}@${domain}`;
-    };
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -39,6 +35,16 @@ export default function ChildrenGallery() {
             console.log("volunteerId:", volunteerId);
 
             try {
+                const userRef = doc(db, "users", volunteerId);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const {first_name, last_name} = userSnap.data();
+                    setVolunteerName(`${first_name} ${last_name.charAt(0)}.`);
+                } else {
+                    console.warn("Volunteer document not found");
+                    setVolunteerName("Volunteer");
+                }
+
                 const childrenQuery = query(
                     collection(db, "users"),
                     where("user_type", "==", "child"),
@@ -124,7 +130,6 @@ export default function ChildrenGallery() {
             setError("");
             router.push("/letterhome");
         } catch (err) {
-            console.error("Error logging in:", err.message);
             alert("Error logging in: " + err.message);
             setPasswordInput("");
         }
@@ -214,16 +219,9 @@ export default function ChildrenGallery() {
                             </figure>
                             <form className="w-full" onSubmit={handleSubmit}>
                                 <div className="mb-4">
-                                    <label htmlFor="volunteerEmail" className="block text-sm font-medium text-gray-700">
-                                        Email
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="volunteerEmail"
-                                        value={auth.currentUser ? maskEmail(auth.currentUser.email) : ""}
-                                        readOnly
-                                        className="w-full border-0 border-b border-black py-2 px-3 text-black focus:outline-none focus:border-[#4E802A]"
-                                    />
+                                    <p className="block text-sm font-medium text-gray-700">
+                                        Local Volunteer: {volunteerName || "Volunteer"}
+                                    </p>
                                 </div>
                                 <div className="mb-4 relative">
                                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">

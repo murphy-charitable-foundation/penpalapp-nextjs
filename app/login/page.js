@@ -1,30 +1,50 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {browserSessionPersistence, setPersistence, signInWithEmailAndPassword,} from "firebase/auth";
+import {browserSessionPersistence, setPersistence, signInWithEmailAndPassword, signOut} from "firebase/auth";
 import {auth, db} from "../firebaseConfig";
-import {doc, getDoc} from "firebase/firestore";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import {useRouter} from "next/navigation";
 import Button from "@/components/general/Button";
 import LoadingSpinner from "@/components/loadingSpinner/LoadingSpinner";
+import {doc, getDoc} from "firebase/firestore";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [showModal, setShowModal] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const isFormFilled = email && password;
-    const [isLoading, setIsLoading] = useState(true);
+
+    // Function to check user_type and redirect
+    const redirectBasedOnUserType = async (uid) => {
+        try {
+            const userRef = doc(db, "users", uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists() && userSnap.data().user_type === "local_volunteer") {
+                router.push("/children-gallery");
+            } else {
+                await signOut(auth);
+                setError("Please log in as a Local Volunteer.");
+                setIsLoading(false);
+            }
+        } catch (err) {
+            console.error("Error fetching user data:", err.message);
+            setError("Failed to redirect. Please try again.");
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
             if (user) {
-                router.push("/children-gallery");
+                await redirectBasedOnUserType(user.uid);
+            } else {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         });
         return () => unsubscribe();
     }, [router]);
@@ -36,37 +56,18 @@ export default function Login() {
         try {
             await setPersistence(auth, browserSessionPersistence);
             await signInWithEmailAndPassword(auth, email, password);
-
-            const uid = auth.currentUser.uid;
-            const userRef = doc(db, "users", uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-                router.push("/children-gallery");
-            } else {
-                router.push("/create-acc");
-            }
+            await redirectBasedOnUserType(auth.currentUser.uid);
         } catch (error) {
             console.error("Authentication error:", error.message);
-            switch (error.code) {
-                case "auth/user-not-found":
-                    setError("The email is not correct.");
-                    break;
-                case "auth/wrong-password":
-                    setError("The password is not correct.");
-                    break;
-                case "auth/too-many-requests":
-                    setError("Too many attempts. Your account was blocked.");
-                    setShowModal(true);
-                    break;
-                default:
-                    setError("Failed to log in.");
+            const message = errorMessages[error.code] || errorMessages.default;
+            setError(message);
+            if (error.code === "auth/too-many-requests") {
+                setShowModal(true);
             }
         }
     };
 
-    function closeModal() {
-        setShowModal(false);
-    }
+    const closeModal = () => setShowModal(false);
 
     if (isLoading) {
         return <LoadingSpinner/>;
@@ -163,25 +164,6 @@ export default function Login() {
                     </div>
                 </form>
             </div>
-
-            {showModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-10 overflow-auto pt-20">
-                    <div className="bg-white p-5 rounded-md w-4/5 max-w-md shadow-lg">
-                        <h3 className="text-red-500 font-bold">Your account was blocked</h3>
-                        <p className="text-black mt-5 leading-8">
-                            Please send an email to verify the reason.
-                        </p>
-                        <div className="flex justify-center mt-8">
-                            <button
-                                className="bg-[#48801c] text-white py-2 px-5 rounded-full border-none cursor-pointer"
-                                onClick={closeModal}
-                            >
-                                Understood
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
