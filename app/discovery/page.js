@@ -36,10 +36,13 @@ export default function ChooseKid() {
 
   const fetchKids = async () => {
     setLoading(true);
-    const uid = auth.currentUser.uid;
-    const userRef = doc(db, "users", uid);
   
     try {
+      const uid = auth.currentUser.uid;
+      if (!uid) {
+        throw new Error("Login error. User may not be logged in properly."); 
+      }
+      const userRef = doc(db, "users", uid);
       const kidsCollectionRef = collection(db, "users");
       let q = query(kidsCollectionRef);
   
