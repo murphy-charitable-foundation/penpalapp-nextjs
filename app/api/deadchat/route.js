@@ -20,7 +20,7 @@ export async function POST(request) {
     const uid = pathSegments[pathSegments.length - 1]; 
     const userRecord = await auth.getUser(uid); // Fetch user record by UID
     let message;
-    if (reason == "richard") {
+    if (reason == "admin") {
       message = `Hello Richard, it seems that a chat in a letterbox with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`
     }
     else {
@@ -81,10 +81,9 @@ export async function POST(request) {
       </html>
     `;
     let msg;
-    if (reason == "richard") {
+    if (reason == "admin") {
       msg = {
         to: 'penpal@murphycharity.org',
-        /*to: "connorwhite771@gmail.com",*/
         from: 'penpal@murphycharity.org', // Your verified sender email
         subject: "Message Reported",
         text: message || 'No message provided.',
@@ -93,7 +92,6 @@ export async function POST(request) {
     } else {
       msg = {
         to: userRecord.email,
-        /*to: "connorwhite771@gmail.com",*/
         from: 'penpal@murphycharity.org', // Your verified sender email
         subject: "Message Reported",
         text: message || 'No message provided.',

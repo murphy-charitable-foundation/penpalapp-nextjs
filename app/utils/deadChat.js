@@ -6,7 +6,7 @@ import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 const apiRequest = async (letterbox, emailId, reason) => {
   try {
-      if (reason == "richard") {
+      if (reason == "admin") {
         const ids = letterbox.members.map((member) => {
           const segments = member._key?.path?.segments;
           return segments?.[segments.length - 1];
@@ -119,7 +119,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
           if (!lastSentDate) {
             // User has sent nothing in the last month
             await apiRequest(letterbox, member, "user");
-            await apiRequest(letterbox, member, "richard");
+            await apiRequest(letterbox, member, "admin");
           } else if (lastSentDate < twoWeeksAgo) {
             // User sent something between 2 weeks ago to 1 month ago 
             await apiRequest(letterbox, member, "user");
