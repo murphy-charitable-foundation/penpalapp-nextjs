@@ -86,8 +86,6 @@ export default function Login() {
                         name="email"
                         required
                         label="Email"
-                        borderColor="border-b border-gray-300"
-                        focusBorderColor="focus:border-green-800"
                         error={error && error.toLowerCase().includes('email') ? error : ''}
                     />
                 </div>
@@ -105,8 +103,6 @@ export default function Login() {
                         name="password"
                         required
                         label="Password"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
                         error={error && error.toLowerCase().includes('password') ? error : ''}
                     />
                 </div>
@@ -121,17 +117,13 @@ export default function Login() {
                     <Button
                         btnType="button"
                         btnText="Terms"
-                        variant="blue"
                         size="small"
-                        rounded="medium"
                         onClick={() => router.push('/terms-conditions')}
                     />
                     <Button
                         btnType="button" 
                         btnText="Privacy Policy"
-                        variant="blue"
                         size="small"
-                        rounded="medium"
                         onClick={() => router.push('/privacy-policy')}
                     />
                 </div>
@@ -163,10 +155,8 @@ export default function Login() {
                             )
                         }
                         color="gray"
-                        hoverColor="hover:bg-[#48801c]"
                         textColor="text-white"
                         disabled={loading}
-                        rounded="rounded-full"
                     />
                 </div>
             </form>

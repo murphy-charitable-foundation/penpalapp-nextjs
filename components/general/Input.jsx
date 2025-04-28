@@ -7,24 +7,15 @@ export default function Input({
   id,
   required = false,
   disabled = false,
-  bgColor = "bg-white",
-  textColor = "text-gray-900",
-  borderColor = "border-gray-300",
-  focusBorderColor = "focus:border-blue-500",
-  placeholderColor = "placeholder:text-gray-400",
-  rounded = "rounded-md",
-  size = "w-full",
-  padding = "px-4 py-2",
   error,
   label,
-  labelColor = "text-gray-700",
 }) {
   return (
     <div className="relative">
       {label && (
         <label
           htmlFor={id}
-          className={`block text-sm font-medium mb-1 ${labelColor}`}
+          className={`block text-sm font-medium mb-1 text-gray-700`}
         >
           {label}
         </label>
@@ -39,16 +30,15 @@ export default function Input({
         disabled={disabled}
         placeholder={placeholder}
         className={`
-          ${size}
-          ${bgColor}
-          ${textColor}
-          ${rounded}
-          ${padding}
-          ${placeholderColor}
+          bg-white
           border-b
-          ${error ? "border-red-500" : borderColor}
-          ${focusBorderColor}
+          ${error ? "border-red-500" : "border-gray-300"}
+          w-full
+          px-4 py-2
+          rounded-md
           outline-none
+          text-gray-900 border-gray-300
+          placeholder:text-gray-400 focus:border-black
           transition-colors
           disabled:opacity-50
           disabled:cursor-not-allowed
