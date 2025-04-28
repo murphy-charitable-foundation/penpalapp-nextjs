@@ -23,8 +23,7 @@ export default function Home() {
               color="bg-transparent"
               textColor="text-gray-600"
               onClick={() => router.push("/cover")}
-              size="w-auto"
-              rounded="rounded-lg"
+              size="xs"
             />
           </Link>
           <div className="flex justify-center mb-40">
@@ -38,18 +37,14 @@ export default function Home() {
           <div className="flex flex-col gap-10 jsu mb-36 items-center">
             <Link href="/login">
               <Button
-                color={"bg-green-800"}
-                hoverColor={"hover:bg-green-700"}
+                color={"green"}
                 btnText={"Log in"}
-                rounded={"rounded-3xl"}
               />
             </Link>
             <Link href="https://calendly.com/murphycharity/60min">
               <Button
-                color={"bg-blue-900"}
-                hoverColor={"hover:bg-blue-700"}
+                color={"blue"}
                 btnText={"Become a Pen Pal Volunteer"}
-                rounded={"rounded-3xl"}
               />
             </Link>
           </div>

@@ -106,13 +106,11 @@ export default function ChangePassword() {
         <Button
             btnType="submit"
             btnText="Done"
-            color="bg-gray-200"
+            color="gray"
             textColor="text-gray-400"
-            hoverColor="hover:bg-[#48801c]"
-            hoverTextClr="hover:text-white"
             font="font-medium"
-            rounded="rounded-full"
-            size="w-full"
+          
+            size="large"
         />
         </div>
     </form>

@@ -162,9 +162,9 @@ export default function Login() {
                                 'Log in'
                             )
                         }
-                        color="bg-green-800"
+                        color="gray"
                         hoverColor="hover:bg-[#48801c]"
-                        textColor="text-gray-200"
+                        textColor="text-white"
                         disabled={loading}
                         rounded="rounded-full"
                     />
