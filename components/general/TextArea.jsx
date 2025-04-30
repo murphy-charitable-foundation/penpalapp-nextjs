@@ -8,8 +8,6 @@ export default function TextArea({
   disabled = false,
   rows = 4,
   maxLength,
-  textColor,
-  borderColor,
   focusBorderColor,
   placeholderColor,
   size,
