@@ -295,15 +295,10 @@ export default function Page({ params }) {
             value={letterContent}
             onChange={(e) => setLetterContent(e.target.value)}
             placeholder="Tap to write letter..."
-            rows={8}
-            bgColor="bg-[#ffffff]"
-            textColor="text-black"
-            rounded="rounded-lg"
-            padding="p-4"
-            borderColor="border-teal-500"
+            rows={10}
           />
 
-          <div className="text-right text-sm p-4 mt-8 text-gray-600">
+          <div className="text-right text-sm mt-2 text-gray-600">
             {letterContent.length} / 1000
           </div>
         </div>

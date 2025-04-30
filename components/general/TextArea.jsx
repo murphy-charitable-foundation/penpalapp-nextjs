@@ -8,14 +8,11 @@ export default function TextArea({
   disabled = false,
   rows = 4,
   maxLength,
-  bgColor,
   textColor,
   borderColor,
   focusBorderColor,
   placeholderColor,
-  rounded,
   size,
-  padding,
   error,
   label,
   labelColor,
@@ -43,14 +40,15 @@ export default function TextArea({
         placeholder={placeholder}
         className={`
           ${size}
-          ${bgColor}
-          ${textColor}
-          ${rounded}
-          ${padding}
+          bg-[#ffffff]
+          text-black
+          rounded-lg
+          p-4
           ${placeholderColor}
           ${resize}
+          w-full
           border
-          ${error ? "border-red-500" : borderColor}
+          ${error ? "border-red-500" : "border-black"}
           ${focusBorderColor}
           outline-none
           transition-colors

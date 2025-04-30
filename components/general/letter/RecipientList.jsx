@@ -1,5 +1,6 @@
 import ProfileImage from "../ProfileImage";
 
+
 export default function RecipientList({ recipients }) {
   if (!recipients?.length) return null;
 
@@ -10,10 +11,10 @@ export default function RecipientList({ recipients }) {
           <ProfileImage 
             photo_uri={recipient?.photo_uri} 
             first_name={recipient?.first_name} 
-            size={20}
+            size={10}
           />
           <div>
-            <h2 className="font-bold text-black">
+            <h2 className="font-bold text-sm text-black">
               {recipient?.first_name} {recipient?.last_name}
             </h2>
             <p className="text-sm text-gray-500">{recipient?.country}</p>
