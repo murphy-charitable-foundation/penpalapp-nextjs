@@ -88,6 +88,7 @@ export default function AddProfile() {
     const uid = auth.currentUser?.uid;
   
     if (!uid) return;  // Make sure uid is available
+    if (!image) return;  // Make sure uid is available
     setLoading(true, 'Saving your avatar, please wait...');
     uploadFile(
       croppedImage,
@@ -200,6 +201,7 @@ export default function AddProfile() {
           (<button
             className={`w-[60%] p-2  font-semibold rounded-2xl ${
               !!image ? 'bg-blue-900 text-white' : 'bg-gray-300 text-gray-500'}`}
+              disabled={!image}
             onClick={handleSaveImage}
           >
             Continue
@@ -208,11 +210,12 @@ export default function AddProfile() {
             className={`w-[60%] p-2  font-semibold rounded-2xl ${
               !!country ? 'bg-blue-900 text-white' : 'bg-gray-300 text-gray-500'}`}
             onClick={handleSaveCountry}
+            disabled={!country}
           >
             Continue
           </button>
           )}
-          <span className="py-6 font-semibold text-gray-900" onClick={handleToList}>Skip for now</span>
+          <span className="py-6 font-semibold text-gray-900 cursor-pointer" onClick={handleToList}>Skip for now</span>
         </div>
 
       </div>

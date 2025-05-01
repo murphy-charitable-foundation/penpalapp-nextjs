@@ -5,12 +5,12 @@ import { LoadingProvider } from './LoadingProvider';
 import { AlertProvider } from './AlertProvider';
 
 
-export function Providers({ children}) {
+export function Providers({ children: content}) {
   return (
     <ConfirmProvider>
       <LoadingProvider>
         <AlertProvider>
-        {children}
+        {content}
         </AlertProvider>
       </LoadingProvider>
     </ConfirmProvider>
