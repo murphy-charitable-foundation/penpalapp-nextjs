@@ -302,15 +302,7 @@ export default function EditProfile() {
           onClose={() => setIsEducationModalOpen(false)}
           title="Education Level"
           content={educationModalContent}
-          bgColor="bg-white"
-          textColor="text-gray-800"
-          titleColor="text-green-800"
-          overlayColor="bg-black bg-opacity-50"
-          borderColor="border border-gray-200"
-          shadow="shadow-xl"
-          width="max-w-sm w-full"
-          padding="p-6"
-          rounded="rounded-xl"
+          width="large"
         />
 
         {/* Guardian Modal */}
@@ -319,15 +311,7 @@ export default function EditProfile() {
           onClose={() => setIsGuardianModalOpen(false)}
           title="Guardian"
           content={guardianModalContent}
-          bgColor="bg-white"
-          textColor="text-gray-800"
-          titleColor="text-green-800"
-          overlayColor="bg-black bg-opacity-50"
-          borderColor="border border-gray-200"
-          shadow="shadow-xl"
-          width="max-w-sm w-full"
-          padding="p-6"
-          rounded="rounded-xl"
+          width="large"
         />
 
         {/* Orphan Modal */}
@@ -335,16 +319,8 @@ export default function EditProfile() {
           isOpen={isOrphanModalOpen}
           onClose={() => setIsOrphanModalOpen(false)}
           title="Orphan Status"
-          content={orphanModalContent}
-          bgColor="bg-white"
-          textColor="text-gray-800"
-          titleColor="text-green-800"
-          overlayColor="bg-black bg-opacity-50"
-          borderColor="border border-gray-200"
-          shadow="shadow-xl"
-          width="max-w-sm w-full"
-          padding="p-6"
-          rounded="rounded-xl"
+          content={orphanModalContent}         
+          width="large"
         />
 
         {/* Bio Modal */}
@@ -353,15 +329,8 @@ export default function EditProfile() {
           onClose={() => setIsBioModalOpen(false)}
           title="Bio/Challenges"
           content={bioModalContent}
-          bgColor="bg-white"
-          textColor="text-gray-800"
-          titleColor="text-green-800"
-          overlayColor="bg-black bg-opacity-50"
-          borderColor="border border-gray-200"
-          shadow="shadow-xl"
-          width="max-w-md w-full"
-          padding="p-6"
-          rounded="rounded-xl"
+          width="large"
+          
         />
 
         {/* Profile Image */}
