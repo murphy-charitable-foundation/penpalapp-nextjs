@@ -233,7 +233,7 @@ export default function Page({ params }) {
   }, []);
 
   return (
-    <PageContainer maxWidth="lg" padding="p-6 pt-20">
+    <PageContainer maxWidth="lg">
       <BackButton />
       {showReportPopup && (
         <ReportPopup

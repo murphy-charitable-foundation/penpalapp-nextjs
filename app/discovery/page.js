@@ -190,7 +190,7 @@ export default function ChooseKid() {
   };
 
   return (
-    <PageContainer maxWidth="lg" padding="p-6 pt-20">
+    <PageContainer maxWidth="lg">
       <BackButton />
       <div className="min-h-screen p-4 bg-white">
         <div className="bg-white">

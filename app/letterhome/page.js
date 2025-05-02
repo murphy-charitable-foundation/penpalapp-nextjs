@@ -107,7 +107,7 @@ export default function Home() {
 
   return (
     <div className="bg-gray-100 min-h-screen py-6 relative">
-      <PageContainer maxWidth="lg" padding="p-6 pt-20">
+      <PageContainer maxWidth="lg">
       <BackButton />
       <WelcomeToast 
         userName={userName}
