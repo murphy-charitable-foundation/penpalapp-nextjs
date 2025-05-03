@@ -5,13 +5,22 @@ import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import LoadingSpinner from './LoadingSpinner';
 
+// Add this list of routes where the spinner should be hidden
+const ROUTES_WITHOUT_SPINNER = [
+  '/', // Assuming your login/signup page is at the root
+  '/login',
+];
 
 export default function NavigationStateManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [sourceRoute, setSourceRoute] = useState('');
 
   useEffect(() => {
+    // Store current route before navigation
+    setSourceRoute(pathname);
+
     // Handler for navigation start
     const handleNavigationStart = () => {
       setIsNavigating(true);
@@ -60,7 +69,7 @@ export default function NavigationStateManager() {
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
     };
-  }, []);
+  }, [pathname]);
 
   // When pathname or searchParams change, navigation is complete
   useEffect(() => {
@@ -72,6 +81,8 @@ export default function NavigationStateManager() {
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);
 
+  const shouldShowSpinner = !ROUTES_WITHOUT_SPINNER.includes(sourceRoute);
+
   // Only render the spinner when navigating
-  return isNavigating ? <LoadingSpinner /> : null;
+  return (isNavigating && shouldShowSpinner) ? <LoadingSpinner /> : null;
 }
