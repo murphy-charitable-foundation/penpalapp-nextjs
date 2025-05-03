@@ -195,28 +195,28 @@ export default function ChooseKid() {
       <div className="min-h-screen p-4 bg-white">
         <div className="bg-white">
           <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
-        {activeFilter ? (
-          <div className="h-auto">
-            <KidFilter
-              setAge={setAge}
-              setGender={setGender}
-              setHobbies={setHobbies}
-              hobbies={hobbies}
-              age={age}
-              gender={gender}
-              filter={filter}
+          {activeFilter ? (
+            <div className="h-auto">
+              <KidFilter
+                setAge={setAge}
+                setGender={setGender}
+                setHobbies={setHobbies}
+                hobbies={hobbies}
+                age={age}
+                gender={gender}
+                filter={filter}
+              />
+            </div>
+          ) : (
+            <KidsList
+              kids={kids}
+              calculateAge={calculateAge}
+              lastKidDoc={lastKidDoc}
+              loadMoreKids={loadMoreKids}
+              loading={loading}
             />
-          </div>
-        ) : (
-          <KidsList
-            kids={kids}
-            calculateAge={calculateAge}
-            lastKidDoc={lastKidDoc}
-            loadMoreKids={loadMoreKids}
-            loading={loading}
-          />
-        )}
-      </div>
+          )}
+        </div>
       </div>
     </PageContainer>
   );

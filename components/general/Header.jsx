@@ -23,10 +23,7 @@ function FilterButton({ activeFilter, setActiveFilter }) {
       <Button
         btnText="Filters"
         color="bg-transparent"
-        textColor="text-black"
-        hoverColor="hover:text-gray-500"
-        rounded="rounded-full"
-        size="w-full px-3 py-1 rounded-full text-sm flex items-center justify-between sm:justify-center sm:bg-[#022f5b] text-[15px] sm:text-[18px]"
+        size="xs"
         onClick={() => setActiveFilter(!activeFilter)}
       >
         <span className="flex items-center">

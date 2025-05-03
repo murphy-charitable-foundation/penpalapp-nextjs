@@ -10,14 +10,15 @@ export default function Button({
     blue: 'bg-blue-700 hover:bg-blue-800 text-white',
     green: 'bg-[#4E802A] hover:bg-green-800 text-white', 
     red: 'bg-red-500 hover:bg-red-600 text-white',
-    gray: 'bg-gray-300 hover: bg-gray-400 text-white'
+    gray: 'bg-gray-300 hover: bg-gray-400 text-white',
+    transparent: 'bg-transparent hover: bg-gray-400 text-black'
   };
 
   const sizes = {
     default: 'w-72',
     small: 'w-48',
     large: 'w-96',
-    xs: 'w-12',
+    xs: 'w-24',
   };
 
   return (
