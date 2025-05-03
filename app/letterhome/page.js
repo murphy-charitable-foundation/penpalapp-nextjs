@@ -17,6 +17,7 @@ import {
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "@/components/general/ProfileImage";
+import LoadingSpinner from "@/components/loading/LoadingSpinner";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -98,7 +99,7 @@ export default function Home() {
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       {isLoading ? (
-        <p>Loading...</p>
+        <LoadingSpinner isLoading={isLoading} />
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : (
