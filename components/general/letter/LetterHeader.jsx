@@ -18,9 +18,9 @@ export default function LetterHeader({
           btnText={
             <img src="/closeicon.svg" alt="Close" />
           }
-          color="bg-transparent"
+          color="transparent"
           textColor="text-gray-400"
-          hoverColor="hover:text-gray-600"
+          size={'small'}
         />
       </Link>
       <Button

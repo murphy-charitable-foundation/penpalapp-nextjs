@@ -17,7 +17,7 @@ export default function RecipientList({ recipients }) {
             <h2 className="font-bold text-sm text-black">
               {recipient?.first_name} {recipient?.last_name}
             </h2>
-            <p className="text-sm text-gray-500">{recipient?.country}</p>
+            <p className="text-xs text-gray-500">{recipient?.country}</p>
           </div>
         </div>
       ))}

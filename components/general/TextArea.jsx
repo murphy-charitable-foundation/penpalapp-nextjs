@@ -8,20 +8,23 @@ export default function TextArea({
   disabled = false,
   rows = 4,
   maxLength,
-  focusBorderColor,
-  placeholderColor,
   size,
   error,
   label,
-  labelColor,
   resize,
 }) {
+  const sizes = {
+    default: 'w-72',
+    small: 'w-48',
+    large: 'w-96',
+    xs: 'w-24',
+  };
   return (
     <div className="relative">
       {label && (
         <label
           htmlFor={id}
-          className={`block text-sm font-medium mb-1 ${labelColor}`}
+          className={`block text-sm font-medium mb-1 text-black`}
         >
           {label}
         </label>
@@ -37,17 +40,17 @@ export default function TextArea({
         maxLength={maxLength}
         placeholder={placeholder}
         className={`
-          ${size}
+          ${sizes[size]}
           bg-[#ffffff]
           text-black
           rounded-lg
           p-4
-          ${placeholderColor}
+          placeholder-gray-400
           ${resize}
           w-full
           border
-          ${error ? "border-red-500" : "border-black"}
-          ${focusBorderColor}
+          ${error ? "border-red-500" : "border-gray-400"}
+          focus:border-black
           outline-none
           transition-colors
           disabled:opacity-50

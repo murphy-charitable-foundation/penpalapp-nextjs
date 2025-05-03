@@ -3,7 +3,7 @@ export default function Button({
   btnText,
   btnType,
   disabled,
-  textColor = 'white',
+  textColor = 'text-white',
   size = 'default',
 }) {
   const colors = {
