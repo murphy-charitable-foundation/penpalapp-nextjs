@@ -2,17 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 
+const sizes = {
+  default: 'w-48 h-48',
+  small: 'w-24 h-24',
+  large: 'w-72 h-72',
+  xs: 'w-12 h-12',
+};
+
 export default function Popover({
   triggerContent,
   popoverContent,
   position,
-  bgColor,
-  textColor,
-  borderColor,
-  shadow,
-  width,
-  padding,
-  rounded,
+  size,
   hoverEffect,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +61,7 @@ export default function Popover({
       {isOpen && (
         <div
           ref={popoverRef}
-          className={`absolute z-50 ${width} ${bgColor} ${rounded} ${shadow} border ${borderColor} ${padding} ${textColor} ${hoverEffect} ${getPositionClasses()} transition-all duration-200`}
+          className={`absolute z-50 ${sizes[size]} bg-white rounded-xl shadow-xl border border border-gray-200 p-4 text-gray-800 ${hoverEffect} ${getPositionClasses()} transition-all duration-200 text-center`}
         >
           {popoverContent}
         </div>

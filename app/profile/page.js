@@ -28,6 +28,7 @@ import Input from "../../components/general/Input";
 import Modal from "../../components/general/Modal";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
+import Popover from "../../components/general/Popover";
 
 export default function EditProfile() {
   // State initializations
