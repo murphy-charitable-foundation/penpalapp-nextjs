@@ -235,6 +235,9 @@ export default function Page({ params }) {
 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg w-full max-w-md m-auto relative">
+        {
+          <FirstTimeChatGuide step={1} />
+        }
           <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
             <Link href="/">
               <button onClick={() => window.history.back()}>
@@ -322,7 +325,7 @@ export default function Page({ params }) {
             id="message-input"
             className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
             rows="8"
-            placeholder="Tap to write letter..."
+            placeholder={setLetterContent}
             value={letterContent}
             onChange={(e) => setLetterContent(e.target.value)}
           />

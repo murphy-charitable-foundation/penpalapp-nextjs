@@ -2,31 +2,32 @@ import React, { useEffect, useState, useRef } from 'react';
 import styles from './Tooltip.module.css';
 import TemplateModal from './TemplateModal';
 
-export default function FirstTimeChatGuide({ messages = [], hasReplied = false, onComplete, onUseTemplate }) {
+export default function FirstTimeChatGuide({ step, chats = [], onUseTemplate }) {
   const [showGuide, setShowGuide] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(step);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const tooltipRef = useRef(null);
   const typingTimerRef = useRef(null);
+
+  
 
   const defaultTemplate = 
     `Dear Angel,
     Thank you fpr you for your tme and effort to contact me!
     I am so happy that we can communicate wth someone outside  of my village`;
   
-  console.log(hasReplied);
   const steps = [
     {
       target: '.first-letter',
       content: 'Tap with your finger to open the letter ',
-      position: 'right', // @todo: change this to array?
+      position: 'first-letter', // @todo: change this to array?
       arrowDirection: 'top',
-      advanceOn: 'click', // The event on the target that will advance the tour
+      //advanceOn: 'click', // The event on the target that will advance the tour
     },
     {
       target: '#message-input',
       content: 'Tap to reply',
-      position: 'top',
+      position: 'typing-box',
       arrowDirection: 'bottom',
       advanceOn: 'focus'
     },
@@ -105,28 +106,40 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
     }
   ];
 
+  // useEffect( () => {
+  //   setShowGuide(true);
+  //   setCurrentStep(step);
+  // }, []);
+
   useEffect(() => {
+    setCurrentStep(step);
+    console.log(chats.length, step);
     // Check if we need to show the guide
-    if (messages.length > 0 && !hasReplied) {
+    if (chats.length == 1 || step == 2 ) {
+      setShowGuide(true);
+      
+      console.log(step);
       const savedStep = localStorage.getItem('chatGuideStep');
       const isGuideCompleted = localStorage.getItem('hasSeenChatGuide') === 'true';
       
       if (!isGuideCompleted) {
-        if (savedStep !== null) {
-          setCurrentStep(parseInt(savedStep, 10));
-        }
+        // if (savedStep !== null) {
+        //   setCurrentStep(parseInt(savedStep, 10));
+        // }
         setShowGuide(true);
       }
     }
-  }, [messages, hasReplied]);
+  }, [chats]);
 
   useEffect(() => {
     console.log(`show guide: ${showGuide}, current step: ${currentStep}`)
     // Save current step to localStorage whenever it changes
-    if (showGuide) {
-      localStorage.setItem('chatGuideStep', currentStep.toString());
-    }
+    // if (showGuide) {
+    //   localStorage.setItem('chatGuideStep', currentStep.toString());
+    // }
   }, [currentStep, showGuide]);
+
+
 
   useEffect(() => {
     // Set up event listeners for the current step target
@@ -135,7 +148,10 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
     const currentStepData = steps[currentStep];
     const targetElement = document.querySelector(currentStepData.target);
     
-    if (!targetElement) return;
+    if (!targetElement) {
+      setShowGuide(false);
+      return;
+    } 
     
     // Position the tooltip relative to the target
     positionTooltip(targetElement, currentStepData.position);
@@ -149,14 +165,7 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
     else if (currentStepData.advanceOn) {
       // Set up event listener for the target element
       const handleTargetAction = () => {
-        if (currentStepData.onComplete) {
-          const shouldAdvance = currentStepData.onComplete();
-          if (shouldAdvance !== false) {
-            nextStep();
-          }
-        } else {
-          nextStep();
-        }
+        setCurrentStep(currentStep+1);
       };
 
       targetElement.addEventListener(currentStepData.advanceOn, handleTargetAction);
@@ -179,7 +188,7 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
     const tooltipRect = tooltipElement.getBoundingClientRect();
     
     // Calculate tooltip position based on target and preferred position
-    let top, left;
+    let top, left, right, bottom;
     console.log(targetRect);
     switch (position) {
       case 'top':
@@ -197,6 +206,13 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
       case 'right':
         top = targetRect.top + tooltipRect.height;
         //left = targetRect.right + 10;
+        break;
+      case 'first-letter':
+        top = targetRect.top - tooltipRect.height - 10;
+        break;
+      case 'typing-box':
+        top = targetRect.top;
+        left = 0;
         break;
       default:
         top = targetRect.bottom + 10;
@@ -239,15 +255,15 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
   };
 
   // If not showing guide or not a first time user, don't render anything
-  if (!showGuide && !showTemplateModal) {
+  if (!showGuide) {
     return null;
   }
 
-  const currentStepData = showGuide ? steps[currentStep] : null;
-
+  const currentStepData = steps[currentStep];
+  
   return (
     <>
-      {showGuide && currentStepData && (
+      { showGuide && currentStepData &&
       <div 
         ref={tooltipRef}
         className={`absolute bg-[#65B427] rounded-lg p-4 shadow-lg w-max z-[51] ${styles.speechbubble} ${styles[currentStepData.arrowDirection]}`}
@@ -268,7 +284,7 @@ export default function FirstTimeChatGuide({ messages = [], hasReplied = false, 
           </button>
         </div>
       </div>
-      )}
+      }
 
       {
         showTemplateModal && 
