@@ -12,7 +12,7 @@ import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "@/components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 export default function CreateAccount() {

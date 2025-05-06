@@ -12,7 +12,7 @@ import { updateDoc } from "firebase/firestore";
 import HobbySelect from "@/components/general/HobbySelect";
 import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 
 export default function EditProfile() {
   // State initializations

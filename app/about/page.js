@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import BottomNavBar from "@/components/bottom-nav-bar";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 import { useEffect } from "react";
 export default function About() {
@@ -71,7 +71,7 @@ export default function About() {
             encourage academic achievement.
           </p>
           <p className="text-gray-700 text-lg leading-relaxed">
-            Our organization’s commitment to humanitarian work has brought about
+            Our organization's commitment to humanitarian work has brought about
             lasting change in the project areas across Uganda. We extend our
             support to disadvantaged individuals without discrimination based on
             race or religion, firmly believing that every person in need

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import logo from "/public/murphylogo.png";
 import Image from "next/image";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 import { useEffect } from "react";

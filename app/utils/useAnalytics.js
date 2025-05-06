@@ -4,7 +4,7 @@ import {
   logError,
   logDeadClick,
   logInternetDisconnection,
-} from "@/app/firebaseConfig";
+} from "@/app/utils/analytics";
 
 // Throttle function to limit the rate at which a function can fire
 const throttle = (func, limit) => {

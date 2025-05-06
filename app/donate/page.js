@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import BottomNavBar from "@/components/bottom-nav-bar";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 import { useEffect } from "react";
 export default function Donate() {

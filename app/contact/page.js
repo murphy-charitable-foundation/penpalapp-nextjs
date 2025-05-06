@@ -8,7 +8,7 @@ import logo from "/public/murphylogo.png";
 import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from "react-icons/fa";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { useEffect } from "react";
 export default function Contact() {
   const socialLinks = {

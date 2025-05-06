@@ -16,7 +16,7 @@ import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 const PAGE_SIZE = 10; // Number of kids per page

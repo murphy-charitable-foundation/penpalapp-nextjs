@@ -23,7 +23,7 @@ import ProfileImage from "@/components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 import { useRouter } from "next/navigation";

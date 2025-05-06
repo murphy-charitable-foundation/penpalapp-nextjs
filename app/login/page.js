@@ -20,7 +20,7 @@ import {
   logInEvent,
   logButtonEvent,
   logLoadingTime,
-} from "@/app/firebaseConfig";
+} from "@/app/utils/analytics";
 
 export default function Login() {
   usePageAnalytics("/login");
@@ -39,6 +39,7 @@ export default function Login() {
       } else {
         router.push("/login");
 
+        const startTime = performance.now();
         requestAnimationFrame(() => {
           setTimeout(() => {
             const endTime = performance.now();

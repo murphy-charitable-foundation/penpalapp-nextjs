@@ -17,7 +17,7 @@ import {
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "@/components/general/ProfileImage";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 export default function Home() {

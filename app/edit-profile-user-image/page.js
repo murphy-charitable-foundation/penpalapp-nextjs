@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
-import { logButtonEvent, logLoadingTime } from "@/app/firebaseConfig";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 export default function EditProfileUserImage() {
