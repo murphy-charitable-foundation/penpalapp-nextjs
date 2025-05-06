@@ -1,17 +1,32 @@
 "use client"
 
-import { db, auth } from '../firebaseConfig'; 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import logo from '/public/murphylogo.png';
-import Image from 'next/image';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { db, auth } from "../firebaseConfig";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import logo from "/public/murphylogo.png";
+import Image from "next/image";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import * as Sentry from "@sentry/nextjs";
-
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import { useEffect } from "react";
 export default function ResetPassword() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+  usePageAnalytics("/reset-password");
+
+  useEffect(() => {
+    const startTime = performance.now();
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        logLoadingTime("/reset-password", loadTime);
+      }, 0);
+    });
+  }, []);
 
   function resetPassword() {
     sendPasswordResetEmail(auth, email)
@@ -22,6 +37,7 @@ export default function ResetPassword() {
         Sentry.captureException(error);
         console.error(error);
       });
+    logButtonEvent("Reset Password clicked!", "/reset-password");
   }
 
   function closeModal() {

@@ -12,6 +12,8 @@ import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "@/components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -22,6 +24,18 @@ export default function CreateAccount() {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
+  usePageAnalytics("/create-acc");
+  useEffect(() => {
+    const startTime = performance.now();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/create-acc", loadTime);
+      }, 0);
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

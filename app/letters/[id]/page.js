@@ -11,14 +11,20 @@ import { MdSend } from "react-icons/md";
 import { BsPaperclip } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
-import BottomNavBar from '@/components/bottom-nav-bar';
+import BottomNavBar from "@/components/bottom-nav-bar";
 import { uploadFile } from "@/app/lib/uploadFile";
-import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchRecipients,
+  sendLetter,
+} from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
-
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
+import { usePageAnalytics } from "@/app/utils/useAnalytics";
 
 import { useRouter } from "next/navigation";
 
@@ -48,6 +54,8 @@ export default function Page({ params }) {
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
   const PAGINATION_INCREMENT = 20;
+  usePageAnalytics(`/letters/letterId`);
+
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
       alert("Please fill in the letter content and select a recipient.");
@@ -86,16 +94,28 @@ export default function Page({ params }) {
   };
 
   useEffect(() => {
+    const startTime = performance.now();
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
       const fetchMessages = async () => {
-        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+          id,
+          5
+        );
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
       };
       fetchMessages();
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const endTime = performance.now();
+          const loadTime = endTime - startTime;
+          console.log(`Page render time: ${loadTime}ms`);
+          logLoadingTime("/letters/letterId", loadTime);
+        }, 0);
+      });
     }
   }, [user]);
 
@@ -136,11 +156,16 @@ export default function Page({ params }) {
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT,
+      lastVisible
+    );
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
     setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
     setLoadingMore(false); // Reset loading state
+    logButtonEvent("Load more clicked!", "/letters/letterId");
   };
 
   const handleChange = (event) => {
@@ -155,10 +180,10 @@ export default function Page({ params }) {
       file,
       `uploads/letterbox/${id}/${file.name}`,
       setUploadProgress,
-      (error) => console.error('Upload error:', error),
+      (error) => console.error("Upload error:", error),
       onUploadComplete
     );
-  };  
+  };
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -211,6 +236,7 @@ export default function Page({ params }) {
 
     return () => unsubscribe();
   }, []);
+
 
   return (
     <div>
