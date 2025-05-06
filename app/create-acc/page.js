@@ -101,8 +101,7 @@ export default function CreateAccount() {
             className="h-6 w-6 cursor-pointer"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="black"
-          >
+            stroke="black">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -128,8 +127,7 @@ export default function CreateAccount() {
             <div className="w-1/2">
               <label
                 htmlFor="first-name"
-                className="text-sm font-medium text-gray-700 block mb-2"
-              >
+                className="text-sm font-medium text-gray-700 block mb-2">
                 First name
               </label>
               <input
@@ -144,8 +142,7 @@ export default function CreateAccount() {
             <div className="w-1/2">
               <label
                 htmlFor="last-name"
-                className="text-sm font-medium text-gray-700 block mb-2"
-              >
+                className="text-sm font-medium text-gray-700 block mb-2">
                 Last name
               </label>
               <input
@@ -161,8 +158,7 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="birthday"
-              className="text-sm font-medium text-gray-700 block mb-2"
-            >
+              className="text-sm font-medium text-gray-700 block mb-2">
               Birthday
             </label>
             <input
@@ -177,8 +173,7 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="email"
-              className="text-sm font-medium text-gray-700 block mb-2"
-            >
+              className="text-sm font-medium text-gray-700 block mb-2">
               Email
             </label>
             <input
@@ -195,8 +190,7 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="password"
-              className="text-sm font-medium text-gray-700 block mb-2"
-            >
+              className="text-sm font-medium text-gray-700 block mb-2">
               New Password
             </label>
             <input
@@ -213,8 +207,7 @@ export default function CreateAccount() {
           <div>
             <label
               htmlFor="repeat-password"
-              className="text-sm font-medium text-gray-700 block mb-2"
-            >
+              className="text-sm font-medium text-gray-700 block mb-2">
               Repeat Password
             </label>
             <input
@@ -239,8 +232,7 @@ export default function CreateAccount() {
               border: "none",
               borderRadius: "20px",
               cursor: "pointer",
-            }}
-          >
+            }}>
             Create Account
           </button>
         </form>
