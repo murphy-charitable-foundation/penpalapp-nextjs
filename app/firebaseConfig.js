@@ -30,6 +30,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app, "gs://penpalmagicapp.appspot.com/");
 
-export { db, auth, storage, FieldPath };
+export { app, db, auth, storage, FieldPath };
 
 // Initialize Firebase Authentication and export
