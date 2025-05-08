@@ -114,22 +114,12 @@ export default function Login() {
                 </div>
 
                 <div className="flex justify-center space-x-4">
-                    <Button
-                        btnType="button"
-                        btnText="Terms"
-                        size="small"
-                        onClick={() => router.push('/terms-conditions')}
-                    />
-                    <Button
-                        btnType="button" 
-                        btnText="Privacy Policy"
-                        size="small"
-                        onClick={() => router.push('/privacy-policy')}
-                    />
+                    
+                    
                 </div>
 
                 <div className="flex items-center justify-center">
-                    <input
+                    <Input
                         id="remember-me"
                         name="remember-me"
                         type="checkbox"
@@ -154,7 +144,7 @@ export default function Login() {
                                 'Log in'
                             )
                         }
-                        color="gray"
+                        color="green"
                         textColor="text-white"
                         disabled={loading}
                     />

@@ -217,6 +217,19 @@ export default function CreateAccount() {
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
+              {/*onClick={() => router.push('/terms-conditions')}  */}
+              <div className="flex items-center justify-center">
+                <Input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                See the <Link href="/terms-conditions" className="underline">terms and conditions</Link> and <Link className="underline" href="privacy-policy">privacy policy</Link>
+                </label>
+              </div>
+
               <div className="flex justify-center">
                 <Button
                   btnType="submit"
