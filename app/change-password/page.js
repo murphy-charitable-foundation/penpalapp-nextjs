@@ -107,9 +107,7 @@ export default function ChangePassword() {
             btnType="submit"
             btnText="Done"
             color="gray"
-            textColor="text-gray-400"
-            font="font-medium"
-          
+            textColor="gray"
             size="large"
         />
         </div>

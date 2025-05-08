@@ -3,7 +3,7 @@ export default function Button({
   btnText,
   btnType,
   disabled,
-  textColor = 'text-white',
+  textColor = 'white',
   size = 'default',
 }) {
   const colors = {
@@ -14,9 +14,16 @@ export default function Button({
     transparent: 'bg-transparent hover: bg-gray-400 text-black'
   };
 
+  const textColors = {
+    black: 'text-black',
+    gray: 'text-gray-400',
+    white: 'text-white',
+  }
+
   const sizes = {
     default: 'w-72',
     small: 'w-48',
+    xl: 'w-108',
     large: 'w-96',
     xs: 'w-24',
   };
@@ -28,7 +35,7 @@ export default function Button({
       className={`
         ${colors[color]}
         ${sizes[size]}
-        ${textColor}
+        ${textColors[textColor]}
         rounded-full
         text-sm font-bold py-3 px-4
         disabled:opacity-50 disabled:cursor-not-allowed

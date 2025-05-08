@@ -37,7 +37,7 @@ export default function Input({
           px-4 py-2
           rounded-md
           outline-none
-          text-gray-900 border-gray-300
+          text-gray-900 border-gray-600
           placeholder:text-gray-400 focus:border-black
           transition-colors
           disabled:opacity-50
