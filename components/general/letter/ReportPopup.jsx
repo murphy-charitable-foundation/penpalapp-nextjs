@@ -73,7 +73,7 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
                 btnText="Report"
                 color="bg-red-500"
                 hoverColor="hover:bg-red-600"
-                textColor="text-white"
+                textColor="text-black"
                 rounded="rounded-lg"
                 size="w-24"
               />

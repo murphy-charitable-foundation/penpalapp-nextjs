@@ -686,7 +686,7 @@ export default function EditProfile() {
                     "Save"
                   )
                 }
-                color="bg-green-800"
+                color="green"
                 hoverColor="hover:bg-[#48801c]"
                 textColor="text-gray-200"
                 disabled={isSaving}
