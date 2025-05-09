@@ -1,0 +1,157 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.header {
+    display: flex;
+    width: 742px;
+    height: 71px;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header div {
+    font-size: 16px;
+    color: #4a4a4a;
+    position: absolute;
+    width: 742px;
+    height: 71px;
+    left: 0px;
+    top: 0px;
+    background: #FFFFFF;
+
+}
+
+.header div:first-child {
+    font-weight: bold;
+}
+
+.header div:last-child {
+    text-align: right;
+}
+.txt{
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 52px;
+    margin: 5px;
+    position: absolute;
+    width: 685px;
+    height: 24px;
+    left: 23px;
+    top: 23px;
+}
+.content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 80px); /* Adjust based on header height */
+}
+
+.logo-and-image {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.logo {
+    position: absolute;
+    top: 86px;
+    left: 17px;
+    z-index: 10;
+    width: 122px;
+    height: 122px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.logo img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+}
+#tx1{
+    padding: auto;
+
+/* Project: Pen Pal Program */
+width: 180px;
+height: 24px;
+font-family: 'Roboto';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 24px;
+/* identical to box height, or 150% */
+display: flex;
+align-items: center;
+color: #797E8B;
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+}
+#tx2{
+/* Content: Design App and Web */
+
+width: 213px;
+height: 24px;
+padding: auto;
+font-family: 'Roboto';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 24px;
+/* identical to box height, or 150% */
+display: flex;
+align-items: center;
+
+color: #797E8B;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+}
+
+#tx3{
+    /* Actualized: February 2024 */
+
+width: 188px;
+height: 24px;
+padding: auto;
+
+font-family: 'Roboto';
+font-style: normal;
+font-weight: 500;
+font-size: 16px;
+line-height: 24px;
+/* identical to box height, or 150% */
+display: flex;
+align-items: center;
+
+color: #797E8B;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+}
