@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { db } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, doc } from "firebase/firestore";
@@ -16,20 +16,19 @@ import { uploadFile } from "@/app/lib/uploadFile";
 import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter } from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
-import ReportPopup from "../../../components/letter/ReportPopup";
-import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 
 
 import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
+import FirstTimeChatGuide from "@/components/tooltip/FirstTimeChatGuide";
 
 export default function Page({ params }) {
   const { id } = params;
   const auth = getAuth();
   const router = useRouter();
 
-  const [letterContent, setLetterContent] = useState("");
+  const [letterContent, setLetterContent] = useState("Tap to write letter...");
   const [debounce, setDebounce] = useState(0);
   const [user, setUser] = useState(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
@@ -47,6 +46,7 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
+  const messageInputRef = useRef(null);
   const PAGINATION_INCREMENT = 20;
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -212,6 +212,25 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, []);
 
+  // This function will be passed as a prop to FirstTimeChatGuide
+  const handleUseTemplate = (templateText) => {
+    console.log("Applying template:", templateText);
+    setLetterContent(templateText);
+    
+    // Focus the input and set cursor at the end
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
+      
+      setTimeout(() => {
+        messageInputRef.current.setSelectionRange(
+          templateText.length, 
+          templateText.length
+        );
+      }, 0);
+      
+    }
+  };
+
   return (
     <div>
       {showReportPopup && (
@@ -228,7 +247,10 @@ export default function Page({ params }) {
       )}
 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white shadow rounded-lg w-full max-w-md m-auto relative">
+        {
+          <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} />
+        }
           <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
             <Link href="/">
               <button onClick={() => window.history.back()}>
@@ -243,7 +265,7 @@ export default function Page({ params }) {
                   <BsPaperclip className="h-6 w-6 rotate-90" />
                 </button>
                 <button
-                  className="text-black p-2 rounded-full"
+                  className="text-black p-2 rounded-full send-letter"
                   onClick={handleSendLetter}
                 >
                   <MdSend className="h-6 w-6" />
@@ -313,11 +335,16 @@ export default function Page({ params }) {
             {loadingMore && <span>Loading...</span>}
           </div>
           <textarea
+            id="message-input"
+            ref={messageInputRef}
             className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
             rows="8"
             placeholder="Tap to write letter..."
             value={letterContent}
-            onChange={(e) => setLetterContent(e.target.value)}
+            onChange={(e) => {
+              setLetterContent(e.target.value)
+              console.log(e);
+            } }
           />
 
           <div className="text-right text-sm p-4 mt-8 text-gray-600">
