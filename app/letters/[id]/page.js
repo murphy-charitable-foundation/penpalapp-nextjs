@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { db } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, doc } from "firebase/firestore";
@@ -46,6 +46,7 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
+  const messageInputRef = useRef(null);
   const PAGINATION_INCREMENT = 20;
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -211,13 +212,24 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, []);
 
-  const handleUseTemplate = (template) => {
-    setLetterContent(template);
-    setTimeout(() => {
-      const messageInput = document.querySelector('#message-input');
-      if (messageInput) messageInput.focus();
-    }, 100);
-  }
+  // This function will be passed as a prop to FirstTimeChatGuide
+  const handleUseTemplate = (templateText) => {
+    console.log("Applying template:", templateText);
+    setLetterContent(templateText);
+    
+    // Focus the input and set cursor at the end
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
+      
+      setTimeout(() => {
+        messageInputRef.current.setSelectionRange(
+          templateText.length, 
+          templateText.length
+        );
+      }, 0);
+      
+    }
+  };
 
   return (
     <div>
@@ -236,7 +248,7 @@ export default function Page({ params }) {
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg w-full max-w-md m-auto relative">
         {
-          <FirstTimeChatGuide step={1} />
+          <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} />
         }
           <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
             <Link href="/">
@@ -252,7 +264,7 @@ export default function Page({ params }) {
                   <BsPaperclip className="h-6 w-6 rotate-90" />
                 </button>
                 <button
-                  className="text-black p-2 rounded-full"
+                  className="text-black p-2 rounded-full send-letter"
                   onClick={handleSendLetter}
                 >
                   <MdSend className="h-6 w-6" />
@@ -323,18 +335,15 @@ export default function Page({ params }) {
           </div>
           <textarea
             id="message-input"
+            ref={messageInputRef}
             className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
             rows="8"
-            placeholder={setLetterContent}
+            placeholder="Tap to write letter..."
             value={letterContent}
-            onChange={(e) => setLetterContent(e.target.value)}
-          />
-
-          <FirstTimeChatGuide 
-            messages={allMessages} 
-            hasReplied={false}
-            onComplete={() => console.log('Guide completed')}
-            onUseTemplate={handleUseTemplate}
+            onChange={(e) => {
+              setLetterContent(e.target.value)
+              console.log(e);
+            } }
           />
 
           <div className="text-right text-sm p-4 mt-8 text-gray-600">

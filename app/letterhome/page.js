@@ -145,7 +145,7 @@ export default function Home() {
                 </Link>
               </h2>
               {
-                letters.length == 1 && <FirstTimeChatGuide step={0} chats={letters} />
+                letters.length == 1 && <FirstTimeChatGuide page="letterHome" />
               }
               {letters.length > 0 ? (
                 letters.map((letter, i) => (
