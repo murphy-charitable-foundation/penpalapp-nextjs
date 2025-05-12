@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig";
+import { db, auth } from "../../firebaseConfig";
 
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
@@ -23,15 +23,15 @@ import {
   Square,
   Palette,
 } from "lucide-react";
-import Button from "../../components/general/Button";
-import Input from "../../components/general/Input";
-import Modal from "../../components/general/Modal";
-import { BackButton } from "../../components/general/BackButton";
-import { PageContainer } from "../../components/general/PageContainer";
-import Popover from "../../components/general/Popover";
+import Button from "../../../components/general/Button";
+import Input from "../../../components/general/Input";
+import Modal from "../../../components/general/Modal";
+import { BackButton } from "../../../components/general/BackButton";
+import { PageContainer } from "../../../components/general/PageContainer";
+import Popover from "../../../components/general/Popover";
 
-export default function EditProfile() {
-  // State initializations
+export default function Page({ params }) {
+  const { id } = params;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -62,7 +62,7 @@ export default function EditProfile() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
+        const uid = id;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
         console.log(docSnap.data());
@@ -345,26 +345,7 @@ export default function EditProfile() {
               alt="Profile picture"
             />
             {/* Edit Icon */}
-            <div
-              className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full curspr-pointer"
-              onClick={() => {
-                router.push("/edit-profile-user-image");
-              }}
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
+            
           </div>
         </div>
 
@@ -381,17 +362,8 @@ export default function EditProfile() {
                 <User className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  label="First name"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">First Name</p>
+                  <span>{firstName != "" ? firstName : "Unknown"}</span>
               </div>
             </div>
 
@@ -400,17 +372,8 @@ export default function EditProfile() {
                 <User className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  label="Last name"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">Last Name</p>
+                  <span>{lastName != "" ? lastName : "Unknown"}</span>
               </div>
             </div>
 
@@ -419,18 +382,8 @@ export default function EditProfile() {
                 <MapPin className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="text"
-                  id="country"
-                  name="country"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  label="Country"
-                  placeholder="Ex: Country"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">Country</p>
+                  <span>{country != "" ? country : "Unknown"}</span>
               </div>
             </div>
 
@@ -439,18 +392,8 @@ export default function EditProfile() {
                 <Home className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="text"
-                  id="village"
-                  name="village"
-                  value={village}
-                  onChange={(e) => setVillage(e.target.value)}
-                  label="Village"
-                  placeholder="Ex: Village"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">Village</p>
+                  <span>{village != "" ? village : "Unknown"}</span>
               </div>
             </div>
 
@@ -459,34 +402,10 @@ export default function EditProfile() {
                 <FileText className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Bio/Challenges faced</p>
-                <button
-                  onClick={handleOpenBioModal}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
+                <p className="text-sm text-500">Bio/Challenges faced</p>
                   <span className="truncate">
-                    {bio ? bio : "Add your bio or challenges..."}
+                    {bio ? bio : "Unknown"}
                   </span>
-                  <svg
-                    className="h-5 w-5 text-gray-400 flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </button>
               </div>
             </div>
 
@@ -495,17 +414,8 @@ export default function EditProfile() {
                 <Calendar className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="date"
-                  id="birthday"
-                  name="birthday"
-                  value={birthday}
-                  onChange={(e) => setBirthday(e.target.value)}
-                  label="Birthday"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">Birthday</p>
+                  <span>{birthday || "Unknown"}</span>
               </div>
             </div>
           </div>
@@ -521,26 +431,8 @@ export default function EditProfile() {
                 <GraduationCap className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Education level</p>
-                <button
-                  onClick={() => setIsEducationModalOpen(true)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
-                  <span>{educationLevel || "Select education level"}</span>
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                <p className="text-sm text-500">Education level</p>
+                  <span>{educationLevel || "Unknown"}</span>
               </div>
             </div>
 
@@ -549,26 +441,8 @@ export default function EditProfile() {
                 <Users className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Guardian</p>
-                <button
-                  onClick={() => setIsGuardianModalOpen(true)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
-                  <span>{guardian || "Select guardian"}</span>
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                <p className="text-sm text-500">Guardian</p>
+                  <span>{guardian || "Unknown"}</span>
               </div>
             </div>
 
@@ -577,26 +451,8 @@ export default function EditProfile() {
                 <Heart className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500">Is orphan</p>
-                <button
-                  onClick={() => setIsOrphanModalOpen(true)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
-                  <span>{isOrphan || "Select option"}</span>
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                <p className="text-sm text-500">Is orphan</p>
+                  <span>{isOrphan || "Unknown"}</span>
               </div>
             </div>
           </div>
@@ -610,18 +466,8 @@ export default function EditProfile() {
                 <Briefcase className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="text"
-                  id="dreamjob"
-                  name="dreamjob"
-                  value={dreamJob}
-                  onChange={(e) => setDreamJob(e.target.value)}
-                  label="Dream job"
-                  placeholder="Airplane pilot"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">Dream Job</p>
+                  <span>{dreamJob != "" ? dreamJob : "Unknown"}</span>
               </div>
             </div>
 
@@ -630,18 +476,8 @@ export default function EditProfile() {
                 <Square className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <Input
-                  type="text"
-                  id="hobby"
-                  name="hobby"
-                  value={hobby}
-                  onChange={(e) => setHobby(e.target.value)}
-                  label="Hobby"
-                  placeholder="Dancing"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
+                <p className="text-sm text-500">Hobby</p>
+                  <span>{hobby != "" ? hobby : "Unknown"}</span>
               </div>
             </div>
           </div>
@@ -651,49 +487,10 @@ export default function EditProfile() {
             <div className="p-2 bg-gray-100 rounded-lg">
               <Palette className="w-5 h-5 text-gray-600" />
             </div>
-            <div className="flex-1">
-              <Input
-                type="text"
-                id="favoriteColor"
-                name="favoriteColor"
-                value={favoriteColor}
-                onChange={(e) => setFavoriteColor(e.target.value)}
-                label="Favorite Color"
-                placeholder="Ex: Blue"
-                borderColor="border-gray-300"
-                focusBorderColor="focus:border-green-800"
-                bgColor="bg-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-center">
-            <Link
-              href="/letterhome"
-              className="transition-transform hover:scale-105 focus:outline-none"
-              onClick={(e) => {
-                e.preventDefault();
-                saveProfileData().then(() => {
-                  router.push("/letterhome");
-                });
-              }}
-            >
-              <Button
-                btnType="button"
-                btnText={
-                  isSaving ? (
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
-                  ) : (
-                    "Save"
-                  )
-                }
-                color="bg-green-800"
-                hoverColor="hover:bg-[#48801c]"
-                textColor="text-gray-200"
-                disabled={isSaving}
-                rounded="rounded-full"
-              />
-            </Link>
+              <div className="flex-1">
+                <p className="text-sm text-500">Favorite Color</p>
+                  <span>{favoriteColor != "" ? favoriteColor : "Unknown"}</span>
+              </div>
           </div>
         </div>
       </div>

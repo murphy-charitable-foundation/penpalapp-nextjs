@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ProfileImage from "../ProfileImage";
 
 
@@ -7,6 +8,7 @@ export default function RecipientList({ recipients }) {
   return (
     <div className="flex space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
       {recipients.map(recipient => (
+        <Link href={"/profile-view/" + recipient?.id}>
         <div key={recipient?.first_name?.[0]} className="flex items-center space-x-3">
           <ProfileImage 
             photo_uri={recipient?.photo_uri} 
@@ -20,6 +22,7 @@ export default function RecipientList({ recipients }) {
             <p className="text-xs text-gray-500">{recipient?.country}</p>
           </div>
         </div>
+        </Link>
       ))}
     </div>
   );
