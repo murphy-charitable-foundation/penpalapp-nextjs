@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import {
   collection,
   getDocs,
+  doc,
   query,
   startAfter,
   limit,
   where,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db } from "../firebaseConfig"; // Ensure this path is correct
-import { differenceInCalendarYears, parseISO } from "date-fns";
+import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
 import KidCard from "../../components/discovery/KidCard";
 import KidFilter from "../../components/discovery/KidFilter";
 import Link from "next/link";
@@ -41,6 +41,11 @@ export default function ChooseKid() {
     setLoading(true);
   
     try {
+      const uid = auth.currentUser.uid;
+      if (!uid) {
+        throw new Error("Login error. User may not be logged in properly."); 
+      }
+      const userRef = doc(db, "users", uid);
       const kidsCollectionRef = collection(db, "users");
       let q = query(kidsCollectionRef);
   
@@ -63,15 +68,20 @@ export default function ChooseKid() {
       }
   
       q = query(q, where("user_type", "==", "child"));
-      q = query(q, where("connected_penpals_count", "<=", 3));
+      q = query(q, where("connected_penpals_count", "<", 3));
   
       if (lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
       q = query(q, limit(PAGE_SIZE));
       const snapshot = await getDocs(q);
+
+      const filteredSnapshot = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        return !data.connected_penpals?.some(penpalRef => penpalRef.path === userRef.path);
+      })
   
-      const kidsList = await Promise.all(snapshot.docs.map(async (doc) => { //Still needed as photo_uri is not currently directly stored under profile
+      const kidsList = await Promise.all(filteredSnapshot.map(async (doc) => { //Still needed as photo_uri is not currently directly stored under profile
         const data = doc.data();
         try {
           if (data.photo_uri) {

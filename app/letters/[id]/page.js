@@ -239,6 +239,7 @@ export default function Page({ params }) {
         <ReportPopup
           setShowPopup={setShowReportPopup}
           setShowConfirmReportPopup={setShowConfirmReportPopup}
+          receiver_email={auth.currentUser.email}
           sender={sender}
           content={content}
         />

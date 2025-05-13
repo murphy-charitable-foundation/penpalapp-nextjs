@@ -1,18 +1,48 @@
 import { db } from "../firebaseConfig";
-import { collection, getDocs, query, orderBy, limit} from "firebase/firestore";
+import { collection, collectionGroup, getDocs, getDoc, doc, query, orderBy, limit, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
-import { getDateFromTimestamp, timestampToDate } from "./timestampToDate";
+import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
-const apiRequest = async (sender, users, id) => {
-  try {     
-      const response = await fetch('/api/deadchat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sender, users, id  }), // Send data as JSON
-      });
+const apiRequest = async (letterbox, emailId, reason) => {
+  try {
+      if (reason == "admin") {
+        const ids = letterbox.members.map((member) => {
+          const segments = member._key?.path?.segments;
+          return segments?.[segments.length - 1];
+          
+        });
+        let userData = [];
+        const sender = await getDoc(doc(db, "users", ids[0]));
+        userData.push(sender.data());
+        const sender2 = await getDoc(doc(db, "users", ids[1]))
+        userData.push(sender2.data());
+        
+        const response = await fetch('/api/deadchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+        });
+      } else {
+        const ids = letterbox.members.map((member) => {
+          const segments = member._key?.path?.segments;
+          if (segments?.[segments.length - 1] != emailId) {
+            return segments?.[segments.length - 1];
+          }
+        });
+        const sender = await getDoc(doc(db, "users", ids[0]));
+        
+        const response = await fetch('/api/deadchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+        });
+      }
+      
         
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
@@ -24,50 +54,76 @@ const apiRequest = async (sender, users, id) => {
 }
 
 
+  export const iterateLetterBoxes = async () => {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
+    // Convert oneMonthAgo to Firestore Timestamp using dateToTimestamp
+    const oneMonthAgoTimestamp = dateToTimestamp(oneMonthAgo);
 
+    //Two indexes needed for this query but keeps read calls down.
+    const allLettersQuery = query(
+        collectionGroup(db, "letters"), 
+        where("status", "==", "sent"),
+        where("created_at", ">=", oneMonthAgoTimestamp), // Use Firestore Timestamp here
+    );
+
+    const querySnapshot = await getDocs(allLettersQuery);
+    const letterboxes = {}; 
+
+    const documents = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        refPath: doc.ref.path, // Store path explicitly
+        ...doc.data()
+    }));
+
+    documents.forEach((doc) => {
+      const pathSegments = doc.refPath.split("/");
+      const letterboxId = pathSegments[1];
   
-const deadChat = async (chat) => {
-    try {
-      const chatData = chat.data()
-      const lettersRef = collection(db, "letterbox", chat.id, "letters");
-  
-      const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
-  
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
-        Sentry.captureException("Letters documents do not exist");
-        return;
+      if (!letterboxes[letterboxId]) {
+        letterboxes[letterboxId] = {};
       }
-      // Process the data
-      const doc = querySnapshot.docs[0];
-      const data = doc.data();
-     
-      const mostRecentDate = new Date(timestampToDate(data.created_at));
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
   
-      if (mostRecentDate < oneMonthAgo) {
-        await apiRequest(data.sent_by, chatData.members, chat.id);
-      } 
-    } catch (error) {
-      Sentry.captureException(error);
+      if (!letterboxes[letterboxId][doc.sent_by]) {
+        letterboxes[letterboxId][doc.sent_by] = [];
+      }
+  
+      letterboxes[letterboxId][doc.sent_by].push(doc);
+    });
+  
+    const letterboxSnapshot = await getDocs(collection(db, "letterbox"));
+    const letterboxDocuments = letterboxSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const now = new Date();
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(now.getDate() - 14);
+  
+    for (const letterbox of letterboxDocuments) {
+      const id = letterbox.id;
+      const members = letterbox.members || [];
+  
+      const activityMap = letterboxes[id] || {};
+  
+      for (const member of members) {
+        const lettersByMember = activityMap[member] || [];
+  
+        const lastSentDate = lettersByMember
+          .map((letter) => letter.created_at?.toDate?.())
+          .filter((d) => !!d)
+          .sort((a, b) => b - a)[0]; // Most recent
+  
+          if (!lastSentDate) {
+            // User has sent nothing in the last month
+            await apiRequest(letterbox, member, "user");
+            await apiRequest(letterbox, member, "admin");
+          } else if (lastSentDate < twoWeeksAgo) {
+            // User sent something between 2 weeks ago to 1 month ago 
+            await apiRequest(letterbox, member, "user");
+          }
+      }
     }
-  
-  }
-
-export const iterateLetterBoxes = async () => {
-      const boxRef = collection(db, "letterbox");
-      const q = query(boxRef);
-      const querySnapshot = await getDocs(q, limit(5))
-  
-      querySnapshot.forEach(doc => {
-          // console.log("this is the chatId", doc.id);
-          deadChat(doc);
-        }
-      )
-  }
-  
- 
-
-
+}; 

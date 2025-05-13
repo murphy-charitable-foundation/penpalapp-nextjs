@@ -85,9 +85,9 @@ export default function CreateAccount() {
         });
 
       setShowCreate(false);
-
+      localStorage.setItem('userFirstName', firstName);
       // Redirect to profile page or any other page as needed
-      // router.push("/profile");
+      router.push('/welcome/');
     } catch (error) {
       Sentry.captureException(error); //need to add password checks for size, and etc to make this defualt
       Sentry.captureException(error);
