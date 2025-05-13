@@ -23,7 +23,7 @@ function FilterButton({ activeFilter, setActiveFilter }) {
       <Button
         btnText="Filters"
         color="bg-transparent"
-        size="xs"
+        size="small"
         onClick={() => setActiveFilter(!activeFilter)}
       >
         <span className="flex items-center">

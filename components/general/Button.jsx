@@ -1,3 +1,5 @@
+"use client";
+
 export default function Button({
   color = 'blue',
   btnText,
@@ -5,6 +7,7 @@ export default function Button({
   disabled,
   textColor = 'white',
   size = 'default',
+  onClick
 }) {
   const colors = {
     blue: 'bg-blue-700 hover:bg-blue-800 text-white',
@@ -32,6 +35,7 @@ export default function Button({
     <button
       type={btnType === "submit" ? "submit" : "button"}
       disabled={disabled}
+      onClick={onClick}
       className={`
         ${colors[color]}
         ${sizes[size]}

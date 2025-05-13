@@ -20,7 +20,7 @@ export default function Home() {
             <Button
               btnType="button"
               btnText="←"
-              color="bg-transparent"
+              color="transparent"
               textColor="text-gray-600"
               onClick={() => router.push("/cover")}
               size="xs"
