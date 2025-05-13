@@ -1,8 +1,12 @@
+"use client";
 // page.js
+
+
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
 import Button from "../components/general/Button";
+import { BackButton } from "../components/general/BackButton";
 
 export default function Home() {
   return (
@@ -17,9 +21,8 @@ export default function Home() {
           }}
         >
           <Link href="/cover">
-            <Button
+            <BackButton
               btnType="button"
-              btnText="←"
               color="transparent"
               textColor="text-gray-600"
               onClick={() => router.push("/cover")}
