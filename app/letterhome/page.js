@@ -37,6 +37,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [showWelcome, setShowWelcome] = useState(false);
+  const [userId, setUserId] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function Home() {
     const fetchUserData = async () => {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
+        setUserId(uid)
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
@@ -120,6 +122,7 @@ export default function Home() {
           userName={userName}
           country={country}
           profileImage={profileImage}
+          id={userId}
         />
 
         <main className="p-6">
