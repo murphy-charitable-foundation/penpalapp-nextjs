@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
-import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");

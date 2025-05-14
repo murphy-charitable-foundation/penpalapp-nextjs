@@ -17,7 +17,7 @@ import KidFilter from "@/components/discovery/KidFilter";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
-import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
 
 const PAGE_SIZE = 10; // Number of kids per page
 
@@ -53,9 +53,17 @@ export default function ChooseKid() {
       // Apply filters
       if (age > 0) {
         const currentDate = new Date();
-        const minBirthDate = new Date(currentDate.getFullYear() - age - 1, currentDate.getMonth(), currentDate.getDate());
-        const maxBirthDate = new Date(currentDate.getFullYear() - age, currentDate.getMonth(), currentDate.getDate());
-  
+        const minBirthDate = new Date(
+          currentDate.getFullYear() - age - 1,
+          currentDate.getMonth(),
+          currentDate.getDate()
+        );
+        const maxBirthDate = new Date(
+          currentDate.getFullYear() - age,
+          currentDate.getMonth(),
+          currentDate.getDate()
+        );
+
         q = query(q, where("date_of_birth", ">=", minBirthDate));
         q = query(q, where("date_of_birth", "<=", maxBirthDate));
       }
@@ -158,10 +166,10 @@ export default function ChooseKid() {
     const timestamp = Date.parse(birthdayTimestamp);
     const birthdayDate = new Date(timestamp);
     const currentDate = new Date();
-    
+
     // Calculate the difference in years
     const diffInYears = currentDate.getFullYear() - birthdayDate.getFullYear();
-  
+
     // Adjust the age based on the birth month and day
     if (
       currentDate.getMonth() < birthdayDate.getMonth() ||
@@ -170,7 +178,7 @@ export default function ChooseKid() {
     ) {
       return diffInYears - 1;
     }
-    
+
     return diffInYears;
   }
 
@@ -224,15 +232,15 @@ export default function ChooseKid() {
               onClick={() => setActiveFilter(!activeFilter)}
             >
               <p>Filters</p>
-              {!activeFilter ? 
-              <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-                <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
-              </svg> : 
-              <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-                <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
+              {!activeFilter ? (
+                <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
                 </svg>
-                }
-              
+              ) : (
+                <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
+                  <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
+                </svg>
+              )}
             </button>
           </div>
         </div>

@@ -11,7 +11,7 @@ import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import HobbySelect from "@/components/general/HobbySelect";
 import * as Sentry from "@sentry/nextjs";
-import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 
 export default function EditProfile() {

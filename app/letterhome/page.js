@@ -18,7 +18,7 @@ import {
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "@/components/general/ProfileImage";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
-import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -176,7 +176,8 @@ export default function Home() {
                   <a
                     key={letter.id + "_" + i}
                     href={`/letters/${letter.id}`}
-                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  >
                     <div className="flex-grow">
                       {letter.recipients?.map((rec) => (
                         <div key={rec.id} className="flex mt-3">
@@ -217,7 +218,8 @@ export default function Home() {
       {userType === "admin" && (
         <button
           className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-          onClick={iterateLetterBoxes}>
+          onClick={iterateLetterBoxes}
+        >
           Check For Inactive Chats
         </button>
       )}

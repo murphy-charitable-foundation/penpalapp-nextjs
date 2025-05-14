@@ -4,7 +4,7 @@ import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
 import Button from "@/components/general/Button";
-import { usePageAnalytics } from "@/app/utils/useAnalytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { useEffect } from "react";
 export default function Home() {
