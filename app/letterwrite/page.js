@@ -11,7 +11,7 @@ import BottomNavBar from "../../components/bottom-nav-bar";
 import { File, X, Video, Play, Pause, Volume2, VolumeX, Settings } from "lucide-react";
 import Compressor from 'compressorjs';
 import Button from "../../components/general/Button";
-
+import * as Sentry from '@sentry/react';
 
 export default function WriteLetter() {
   const [letterContent, setLetterContent] = useState("");
@@ -21,7 +21,6 @@ export default function WriteLetter() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const auth = getAuth();
-  const storage = getStorage();
   const fileInputRef = useRef(null);
   const router = useRouter();
   const [playingAudio, setPlayingAudio] = useState(null);
@@ -240,6 +239,7 @@ export default function WriteLetter() {
   };
 
   const uploadFile = async (file) => {
+    const storage = getStorage();
     const userId = auth.currentUser.uid;
     const storageRef = ref(storage, `attachments/${userId}/${file.name}`);
     await uploadBytes(storageRef, file);
