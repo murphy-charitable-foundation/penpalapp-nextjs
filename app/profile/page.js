@@ -284,18 +284,6 @@ export default function EditProfile() {
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <BackButton />
       <div className="max-w-lg mx-auto p-6 pt-4">
-        <div className="flex justify-end">
-          <Button
-            onClick={handleLogout}
-            color="bg-red-500"
-            textColor="text-white"
-            hoverColor="hover:bg-red-600"
-            btnType="submit"
-            rounded="rounded-lg"
-            btnText="Log out"
-            size="w-24"
-          />
-        </div>
 
         {/* Education Level Modal */}
         <Modal

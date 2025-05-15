@@ -70,7 +70,7 @@ export default function NavBar() {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 bg-blue-200 p-3 flex justify-around items-center text-zinc-900 border-t border-[#E6E6E6] shadow-md">
+    <nav className="fixed inset-x-0 bottom-0 bg-blue-100 p-3 flex justify-around items-center text-zinc-900 border-t border-[#E6E6E6] shadow-md">
       <Link href="/letters">
         <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
           <FaInbox className="h-4 w-4" />
