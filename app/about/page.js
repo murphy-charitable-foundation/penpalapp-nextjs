@@ -8,7 +8,7 @@ import BottomNavBar from '../../components/bottom-nav-bar';
 import { BackButton } from '../../components/general/BackButton';
 export default function About() {
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 pb-20">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-2xl w-full">
                 <BackButton />
                 <div className="p-6">

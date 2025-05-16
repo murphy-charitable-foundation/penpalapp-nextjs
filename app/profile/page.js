@@ -284,6 +284,7 @@ export default function EditProfile() {
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <BackButton />
       <div className="max-w-lg mx-auto p-6 pt-4">
+        
 
         {/* Education Level Modal */}
         <Modal
