@@ -23,6 +23,8 @@ import {
 import Button from "../../../components/general/Button";
 import { BackButton } from "../../../components/general/BackButton";
 import { PageContainer } from "../../../components/general/PageContainer";
+import ProfileSection from "../../../components/general/profile/ProfileSection";
+import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -129,7 +131,7 @@ export default function Page({ params }) {
                 alt="Profile picture"
               />
               {/* Edit Icon */}
-              {auth.currentUser.uid === id && (
+              {auth.currentUser?.uid === id && (
                 <div
                   className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full curspr-pointer"
                   onClick={() => {
@@ -190,128 +192,46 @@ export default function Page({ params }) {
           {/* Info */}
           <div className="space-y-8 mb-[120px]">
             {/* Personal Information Section */}
-            <div className="space-y-4">
-              <div className="h-4"></div>
-              <h3 className="text-blue-900 font-medium text-sm mb-5">
-                Personal Information
-              </h3>
-              <div className="h-4"></div>
+            <ProfileSection title="Personal Information">
+              <InfoDisplay title="Village" info={village}>
+                <Home className="w-5 h-5 text-600" />
+              </InfoDisplay>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Home className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Village</p>
-                  <span className={village != "" ? "" : "text-gray-500"}>
-                    {village != "" ? village : "Unknown"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Calendar className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Birthday</p>
-                  <span className={birthday != "" ? "" : "text-gray-500"}>
-                    {birthday || "Unknown"}
-                  </span>
-                </div>
-              </div>
-            </div>
+              <InfoDisplay title="Birthday" info={birthday}>
+                <Calendar className="w-5 h-5 text-600" />
+              </InfoDisplay>
+            </ProfileSection>
 
             {/* Education & Family Section */}
-            <div className="space-y-4">
-              <div className="h-4"></div>
-              <h3 className="text-blue-900 font-medium text-sm mb-4">
-                Education & Family
-              </h3>
-              <div className="h-4"></div>
+            <ProfileSection title="Education & Family">
+              <InfoDisplay title="Education level" info={educationLevel}>
+                <GraduationCap className="w-5 h-5 text-600" />
+              </InfoDisplay>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <GraduationCap className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Education level</p>
-                  <span className={educationLevel != "" ? "" : "text-gray-500"}>
-                    {educationLevel || "Unknown"}
-                  </span>
-                </div>
-              </div>
+              <InfoDisplay title="Guardian" info={guardian}>
+                <Users className="w-5 h-5 text-600" />
+              </InfoDisplay>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Users className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Guardian</p>
-                  <span className={guardian != "" ? "" : "text-gray-500"}>
-                    {guardian || "Unknown"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Heart className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Is orphan</p>
-                  <span className={isOrphan != "" ? "" : "text-gray-500"}>
-                    {isOrphan || "Unknown"}
-                  </span>
-                </div>
-              </div>
-            </div>
+              <InfoDisplay title="Is orphan" info={isOrphan}>
+                <Heart className="w-5 h-5 text-600" />
+              </InfoDisplay>
+            </ProfileSection>
 
             {/* Interest Section */}
-            <div className="space-y-4">
-              <div className="h-4"></div>
-              <h3 className="text-blue-900 font-medium text-sm mb-4">
-                Interest
-              </h3>
-              <div className="h-4"></div>
+            <ProfileSection title="Interest">
+              <InfoDisplay title="Dream Job" info={dreamJob}>
+                <Briefcase className="w-5 h-5 text-600" />
+              </InfoDisplay>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Briefcase className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Dream Job</p>
-                  <span className={dreamJob != "" ? "" : "text-gray-500"}>
-                    {dreamJob != "" ? dreamJob : "Unknown"}
-                  </span>
-                </div>
-              </div>
+              <InfoDisplay title="Hobby" info={hobby}>
+                <Square className="w-5 h-5 text-600" />
+              </InfoDisplay>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Square className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Hobby</p>
-                  <span className={hobby != "" ? "" : "text-gray-500"}>
-                    {hobby != "" ? hobby : "Unknown"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Favorite Color */}
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
+              {/* Favorite Color */}
+              <InfoDisplay title="Favorite Color" info={favoriteColor}>
                 <Palette className="w-5 h-5 text-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-500">Favorite Color</p>
-                <span className={favoriteColor != "" ? "" : "text-gray-500"}>
-                  {favoriteColor != "" ? favoriteColor : "Unknown"}
-                </span>
-              </div>
-            </div>
+              </InfoDisplay>
+            </ProfileSection>
           </div>
         </div>
       </PageContainer>
