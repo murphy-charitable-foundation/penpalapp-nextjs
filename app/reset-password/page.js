@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import Button from '../../components/general/Button';
 import Input from '../../components/general/Input'; 
+import Modal from '../../components/general/Modal';
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -28,6 +29,18 @@ export default function ResetPassword() {
     setShowModal(false);
     router.push('/login');
   }
+
+  const modalContent = (
+    <div>
+      <p style={{ color: 'black', marginTop:'20px', fontSize: '0.9rem'}}>Please check your email inbox and spam folder for a verification email to reset your password.</p>
+      <div className="flex justify-center mt-4">
+        <Button onClick={closeModal} btnText="Understood" 
+          color="green"/>
+      </div>
+    </div>
+
+  );
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
@@ -49,9 +62,6 @@ export default function ResetPassword() {
       <div className="flex justify-center">
         <Image src={logo} alt="Foundation Logo" width={200} margin={0}/>
       </div>
-      <div style={{ display: 'inline-block', width: '80%', maxWidth: '500px', textAlign: 'left', marginTop:"80px"}}>
-      <label htmlFor="email" style={{padding:"10px"}} className="text-sm font-medium text-gray-700 block">Write your e-mail registered</label>
-      </div>
       <Input
         type="email"
         value={email}
@@ -62,63 +72,23 @@ export default function ResetPassword() {
         required
         bgColor="bg-white"
         textColor="text-black"
-        borderColor="border-gray-300"
-        focusBorderColor="focus:border-blue-500"
-        placeholderColor="placeholder:text-gray-500"
-        rounded="rounded-none"
-        size="w-4/5 mx-auto"
-        padding="px-3 py-2"
-        label="Write your e-mail registered"
+        label="Write your registered email"
         labelColor="text-gray-700"
       />
-      <Button
-        btnType="button"
-        btnText="Reset"
-        color="bg-gray-200"
-        textColor="text-gray-400"
-        hoverColor="hover:bg-[#48801c]"
-        hoverTextClr="hover:text-white"
-        font="font-medium"
-        rounded="rounded-full"
-        size="w-full"
-        onClick={resetPassword}
-      />
-        Reset
-      {showModal && (
-        <div style={{
-          position: 'absolute',
-          paddingTop:'80px',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow:'auto',
-          zIndex: '2',
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '5px',
-            textAlign: 'left',
-            width: '80%',
-            boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2)'
-          }}>
-            <h3 style={{ color: 'blue'}}>Check your email</h3>
-            <p style={{ color: 'black', marginTop:'20px',leading:'[2rem]'}}>Please check your email inbox and spam folder for a verification email to reset your password.</p>
-            <div className="flex justify-center">
-            <button onClick={closeModal} style={{backgroundColor: '#48801c', color: 'white', padding: '10px 20px', margin: '30px 0', borderRadius: '20px', border: 'none', cursor: 'pointer' }}>
-              Understood
-            </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="mt-4">
+        <Button
+          btnType="button"
+          btnText="Reset"
+          color="gray"
+          textColor="text-gray-400"
+          size="default"
+          onClick={resetPassword}
+        />
+      </div>
+      
     </div>
     </div>
+    <Modal isOpen={showModal} width="large" onClose={() => {setShowModal(false);}} title="Please Check Your Email" content={modalContent} />
   </div>
   );
 }

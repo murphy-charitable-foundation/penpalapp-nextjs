@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Button from "./Button";
+import  Button  from "./Button";
 
 const sizes = {
   default: 'w-72 max-w-sm',
@@ -23,7 +23,8 @@ export default function Dialog({
   // Add debugging
   console.log("Dialog render:", { isOpen, title });
 
-  const dialogRef = useRef(null);
+ 
+  const dialogRef = useRef(null); 
 
   useEffect(() => {
     if (isOpen) {
@@ -40,26 +41,34 @@ export default function Dialog({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+      
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]`}
         onClick={() => closeOnOverlay && onClose()}
       />
+      
       <div
         ref={dialogRef}
         className={`relative ${sizes[width]} bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]`}
       >
         {showCloseButton && (
-          <button 
-            onClick={onClose}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
-          >
-            ✕
-          </button>
+          <div className="absolute top-1 right-1 text-xl">
+            <Button 
+              onClick={onClose}
+              btnText="✕"
+              color="transparent"
+              textColor="black"
+              size="xxs"
+            />
+          </div>
+          
+            
+          
         )}
         {title && (
-          <h2 className={`text-lg font-semibold mb-4 text-green-800`}>{title}</h2>
+          <h2 className={`text-xl text-center font-semibold mt-6 mb-4 text-[#4E802A]`}>{title}</h2>
         )}
-        <div>{content}</div>
+        <div className="mt-4 text-center">{content}</div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export default function Button({
     blue: 'bg-blue-700 hover:bg-blue-800 text-white',
     green: 'bg-[#4E802A] hover:bg-green-800 text-white', 
     red: 'bg-red-500 hover:bg-red-600 text-white',
-    gray: 'bg-gray-300 hover: bg-gray-400 text-white',
+    gray: 'bg-gray-300 hover:bg-[#4E802A] text-white',
     transparent: 'bg-transparent hover: bg-gray-400 text-black'
   };
 
@@ -29,6 +29,7 @@ export default function Button({
     xl: 'w-108',
     large: 'w-96',
     xs: 'w-24',
+    xxs: 'w-12'
   };
 
   return (
@@ -41,7 +42,7 @@ export default function Button({
         ${sizes[size]}
         ${textColors[textColor]}
         rounded-full
-        text-sm font-bold py-3 px-4
+        text-md font-bold py-3 px-4
         disabled:opacity-50 disabled:cursor-not-allowed
       `}
     >

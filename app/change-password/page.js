@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { updatePassword, signOut } from "firebase/auth";
 //import { handleLogout } from '../profile/page'; 
 import PasswordChecklist from "react-password-checklist";
+import Modal from "../../components/general/Modal";
 import Button from '../../components/general/Button';
 
 export default function ChangePassword() {
@@ -43,6 +44,16 @@ export default function ChangePassword() {
           console.error(error);
         }
   }
+
+  const modalContent = (<div className="space-y-4">
+            <p style={{ color: 'black', text: 'textCenter', marginTop:'20px'}}>Your password has been reset. Please sign in to your account again.</p>
+            <div className="flex justify-center">
+            <Button onClick={closeModal} 
+              color="green"
+              btnText="Understood"
+            />
+            </div>
+          </div>);
  
   function closeModal() {
     setShowModal(false);
@@ -113,40 +124,9 @@ export default function ChangePassword() {
         </div>
     </form>
 
-      {showModal && (
-        <div style={{
-          position: 'absolute',
-          paddingTop:'80px',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow:'auto',
-          zIndex: '2',
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '5px',
-            textAlign: 'left',
-            width: '80%',
-            boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2)'
-          }}>
-            <h3 style={{ color: 'blue'}}>The reset was succesfully!</h3>
-            <p style={{ color: 'black', marginTop:'20px',leading:'[2rem]'}}>Your password has been reset. Please sign in to your account again.</p>
-            <div className="flex justify-center">
-            <button onClick={closeModal} style={{backgroundColor: '#48801c', color: 'white', padding: '10px 20px', margin: '30px 0', borderRadius: '20px', border: 'none', cursor: 'pointer' }}>
-              Understood
-            </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
+    <Modal isOpen={showModal} onClose={() => {setShowModal(false);}} title="Password reset was successful!" content={modalContent} width="large"/>
   </div>
     //</div>
   );
