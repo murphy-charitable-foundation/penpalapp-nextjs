@@ -26,6 +26,7 @@ import {
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import Modal from "../../components/general/Modal";
+import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import Popover from "../../components/general/Popover";
@@ -171,24 +172,13 @@ export default function EditProfile() {
   const educationModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-4">Select your education level:</p>
-      <div className="grid grid-cols-1 gap-3">
-        {educationOptions.map((option) => (
-          <button
-            key={option}
-            className={`p-3 rounded-lg text-left ${
-              educationLevel === option
-                ? "bg-green-100 border border-green-500"
-                : "bg-gray-50 hover:bg-gray-100"
-            }`}
-            onClick={() => {
-              setEducationLevel(option);
-              setIsEducationModalOpen(false);
-            }}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
+      <List 
+        options={educationOptions}
+        valueChange={(option) => {setEducationLevel(option);}} 
+        closeList={() => {setIsEducationModalOpen(false);}}
+        currentValue={educationLevel}
+      />
+      
     </div>
   );
 
@@ -196,24 +186,13 @@ export default function EditProfile() {
   const guardianModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-4">Select your guardian:</p>
-      <div className="grid grid-cols-1 gap-3">
-        {guardianOptions.map((option) => (
-          <button
-            key={option}
-            className={`p-3 rounded-lg text-left ${
-              guardian === option
-                ? "bg-green-100 border border-green-500"
-                : "bg-gray-50 hover:bg-gray-100"
-            }`}
-            onClick={() => {
-              setGuardian(option);
-              setIsGuardianModalOpen(false);
-            }}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
+      <List 
+        options={guardianOptions}
+        valueChange={(option) => {setGuardian(option);}}
+        closeList={() => {setIsGuardianModalOpen(false);}}
+        currentValue={guardian}
+      />
+      
     </div>
   );
 
