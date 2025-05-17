@@ -17,8 +17,6 @@ import {
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "@/components/general/ProfileImage";
-import LoadingSpinner from "@/components/loading/LoadingSpinner";
-import LoadingSkeleton from "@/components/loading/LoadingSkeleton";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -96,13 +94,6 @@ export default function Home() {
 
     return () => unsubscribe();
   }, [router]);
-
-  // Skeleton loading component
-  // if (isLoading) {
-  //   return (
-  //     <LoadingSkeleton />
-  //   );
-  // }
 
   return (
     <div className="bg-gray-100 min-h-screen py-6">

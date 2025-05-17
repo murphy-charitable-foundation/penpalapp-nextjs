@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import LoadingSkeleton from '../loading/LoadingSkeleton';
+import SkeletonComponent from '../loading/SkeletonComponent';
 import LoadingSpinner from '../loading/LoadingSpinner';
 
 export default function NavigationStateManager() {
@@ -12,7 +12,6 @@ export default function NavigationStateManager() {
 
   const [isExiting, setIsExiting] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
-  // const [sourceRoute, setSourceRoute] = useState('');
   const [targetUrl, setTargetUrl] = useState(null);
 
   useEffect(() => {
@@ -98,15 +97,23 @@ export default function NavigationStateManager() {
       setIsExiting(false);
       setIsEntering(false);
       setTargetUrl(null);
-    }, 100);
+    }, 200);
     
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);
 
+  // Get the skeleton component based on the target URL
+  const renderSkeleton = () => {
+    if (!targetUrl) return null;
+    
+    const SkeletonComponent = getSkeletonForRoute(targetUrl);
+    return <SkeletonComponent />;
+  };
+  
   return (
     <>
       {isExiting && <LoadingSpinner />}
-      {isEntering && <LoadingSkeleton />}
+      {isEntering && renderSkeleton()}
     </>
   );
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LoadingSkeleton() {
+export default function SkeletonComponent() {
   return (
     <div className="bg-gray-100 min-h-screen py-6">
         <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden animate-pulse">

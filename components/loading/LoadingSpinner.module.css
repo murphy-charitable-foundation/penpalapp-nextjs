@@ -1,20 +1,11 @@
-.loading-wrap { 
-    width: 5em;
-    height: 5em;
-    padding: 8px;
-    border-radius: 50%;
-    background: linear-gradient(to right, #fff, #65B427);
-    animation: spin 1s linear infinite;
-}
-.loading-inner {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background-color: white;
-}
-
-@keyframes spin {
-    to {
-    transform: rotate(360deg);
+@keyframes reverseSpin {
+    from {
+        transform: rotate(0deg);
     }
+    to {
+        transform: rotate(-360deg);
+    }
+}
+.animate-reverse-spin {
+    animation: reverseSpin 1s linear infinite;
 }
