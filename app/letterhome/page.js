@@ -25,7 +25,7 @@ import Button from '../../components/general/Button';
 import WelcomeToast from "../../components/general/WelcomeToast";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
-import EmptyState from "../../components/general/EmptyState";
+import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 export default function Home() {
