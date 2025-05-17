@@ -3,27 +3,26 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import LoadingSpinner from './LoadingSpinner';
-
-// Add this list of routes where the spinner should be hidden
-const ROUTES_WITHOUT_SPINNER = [
-  '/', // Assuming your login/signup page is at the root
-  '/login',
-];
+import LoadingSkeleton from '../loading/LoadingSkeleton';
+import LoadingSpinner from '../loading/LoadingSpinner';
 
 export default function NavigationStateManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [sourceRoute, setSourceRoute] = useState('');
+
+  const [isExiting, setIsExiting] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
+  // const [sourceRoute, setSourceRoute] = useState('');
+  const [targetUrl, setTargetUrl] = useState(null);
 
   useEffect(() => {
-    // Store current route before navigation
-    setSourceRoute(pathname);
+    // Track the current page for comparison
+    let currentUrl = window.location.pathname + window.location.search;
 
-    // Handler for navigation start
-    const handleNavigationStart = () => {
-      setIsNavigating(true);
+    // Handler for navigation start - when leaving current page
+    const handleNavigationStart = (url) => {
+      setIsExiting(true);
+      if (url) setTargetUrl(url);
     };
 
     // Add event listeners for link clicks
@@ -38,7 +37,11 @@ export default function NavigationStateManager() {
         !e.metaKey && 
         !e.shiftKey
       ) {
-        handleNavigationStart();
+        const url = new URL(target.href);
+        const targetPath = url.pathname + url.search;
+        if (targetPath !== currentUrl) {
+          handleNavigationStart(targetPath);
+        }
       }
     };
 
@@ -46,18 +49,22 @@ export default function NavigationStateManager() {
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
-    window.history.pushState = function() {
-      handleNavigationStart();
+    window.history.pushState = function(state, unused, url) {
+      if (url && url !== currentUrl) {
+        handleNavigationStart(url);
+      }
       return originalPushState.apply(this, arguments);
     };
 
-    window.history.replaceState = function() {
-      handleNavigationStart();
+    window.history.replaceState = function(state, unused, url) {
+      if (url && url !== currentUrl) {
+        handleNavigationStart(url);
+      }
       return originalReplaceState.apply(this, arguments);
     };
 
     // Handle browser back/forward
-    window.addEventListener('popstate', handleNavigationStart);
+    window.addEventListener('popstate', () => handleNavigationStart());
     
     // Add click listener for all links
     document.addEventListener('click', handleLinkClick);
@@ -69,20 +76,38 @@ export default function NavigationStateManager() {
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
     };
-  }, [pathname]);
+  }, []);
+
+  // Handle the transition between exit and enter states
+  useEffect(() => {
+    if (isExiting) {
+      // Short delay to show exit animation
+      const exitTimer = setTimeout(() => {
+        setIsExiting(false);
+        setIsEntering(true);
+      }, 100);
+      
+      return () => clearTimeout(exitTimer);
+    }
+  }, [isExiting]);
 
   // When pathname or searchParams change, navigation is complete
   useEffect(() => {
     // Small delay to prevent flickering for fast navigations
     const timer = setTimeout(() => {
-      setIsNavigating(false);
+      setIsExiting(false);
+      setIsEntering(false);
+      setTargetUrl(null);
     }, 100);
     
     return () => clearTimeout(timer);
   }, [pathname, searchParams]);
 
-  const shouldShowSpinner = !ROUTES_WITHOUT_SPINNER.includes(sourceRoute);
+  return (
+    <>
+      {isExiting && <LoadingSpinner />}
+      {isEntering && <LoadingSkeleton />}
+    </>
+  );
 
-  // Only render the spinner when navigating
-  return (isNavigating && shouldShowSpinner) ? <LoadingSpinner /> : null;
 }
