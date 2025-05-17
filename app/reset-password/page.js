@@ -1,13 +1,15 @@
 "use client"
 
+{/* pages/reset-password.js */}
 import { db, auth } from '../firebaseConfig'; 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import logo from '/public/murphylogo.png';
+import logo from '/public/murphylogo.png'; 
 import Image from 'next/image';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import * as Sentry from "@sentry/nextjs";
-
+import Button from '../../components/general/Button';
+import Input from '../../components/general/Input'; 
+import Modal from '../../components/general/Modal';
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -19,20 +21,31 @@ export default function ResetPassword() {
         setShowModal(true);
       })
       .catch((error) => {
-        Sentry.captureException(error);
         console.error(error);
       });
   }
 
   function closeModal() {
     setShowModal(false);
+    router.push('/login');
   }
 
+  const modalContent = (
+    <div>
+      <p style={{ color: 'black', marginTop:'20px', fontSize: '0.9rem'}}>Please check your email inbox and spam folder for a verification email to reset your password.</p>
+      <div className="flex justify-center mt-4">
+        <Button onClick={closeModal} btnText="Understood" 
+          color="green"/>
+      </div>
+    </div>
+
+  );
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
-        <div className="w-full max-w-md space-y-8">
-    <div style={{ textAlign: 'center', padding: '20px', background: 'white' }}>
-        <div className="flex items-center justify-between mb-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-6">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
+    <div style={{ textAlign: 'center', padding: '0px', background: 'white' }}>
+        <div className="flex flex-row items-center justify-between mb-4">
                     <svg
                         onClick={() => window.history.back()}
                         xmlns="http://www.w3.org/2000/svg"
@@ -49,64 +62,33 @@ export default function ResetPassword() {
       <div className="flex justify-center">
         <Image src={logo} alt="Foundation Logo" width={200} margin={0}/>
       </div>
-      <div style={{ display: 'inline-block', width: '80%', maxWidth: '500px', textAlign: 'left' }}>
-      <label htmlFor="email" className="text-sm font-medium text-gray-700 block">Write your e-mail registered</label>
-      </div>
-      <input
+      <Input
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Ex: user@gmail.com"
-        style={{ border: '0px', borderBottom: '1px solid black', padding: '10px', width: '80%', margin: '0 auto', display: 'block', color: 'black' }}
+        name="email"
+        id="email"
+        required
+        bgColor="bg-white"
+        textColor="text-black"
+        label="Write your registered email"
+        labelColor="text-gray-700"
       />
-      <button
-        onClick={resetPassword}
-        style={{
-          padding: '10px 20px',
-          width: '80%',
-          margin: '50px auto',
-          display: 'block',
-          backgroundColor: '#48801c',
-          color: 'white',
-          border: 'none',
-          borderRadius: '20px',
-          cursor: 'pointer'
-        }}
-      >
-        Reset
-      </button>
-
-      {showModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2,
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '5px',
-            textAlign: 'center',
-            width: '80%',
-            boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2)'
-          }}>
-            <h3 style={{ color: '#023268' }}>Check your email</h3>
-            <p style={{ color: 'black' }}>Please check your email inbox and spam folder for a verification email to reset your password.</p>
-            <button onClick={closeModal} style={{ backgroundColor: '#48801c', color: 'white', padding: '10px 20px', margin: '10px 0', borderRadius: '20px', border: 'none', cursor: 'pointer' }}>
-              Understood
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="mt-4">
+        <Button
+          btnType="button"
+          btnText="Reset"
+          color="gray"
+          textColor="text-gray-400"
+          size="default"
+          onClick={resetPassword}
+        />
+      </div>
+      
     </div>
     </div>
-    </div>
+    <Modal isOpen={showModal} width="large" onClose={() => {setShowModal(false);}} title="Please Check Your Email" content={modalContent} />
+  </div>
   );
 }

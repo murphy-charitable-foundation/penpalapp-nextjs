@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 import Image from 'next/image';
 import Link from 'next/link';
+import Button from "../../components/general/Button";
 
 
 export default function Welcome() {
@@ -29,9 +30,10 @@ export default function Welcome() {
                 </div>
                 <div className='text-center w-full pt-10 pb-20'>
                     <Link href="/edit-profile-user-image">
-                        <button className="bg-white text-[#111111] px-16 py-2 rounded-full font-semibold">
-                        Continue
-                        </button>
+                        <Button 
+                            btnText="Continue"
+                            color="white"
+                        />
                     </Link>
                 </div>
             </div>

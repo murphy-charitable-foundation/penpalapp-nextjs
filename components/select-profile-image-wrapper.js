@@ -1,4 +1,5 @@
 import EditProfileImage from './edit-profile-image';
+import Button from './general/Button';
 
 const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, buttonClasses, handleDrop, handleCrop, cropperRef, updateStage }) => {
 	return (
@@ -13,8 +14,20 @@ const SelectProfileImage = ({ image, handleSave, newProfileImage, previewURL, bu
 				handleCrop={handleCrop}
 				cropperRef={cropperRef}
 			/>
-			<button className={buttonClasses()} disabled={!previewURL} onClick={() => updateStage(2, false)}>Continue</button>
-			<button className='text-black font-semibold mt-[14px] mb-[40px]' onClick={() => updateStage(2, true)}>Skip for now</button>
+			<Button
+				btnType="button"
+				btnText="Continue"
+				color={buttonClasses()}
+				disabled={!previewURL}
+				onClick={() => updateStage(2, false)}
+			/>
+			<Button
+				btnType="button"
+				btnText="Skip for now"
+				color="bg-transparent"
+				textColor="text-black"
+				onClick={() => updateStage(2, true)}
+			/>
 		</div>
 	);
 };

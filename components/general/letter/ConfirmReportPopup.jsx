@@ -13,7 +13,12 @@ const ConfirmReportPopup = ({ setShowPopup }) => {
           the content of the message.
         </p>
         <div className="flex justify-around w-full">
-          <Button onClick={() => setShowPopup(false)} type="success" size="sm">
+          <Button 
+          onClick={() => setShowPopup(false)} 
+          color="blue"
+          btnType="success"
+          size="small"
+          >
             Got It
           </Button>
         </div>
