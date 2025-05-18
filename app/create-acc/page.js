@@ -15,6 +15,8 @@ import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -98,8 +100,8 @@ export default function CreateAccount() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative min-h-[80vh]">
+    <PageBackground className="flex flex-col items-center justify-center px-4">
+      <PageContainer>
         <div className="flex items-center justify-between mb-4">
           <BackButton />
           <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">
@@ -228,7 +230,7 @@ export default function CreateAccount() {
             </form>
           
         {/* <EditProfileImage router={router} /> */}
-      </div>
-    </div>
+      </PageContainer>
+    </PageBackground>
   );
 }

@@ -13,12 +13,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
       <div className="w-full max-w-md space-y-8">
         <div
-          style={{
-            textAlign: "left",
-            padding: "20px",
-            background: "white",
-            height: "80%",
-          }}
+          className="text-left p-4 bg-white h-[80%]"
         >
           <Link href="/cover">
             <BackButton

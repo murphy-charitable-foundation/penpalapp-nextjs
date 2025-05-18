@@ -15,6 +15,8 @@ import Button from '../../components/general/Button';
 import Input from '../../components/general/Input';
 import { PageContainer } from '../../components/general/PageContainer';
 import { BackButton } from '../../components/general/BackButton';
+import { PageHeader } from '../../components/general/PageHeader'
+import { PageBackground } from '../../components/general/PageBackground';
 
 export default function ChangePassword() {
   const [password, setPassword] = useState('');
@@ -66,18 +68,12 @@ export default function ChangePassword() {
 
   return (
     <>
-    <div className="bg-gray-100 min-h-screen py-6 relative">
+    <PageBackground>
       <PageContainer maxWidth="lg">
         <BackButton />
         <div className="max-w-lg mx-auto  rounded-lg overflow-hidden">
           
-              <div className="flex flex-row items-center justify-between mb-4">
-                          <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">Create a new password</h2>
-                          <div className="h-6 w-6"></div>
-                      </div>
-            <div className="flex justify-center">
-              <Image src={logo} alt="Foundation Logo" width={200} margin={0}/>
-            </div>
+            <PageHeader title="Create Your New Password"/>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
             
@@ -124,7 +120,7 @@ export default function ChangePassword() {
         </div>
         <Modal isOpen={showModal} onClose={() => {setShowModal(false);}} title="Password reset was successful!" content={modalContent} width="large"/>
     </PageContainer>
-  </div>
+  </PageBackground>
   </>
   );
 }

@@ -12,6 +12,7 @@ import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { BackButton } from '../../components/general/BackButton';
 import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from '../../components/general/PageHeader';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -62,15 +63,7 @@ export default function Login() {
 
     return (
         <PageContainer maxWidth="md" padding="p-8">
-            <div className="relative">
-                <BackButton href="/" />
-                <div className="flex justify-center">
-                    <Image src={logo} alt="Murphy Charitable Foundation Uganda" width={150} height={150} />
-                </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Login
-                </h2>
-            </div>
+            <PageHeader title="Login"/>
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div>

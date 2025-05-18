@@ -43,11 +43,6 @@ export default function NavBar() {
       label: "Home",
     },
     {
-      href: "/letterwrite",
-      icon: <FaPen className="h-4 w-4" />,
-      label: "Write",
-    },
-    {
       href: "/discovery",
       icon: <FaCompass className="h-4 w-4" />,
       label: "Discover",

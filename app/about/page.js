@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import BottomNavBar from '../../components/bottom-nav-bar';
 import { BackButton } from '../../components/general/BackButton';
+import { PageBackground } from '../../components/general/PageBackground';
+import { PageContainer } from '../../components/general/PageContainer';
 export default function About() {
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 pb-20">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden max-w-2xl w-full">
+        <PageBackground className="flex flex-col items-center justify-center p-4 pb-20">
+            <PageContainer maxWidth="xxl">
                 <BackButton />
                 <div className="p-6">
                     <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">About Us</h2>
@@ -32,13 +34,13 @@ export default function About() {
                 </div>
                 
                 <div className="bg-blue-600 text-white p-6">
-                    <blockquote className="italic text-lg">
+                    <blockquote className="italic text-lg text-center">
                         Together, we can create a brighter future for the children of Uganda.
                     </blockquote>
                 </div>
-            </div>
+            </PageContainer>
             <BottomNavBar />
-        </div>
+        </PageBackground>
     );
 }
 

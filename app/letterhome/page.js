@@ -28,6 +28,8 @@ import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
+import { PageBackground } from "../../components/general/PageBackground"; 
+
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
@@ -106,7 +108,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-gray-100 min-h-screen py-6 relative">
+    <PageBackground>
       <PageContainer maxWidth="lg">
       <BackButton />
       <WelcomeToast 
@@ -169,6 +171,6 @@ export default function Home() {
         }
       `}</style>
       </PageContainer>
-    </div>
+    </PageBackground>
   );
 }

@@ -29,6 +29,7 @@ import Modal from "../../components/general/Modal";
 import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
+import { PageBackground } from "../../components/general/PageBackground";
 import Popover from "../../components/general/Popover";
 
 export default function EditProfile() {
@@ -259,7 +260,7 @@ export default function EditProfile() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <PageBackground>
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <BackButton />
       <div className="max-w-lg mx-auto p-6 pt-4">
@@ -665,6 +666,6 @@ export default function EditProfile() {
         </div>
       </div>
       </PageContainer>
-    </div>
+    </PageBackground>
   );
 }
