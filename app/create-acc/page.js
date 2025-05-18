@@ -14,6 +14,7 @@ import * as Sentry from "@sentry/nextjs";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
+import { BackButton } from "../../components/general/BackButton";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -100,20 +101,7 @@ export default function CreateAccount() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative min-h-[80vh]">
         <div className="flex items-center justify-between mb-4">
-          <svg
-            onClick={() => window.history.back()}
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 cursor-pointer"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="black">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <BackButton />
           <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">
             Create account
           </h2>
