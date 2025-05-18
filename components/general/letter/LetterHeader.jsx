@@ -29,9 +29,9 @@ export default function LetterHeader({
         textColor="text-gray-400"
         hoverColor="hover:text-gray-600"
       />
-      <div className="flex justify-between items-center p-4">
+      <div className="flex flex-row justify-between items-center p-2">
         <span className="text-black">{attachmentsCount} files</span>
-        <div className="space-x-2">
+        <div className="flex flex-row">
           <IconButton icon={BsPaperclip} onClick={onAttach} ariaLabel="Attach file" />
           <IconButton icon={MdSend} onClick={onSend} ariaLabel="Send message" />
           <IconButton icon={RiDeleteBin6Line} onClick={onDelete} ariaLabel="Delete" />
