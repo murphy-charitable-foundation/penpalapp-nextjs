@@ -2,10 +2,10 @@ import Link from "next/link";
 import ProfileImage from "../ProfileImage";
 import Button from "../Button";
 
-export default function ProfileHeader({ userName, country, profileImage }) {
+export default function ProfileHeader({ userName, country, profileImage, id }) {
   return (
     <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
-      <Link href="/profile">
+      <Link href={"/profile-view/" + id}>
         <Button
           btnText={
             <div className="flex items-center">
