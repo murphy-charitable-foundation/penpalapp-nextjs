@@ -11,6 +11,29 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
+export const fetchData3 = async () => {
+  if (!auth.currentUser?.uid) {
+    console.warn("error loading auth");
+    setTimeout(() => {
+      fetchData2();
+    }, 2000);
+    return;
+  }
+  const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+  const userDocSnapshot = await getDoc(userDocRef);
+
+  if (userDocSnapshot.exists()) {
+    console.log("permission error");
+    const allLettersQuery = query(
+      collectionGroup(db, "letters"),
+      where("status", "==", "sent")
+    );
+    const querySnapshot = await getDocs(allLettersQuery);
+    return querySnapshot;
+  }
+  return;
+};
+
 export const fetchData2 = async () => {
   if (!auth.currentUser?.uid) {
     console.warn("error loading auth");
@@ -23,16 +46,7 @@ export const fetchData2 = async () => {
   console.log(auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
   console.log(userDocSnapshot);
-console.log(userDocSnapshot.exists())
-    const draftQuery = query(
-      collectionGroup(db, "letters"),
-      where("status", "==", "draft"),
-      where("sent_by", "==", userDocRef),
-      orderBy("created_at")
-      //limit(1)
-    );
-    const draftSnapshot = await getDocs(draftQuery);
-    console.log("DRAFT", draftSnapshot);
+
   if (userDocSnapshot.exists()) {
     const messages = [];
     const draftQuery = query(
@@ -71,19 +85,19 @@ console.log(userDocSnapshot.exists())
       const snapshot = await getDocs(letterboxQuery);
 
       if (!snapshot.empty) {
-        for (const draft of snapshot.docs){
+        for (const draft of snapshot.docs) {
           const latestMessage = draft.data();
-        messages.push({
-          letterboxId: draft.ref?.parent?.parent?.id,
-          collectionId: draft.id,
-          receiver: latestMessage.members.find(
-            (memberRef) => memberRef.id !== auth.currentUser.uid
-          ).id,
-          content: latestMessage.content,
-          status: latestMessage.status,
-          deleted: latestMessage.deleted_at,
-          created_at: latestMessage.created_at,
-        });
+          messages.push({
+            letterboxId: draft.ref?.parent?.parent?.id,
+            collectionId: draft.id,
+            receiver: latestMessage.members.find(
+              (memberRef) => memberRef.id !== auth.currentUser.uid
+            ).id,
+            content: latestMessage.content,
+            status: latestMessage.status,
+            deleted: latestMessage.deleted_at,
+            created_at: latestMessage.created_at,
+          });
         }
       }
     }

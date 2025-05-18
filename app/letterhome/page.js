@@ -29,6 +29,7 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground"; 
+import {fetchData, fetchData2, fetchData3} from "../utils/firestore"
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -105,6 +106,20 @@ export default function Home() {
     };
 
     fetchUserData();
+  }, []);
+
+useEffect(() => {
+    const test = async () => {
+      if (auth.currentUser) {
+        const letterboxes = await fetchData3();
+        console.log(letterboxes)
+        console.log("data")
+      } else {
+        console.log("No user logged in");
+      }
+    };
+
+    test();
   }, []);
 
   return (
