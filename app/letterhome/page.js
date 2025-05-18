@@ -29,7 +29,7 @@ const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   if (draft) return draft;
 
   const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
-  const q = query(lettersRef, orderBy("timestamp", "desc"), limit(1));
+  const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
   const letterSnapshot = await getDocs(q);
   let letter;
   letterSnapshot.forEach((doc) => {
@@ -78,7 +78,7 @@ export default function Home() {
               name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
-              lastMessageDate: letter.timestamp || "",
+              lastMessageDate: letter.created_at || "",
               status: letter.status || "",
               letterboxId: id || "",
             };
