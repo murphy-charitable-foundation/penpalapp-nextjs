@@ -8,7 +8,8 @@ import logo from '../../public/murphylogo.png';
 
 export function PageHeader({
   title,
-}
+  titleColor = "text-gray-800"
+} 
 ) {
   
 
@@ -16,7 +17,7 @@ export function PageHeader({
     <>
       <div className="flex flex-row items-center justify-between mb-4">
         <BackButton />
-        <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">{title}</h2>
+        <h2 className={`flex-grow text-center text-2xl font-bold ${titleColor}`}>{title}</h2>
       </div>
       <div className="flex justify-center">
         <Image src={logo} alt="Foundation Logo" width={200} margin={0}/>

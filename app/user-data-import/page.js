@@ -4,6 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { doc, setDoc } from "firebase/firestore"
 import { db } from '../../app/firebaseConfig'
+import { PageContainer } from '../../components/general/PageContainer'
+import { PageHeader } from '../../components/general/PageHeader'
+import { PageBackground } from '../../components/general/PageBackground'
+import Input from '../../components/general/Input'
+import Button from '../../components/general/Button'
+import TextArea from '../../components/general/TextArea'
 import * as Sentry from "@sentry/nextjs"
 
 export default function UserDataImport() {
@@ -49,60 +55,50 @@ export default function UserDataImport() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Import User Data</h1>
-          <button
-            onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+    <PageBackground>
+      <PageContainer maxWidth="lg">
+        <PageHeader title="Import User Data"/>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
+        <form onSubmit={handleSubmit} className="space-y-6  p-6 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Basic Information */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">First Name</label>
-              <input
+              <Input
                 type="text"
+                id="first-name"
                 name="firstName"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                label="First Name"
+                required={true}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Last Name</label>
-              <input
+              <Input
                 type="text"
+                id="last-name"
                 name="lastName"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                label="Last Name"
+                required={true}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <input
+              <Input
                 type="email"
                 name="email"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                id="email"
+                label="Email"
+                required={true}                
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Birthday</label>
-              <input
+              <Input
                 type="date"
+                id="birthday"
                 name="birthday"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                label="birthday"
+                required={true}
               />
             </div>
 
@@ -121,22 +117,23 @@ export default function UserDataImport() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Country</label>
-              <input
+              <Input
                 type="text"
                 name="country"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                id="country"
+                label="Country"
+                required={true}
+                
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Village</label>
-              <input
+              <Input
                 type="text"
+                id="village"
                 name="village"
-                required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                label="Village"
+                required={true}
               />
             </div>
 
@@ -187,54 +184,55 @@ export default function UserDataImport() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Dream Job</label>
-              <input
+              <Input
                 type="text"
                 name="dreamJob"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                id="dream-job"
+                label="Dream Job"
+                require={true}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Hobby</label>
-              <input
+            <div>              
+              <Input
                 type="text"
+                id="hobby"
                 name="hobby"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                label="Hobby"
+                required={true}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Favorite Color</label>
-              <input
+              <Input
                 type="text"
                 name="favoriteColor"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+                id="favorite-color"
+                label="Favorite Color"
+                required={true}
               />
             </div>
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Bio/Challenges Faced</label>
-            <textarea
+            
+            <TextArea
               name="bio"
               rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
               maxLength={50}
+              label="Bio/Challenges Faced"
             />
           </div>
 
-          <div className="flex justify-end">
-            <button
+          <div className="flex justify-center">
+            <Button 
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isSubmitting ? 'Importing...' : 'Import User Data'}
-            </button>
+              btnText={isSubmitting ? 'Importing...' : 'Import User Data'}
+            />
           </div>
         </form>
-      </div>
-    </div>
+      </PageContainer>
+    </PageBackground>
   )
 }
