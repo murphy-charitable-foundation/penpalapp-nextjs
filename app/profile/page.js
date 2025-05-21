@@ -85,6 +85,7 @@ export default function EditProfile() {
           setDreamJob(userData.dream_job || "");
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
+          setPhotoUri(userData.photo_uri || "");
         } else {
           console.log("No such document!");
         }
