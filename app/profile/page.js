@@ -7,7 +7,7 @@ import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-
+import { FaChevronDown } from 'react-icons/fa'; // Font Awesome
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -30,6 +30,7 @@ import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import Dropdown from "../../components/general/Dropdown";
 import Popover from "../../components/general/Popover";
 
 export default function EditProfile() {
@@ -169,58 +170,12 @@ export default function EditProfile() {
     "Other"
   ];
 
-  // Education Modal content
-  const educationModalContent = (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-500 mb-4">Select your education level:</p>
-      <List 
-        options={educationOptions}
-        valueChange={(option) => {setEducationLevel(option);}} 
-        closeList={() => {setIsEducationModalOpen(false);}}
-        currentValue={educationLevel}
-      />
-      
-    </div>
-  );
+  const orphanOptions = [
+    "Yes",
+    "No"
+  ]
 
-  // Guardian Modal content
-  const guardianModalContent = (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-500 mb-4">Select your guardian:</p>
-      <List 
-        options={guardianOptions}
-        valueChange={(option) => {setGuardian(option);}}
-        closeList={() => {setIsGuardianModalOpen(false);}}
-        currentValue={guardian}
-      />
-      
-    </div>
-  );
 
-  // Orphan Modal content
-  const orphanModalContent = (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-500 mb-4">Are you an orphan?</p>
-      <div className="grid grid-cols-2 gap-3">
-        {["Yes", "No"].map((option) => (
-          <button
-            key={option}
-            className={`p-3 rounded-lg text-center ${
-              isOrphan === option
-                ? "bg-green-100 border border-green-500"
-                : "bg-gray-50 hover:bg-gray-100"
-            }`}
-            onClick={() => {
-              setIsOrphan(option);
-              setIsOrphanModalOpen(false);
-            }}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 
   // Bio Modal content
   const bioModalContent = (
@@ -265,33 +220,6 @@ export default function EditProfile() {
       <BackButton />
       <div className="max-w-lg mx-auto p-6 pt-4">
         
-
-        {/* Education Level Modal */}
-        <Modal
-          isOpen={isEducationModalOpen}
-          onClose={() => setIsEducationModalOpen(false)}
-          title="Education Level"
-          content={educationModalContent}
-          width="large"
-        />
-
-        {/* Guardian Modal */}
-        <Modal
-          isOpen={isGuardianModalOpen}
-          onClose={() => setIsGuardianModalOpen(false)}
-          title="Guardian"
-          content={guardianModalContent}
-          width="large"
-        />
-
-        {/* Orphan Modal */}
-        <Modal
-          isOpen={isOrphanModalOpen}
-          onClose={() => setIsOrphanModalOpen(false)}
-          title="Orphan Status"
-          content={orphanModalContent}         
-          width="large"
-        />
 
         {/* Bio Modal */}
         <Modal
@@ -490,25 +418,11 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Education level</p>
-                <button
-                  onClick={() => setIsEducationModalOpen(true)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
-                  <span>{educationLevel || "Select education level"}</span>
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                <Dropdown options={educationOptions}
+                  valueChange={(option) => {setEducationLevel(option);}}
+                  currentValue={educationLevel}
+                  text="Education Level"
+                />
               </div>
             </div>
 
@@ -518,25 +432,12 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Guardian</p>
-                <button
-                  onClick={() => setIsGuardianModalOpen(true)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
-                  <span>{guardian || "Select guardian"}</span>
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                <Dropdown 
+                  options={guardianOptions}
+                  valueChange={(option) => {setGuardian(option);}}
+                  currentValue={guardian}
+                  text="Guardian"
+                />
               </div>
             </div>
 
@@ -546,25 +447,12 @@ export default function EditProfile() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Is orphan</p>
-                <button
-                  onClick={() => setIsOrphanModalOpen(true)}
-                  className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                >
-                  <span>{isOrphan || "Select option"}</span>
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+               
+                <Dropdown options={orphanOptions}
+                valueChange={(option) => {setIsOrphan(option);}}
+                currentValue={isOrphan}
+                text="Orphan Status"
+                />
               </div>
             </div>
           </div>
