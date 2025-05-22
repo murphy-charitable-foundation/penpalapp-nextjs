@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db } from "../../app/firebaseConfig";
 import HobbySelect from "../general/HobbySelect";
+import Input from "../general/Input";
+import Button from "../general/Button";
+import Dropdown from "../general/Dropdown";
 
 export default function KidFilter({
   setHobbies,
@@ -22,10 +27,14 @@ export default function KidFilter({
     setGenderFilter(gender || "");
   }, [age, gender, hobbies]);
 
+
+
   const applyFilter = (e) => {
     e.preventDefault();
     filter(ageFilter, hobbyFilter, genderFilter);
   };
+
+
 
   const clearFilter = () => {
     setHobbies(null);
@@ -35,6 +44,8 @@ export default function KidFilter({
     setAgeFilter("");
     setGenderFilter("");
   };
+
+  const genderOptions = ["Male", "Female", "Non-binary", "Other"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -46,6 +57,7 @@ export default function KidFilter({
           >
             Hobby
           </label>
+          
           <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} wantBorder={false}/>
         </div>
         <div>
@@ -55,18 +67,13 @@ export default function KidFilter({
           >
             Gender
           </label>
-          <select
-            id="gender"
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-            className="w-full p-2 border-b border-black text-black outline-none"
-          >
-            <option value="">Select your gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Non-Binary">Non-Binary</option>
-            <option value="Other">Other</option>
-          </select>
+          
+          <Dropdown
+          options={genderOptions}
+          valueChange={setGenderFilter}
+          currentValue={genderFilter}
+          text="Gender"
+          />
         </div>
         <div>
           <label
@@ -75,29 +82,40 @@ export default function KidFilter({
           >
             Age
           </label>
-          <input
+          <Input
             type="number"
             id="age"
             value={ageFilter}
             onChange={(e) => setAgeFilter(e.target.value)}
-            className="w-full p-2 border-b border-black text-black outline-none"
             placeholder="Input your age"
+            size="w-full"
+            padding="p-2"
+            borderColor="border-black"
+            textColor="text-black"
           />
         </div>
         <div className="flex justify-center mt-24">
           <div className="flex flex-col gap-2">
-            <button
+            <Button
               onClick={applyFilter}
-              className="bg-[#4E802A] text-white text-lg font-bold py-2 px-4 rounded-3xl"
-            >
-              Apply Filters
-            </button>
-            <button onClick={clearFilter} className="text-black text-lg">
-              Clear Filters
-            </button>
+              btnText="Apply Filters"
+              color="blue"
+              textColor="text-white"
+              font="font-bold"
+              rounded="rounded-3xl"
+              size="w-full"
+            />
+            <Button
+              onClick={clearFilter}
+              btnText="Clear Filters"
+              textColor="text-black"
+              font="text-lg"
+              size="w-full"
+            />
           </div>
         </div>
       </form>
     </div>
   );
 }
+

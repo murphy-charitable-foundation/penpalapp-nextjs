@@ -21,6 +21,8 @@ const firebaseConfig = {
 };
 
 // // Initialize Firebase
+// Only initialize if no apps have been initialized
+
 // const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 
