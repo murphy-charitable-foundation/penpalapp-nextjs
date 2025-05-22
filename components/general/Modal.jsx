@@ -20,8 +20,6 @@ export default function Dialog({
   closeOnOverlay = true,
   showCloseButton = true,
 }) {
-  // Add debugging
-  console.log("Dialog render:", { isOpen, title });
 
  
   const dialogRef = useRef(null); 

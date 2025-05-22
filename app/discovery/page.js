@@ -37,6 +37,11 @@ export default function ChooseKid() {
     fetchKids();
   }, [age, gender, hobbies]);
 
+    useEffect(() => {
+      console.log("Age:", age);
+    }, [age])
+
+
   const fetchKids = async () => {
     setLoading(true);
   

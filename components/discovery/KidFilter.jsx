@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db } from "../../app/firebaseConfig";
 import HobbySelect from "../general/HobbySelect";
 import Input from "../general/Input";
 import Button from "../general/Button";
+import Dropdown from "../general/Dropdown";
 
 export default function KidFilter({
   setHobbies,
@@ -24,10 +27,14 @@ export default function KidFilter({
     setGenderFilter(gender || "");
   }, [age, gender, hobbies]);
 
+
+
   const applyFilter = (e) => {
     e.preventDefault();
     filter(ageFilter, hobbyFilter, genderFilter);
   };
+
+
 
   const clearFilter = () => {
     setHobbies(null);
@@ -37,6 +44,8 @@ export default function KidFilter({
     setAgeFilter("");
     setGenderFilter("");
   };
+
+  const genderOptions = ["Male", "Female", "Non-binary", "Other"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -48,6 +57,7 @@ export default function KidFilter({
           >
             Hobby
           </label>
+          
           <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} wantBorder={false}/>
         </div>
         <div>
@@ -57,18 +67,13 @@ export default function KidFilter({
           >
             Gender
           </label>
-          <select
-            id="gender"
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-            className="w-full p-2 border-b border-black text-black outline-none"
-          >
-            <option value="">Select your gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Non-Binary">Non-Binary</option>
-            <option value="Other">Other</option>
-          </select>
+          
+          <Dropdown
+          options={genderOptions}
+          valueChange={setGenderFilter}
+          currentValue={genderFilter}
+          text="Gender"
+          />
         </div>
         <div>
           <label
@@ -94,7 +99,7 @@ export default function KidFilter({
             <Button
               onClick={applyFilter}
               btnText="Apply Filters"
-              color="bg-[#4E802A]"
+              color="blue"
               textColor="text-white"
               font="font-bold"
               rounded="rounded-3xl"

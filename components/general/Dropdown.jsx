@@ -1,7 +1,6 @@
 "use client";
 import Modal from './Modal';
 import List from './List';
-import Button from './Button';
 import { useState } from 'react';
 
 export default function Dropdown({
@@ -16,8 +15,10 @@ export default function Dropdown({
         <div className="space-y-4">
             <List 
             options={options}
-            valueChange={(option) => {valueChange(option);}}
-            closeList={() => {setIsModalOpen(false);}}
+            valueChange={(option) => {
+                valueChange(option);}}
+            closeList={() => {
+                setIsModalOpen(false);}}
             currentValue={currentValue}
             />     
         </div>
@@ -27,7 +28,9 @@ export default function Dropdown({
     <>
 
         <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={(e) => {
+                e.preventDefault();
+                setIsModalOpen(true)}}
             className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
         >
             <span>{currentValue || `Select ${text}`}</span>
@@ -48,7 +51,8 @@ export default function Dropdown({
 
         <Modal
         isOpen={isModalOpen} 
-        onClose={() => {setIsModalOpen(false);}}
+        onClose={() => {
+            setIsModalOpen(false);}}
         title={text}
         content={modalContent}
         width="large"

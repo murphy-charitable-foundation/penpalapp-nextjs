@@ -4,6 +4,7 @@ import Link from "next/link";
 import Button from "./Button";
 
 export default function Header({ activeFilter, setActiveFilter }) {
+  
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078] sticky top-0 z-10">
       <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
@@ -26,7 +27,8 @@ function FilterButton({ activeFilter, setActiveFilter }) {
         btnText="Filters"
         color="bg-transparent"
         size="small"
-        onClick={() => setActiveFilter(!activeFilter)}
+        onClick={() => {
+          setActiveFilter(!activeFilter);}}
       >
         <span className="flex items-center">
           <p>Filters</p>
