@@ -1,29 +1,40 @@
 // components/NavigationStateManager.jsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import SkeletonComponent from '../loading/SkeletonComponent';
 import LoadingSpinner from '../loading/LoadingSpinner';
 
 export default function NavigationStateManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  const [isExiting, setIsExiting] = useState(false);
-  const [isEntering, setIsEntering] = useState(false);
-  const [targetUrl, setTargetUrl] = useState(null);
+  // Use refs to avoid stale closures in event handlers
+  const currentUrlRef = useRef();
+  const navigationStartTimeRef = useRef(null);
 
+  // Update current URL ref when pathname/searchParams change
   useEffect(() => {
-    // Track the current page for comparison
-    let currentUrl = window.location.pathname + window.location.search;
+    currentUrlRef.current = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+  }, [pathname, searchParams]);
 
-    // Handler for navigation start - when leaving current page
-    const handleNavigationStart = (url) => {
-      setIsExiting(true);
-      if (url) setTargetUrl(url);
-    };
+  // Memoized navigation handler to prevent recreating on every render
+  const handleNavigationStart = useCallback((url) => {
+    // Prevent multiple simultaneous navigations
+    if (isNavigating) return;
+    
+    // Record navigation start time
+    navigationStartTimeRef.current = Date.now();
+    
+    // Use setTimeout to defer state update to next tick
+    setTimeout(() => {
+      setIsNavigating(true);
+    }, 0);
+  }, [isNavigating]);
 
+    
+  useEffect(() => {
     // Add event listeners for link clicks
     const handleLinkClick = (e) => {
       const target = e.target.closest('a');
@@ -38,8 +49,9 @@ export default function NavigationStateManager() {
       ) {
         const url = new URL(target.href);
         const targetPath = url.pathname + url.search;
-        if (targetPath !== currentUrl) {
-          handleNavigationStart(targetPath);
+
+        if (targetPath !== currentUrlRef.current) {
+          handleNavigationStart();
         }
       }
     };
@@ -49,22 +61,24 @@ export default function NavigationStateManager() {
     const originalReplaceState = window.history.replaceState;
 
     window.history.pushState = function(state, unused, url) {
-      if (url && url !== currentUrl) {
+      if (url && url !== currentUrlRef.current) {
         handleNavigationStart(url);
       }
       return originalPushState.apply(this, arguments);
     };
 
     window.history.replaceState = function(state, unused, url) {
-      if (url && url !== currentUrl) {
+      if (url && url !== currentUrlRef.current) {
         handleNavigationStart(url);
       }
       return originalReplaceState.apply(this, arguments);
     };
 
     // Handle browser back/forward
-    window.addEventListener('popstate', () => handleNavigationStart());
-    
+    const handlePopState = () => handleNavigationStart();
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', () => handlePopState);
     // Add click listener for all links
     document.addEventListener('click', handleLinkClick);
 
@@ -75,45 +89,27 @@ export default function NavigationStateManager() {
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
     };
-  }, []);
-
-  // Handle the transition between exit and enter states
-  useEffect(() => {
-    if (isExiting) {
-      // Short delay to show exit animation
-      const exitTimer = setTimeout(() => {
-        setIsExiting(false);
-        setIsEntering(true);
-      }, 100);
-      
-      return () => clearTimeout(exitTimer);
-    }
-  }, [isExiting]);
+  }, [handleNavigationStart]);
 
   // When pathname or searchParams change, navigation is complete
   useEffect(() => {
-    // Small delay to prevent flickering for fast navigations
-    const timer = setTimeout(() => {
-      setIsExiting(false);
-      setIsEntering(false);
-      setTargetUrl(null);
-    }, 200);
-    
-    return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
-
-  // Get the skeleton component based on the target URL
-  const renderSkeleton = () => {
-    if (!targetUrl) return null;
-    
-    const SkeletonComponent = getSkeletonForRoute(targetUrl);
-    return <SkeletonComponent />;
-  };
-  
+    if (isNavigating && navigationStartTimeRef.current) {
+      const elapsedTime = Date.now() - navigationStartTimeRef.current;
+      const minDisplayTime = 1000; // 1 second minimum
+      const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
+      
+      const timer = setTimeout(() => {
+        setIsNavigating(false);
+        navigationStartTimeRef.current = null;
+      }, remainingTime);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, searchParams, isNavigating]);
+   
   return (
     <>
-      {isExiting && <LoadingSpinner />}
-      {isEntering && renderSkeleton()}
+      {isNavigating && <LoadingSpinner />}
     </>
   );
 

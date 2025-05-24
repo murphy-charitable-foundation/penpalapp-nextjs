@@ -16,6 +16,7 @@ import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import Button from "@/components/general/Button";
 import LoadingSpinner from "@/components/loading/loadingSpinner";
+import LetterHomeSkeleton from "@/components/loading/LetterHomeSkeleton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export default function Login() {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    <LoadingSpinner />
     // Check if the user is already logged in and retrieve the email
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {

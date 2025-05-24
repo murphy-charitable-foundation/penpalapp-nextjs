@@ -23,6 +23,7 @@ import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
+import LettersSkeleton from "@/components/loading/LettersSkeleton";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -47,6 +48,7 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const PAGINATION_INCREMENT = 20;
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
@@ -94,9 +96,13 @@ export default function Page({ params }) {
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
+        if( messages.length > 0 ) {
+          setIsLoading(false);
+        }
       };
       fetchMessages();
     }
+    
   }, [user]);
 
   useEffect(() => {
@@ -111,6 +117,7 @@ export default function Page({ params }) {
       }
     };
     getSelectedUser();
+    
   }, [recipients]);
 
   useEffect(() => {
@@ -226,6 +233,8 @@ export default function Page({ params }) {
         <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
       )}
 
+      {isLoading ? 
+      <LettersSkeleton /> : 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg">
           <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
@@ -326,6 +335,9 @@ export default function Page({ params }) {
         <BottomNavBar />
         {isFileModalOpen && <FileModal />}
       </div>
+      }
+
+      
     </div>
   );
 }

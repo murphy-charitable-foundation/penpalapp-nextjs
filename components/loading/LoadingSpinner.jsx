@@ -23,7 +23,7 @@ export default function LoadingSpinner() {
                 <div className="absolute inset-0 flex items-center justify-center">
 
                     <div
-                        className="w-40 h-40 border-4 border-t-[#034792] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-reverse-spin"></div>
+                        className={`w-40 h-40 border-4 border-t-[#034792] border-r-transparent border-b-transparent border-l-transparent rounded-full ${styles['animate-reverse-spin']}`}></div>
                 </div>
             </div>
         </div>
