@@ -10,9 +10,9 @@ export default function Button({
 }) {
   const colors = {
     blue: 'bg-blue-700 hover:bg-blue-800 text-white',
-    green: 'bg-[#4E802A] hover:bg-green-800 text-white', 
+    green: 'bg-dark-green hover:bg-green-800 text-white', 
     red: 'bg-red-500 hover:bg-red-600 text-white',
-    gray: 'bg-gray-300 hover:bg-[#4E802A] text-white',
+    gray: 'bg-gray-300 hover:bg-dark-green text-white',
     transparent: 'bg-transparent hover: bg-gray-400 text-black',
     white:'bg-white hover:bg-gray-100 text-black'
   };

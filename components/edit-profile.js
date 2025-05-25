@@ -21,7 +21,7 @@ const EditProfileImage = ({ router }) => {
 		if (!previewURL) {
 			return "w-[80%] mx-auto mt-[100px] p-2 bg-[#1C1B1F1F] text-[#1D1D00] font-semibold  rounded-[100px]"
 		}
-		return "w-[80%] mx-auto mt-[100px] p-2 bg-[#4E802A] text-white font-semibold  rounded-[100px]"
+		return "w-[80%] mx-auto mt-[100px] p-2 bg-[] text-white font-semibold  rounded-[100px]"
 	}
 	const [countries, setCountries] = useState([]);
 
