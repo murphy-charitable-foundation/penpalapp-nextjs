@@ -1,0 +1,11 @@
+@keyframes reverseSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(-360deg);
+    }
+}
+.animate-reverse-spin {
+    animation: reverseSpin 1s linear infinite;
+}
