@@ -11,10 +11,27 @@ import { BackButton } from '../../components/general/BackButton';
 import Button from '../../components/general/Button';
 
 export default function Contact() {
-    const socialLinks = [['Instagram', 'https://www.instagram.com/murphycharity_/'],
-  ['Linkedin', 'https://www.linkedin.com/company/murphy-charitable-foundation-uganda'],
-  ['Email', 'mailto:rez@murphycharity.org'],
-  ['Website', 'https://murphycharity.org']];
+    const socialLinks = [{
+            name: 'Instagram',
+            url : 'https://www.instagram.com/murphycharity_/',
+            icon: <FaInstagram className="h-6 w-6" />,  
+        },
+        {
+            name: 'Linkedin',
+            url:  'https://www.linkedin.com/company/murphy-charitable-foundation-uganda',
+            icon:  <FaLinkedinIn className="h-6 w-6" />, 
+        },
+        {
+            name: 'Email',
+            url:  'mailto:rez@murphycharity.org',
+            icon: <FaEnvelope className="h-6 w-6" />,
+        },
+        {
+            name: 'Website',
+            url:  'https://murphycharity.org',
+            icon: <FaGlobe className="h-6 w-6" />,
+        },
+    ];
 
     return (
         <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center justify-center">
@@ -27,19 +44,16 @@ export default function Contact() {
                 <p className="text-center text-lg text-gray-100 mb-6">Reach out to us here</p>
 
                 <div className="space-y-6">
-                    {socialLinks.map(([platform, url]) => (
+                    {socialLinks.map(link => (
                         <Button
-                            key={platform}
+                            key={link.name}
                             btnText={
                             <div className="flex items-center">
-                                {platform === 'Instagram' && <FaInstagram className="h-6 w-6" />}
-                                {platform === 'Linkedin' && <FaLinkedinIn className="h-6 w-6" />}
-                                {platform === 'Email' && <FaEnvelope className="h-6 w-6" />}
-                                {platform === 'Website' && <FaGlobe className="h-6 w-6" />}
-                                <span className="ml-3 capitalize">{platform}</span>
+                                {link.icon}
+                                <span className="ml-3 capitalize">{link.name}</span>
                             </div>
                             }
-                            onClick={() => window.open(url, "_blank")}
+                            onClick={() => window.open(link.url, "_blank")}
                         />
                     ))}
                     {/* Instagram */}
