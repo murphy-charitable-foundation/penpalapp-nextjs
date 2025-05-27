@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { db } from "../../firebaseConfig";
-import { collection, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import {
@@ -43,9 +50,10 @@ export default function Page({ params }) {
   const [userLocation, setUserLocation] = useState("");
   const [draftTimerId, setDraftTimerId] = useState(null);
   const [isSending, setIsSending] = useState(false);
-
-  // New state for close message dialog
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -58,9 +66,9 @@ export default function Page({ params }) {
     scrollToBottom();
   }, [allMessages]);
 
-  // Function to refresh messages
-  const refreshMessages = async () => {
-    if (!user || !id) return;
+  // Memoized function to refresh messages
+  const refreshMessages = useCallback(async () => {
+    if (!user || !id || !recipients.length) return;
 
     try {
       console.log("Refreshing messages...");
@@ -83,7 +91,6 @@ export default function Page({ params }) {
           // Only fetch sender info for messages not sent by current user
           if (message.sent_by.id !== user.uid) {
             try {
-              // Use the recipients data we already have instead of fetching again
               const recipient = recipients.find(
                 (r) => r.id === message.sent_by.id
               );
@@ -92,7 +99,6 @@ export default function Page({ params }) {
               }
             } catch (error) {
               console.error("Error setting sender location:", error);
-              // Don't fail the whole process, just skip location
               message.senderLocation = "";
             }
           }
@@ -108,27 +114,52 @@ export default function Page({ params }) {
     } catch (error) {
       console.error("Error refreshing messages:", error);
     }
-  };
+  }, [user, id, recipients]);
 
-  // New function to save draft message to Firestore
+  // FIXED: Improved function to save draft message to Firestore
   const saveDraftMessage = async (content) => {
-    if (!user || !lettersRef || !content.trim()) return;
+    if (
+      !user ||
+      !lettersRef ||
+      isSending ||
+      !isInitialized ||
+      !hasUserInteracted
+    )
+      return;
 
     try {
       const letterUserRef = userRef ?? doc(db, "users", user.uid);
 
-      // Create draft data
+      // If content is empty, delete the draft completely
+      if (!content.trim()) {
+        if (draft?.id) {
+          console.log("Deleting draft document completely...");
+          await deleteDoc(doc(lettersRef, draft.id));
+          setDraft(null);
+          console.log("Draft deleted successfully");
+        }
+        return;
+      }
+
+      // Don't overwrite sent messages
+      if (draft?.status === "sent") {
+        console.log("Skipping draft save - message already sent");
+        return;
+      }
+
+      // Create draft data with proper structure
       const draftData = {
         sent_by: letterUserRef,
-        content: content,
+        content: content.trim(),
         status: "draft",
-        created_at: new Date(),
+        created_at: draft?.created_at || new Date(),
         deleted: null,
       };
 
       // Use existing draft ID or create a new one
       if (draft?.id) {
         await updateDoc(doc(lettersRef, draft.id), draftData);
+        setDraft({ ...draftData, id: draft.id });
         console.log("Updated existing draft");
       } else {
         const newDraftRef = doc(lettersRef);
@@ -142,55 +173,75 @@ export default function Page({ params }) {
     }
   };
 
-  // Add debounced draft saving whenever messageContent changes
+  // FIXED: Debounced draft saving with improved logic
   useEffect(() => {
     // Clear any existing timer
     if (draftTimerId) {
       clearTimeout(draftTimerId);
     }
 
-    // Only save if there's actually content and user is logged in
-    if (messageContent.trim() && user && lettersRef) {
-      // Set a new timer to save draft after 1 second of inactivity
+    // Don't save draft if we're currently sending, not initialized, or user hasn't interacted
+    if (isSending || !isInitialized || !hasUserInteracted) {
+      return;
+    }
+
+    // Save draft for any content change after a delay
+    if (user && lettersRef) {
       const newTimer = setTimeout(() => {
-        saveDraftMessage(messageContent);
-      }, 1000);
+        if (!isSending) {
+          saveDraftMessage(messageContent);
+        }
+      }, 1500);
 
       setDraftTimerId(newTimer);
     }
 
-    // Cleanup timer when component unmounts
+    // Cleanup timer
     return () => {
       if (draftTimerId) {
         clearTimeout(draftTimerId);
       }
     };
-  }, [messageContent, user, lettersRef]);
+  }, [
+    messageContent,
+    user,
+    lettersRef,
+    isSending,
+    isInitialized,
+    hasUserInteracted,
+  ]);
 
-  // Enhanced effect to load draft message when first opening the chat
+  // FIXED: Load draft content only once when initializing
   useEffect(() => {
-    if (draft?.content && messageContent === "") {
+    if (!isInitialized || isDraftLoaded) return;
+
+    if (draft?.content && draft.status === "draft") {
+      console.log("Loading draft content:", draft.content);
       setMessageContent(draft.content);
       setCharacterCount(draft.content.length);
     }
-  }, [draft]);
 
-  // New function to handle closing the message
+    setIsDraftLoaded(true);
+  }, [draft, isInitialized, isDraftLoaded]);
+
+  // Function to handle closing the message
   const handleCloseMessage = () => {
     if (messageContent.trim()) {
-      // If there's content, show confirmation dialog
       setShowCloseDialog(true);
     } else {
-      // If no content, just go back
+      // If no content, delete any existing draft and go back
+      if (draft?.id) {
+        saveDraftMessage(""); // This will delete the draft
+      }
       router.back();
     }
   };
 
   // Function to close dialog and navigate back
-  const handleConfirmClose = () => {
-    // Save as draft before navigating away
-    if (messageContent.trim() && user && lettersRef) {
-      saveDraftMessage(messageContent);
+  const handleConfirmClose = async () => {
+    // Save current state (will delete if empty, save as draft if has content)
+    if (user && lettersRef && isInitialized && hasUserInteracted) {
+      await saveDraftMessage(messageContent);
     }
     router.back();
   };
@@ -200,49 +251,90 @@ export default function Page({ params }) {
     setShowCloseDialog(false);
   };
 
+  // FIXED: Completely rewritten handleSendMessage function
   const handleSendMessage = async () => {
-    if (!messageContent.trim() || !recipients?.length || isSending) {
-      if (!messageContent.trim()) alert("Please enter a message");
+    const trimmedContent = messageContent.trim();
+
+    if (!trimmedContent || !recipients?.length || isSending) {
+      if (!trimmedContent) {
+        alert("Please enter a message");
+      }
       return;
     }
 
     setIsSending(true);
 
     try {
+      // Clear any pending draft timer
+      if (draftTimerId) {
+        clearTimeout(draftTimerId);
+        setDraftTimerId(null);
+      }
+
       const letterUserRef = userRef ?? doc(db, "users", auth.currentUser.uid);
 
-      // Create the message data with "sent" status for final sending
+      // Create the message data with "sent" status
       const letterData = {
         sent_by: letterUserRef,
-        content: messageContent.trim(),
+        content: trimmedContent,
         status: "sent",
-        created_at: new Date(),
+        created_at: new Date(), // Always use current timestamp for sent messages
         deleted: null,
       };
 
       console.log("Sending letter with data:", letterData);
-      console.log("Using draft ID:", draft?.id);
 
-      // Use the draft ID if it exists
-      const draftId = draft?.id;
+      let messageRef;
 
-      // Send the letter (this will either update existing draft or create new)
-      const sentMessage = await sendLetter(letterData, lettersRef, draftId);
-
-      if (sentMessage) {
-        console.log("Message sent successfully with ID:", sentMessage.id);
-
-        // Clear the input and draft state FIRST
-        setMessageContent("");
-        setCharacterCount(0);
-        setDraft(null);
-
-        // Wait a moment for Firestore to process the update, then refresh
-        setTimeout(async () => {
-          await refreshMessages();
-        }, 500);
-        setSelectedMessageId(null);
+      // If we have an existing draft, update it to sent status
+      if (draft?.id && draft.status === "draft") {
+        messageRef = doc(lettersRef, draft.id);
+        await updateDoc(messageRef, letterData);
+        console.log("Updated draft to sent status, ID:", draft.id);
+      } else {
+        // Create new sent message
+        messageRef = doc(lettersRef);
+        await setDoc(messageRef, letterData);
+        console.log("Created new sent message, ID:", messageRef.id);
       }
+
+      // Verify the message was sent by reading it back
+      const sentDoc = await getDoc(messageRef);
+      if (!sentDoc.exists()) {
+        throw new Error("Message was not saved to Firestore");
+      }
+
+      const sentData = sentDoc.data();
+      if (sentData.status !== "sent") {
+        throw new Error("Message status was not updated to sent");
+      }
+
+      console.log("Message confirmed sent with ID:", messageRef.id);
+
+      // Clear the input and reset states
+      setMessageContent("");
+      setCharacterCount(0);
+      setDraft(null); // Clear draft after successful send
+      setHasUserInteracted(false); // Reset interaction flag
+
+      // Add the sent message to allMessages immediately for better UX
+      const messageWithId = {
+        ...letterData,
+        id: messageRef.id,
+        sent_by: { id: user.uid },
+      };
+
+      setAllMessages((prevMessages) => [...prevMessages, messageWithId]);
+
+      // Scroll to bottom immediately
+      setTimeout(() => scrollToBottom(true), 100);
+
+      // Refresh messages after a delay to ensure consistency
+      setTimeout(async () => {
+        await refreshMessages();
+      }, 1000);
+
+      setSelectedMessageId(null);
     } catch (error) {
       console.error("Error sending message:", {
         message: error.message,
@@ -283,25 +375,25 @@ export default function Page({ params }) {
   // Save draft when navigating away
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (messageContent.trim() && user && lettersRef) {
+      if (user && lettersRef && hasUserInteracted && messageContent.trim()) {
+        // Use navigator.sendBeacon for reliability during page unload
         saveDraftMessage(messageContent);
       }
     };
 
-    // Add event listener for page navigation
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      // Clean up event listener
       window.removeEventListener("beforeunload", handleBeforeUnload);
 
-      // Save draft when component unmounts (navigating away)
-      if (messageContent.trim() && user && lettersRef) {
+      // Save draft when component unmounts
+      if (user && lettersRef && hasUserInteracted && messageContent.trim()) {
         saveDraftMessage(messageContent);
       }
     };
-  }, [messageContent, user, lettersRef]);
+  }, [messageContent, user, lettersRef, hasUserInteracted]);
 
+  // Main initialization effect
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
@@ -309,7 +401,7 @@ export default function Page({ params }) {
         setUser(currentUser);
 
         try {
-          // First, check if the user is a member of this letterbox
+          // Check if the user is a member of this letterbox
           const letterboxRef = doc(db, "letterbox", id);
           const letterboxDoc = await getDoc(letterboxRef);
 
@@ -333,22 +425,66 @@ export default function Page({ params }) {
           const lRef = collection(letterboxRef, "letters");
           setLettersRef(lRef);
 
-          // Enhanced draft fetching - load draft if it exists
+          // Fetch draft after everything is set up
           const draftData = await fetchDraft(
             id,
             doc(db, "users", currentUser.uid),
-            false // Don't create new draft automatically
+            false
           );
-          setDraft(draftData);
 
-          // Load draft content if it exists
-          if (draftData?.content) {
-            setMessageContent(draftData.content);
-            setCharacterCount(draftData.content.length);
+          // Only set draft if it's actually a draft status
+          if (draftData && draftData.status === "draft") {
+            setDraft(draftData);
+            console.log("Found existing draft:", draftData);
+          } else {
+            setDraft(null);
           }
 
-          // Fetch messages after we have recipients data and everything is set up
-          await refreshMessages();
+          // Mark as initialized AFTER fetching draft
+          setIsInitialized(true);
+
+          // Fetch messages after we have recipients data
+          if (fetchedRecipients && fetchedRecipients.length > 0) {
+            const { messages } = await fetchLetterbox(id, 20);
+
+            // Sort messages by creation time (oldest first for display)
+            const sortedMessages = messages.sort((a, b) => {
+              const aTime =
+                a.created_at instanceof Date
+                  ? a.created_at
+                  : new Date(a.created_at);
+              const bTime =
+                b.created_at instanceof Date
+                  ? b.created_at
+                  : new Date(b.created_at);
+              return aTime.getTime() - bTime.getTime();
+            });
+
+            // Process messages with sender info
+            const messagesWithSenderInfo = await Promise.all(
+              sortedMessages.map(async (message) => {
+                if (!message.sent_by) return message;
+
+                // Only fetch sender info for messages not sent by current user
+                if (message.sent_by.id !== currentUser.uid) {
+                  try {
+                    const recipient = fetchedRecipients.find(
+                      (r) => r.id === message.sent_by.id
+                    );
+                    if (recipient) {
+                      message.senderLocation = recipient.location || "";
+                    }
+                  } catch (error) {
+                    console.error("Error setting sender location:", error);
+                    message.senderLocation = "";
+                  }
+                }
+                return message;
+              })
+            );
+
+            setAllMessages(messagesWithSenderInfo);
+          }
         } catch (error) {
           console.error("Initialization error: ", error);
           Sentry.captureException(error);
@@ -363,13 +499,6 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, [id]);
 
-  // Move refreshMessages call to after recipients are loaded
-  useEffect(() => {
-    if (user && recipients.length > 0 && lettersRef) {
-      refreshMessages();
-    }
-  }, [user, recipients, lettersRef]);
-
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
@@ -382,23 +511,16 @@ export default function Page({ params }) {
     if (!timestamp) return "";
 
     let date;
-
-    // Handle different timestamp formats
     if (timestamp.toDate && typeof timestamp.toDate === "function") {
-      // It's a Firestore Timestamp object
       date = timestamp.toDate();
     } else if (timestamp instanceof Date) {
-      // It's already a JavaScript Date object
       date = timestamp;
     } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-      // It's a timestamp number or string that can be converted to Date
       date = new Date(timestamp);
     } else {
-      // If we can't format it, return empty string
       return "";
     }
 
-    // Format with 12-hour clock and AM/PM
     return date.toLocaleTimeString([], {
       hour: "numeric",
       minute: "2-digit",
@@ -412,26 +534,29 @@ export default function Page({ params }) {
 
   const getMessageId = (message) => message.id;
 
-  // Truncate message to first 30 characters and add ellipsis
   const truncateMessage = (message) => {
     if (message.length <= 30) return message;
     return `${message.substring(0, 30)}...`;
   };
 
-  // Handle message input change
+  // FIXED: Handle message change with proper state management
   const handleMessageChange = (e) => {
-    setMessageContent(e.target.value);
-    setCharacterCount(e.target.value.length);
+    const newContent = e.target.value;
+    setMessageContent(newContent);
+    setCharacterCount(newContent.length);
+
+    // Mark that user has started interacting
+    if (!hasUserInteracted) {
+      setHasUserInteracted(true);
+    }
   };
 
-  // Get location for a message sender
   const getSenderLocation = (message) => {
     const isSenderUser = message.sent_by?.id === userRef?.id;
 
     if (isSenderUser) {
       return userLocation || "";
     } else {
-      // For recipients, use either the fetched location from the message or try to get it from recipients array
       if (message.senderLocation) {
         return message.senderLocation;
       } else if (recipients[0]?.location) {
@@ -440,6 +565,12 @@ export default function Page({ params }) {
     }
 
     return "";
+  };
+
+  // FIXED: Handle clicking on reply box to start typing
+  const handleReplyBoxClick = () => {
+    setHasUserInteracted(true);
+    // Focus will be handled by autoFocus on textarea
   };
 
   return (
@@ -552,9 +683,9 @@ export default function Page({ params }) {
         </div>
 
         {/* Message input area at the bottom */}
-        <div className="bg-white ">
-          {messageContent ? (
-            // Expanded typing view (Image 2)
+        <div className="bg-white">
+          {hasUserInteracted || messageContent ? (
+            // Expanded typing view - Show when user has interacted OR when messageContent exists
             <>
               {/* Recipient header - only show in expanded view */}
               <div className="flex items-center px-4 py-2">
@@ -580,7 +711,7 @@ export default function Page({ params }) {
                   style={{
                     overflowWrap: "break-word",
                     wordWrap: "break-word",
-                    height: "calc(100% - 24px)", // Account for padding
+                    height: "calc(100% - 24px)",
                   }}
                 />
                 <div className="absolute bottom-6 right-6">
@@ -602,12 +733,11 @@ export default function Page({ params }) {
               </div>
             </>
           ) : (
-            // Initial view with single reply box (Image 1) - no header
+            // Initial view with single reply box
             <div className="p-4">
               <div
-                className="border border-cyan-400 rounded p-3 text-gray-500 flex justify-between items-center"
-                onClick={() => setMessageContent(" ")} // Set a space to trigger expanded view
-              >
+                className="border border-cyan-400 rounded p-3 text-gray-500 flex justify-between items-center cursor-pointer"
+                onClick={handleReplyBoxClick}>
                 <span className="italic">Reply to the letter...</span>
                 <Image
                   src="/arrow-right.png"
