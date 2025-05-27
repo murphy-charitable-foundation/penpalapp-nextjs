@@ -111,7 +111,7 @@ export default function EditProfileUserImage() {
             <h1 className="ml-4 text-xl text-center font-bold text-gray-800">Edit image</h1>
           </div>
         </div>
-        <div className="flex flex-col items-center mt-6">
+        <div className="flex flex-col items-center gap-6 mt-6">
           <EditProfileImage
             image={image}
             newProfileImage={newProfileImage}

@@ -51,7 +51,7 @@ export default function ChangePassword() {
   }
 
   const modalContent = (<div className="space-y-4">
-            <p style={{ color: 'black', text: 'textCenter', marginTop:'20px'}}>Your password has been reset. Please sign in to your account again.</p>
+            <p className='text-black text-center mt-[20px]'>Your password has been reset. Please sign in to your account again.</p>
             <div className="flex justify-center">
             <Button onClick={closeModal} 
               color="green"

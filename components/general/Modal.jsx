@@ -65,7 +65,7 @@ export default function Dialog({
           
         )}
         {title && (
-          <h2 className={`text-xl text-center font-semibold mt-6 mb-4 text-[#4E802A]`}>{title}</h2>
+          <h2 className={`text-xl text-center font-semibold mt-6 mb-4 text-dark-green`}>{title}</h2>
         )}
         <div className="mt-4 text-center">{content}</div>
       </div>
