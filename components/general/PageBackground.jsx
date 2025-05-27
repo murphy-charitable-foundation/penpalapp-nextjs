@@ -12,7 +12,7 @@ export function PageBackground({
 
   return (
     <>
-        <div className={`bg-gray-100 min-h-screen py-6 relative ${className}`}>
+        <div id="background" className={`bg-gray-100 min-h-screen py-6 relative ${className}`}>
             {children}
         </div>
     

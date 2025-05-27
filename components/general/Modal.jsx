@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import  Button  from "./Button";
 
 const sizes = {
@@ -21,14 +21,15 @@ export default function Dialog({
   showCloseButton = true,
 }) {
 
- 
   const dialogRef = useRef(null); 
 
   useEffect(() => {
+    
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "unset";  
+      
     }
     return () => {
       document.body.style.overflow = "unset";
@@ -38,7 +39,7 @@ export default function Dialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
       
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]`}
