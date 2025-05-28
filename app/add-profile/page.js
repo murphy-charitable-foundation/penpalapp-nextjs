@@ -12,6 +12,8 @@ import { useLoading } from '@/components/LoadingProvider';
 import { useAlert } from '@/components/AlertProvider';
 import CountrySelect from '@/components/general/CountrySelect';
 import EditProfileImage from "@/components/edit-profile-image";
+import compressImage from "@/components/general/compress-image";
+
 
 
 export default function AddProfile() {
@@ -41,11 +43,32 @@ export default function AddProfile() {
       typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
     ) {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
-      canvas.toBlob((blob) => {
-        setCroppedImage(blob);
-      });
+    
+      canvas.toBlob(async (originalBlob) => {
+        console.log('Original size:', originalBlob.size, 'bytes');
+        const compressedBlob = await compressImage(originalBlob, {
+          quality: 0.8,
+        });
+    
+        console.log('Compressed size:', compressedBlob.size, 'bytes');
+    
+        setCroppedImage(compressedBlob);
+      }, 'image/jpeg', 0.95); 
+    
     }
-  };
+
+    // if (
+    //   cropperRef.current &&
+    //   typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
+    // ) {
+    //   const canvas = cropperRef.current.cropper.getCroppedCanvas();
+    //   canvas.toBlob((blob) => {
+    //     setCroppedImage(blob);
+    //   });
+    // }
+  }
+
+
 
   const handleDrop = (acceptedFiles) => {
     setImage(URL.createObjectURL(acceptedFiles[0]));
