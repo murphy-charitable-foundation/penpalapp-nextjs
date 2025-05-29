@@ -34,7 +34,6 @@ const EditProfileImage = ({ image, newProfileImage, previewURL, handleDrop, hand
 						viewMode={1}
 					/>
 					<br />
-					
 				</div>
 			)}
 		</>
