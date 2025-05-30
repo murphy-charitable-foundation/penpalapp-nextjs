@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db } from "../../firebaseConfig";
 import {
   collection,
@@ -16,7 +16,6 @@ import {
   fetchDraft,
   fetchLetterbox,
   fetchRecipients,
-  sendLetter,
 } from "@/app/utils/letterboxFunctions";
 import ProfileImage from "@/components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -32,28 +31,36 @@ export default function Page({ params }) {
   const router = useRouter();
   const messagesEndRef = useRef(null);
 
-  const [messageContent, setMessageContent] = useState("");
+  // User and auth states
   const [user, setUser] = useState(null);
-  const [draft, setDraft] = useState(null);
   const [userRef, setUserRef] = useState(null);
+  const [userLocation, setUserLocation] = useState("");
+
+  // Message and draft states
+  const [messageContent, setMessageContent] = useState("");
+  const [draft, setDraft] = useState(null);
+  const [hasDraftContent, setHasDraftContent] = useState(false);
+
+  // Chat states
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
-  const [lettersRef, setLettersRef] = useState(null);
-  const [showReportPopup, setShowReportPopup] = useState(false);
-  const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
-  const [content, setContent] = useState(null);
-  const [sender, setSender] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [recipientName, setRecipientName] = useState("");
-  const [characterCount, setCharacterCount] = useState(0);
-  const [userLocation, setUserLocation] = useState("");
-  const [draftTimerId, setDraftTimerId] = useState(null);
+  const [lettersRef, setLettersRef] = useState(null);
+
+  // UI states
+  const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+
+  // Report states
+  const [showReportPopup, setShowReportPopup] = useState(false);
+  const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
+  const [reportContent, setReportContent] = useState(null);
+  const [reportSender, setReportSender] = useState(null);
+
+  // Auto-save draft timer
+  const [draftTimer, setDraftTimer] = useState(null);
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -62,19 +69,178 @@ export default function Page({ params }) {
     });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [allMessages]);
+  // Auto-save draft function
+  const saveDraft = async (content) => {
+    if (!user || !lettersRef || isSending) return;
 
-  // Memoized function to refresh messages
-  const refreshMessages = useCallback(async () => {
+    try {
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+
+      // If content is empty, delete existing draft
+      if (!content.trim()) {
+        if (draft?.id) {
+          await deleteDoc(doc(lettersRef, draft.id));
+          setDraft(null);
+        }
+        setHasDraftContent(false);
+        return;
+      }
+
+      const currentTime = new Date();
+      const draftData = {
+        sent_by: letterUserRef,
+        content: content.trim(),
+        status: "draft",
+        created_at: draft?.created_at || currentTime,
+        updated_at: currentTime,
+        deleted: null,
+      };
+
+      if (draft?.id) {
+        // Update existing draft
+        await updateDoc(doc(lettersRef, draft.id), draftData);
+        setDraft({ ...draftData, id: draft.id });
+      } else {
+        // Create new draft
+        const newDraftRef = doc(lettersRef);
+        await setDoc(newDraftRef, draftData);
+        setDraft({ ...draftData, id: newDraftRef.id });
+      }
+      setHasDraftContent(true);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+    }
+  };
+
+  // Handle message content change
+  const handleMessageChange = (e) => {
+    const newContent = e.target.value;
+    setMessageContent(newContent);
+    setHasDraftContent(newContent.trim().length > 0);
+
+    // Clear existing timer
+    if (draftTimer) {
+      clearTimeout(draftTimer);
+    }
+
+    // Set new timer to save draft after 2 seconds
+    const timer = setTimeout(() => {
+      saveDraft(newContent);
+    }, 2000);
+
+    setDraftTimer(timer);
+  };
+
+  // Send message function
+  const handleSendMessage = async () => {
+    const trimmedContent = messageContent.trim();
+
+    if (!trimmedContent && !draft?.content?.trim()) {
+      alert("Please enter a message");
+      return;
+    }
+
+    if (isSending) return;
+
+    setIsSending(true);
+
+    try {
+      // Clear draft timer
+      if (draftTimer) {
+        clearTimeout(draftTimer);
+        setDraftTimer(null);
+      }
+
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const contentToSend = trimmedContent || draft?.content?.trim();
+      const currentTime = new Date();
+
+      const messageData = {
+        sent_by: letterUserRef,
+        content: contentToSend,
+        status: "sent",
+        created_at: currentTime,
+        deleted: null,
+      };
+
+      let messageRef;
+
+      if (draft?.id) {
+        // Update existing draft to sent
+        messageRef = doc(lettersRef, draft.id);
+        await updateDoc(messageRef, messageData);
+      } else {
+        // Create new message
+        messageRef = doc(lettersRef);
+        await setDoc(messageRef, messageData);
+      }
+
+      // Verify message was sent
+      const sentDoc = await getDoc(messageRef);
+      if (!sentDoc.exists() || sentDoc.data().status !== "sent") {
+        throw new Error("Message failed to send");
+      }
+
+      // Clear states
+      setMessageContent("");
+      setDraft(null);
+      setHasDraftContent(false);
+
+      // Add message to UI immediately
+      const messageWithId = {
+        ...messageData,
+        id: messageRef.id,
+        sent_by: { id: user.uid },
+      };
+      setAllMessages((prev) => [...prev, messageWithId]);
+
+      // Scroll to bottom
+      setTimeout(() => scrollToBottom(true), 100);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send message. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle close button
+  const handleCloseMessage = () => {
+    const hasContent = messageContent.trim().length > 0;
+
+    if (hasContent) {
+      setShowCloseDialog(true);
+    } else {
+      // No content, just go back
+      if (draft?.id && !messageContent.trim()) {
+        saveDraft(""); // This will delete the draft
+      }
+      router.back();
+    }
+  };
+
+  // Confirm close and save draft
+  const handleConfirmClose = async () => {
+    const trimmedContent = messageContent.trim();
+    if (trimmedContent) {
+      await saveDraft(trimmedContent);
+    }
+    setShowCloseDialog(false);
+    router.back();
+  };
+
+  // Continue editing
+  const handleContinueEditing = () => {
+    setShowCloseDialog(false);
+  };
+
+  // Load messages
+  const loadMessages = async () => {
     if (!user || !id || !recipients.length) return;
 
     try {
-      console.log("Refreshing messages...");
       const { messages } = await fetchLetterbox(id, 20);
 
-      // Sort messages by creation time (oldest first for display)
       const sortedMessages = messages.sort((a, b) => {
         const aTime =
           a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
@@ -83,23 +249,14 @@ export default function Page({ params }) {
         return aTime.getTime() - bTime.getTime();
       });
 
-      // Fetch sender information for messages more safely
       const messagesWithSenderInfo = await Promise.all(
         sortedMessages.map(async (message) => {
-          if (!message.sent_by) return message;
-
-          // Only fetch sender info for messages not sent by current user
-          if (message.sent_by.id !== user.uid) {
-            try {
-              const recipient = recipients.find(
-                (r) => r.id === message.sent_by.id
-              );
-              if (recipient) {
-                message.senderLocation = recipient.location || "";
-              }
-            } catch (error) {
-              console.error("Error setting sender location:", error);
-              message.senderLocation = "";
+          if (message.sent_by?.id !== user.uid) {
+            const recipient = recipients.find(
+              (r) => r.id === message.sent_by?.id
+            );
+            if (recipient) {
+              message.senderLocation = recipient.location || "";
             }
           }
           return message;
@@ -107,397 +264,121 @@ export default function Page({ params }) {
       );
 
       setAllMessages(messagesWithSenderInfo);
-      console.log("Messages refreshed, count:", messagesWithSenderInfo.length);
-
-      // Scroll to bottom after refresh with a delay to ensure DOM is updated
       setTimeout(() => scrollToBottom(true), 300);
     } catch (error) {
-      console.error("Error refreshing messages:", error);
-    }
-  }, [user, id, recipients]);
-
-  // FIXED: Improved function to save draft message to Firestore
-  const saveDraftMessage = async (content) => {
-    if (
-      !user ||
-      !lettersRef ||
-      isSending ||
-      !isInitialized ||
-      !hasUserInteracted
-    )
-      return;
-
-    try {
-      const letterUserRef = userRef ?? doc(db, "users", user.uid);
-
-      // If content is empty, delete the draft completely
-      if (!content.trim()) {
-        if (draft?.id) {
-          console.log("Deleting draft document completely...");
-          await deleteDoc(doc(lettersRef, draft.id));
-          setDraft(null);
-          console.log("Draft deleted successfully");
-        }
-        return;
-      }
-
-      // Don't overwrite sent messages
-      if (draft?.status === "sent") {
-        console.log("Skipping draft save - message already sent");
-        return;
-      }
-
-      // Create draft data with proper structure
-      const draftData = {
-        sent_by: letterUserRef,
-        content: content.trim(),
-        status: "draft",
-        created_at: draft?.created_at || new Date(),
-        deleted: null,
-      };
-
-      // Use existing draft ID or create a new one
-      if (draft?.id) {
-        await updateDoc(doc(lettersRef, draft.id), draftData);
-        setDraft({ ...draftData, id: draft.id });
-        console.log("Updated existing draft");
-      } else {
-        const newDraftRef = doc(lettersRef);
-        await setDoc(newDraftRef, draftData);
-        setDraft({ ...draftData, id: newDraftRef.id });
-        console.log("Created new draft");
-      }
-    } catch (error) {
-      console.error("Error saving draft:", error);
-      Sentry.captureException(error);
+      console.error("Error loading messages:", error);
     }
   };
 
-  // FIXED: Debounced draft saving with improved logic
-  useEffect(() => {
-    // Clear any existing timer
-    if (draftTimerId) {
-      clearTimeout(draftTimerId);
-    }
-
-    // Don't save draft if we're currently sending, not initialized, or user hasn't interacted
-    if (isSending || !isInitialized || !hasUserInteracted) {
-      return;
-    }
-
-    // Save draft for any content change after a delay
-    if (user && lettersRef) {
-      const newTimer = setTimeout(() => {
-        if (!isSending) {
-          saveDraftMessage(messageContent);
-        }
-      }, 1500);
-
-      setDraftTimerId(newTimer);
-    }
-
-    // Cleanup timer
-    return () => {
-      if (draftTimerId) {
-        clearTimeout(draftTimerId);
-      }
-    };
-  }, [
-    messageContent,
-    user,
-    lettersRef,
-    isSending,
-    isInitialized,
-    hasUserInteracted,
-  ]);
-
-  // FIXED: Load draft content only once when initializing
-  useEffect(() => {
-    if (!isInitialized || isDraftLoaded) return;
-
-    if (draft?.content && draft.status === "draft") {
-      console.log("Loading draft content:", draft.content);
-      setMessageContent(draft.content);
-      setCharacterCount(draft.content.length);
-    }
-
-    setIsDraftLoaded(true);
-  }, [draft, isInitialized, isDraftLoaded]);
-
-  // Function to handle closing the message
-  const handleCloseMessage = () => {
-    if (messageContent.trim()) {
-      setShowCloseDialog(true);
-    } else {
-      // If no content, delete any existing draft and go back
-      if (draft?.id) {
-        saveDraftMessage(""); // This will delete the draft
-      }
-      router.back();
-    }
-  };
-
-  // Function to close dialog and navigate back
-  const handleConfirmClose = async () => {
-    // Save current state (will delete if empty, save as draft if has content)
-    if (user && lettersRef && isInitialized && hasUserInteracted) {
-      await saveDraftMessage(messageContent);
-    }
-    router.back();
-  };
-
-  // Function to continue editing (close dialog)
-  const handleContinueEditing = () => {
-    setShowCloseDialog(false);
-  };
-
-  // FIXED: Completely rewritten handleSendMessage function
-  const handleSendMessage = async () => {
-    const trimmedContent = messageContent.trim();
-
-    if (!trimmedContent || !recipients?.length || isSending) {
-      if (!trimmedContent) {
-        alert("Please enter a message");
-      }
-      return;
-    }
-
-    setIsSending(true);
-
-    try {
-      // Clear any pending draft timer
-      if (draftTimerId) {
-        clearTimeout(draftTimerId);
-        setDraftTimerId(null);
-      }
-
-      const letterUserRef = userRef ?? doc(db, "users", auth.currentUser.uid);
-
-      // Create the message data with "sent" status
-      const letterData = {
-        sent_by: letterUserRef,
-        content: trimmedContent,
-        status: "sent",
-        created_at: new Date(), // Always use current timestamp for sent messages
-        deleted: null,
-      };
-
-      console.log("Sending letter with data:", letterData);
-
-      let messageRef;
-
-      // If we have an existing draft, update it to sent status
-      if (draft?.id && draft.status === "draft") {
-        messageRef = doc(lettersRef, draft.id);
-        await updateDoc(messageRef, letterData);
-        console.log("Updated draft to sent status, ID:", draft.id);
-      } else {
-        // Create new sent message
-        messageRef = doc(lettersRef);
-        await setDoc(messageRef, letterData);
-        console.log("Created new sent message, ID:", messageRef.id);
-      }
-
-      // Verify the message was sent by reading it back
-      const sentDoc = await getDoc(messageRef);
-      if (!sentDoc.exists()) {
-        throw new Error("Message was not saved to Firestore");
-      }
-
-      const sentData = sentDoc.data();
-      if (sentData.status !== "sent") {
-        throw new Error("Message status was not updated to sent");
-      }
-
-      console.log("Message confirmed sent with ID:", messageRef.id);
-
-      // Clear the input and reset states
-      setMessageContent("");
-      setCharacterCount(0);
-      setDraft(null); // Clear draft after successful send
-      setHasUserInteracted(false); // Reset interaction flag
-
-      // Add the sent message to allMessages immediately for better UX
-      const messageWithId = {
-        ...letterData,
-        id: messageRef.id,
-        sent_by: { id: user.uid },
-      };
-
-      setAllMessages((prevMessages) => [...prevMessages, messageWithId]);
-
-      // Scroll to bottom immediately
-      setTimeout(() => scrollToBottom(true), 100);
-
-      // Refresh messages after a delay to ensure consistency
-      setTimeout(async () => {
-        await refreshMessages();
-      }, 1000);
-
-      setSelectedMessageId(null);
-    } catch (error) {
-      console.error("Error sending message:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-      });
-      Sentry.captureException(error);
-      alert(`Failed to send message: ${error.message}`);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      const userDocRef = doc(db, "users", user.uid);
-      setUserRef(userDocRef);
-
-      // Fetch user location
-      const fetchUserData = async () => {
-        try {
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.location) {
-              setUserLocation(userData.location);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      };
-
-      fetchUserData();
-    }
-  }, [user]);
-
-  // Save draft when navigating away
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (user && lettersRef && hasUserInteracted && messageContent.trim()) {
-        // Use navigator.sendBeacon for reliability during page unload
-        saveDraftMessage(messageContent);
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-
-      // Save draft when component unmounts
-      if (user && lettersRef && hasUserInteracted && messageContent.trim()) {
-        saveDraftMessage(messageContent);
-      }
-    };
-  }, [messageContent, user, lettersRef, hasUserInteracted]);
-
-  // Main initialization effect
+  // Initialize component
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
-      if (currentUser) {
-        setUser(currentUser);
 
-        try {
-          // Check if the user is a member of this letterbox
-          const letterboxRef = doc(db, "letterbox", id);
-          const letterboxDoc = await getDoc(letterboxRef);
+      if (!currentUser) {
+        router.push("/login");
+        return;
+      }
 
-          if (!letterboxDoc.exists()) {
-            console.error("Letterbox does not exist");
-            setIsLoading(false);
-            return;
-          }
+      setUser(currentUser);
 
-          // Fetch recipients first
-          const fetchedRecipients = await fetchRecipients(id);
-          setRecipients(fetchedRecipients || []);
+      try {
+        // Check letterbox exists
+        const letterboxRef = doc(db, "letterbox", id);
+        const letterboxDoc = await getDoc(letterboxRef);
 
-          // Set recipient name for header
-          if (fetchedRecipients && fetchedRecipients.length > 0) {
-            setRecipientName(
-              `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`
-            );
-          }
+        if (!letterboxDoc.exists()) {
+          console.error("Letterbox does not exist");
+          setIsLoading(false);
+          return;
+        }
 
-          const lRef = collection(letterboxRef, "letters");
-          setLettersRef(lRef);
+        // Set user ref and fetch user data
+        const userDocRef = doc(db, "users", currentUser.uid);
+        setUserRef(userDocRef);
 
-          // Fetch draft after everything is set up
-          const draftData = await fetchDraft(
-            id,
-            doc(db, "users", currentUser.uid),
-            false
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().location) {
+          setUserLocation(userDoc.data().location);
+        }
+
+        // Fetch recipients
+        const fetchedRecipients = await fetchRecipients(id);
+        setRecipients(fetchedRecipients || []);
+
+        if (fetchedRecipients?.length > 0) {
+          setRecipientName(
+            `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`
+          );
+        }
+
+        // Set letters ref
+        const lRef = collection(letterboxRef, "letters");
+        setLettersRef(lRef);
+
+        // Fetch existing draft
+        const draftData = await fetchDraft(id, userDocRef, false);
+        if (draftData?.status === "draft") {
+          setDraft(draftData);
+          setMessageContent(draftData.content || "");
+          setHasDraftContent(Boolean(draftData.content?.trim()));
+        }
+
+        // Load messages if we have recipients
+        if (fetchedRecipients?.length > 0) {
+          const { messages } = await fetchLetterbox(id, 20);
+
+          const sortedMessages = messages.sort((a, b) => {
+            const aTime =
+              a.created_at instanceof Date
+                ? a.created_at
+                : new Date(a.created_at);
+            const bTime =
+              b.created_at instanceof Date
+                ? b.created_at
+                : new Date(b.created_at);
+            return aTime.getTime() - bTime.getTime();
+          });
+
+          const messagesWithSenderInfo = await Promise.all(
+            sortedMessages.map(async (message) => {
+              if (message.sent_by?.id !== currentUser.uid) {
+                const recipient = fetchedRecipients.find(
+                  (r) => r.id === message.sent_by?.id
+                );
+                if (recipient) {
+                  message.senderLocation = recipient.location || "";
+                }
+              }
+              return message;
+            })
           );
 
-          // Only set draft if it's actually a draft status
-          if (draftData && draftData.status === "draft") {
-            setDraft(draftData);
-            console.log("Found existing draft:", draftData);
-          } else {
-            setDraft(null);
-          }
-
-          // Mark as initialized AFTER fetching draft
-          setIsInitialized(true);
-
-          // Fetch messages after we have recipients data
-          if (fetchedRecipients && fetchedRecipients.length > 0) {
-            const { messages } = await fetchLetterbox(id, 20);
-
-            // Sort messages by creation time (oldest first for display)
-            const sortedMessages = messages.sort((a, b) => {
-              const aTime =
-                a.created_at instanceof Date
-                  ? a.created_at
-                  : new Date(a.created_at);
-              const bTime =
-                b.created_at instanceof Date
-                  ? b.created_at
-                  : new Date(b.created_at);
-              return aTime.getTime() - bTime.getTime();
-            });
-
-            // Process messages with sender info
-            const messagesWithSenderInfo = await Promise.all(
-              sortedMessages.map(async (message) => {
-                if (!message.sent_by) return message;
-
-                // Only fetch sender info for messages not sent by current user
-                if (message.sent_by.id !== currentUser.uid) {
-                  try {
-                    const recipient = fetchedRecipients.find(
-                      (r) => r.id === message.sent_by.id
-                    );
-                    if (recipient) {
-                      message.senderLocation = recipient.location || "";
-                    }
-                  } catch (error) {
-                    console.error("Error setting sender location:", error);
-                    message.senderLocation = "";
-                  }
-                }
-                return message;
-              })
-            );
-
-            setAllMessages(messagesWithSenderInfo);
-          }
-        } catch (error) {
-          console.error("Initialization error: ", error);
-          Sentry.captureException(error);
-        } finally {
-          setIsLoading(false);
+          setAllMessages(messagesWithSenderInfo);
         }
-      } else {
-        router.push("/login");
+      } catch (error) {
+        console.error("Initialization error:", error);
+      } finally {
+        setIsLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, [id]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (draftTimer) {
+        clearTimeout(draftTimer);
+      }
+    };
+  }, [draftTimer]);
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [allMessages]);
 
   if (isLoading) {
     return (
@@ -532,60 +413,40 @@ export default function Page({ params }) {
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
   };
 
-  const getMessageId = (message) => message.id;
-
   const truncateMessage = (message) => {
     if (message.length <= 30) return message;
     return `${message.substring(0, 30)}...`;
   };
 
-  // FIXED: Handle message change with proper state management
-  const handleMessageChange = (e) => {
-    const newContent = e.target.value;
-    setMessageContent(newContent);
-    setCharacterCount(newContent.length);
-
-    // Mark that user has started interacting
-    if (!hasUserInteracted) {
-      setHasUserInteracted(true);
-    }
-  };
-
   const getSenderLocation = (message) => {
-    const isSenderUser = message.sent_by?.id === userRef?.id;
-
+    const isSenderUser = message.sent_by?.id === user?.uid;
     if (isSenderUser) {
       return userLocation || "";
     } else {
-      if (message.senderLocation) {
-        return message.senderLocation;
-      } else if (recipients[0]?.location) {
-        return recipients[0].location;
-      }
+      return message.senderLocation || recipients[0]?.location || "";
     }
-
-    return "";
   };
 
-  // FIXED: Handle clicking on reply box to start typing
-  const handleReplyBoxClick = () => {
-    setHasUserInteracted(true);
-    // Focus will be handled by autoFocus on textarea
+  const canSendMessage = () => {
+    return (
+      (messageContent.trim().length > 0 || draft?.content?.trim().length > 0) &&
+      !isSending
+    );
   };
 
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-        {/* Header bar */}
+        {/* Header */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
           <button onClick={handleCloseMessage} className="text-gray-700">
             ✕
           </button>
           <button
             onClick={handleSendMessage}
-            disabled={!messageContent.trim() || isSending}
+            disabled={!canSendMessage()}
             className={`p-1 ${
-              !messageContent.trim() || isSending
+              !canSendMessage()
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-blue-200 rounded"
             }`}>
@@ -599,12 +460,12 @@ export default function Page({ params }) {
           </button>
         </div>
 
-        {/* Messages area */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
           {allMessages.map((message) => {
-            const messageId = getMessageId(message);
+            const messageId = message.id;
             const isSelected = selectedMessageId === messageId;
-            const isSenderUser = message.sent_by?.id === userRef?.id;
+            const isSenderUser = message.sent_by?.id === user?.uid;
             const location = getSenderLocation(message);
 
             return (
@@ -664,8 +525,8 @@ export default function Page({ params }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSender(message.sent_by.id);
-                            setContent(message.content);
+                            setReportSender(message.sent_by.id);
+                            setReportContent(message.content);
                             setShowReportPopup(true);
                           }}
                           className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
@@ -682,88 +543,56 @@ export default function Page({ params }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message input area at the bottom */}
+        {/* Message Input */}
         <div className="bg-white">
-          {hasUserInteracted || messageContent ? (
-            // Expanded typing view - Show when user has interacted OR when messageContent exists
-            <>
-              {/* Recipient header - only show in expanded view */}
-              <div className="flex items-center px-4 py-2">
-                <Image
-                  src="/arrow-left.png"
-                  alt="Back"
-                  width={20}
-                  height={20}
-                  className="mr-2"
-                />
-                <span className="text-gray-700">To {recipientName}</span>
-              </div>
+          <div className="flex items-center px-4 py-2">
+            <Image
+              src="/arrow-left.png"
+              alt="Back"
+              width={20}
+              height={20}
+              className="mr-2"
+            />
+            <span className="text-gray-700">To {recipientName}</span>
+          </div>
 
-              {/* Message text area */}
-              <div className="p-4 relative" style={{ height: "50vh" }}>
-                <textarea
-                  className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white break-words whitespace-pre-wrap"
-                  placeholder="Reply to the letter..."
-                  value={messageContent}
-                  onChange={handleMessageChange}
-                  autoFocus
-                  wrap="soft"
-                  style={{
-                    overflowWrap: "break-word",
-                    wordWrap: "break-word",
-                    height: "calc(100% - 24px)",
-                  }}
-                />
-                <div className="absolute bottom-6 right-6">
-                  <Image
-                    src="/arrow-right.png"
-                    alt="Send"
-                    width={20}
-                    height={20}
-                    className={`cursor-pointer ${
-                      (!messageContent.trim() || isSending) && "opacity-50"
-                    }`}
-                    onClick={
-                      messageContent.trim() && !isSending
-                        ? handleSendMessage
-                        : undefined
-                    }
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            // Initial view with single reply box
-            <div className="p-4">
-              <div
-                className="border border-cyan-400 rounded p-3 text-gray-500 flex justify-between items-center cursor-pointer"
-                onClick={handleReplyBoxClick}>
-                <span className="italic">Reply to the letter...</span>
-                <Image
-                  src="/arrow-right.png"
-                  alt="Send"
-                  width={20}
-                  height={20}
-                />
-              </div>
+          <div className="p-4 relative" style={{ height: "40vh" }}>
+            <textarea
+              className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
+              placeholder="Write your message..."
+              value={messageContent}
+              onChange={handleMessageChange}
+              autoFocus
+              style={{
+                overflowWrap: "break-word",
+                wordWrap: "break-word",
+                height: "calc(100% - 24px)",
+              }}
+            />
+            <div className="absolute bottom-6 right-6">
+              <Image
+                src="/arrow-right.png"
+                alt="Send"
+                width={20}
+                height={20}
+                className={`cursor-pointer ${
+                  !canSendMessage() && "opacity-50"
+                }`}
+                onClick={canSendMessage() ? handleSendMessage : undefined}
+              />
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Close message confirmation dialog */}
+        {/* Close Dialog */}
         {showCloseDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div
-              className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto"
-              style={{ fontFamily: "Inter, sans-serif" }}>
+            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
               <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                Close this message, that
-                <br />
-                you have write?
+                Close this message?
               </h2>
               <p className="text-gray-600 mb-6 text-sm">
-                Are you sure you want to close this message? Unsaved changes
-                will be saved as a draft.
+                Your message will be saved as a draft.
               </p>
               <div className="flex space-x-3">
                 <button
@@ -781,13 +610,13 @@ export default function Page({ params }) {
           </div>
         )}
 
-        {/* Report popups */}
+        {/* Report Popups */}
         {showReportPopup && (
           <ReportPopup
             setShowPopup={setShowReportPopup}
             setShowConfirmReportPopup={setShowConfirmReportPopup}
-            sender={sender}
-            content={content}
+            sender={reportSender}
+            content={reportContent}
           />
         )}
         {showConfirmReportPopup && (
