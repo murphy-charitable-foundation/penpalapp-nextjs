@@ -32,6 +32,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import Popover from "../../components/general/Popover";
+import ProfileSection from "../../components/general/profile/ProfileSection";
 
 export default function EditProfile() {
   // State initializations
@@ -173,7 +174,7 @@ export default function EditProfile() {
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         throw new Error("Form validation error");
-        return
+        return;
       }
 
       try {
@@ -321,14 +322,10 @@ export default function EditProfile() {
           {/* Form Fields */}
           <div className="space-y-6 mb-[120px]">
             {/* Personal Information Section */}
-            <div className="space-y-4">
-              <h3 className="text-blue-900 font-medium text-lg mb-4">
-                Personal Information
-              </h3>
-
+            <ProfileSection title="Personal Information">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <User className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <User className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -347,8 +344,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <User className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <User className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -367,8 +364,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <MapPin className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <MapPin className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -388,8 +385,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Home className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <Home className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -409,8 +406,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <FileText className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <FileText className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Bio/Challenges faced</p>
@@ -445,8 +442,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Calendar className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <Calendar className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -463,17 +460,13 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
-            </div>
+            </ProfileSection>
 
             {/* Education & Family Section */}
-            <div className="space-y-4">
-              <h3 className="text-blue-900 font-medium text-lg mb-4">
-                Education & Family
-              </h3>
-
+            <ProfileSection title="Education & Family">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <GraduationCap className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <GraduationCap className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Education level</p>
@@ -490,8 +483,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Users className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <Users className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Guardian</p>
@@ -508,8 +501,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Heart className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <Heart className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Is orphan</p>
@@ -524,17 +517,13 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
-            </div>
+            </ProfileSection>
 
             {/* Interest Section */}
-            <div className="space-y-4">
-              <h3 className="text-blue-900 font-medium text-lg mb-4">
-                Interest
-              </h3>
-
+            <ProfileSection title="Interest">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Briefcase className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <Briefcase className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -554,8 +543,8 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Square className="w-5 h-5 text-gray-600" />
+                <div className="p-2 bg-100 rounded-lg">
+                  <Square className="w-5 h-5 text-600" />
                 </div>
                 <div className="flex-1">
                   <Input
@@ -573,12 +562,12 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
-            </div>
+            </ProfileSection>
 
             {/* Favorite Color */}
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Palette className="w-5 h-5 text-gray-600" />
+              <div className="p-2 bg-100 rounded-lg">
+                <Palette className="w-5 h-5 text-600" />
               </div>
               <div className="flex-1">
                 <Input
