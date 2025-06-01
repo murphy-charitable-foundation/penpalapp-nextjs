@@ -163,7 +163,7 @@ export default function EditProfile() {
         newErrors.dream_job = "Job is required";
       }
 
-      if (!userProfile.hobby.length === 0) {
+      if (userProfile.hobby.length === 0) {
         newErrors.hobby = "Hobby is required";
       }
 
@@ -173,8 +173,7 @@ export default function EditProfile() {
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
-        throw new Error("Form validation error");
-        return;
+        throw new Error("Form validation error(s)");
       }
 
       try {
@@ -597,7 +596,9 @@ export default function EditProfile() {
                       router.push("/letterhome");
                     })
                     .catch((error) => {
-                      console.log(error);
+                      Sentry.captureException(
+                        "Error saving profile data: ", error
+                      );
                     });
                 }}
               >
