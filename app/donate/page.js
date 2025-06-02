@@ -28,6 +28,10 @@ export default function Donate() {
     });
   }, []);
 
+  const DonateButtonClicked = () => {
+    logButtonEvent("make_donation button clicked", "/donate")
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="max-w-2xl w-full mb-8">
@@ -59,7 +63,7 @@ export default function Donate() {
 
             <div className="mt-6 text-center">
               <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
-                <button className="inline-block text-white bg-blue-600 hover:bg-blue-700 font-semibold py-3 px-6 rounded-md transition duration-300">
+                <button onClick={DonateButtonClicked} className="inline-block text-white bg-blue-600 hover:bg-blue-700 font-semibold py-3 px-6 rounded-md transition duration-300">
                   Make a Donation
                 </button>
               </Link>

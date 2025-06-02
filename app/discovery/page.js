@@ -38,6 +38,7 @@ export default function ChooseKid() {
     fetchKids(startTime);
   }, [age, gender, hobbies]);
 
+
   const fetchKids = async (startTime) => {
     setLoading(true);
 
@@ -195,6 +196,7 @@ export default function ChooseKid() {
   const loadMoreKids = () => {
     if (loading) return;
     fetchKids();
+    logButtonEvent("Load more button clicked!", "/discovery")
   };
 
   return (
