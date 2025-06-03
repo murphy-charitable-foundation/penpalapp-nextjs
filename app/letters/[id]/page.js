@@ -25,10 +25,16 @@ import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/useAnalytics";
-
+import Button from "../../../components/general/Button";
+import TextArea from "../../../components/general/TextArea";
+import Input from "../../../components/general/Input";
 import { useRouter } from "next/navigation";
-
 import * as Sentry from "@sentry/nextjs";
+import LetterHeader from "../../../components/general/letter/LetterHeader";
+import RecipientList from "../../../components/general/letter/RecipientList";
+import MessageBubble from "../../../components/general/letter/MessageBubble";
+import { PageContainer } from "../../../components/general/PageContainer";
+import { BackButton } from "../../../components/general/BackButton";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -192,22 +198,28 @@ export default function Page({ params }) {
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
         <div className="flex relative">
-          <button
+          <Button
+            btnText=""
+            color="bg-transparent"
+            textColor="text-gray-600"
+            hoverColor="hover:bg-gray-100"
+            rounded="rounded-full"
+            size="w-8 h-8"
             onClick={() => setIsFileModalOpen(false)}
-            className="rounded-lg transition-colors duration-150 h-6 w-6 absolute top-0 left-0"
           >
             <IoMdClose className="h-full w-full" />
-          </button>
+          </Button>
           <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
             Files
           </h3>
         </div>
-        <input
+        <Input
           type="file"
           hidden
           onChange={handleChange}
           disabled={uploadProgress > 0 && uploadProgress < 100}
           id="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
         />
         <label
           htmlFor="raised-button-file"
@@ -250,7 +262,8 @@ export default function Page({ params }) {
   }, []);
 
   return (
-    <div>
+    <PageContainer maxWidth="lg">
+      <BackButton />
       {showReportPopup && (
         <ReportPopup
           setShowPopup={setShowReportPopup}
@@ -266,122 +279,70 @@ export default function Page({ params }) {
 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg">
-          <div className="flex items-center justify-between p-4 border-b border-gray-300 bg-[#FAFAFA]">
-            <Link href="/">
-              <button onClick={() => window.history.back()}>
-                <img src="/closeicon.svg" />
-              </button>
-            </Link>
-            <button className="opacity-0">{"<"}</button>
-            <div className="flex justify-between items-center p-4">
-              <span className="text-black">{attachments.length} files</span>
-              <div className="space-x-2">
-                <button
-                  className="text-black p-2 rounded-full"
-                  onClick={() => setIsFileModalOpen(true)}
-                >
-                  <BsPaperclip className="h-6 w-6 rotate-90" />
-                </button>
-                <button
-                  className="text-black p-2 rounded-full"
-                  onClick={handleSendLetter}
-                >
-                  <MdSend className="h-6 w-6" />
-                </button>
-                <button className="text-black p-2 rounded-full">
-                  <RiDeleteBin6Line className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <LetterHeader
+            attachmentsCount={attachments.length}
+            onAttach={() => setIsFileModalOpen(true)}
+            onSend={handleSendLetter}
+            onDelete={() => {
+              /* implement delete handler */
+            }}
+          />
 
-          <div className="flex  space-x-6 p-4 bg-[#F3F4F6] rounded-t-lg">
-            {recipients?.length &&
-              recipients.map((recipient) => (
-                <div key={recipient?.first_name?.[0]}>
-                  <ProfileImage
-                    photo_uri={recipient?.photo_uri}
-                    first_name={recipient?.first_name}
-                    size={20}
-                  />
-                  <div key={`${recipient?.first_name?.[0]}_`}>
-                    <h2 className="font-bold text-black">
-                      {recipient?.first_name} {recipient?.last_name}
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      {recipient?.country}
-                    </p>
-                  </div>
-                </div>
-              ))}
-          </div>
+          <RecipientList recipients={recipients} />
 
           {isFileModalOpen && <FileModal />}
 
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
             {allMessages?.length ? (
               allMessages.map((message, index) => (
-                <div
+                <MessageBubble
                   key={index}
-                  className={`w-[35%] flex bg-white p-4 rounded-lg text-gray-600 mb-4 ${
-                    message.sent_by.id === userRef.id && "self-end"
-                  }`}
-                >
-                  <div className="flex flex-col w-[90%]">
-                    {message?.attachments?.length ? (
-                      <Image
-                        alt="attachment"
-                        width={100}
-                        height={100}
-                        src={message.attachments[0]}
-                      />
-                    ) : null}
-                    <span>{message.content}</span>
-                    <section className="px-5">
-                      <div className="flex justify-end mb-2">
-                        <FaExclamationCircle
-                          className="cursor-pointer"
-                          onClick={() => {
-                            setSender(message.sent_by.id);
-                            setContent(message.content);
-                            setShowReportPopup(true);
-                          }}
-                        />
-                      </div>
-                    </section>
-                  </div>
-                </div>
+                  message={message}
+                  isOwnMessage={message.sent_by.id === userRef?.id}
+                  onReport={() => {
+                    setSender(message.sent_by.id);
+                    setContent(message.content);
+                    setShowReportPopup(true);
+                  }}
+                />
               ))
             ) : (
               <span>No messages</span>
             )}
 
             {hasMoreMessages && !loadingMore && (
-              <button
-                onClick={handleLoadMore}
-                className="py-2 px-4 mt-4 mb-8 bg-blue-500 text-white rounded"
-              >
-                Load More
-              </button>
+              <Button
+                btnText="Load More"
+                color="bg-blue-500"
+                textColor="text-white"
+                rounded="rounded"
+                size="py-2 px-4 mt-4 mb-8"
+                onClick={() => {
+                  logButtonEvent(
+                    "load more button clicked",
+                    "/letters/letterId"
+                  );
+                  handleLoadMore();
+                }}
+              />
             )}
 
             {loadingMore && <span>Loading...</span>}
           </div>
-          <textarea
-            className="w-full p-4 text-black bg-[#ffffff] rounded-lg border-teal-500"
-            rows="8"
-            placeholder="Tap to write letter..."
+          <TextArea
             value={letterContent}
             onChange={(e) => setLetterContent(e.target.value)}
+            placeholder="Tap to write letter..."
+            rows={10}
           />
 
-          <div className="text-right text-sm p-4 mt-8 text-gray-600">
+          <div className="text-right text-sm mt-2 text-gray-600">
             {letterContent.length} / 1000
           </div>
         </div>
         <BottomNavBar />
         {isFileModalOpen && <FileModal />}
       </div>
-    </div>
+    </PageContainer>
   );
 }

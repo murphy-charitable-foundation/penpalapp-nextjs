@@ -8,17 +8,19 @@ import {
   startAfter,
   limit,
   where,
+  doc,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db } from "../firebaseConfig"; // Ensure this path is correct
-import { differenceInCalendarYears, parseISO } from "date-fns";
-import KidCard from "@/components/general/KidCard";
 import KidFilter from "@/components/discovery/KidFilter";
-import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/useAnalytics";
 
+import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
+import Header from "../../components/general/Header";
+import KidsList from "../../components/discovery/KidsList";
+import { PageContainer } from "../../components/general/PageContainer";
+import { BackButton } from "../../components/general/BackButton";
 const PAGE_SIZE = 10; // Number of kids per page
 
 export default function ChooseKid() {
@@ -38,6 +40,9 @@ export default function ChooseKid() {
     fetchKids(startTime);
   }, [age, gender, hobbies]);
 
+  useEffect(() => {
+    console.log("Age:", age);
+  }, [age]);
 
   const fetchKids = async (startTime) => {
     setLoading(true);
@@ -164,23 +169,46 @@ export default function ChooseKid() {
   };
 
   function calculateAge(birthdayTimestamp) {
-    const timestamp = Date.parse(birthdayTimestamp);
-    const birthdayDate = new Date(timestamp);
-    const currentDate = new Date();
+    if (!birthdayTimestamp) return 0; // Handle null/undefined case
 
-    // Calculate the difference in years
-    const diffInYears = currentDate.getFullYear() - birthdayDate.getFullYear();
+    let birthdayDate;
+    try {
+      // Handle different timestamp formats
+      if (birthdayTimestamp instanceof Date) {
+        birthdayDate = birthdayTimestamp;
+      } else if (typeof birthdayTimestamp.toDate === "function") {
+        // Firebase Timestamp
+        birthdayDate = birthdayTimestamp.toDate();
+      } else if (birthdayTimestamp._seconds) {
+        // Firestore Timestamp
+        birthdayDate = new Date(birthdayTimestamp._seconds * 1000);
+      } else {
+        // Try to parse as date string
+        birthdayDate = new Date(birthdayTimestamp);
+      }
 
-    // Adjust the age based on the birth month and day
-    if (
-      currentDate.getMonth() < birthdayDate.getMonth() ||
-      (currentDate.getMonth() === birthdayDate.getMonth() &&
-        currentDate.getDate() < birthdayDate.getDate())
-    ) {
-      return diffInYears - 1;
+      if (isNaN(birthdayDate.getTime())) {
+        console.error("Invalid date:", birthdayTimestamp);
+        return 0;
+      }
+
+      const currentDate = new Date();
+      const diffInYears =
+        currentDate.getFullYear() - birthdayDate.getFullYear();
+
+      if (
+        currentDate.getMonth() < birthdayDate.getMonth() ||
+        (currentDate.getMonth() === birthdayDate.getMonth() &&
+          currentDate.getDate() < birthdayDate.getDate())
+      ) {
+        return diffInYears - 1;
+      }
+
+      return diffInYears;
+    } catch (error) {
+      console.error("Error calculating age:", error);
+      return 0;
     }
-
-    return diffInYears;
   }
 
   const filter = async (age, hobby, gender) => {
@@ -196,94 +224,41 @@ export default function ChooseKid() {
   const loadMoreKids = () => {
     if (loading) return;
     fetchKids();
-    logButtonEvent("Load more button clicked!", "/discovery")
+    logButtonEvent("Load more button clicked!", "/discovery");
   };
 
   return (
-    <div className="min-h-screen p-4 bg-white">
-      <div className="bg-white">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078]  sticky top-0 z-10">
-          {/* Top part with white background and black text */}
-          <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
-            <div className="flex gap-4 justify-center w-full">
-              <Link href={"/letterhome"}>
-                <svg
-                  className="h-6 w-6 text-gray-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </Link>
-              <h1 className="text-xl sm:text-2xl font-bold text-center">
-                Choose a kid to write to
-              </h1>
+    <PageContainer maxWidth="lg">
+      <BackButton />
+      <div className="min-h-screen p-4 bg-white">
+        <div className="bg-white">
+          <Header
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+          />
+          {activeFilter ? (
+            <div className="h-auto">
+              <KidFilter
+                setAge={setAge}
+                setGender={setGender}
+                setHobbies={setHobbies}
+                hobbies={hobbies}
+                age={age}
+                gender={gender}
+                filter={filter}
+              />
             </div>
-          </div>
-
-          {/* Filter button with grey background */}
-          <div className="p-4 bg-[#E6EDF4] sm:bg-[#034078]">
-            <button
-              className="text-black sm:text-white w-full px-3 py-1 rounded-full text-sm flex items-center justify-between sm:justify-center sm:bg-[#022f5b] text-[15px] sm:text-[18px]"
-              onClick={() => setActiveFilter(!activeFilter)}
-            >
-              <p>Filters</p>
-              {!activeFilter ? (
-                <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-                  <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {activeFilter ? (
-          <div className="h-auto">
-            <KidFilter
-              setAge={setAge}
-              setGender={setGender}
-              setHobbies={setHobbies}
-              hobbies={hobbies}
-              age={age}
-              gender={gender}
-              filter={filter}
+          ) : (
+            <KidsList
+              kids={kids}
+              calculateAge={calculateAge}
+              lastKidDoc={lastKidDoc}
+              loadMoreKids={loadMoreKids}
+              loading={loading}
             />
-          </div>
-        ) : (
-          <div>
-            <div className="px-4 py-2 flex flex-row flex-wrap gap-5 justify-center relative">
-              {kids.map((kid) => (
-                <KidCard
-                  kid={kid}
-                  calculateAge={calculateAge}
-                  key={kid?.id}
-                  style={{ minHeight: "300px", minWidth: "280px" }}
-                />
-              ))}
-            </div>
-            {lastKidDoc && (
-              <div className="flex justify-center">
-                <button
-                  onClick={loadMoreKids}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
-                >
-                  {loading ? "Loading..." : "Load More"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

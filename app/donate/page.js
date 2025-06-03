@@ -1,13 +1,15 @@
 "use client";
 
 // pages/donate.js
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/useAnalytics";
 import { useEffect } from "react";
+import Image from "next/image";
+import { useState } from "react";
+import Button from "../../components/general/Button";
+import { BackButton } from "../../components/general/BackButton";
 export default function Donate() {
   const details = [
     { label: "Account Name", value: "Murphy Charitable Foundation" },
@@ -28,28 +30,12 @@ export default function Donate() {
     });
   }, []);
 
-  const DonateButtonClicked = () => {
-    logButtonEvent("make_donation button clicked", "/donate")
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="max-w-2xl w-full mb-8">
-        <button onClick={() => window.history.back()}>
-          <svg
-            className="h-6 w-6 text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+        <Link href="letterhome">
+          <BackButton />
+        </Link>
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6">
             <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">
@@ -63,9 +49,17 @@ export default function Donate() {
 
             <div className="mt-6 text-center">
               <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
-                <button onClick={DonateButtonClicked} className="inline-block text-white bg-blue-600 hover:bg-blue-700 font-semibold py-3 px-6 rounded-md transition duration-300">
-                  Make a Donation
-                </button>
+                <Button
+                  btnText="Make a Donation"
+                  color="bg-blue-600"
+                  textColor="text-white"
+                  hoverColor="hover:bg-blue-700"
+                  rounded="rounded-md"
+                  font="font-semibold"
+                  onClick={() =>
+                    logButtonEvent("make donation button clicked", "/donate")
+                  }
+                />
               </Link>
             </div>
           </div>

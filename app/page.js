@@ -1,3 +1,4 @@
+"use client";
 // page.js
 "use client";
 import Image from "next/image";
@@ -7,6 +8,8 @@ import Button from "@/components/general/Button";
 import { usePageAnalytics } from "@/app/useAnalytics";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { useEffect } from "react";
+import { BackButton } from "../components/general/BackButton";
+
 export default function Home() {
   usePageAnalytics("/");
 
@@ -26,35 +29,15 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
       <div className="w-full max-w-md space-y-8">
-        <div
-          style={{
-            textAlign: "left",
-            padding: "20px",
-            background: "white",
-            height: "80%",
-          }}
-        >
+        <div className="text-left p-4 bg-white h-[80%]">
           <Link href="/cover">
-            <button
-              style={{
-                border: "none",
-                background: "none",
-              }}
-            >
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
+            <BackButton
+              btnType="button"
+              color="transparent"
+              textColor="text-gray-600"
+              onClick={() => router.push("/cover")}
+              size="xs"
+            />
           </Link>
           <div className="flex justify-center mb-40">
             <Image
@@ -67,20 +50,18 @@ export default function Home() {
           <div className="flex flex-col gap-10 jsu mb-36 items-center">
             <Link href="/login">
               <Button
-                onClick={() => logButtonEvent("log in clicked", "/")}
-                color={"bg-green-700"}
-                hoverColor={"hover:bg-green-800"}
+                color={"green"}
                 btnText={"Log in"}
+                onClick={() => logButtonEvent("log in clicked", "/")}
               />
             </Link>
             <Link href="https://calendly.com/murphycharity/60min">
               <Button
+                color={"blue"}
+                btnText={"Become a Pen Pal Volunteer"}
                 onClick={() =>
                   logButtonEvent("become a pen pal volunteer clicked", "/")
                 }
-                color={"bg-blue-700"}
-                hoverColor={"hover:bg-blue-800"}
-                btnText={"Become a Pen Pal Volunteer"}
               />
             </Link>
           </div>

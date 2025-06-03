@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { auth, db } from "../firebaseConfig";
-import EditProfileImage from "@/components/edit-profile-image";
+import EditProfileImage from "../../components/edit-profile-image";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { usePageAnalytics } from "@/app/useAnalytics";
+import Button from "../../components/general/Button";
+import { BackButton } from "../../components/general/BackButton";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -113,28 +115,16 @@ export default function EditProfileUserImage() {
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-lg mx-auto p-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <button onClick={() => window.history.back()}>
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
+        <div className="flex flex-col justify-between items-center">
+          <div className="block">
+            <BackButton />
 
-            <h1 className="ml-4 text-xl font-bold text-gray-800">Edit image</h1>
+            <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
+              Edit image
+            </h1>
           </div>
         </div>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center gap-6 mt-6">
           <EditProfileImage
             image={image}
             newProfileImage={newProfileImage}
@@ -144,12 +134,12 @@ export default function EditProfileUserImage() {
             cropperRef={cropperRef}
           />
           <i>Click to edit</i>
-          <button
-            className="w-[80%] mx-auto mt-[100px] p-2 bg-[#4E802A] text-white font-semibold  rounded-[100px]"
+          <Button
+            btnType="button"
+            btnText="Save New Profile Picture"
+            color="green"
             onClick={saveImage}
-          >
-            Save New Profile Picture
-          </button>
+          />
         </div>
       </div>
     </div>

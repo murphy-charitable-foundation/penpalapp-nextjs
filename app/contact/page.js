@@ -1,23 +1,43 @@
 "use client";
 
 // pages/contact.js
+
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import logo from "/public/murphylogo.png";
 import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from "react-icons/fa";
-import BottomNavBar from "@/components/bottom-nav-bar";
+import BottomNavBar from "../../components/bottom-nav-bar";
+import { BackButton } from "../../components/general/BackButton";
+import Button from "../../components/general/Button";
 import { usePageAnalytics } from "@/app/useAnalytics";
 import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
 import { useEffect } from "react";
+
 export default function Contact() {
-  const socialLinks = {
-    instagram: "https://www.instagram.com/murphycharity_/",
-    linkedin:
-      "https://www.linkedin.com/company/murphy-charitable-foundation-uganda",
-    email: "mailto:rez@murphycharity.org",
-    website: "https://murphycharity.org",
-  };
+  const socialLinks = [
+    {
+      name: "Instagram",
+      url: "https://www.instagram.com/murphycharity_/",
+      icon: <FaInstagram className="h-6 w-6" />,
+    },
+    {
+      name: "Linkedin",
+      url: "https://www.linkedin.com/company/murphy-charitable-foundation-uganda",
+      icon: <FaLinkedinIn className="h-6 w-6" />,
+    },
+    {
+      name: "Email",
+      url: "mailto:rez@murphycharity.org",
+      icon: <FaEnvelope className="h-6 w-6" />,
+    },
+    {
+      name: "Website",
+      url: "https://murphycharity.org",
+      icon: <FaGlobe className="h-6 w-6" />,
+    },
+  ];
+
   usePageAnalytics("/contact");
   useEffect(() => {
     const startTime = performance.now();
@@ -33,22 +53,8 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center justify-center">
-      <div className="bg-[#075EA6] shadow rounded-lg p-6 w-full max-w-md">
-        <button onClick={() => window.history.back()}>
-          <svg
-            className="h-6 w-6 text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+      <div className="bg-blue-700 shadow rounded-lg p-6 w-full max-w-md">
+        <BackButton />
         <div className="my-4 flex justify-center">
           <Image src={logo} alt="Foundation Logo" width={100} height={100} />{" "}
           {/* Adjust the path and size as needed */}
@@ -61,34 +67,19 @@ export default function Contact() {
         </p>
 
         <div className="space-y-6">
+          {socialLinks.map((link) => (
+            <Button
+              key={link.name}
+              btnText={
+                <div className="flex items-center">
+                  {link.icon}
+                  <span className="ml-3 capitalize">{link.name}</span>
+                </div>
+              }
+              onClick={() => window.open(link.url, "_blank")}
+            />
+          ))}
           {/* Instagram */}
-          <Link href={socialLinks.instagram}>
-            <button className="flex justify-center items-center text-white hover:text-[#cfe899] py-4">
-              <FaInstagram className="h-6 w-6" />
-              <span className="ml-6">Instagram</span>
-            </button>
-          </Link>
-          {/* LinkedIn */}
-          <Link href={socialLinks.linkedin}>
-            <button className="flex justify-center items-center text-white hover:text-[#cfe899] py-4">
-              <FaLinkedinIn className="h-6 w-6" />
-              <span className="ml-6">LinkedIn</span>
-            </button>
-          </Link>
-          {/* Email */}
-          <Link href={`mailto:${socialLinks.email}`}>
-            <button className="flex justify-center items-center text-white hover:text-[#cfe899] py-4">
-              <FaEnvelope className="h-6 w-6" />
-              <span className="ml-6">Email</span>
-            </button>
-          </Link>
-          {/* Website */}
-          <Link href={socialLinks.website}>
-            <button className="flex justify-center items-center text-white hover:text-[#cfe899] py-4">
-              <FaGlobe className="h-6 w-6" />
-              <span className="ml-6">Website</span>
-            </button>
-          </Link>
         </div>
       </div>
       <BottomNavBar />

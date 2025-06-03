@@ -1,21 +1,21 @@
 "use client";
 
 // pages/login.js
-import { useState, useEffect } from "react";
-import {
-  signInWithEmailAndPassword,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  setPersistence,
-} from "firebase/auth";
+import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
-import Button from "@/components/general/Button";
+import Button from "../../components/general/Button";
+import Input from "../../components/general/Input";
+import { BackButton } from "../../components/general/BackButton";
+import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
 import { usePageAnalytics } from "@/app/useAnalytics";
+import { useEffect } from "react";
 import {
   logInEvent,
   logButtonEvent,
@@ -23,13 +23,13 @@ import {
 } from "@/app/utils/analytics";
 
 export default function Login() {
-  usePageAnalytics("/login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const [rememberMe, setRememberMe] = useState(false);
+
+  const startTime = performance.now();
 
   useEffect(() => {
     // Check if the user is already logged in and retrieve the email
@@ -38,8 +38,6 @@ export default function Login() {
         router.push("/letterhome");
       } else {
         router.push("/login");
-
-        const startTime = performance.now();
         requestAnimationFrame(() => {
           setTimeout(() => {
             const endTime = performance.now();
@@ -50,28 +48,25 @@ export default function Login() {
         });
       }
     });
-
-    return () => unsubscribe(); // Clean up the listener on component unmount
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    logButtonEvent("Log in clicked!", "/login");
+    setLoading(true);
+    logButtonEvent("login button clicked", "/login");
+
     try {
-      // Set persistence based on "Remember Me" checkbox
-      const persistenceType = rememberMe
-        ? browserLocalPersistence
-        : browserSessionPersistence;
-
-      await setPersistence(auth, persistenceType);
-      await signInWithEmailAndPassword(auth, email, password);
-
-      const uid = auth.currentUser.uid;
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
+
       if (userSnap.exists()) {
-        logInEvent("success", "Existed User logged");
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
@@ -80,264 +75,115 @@ export default function Login() {
       console.error("Authentication error:", error.message);
       switch (error.code) {
         case "auth/user-not-found":
-          setError("The email is not correct.");
-          logInEvent("failure", "The email is not correct.");
+          setError("No user found with this email.");
           break;
         case "auth/wrong-password":
-          setError("The password is not correct.");
-          logInEvent("failure", "The password is not correct.");
+          setError("Wrong password.");
           break;
         case "auth/too-many-requests":
-          setError("Too many attempts. Your account was blocked.");
-          logInEvent("failure", "Too many attempts. Your account was blocked.");
-          setShowModal(true);
+          setError("Too many attempts. Try again later.");
           break;
         default:
           setError("Failed to log in.");
-          logInEvent("failure", "Failed to log in.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
-  function closeModal() {
-    setShowModal(false);
-    logButtonEvent("Close modal clicked!", "/login");
-  }
+  const handleInputChange = () => {
+    setError("");
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
-      <div className="w-full max-w-md space-y-8">
-        <div
-          style={{
-            textAlign: "left",
-            padding: "20px",
-            background: "white",
-            height: "80%",
-          }}
-        >
-          <div style={{ position: "relative" }}>
-            <button
-              style={{
-                border: "none",
-                background: "none",
-                position: "absolute",
-                left: "0%",
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
-              onClick={() => window.history.back()}
-            >
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <span
-              style={{
-                padding: "0 40%",
-              }}
-              className="flex-grow text-center text-2xl font-bold text-gray-800"
-            >
-              Login
-            </span>
-          </div>
+    <PageContainer maxWidth="md" padding="p-8">
+      <PageHeader title="Login" />
 
-          <div className="flex justify-center mb-20">
-            <Image
-              src={logo}
-              alt="Murphy Charitable Foundation Uganda"
-              width={150}
-              height={150}
-            />
-          </div>
-          <form className=" space-y-12  m-auto" onSubmit={handleSubmit}>
-            <div>
-              <h6 className="text-left ml-2 text-gray-800 ">Email</h6>
-              <input
-                type="email"
-                value={email}
-                autoComplete="email"
-                required
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Ex. user@gmail.com"
-                style={{
-                  border: "0px",
-                  borderBottom: "1px solid black",
-                  padding: "10px",
-                  width: "100%",
-                  margin: "0 auto",
-                  display: "block",
-                  color: "black",
-                }}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <h6 className="mt-12 text-left ml-2 text-gray-800 ">Password</h6>
-              <input
-                type="password"
-                value={password}
-                autoComplete="current-password"
-                required
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="******"
-                style={{
-                  border: "0px",
-                  borderBottom: "1px solid black",
-                  padding: "10px",
-                  width: "100%",
-                  margin: "0 auto",
-                  display: "block",
-                  color: "black",
-                }}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              />
-            </div>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <span className="flex items-center text-sm font-medium text-red-600">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  {error}
-                </span>
-              </div>
-            )}
-
-            <div className="text-left text-sm">
-              <a
-                href="/reset-password"
-                style={{ textDecoration: "underline" }}
-                className="font-medium text-gray-600 hover:text-blue-500"
-              >
-                Forgot your password?
-              </a>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center w-full justify-between">
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-900"
-                >
-                  Remember me
-                </label>
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <Button
-                btnText={"Log in"}
-                btnType="submit"
-                color={"bg-gray-200"}
-                textColor={"text-gray-400"}
-                hoverColor={"hover:bg-gray-500"}
-                hoverTextClr={"hover:text-white"}
-                font={"font-medium"}
-                disabled={email === ""}
-              />
-              {/* <button
-                type="submit"
-                style={{
-                  width: "80%",
-                  display: "block",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  hover: "enabled",
-                }}
-                className="group relative  w-full flex justify-center py-2 px-4 border border-transparent rounded-full text-sm font-medium  text-gray-400 bg-gray-200 hover:bg-[#48801c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-transparent"
-                disabled={email === ""}
-              >
-                Login
-              </button> */}
-            </div>
-          </form>
-
-          {showModal && (
-            <div
-              style={{
-                position: "absolute",
-                paddingTop: "80px",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                background: "rgba(0, 0, 0, 0.8)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "auto",
-                zIndex: "2",
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: "white",
-                  padding: "20px",
-                  borderRadius: "5px",
-                  textAlign: "left",
-                  width: "80%",
-                  boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                <h3 style={{ color: "red" }}>Your account was blocked</h3>
-                <p
-                  style={{
-                    color: "black",
-                    marginTop: "20px",
-                    leading: "[2rem]",
-                  }}
-                >
-                  Please send an email to verify the reason.
-                </p>
-                <div className="flex justify-center">
-                  <button
-                    onClick={closeModal}
-                    style={{
-                      backgroundColor: "#48801c",
-                      color: "white",
-                      padding: "10px 20px",
-                      margin: "30px 0",
-                      borderRadius: "20px",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Understood
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <div>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="Ex. user@gmail.com"
+            id="email"
+            name="email"
+            required
+            label="Email"
+            error={error && error.toLowerCase().includes("email") ? error : ""}
+          />
         </div>
-      </div>
-    </div>
+
+        <div>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="******"
+            id="password"
+            name="password"
+            required
+            label="Password"
+            error={
+              error && error.toLowerCase().includes("password") ? error : ""
+            }
+          />
+        </div>
+
+        <div className="text-sm text-center">
+          <Link
+            href="/reset-password"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Forgot your password?
+          </Link>
+        </div>
+
+        <div className="flex justify-center space-x-4"></div>
+
+        <div className="flex items-center justify-center">
+          <Input
+            id="remember-me"
+            name="remember-me"
+            type="checkbox"
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label
+            htmlFor="remember-me"
+            className="ml-2 block text-sm text-gray-900"
+          >
+            Remember me
+          </label>
+        </div>
+
+        {error &&
+          !error.toLowerCase().includes("email") &&
+          !error.toLowerCase().includes("password") && (
+            <div className="text-red-500 text-sm text-center">{error}</div>
+          )}
+
+        <div className="flex justify-center">
+          <Button
+            btnType="submit"
+            btnText={
+              loading ? (
+                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
+              ) : (
+                "Log in"
+              )
+            }
+            color="green"
+            textColor="text-white"
+            disabled={loading}
+          />
+        </div>
+      </form>
+    </PageContainer>
   );
 }
