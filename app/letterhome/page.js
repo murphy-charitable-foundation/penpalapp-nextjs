@@ -16,19 +16,18 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import {
-  deadChat,
-  iterateLetterBoxes
-} from "../utils/deadChat";
-import ProfileImage from '/components/general/ProfileImage';
-import Button from '../../components/general/Button';
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
+import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+import ProfileImage from "/components/general/ProfileImage";
+import Button from "../../components/general/Button";
 import WelcomeToast from "../../components/general/WelcomeToast";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground"; 
+import { PageBackground } from "../../components/general/PageBackground";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -41,6 +40,7 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+  usePageAnalytics("/letterhome");
 
   useEffect(() => {
     setIsLoading(true);
@@ -77,10 +77,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const startTime = performance.now();
     const fetchUserData = async () => {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
-        setUserId(uid)
+        setUserId(uid);
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
@@ -90,10 +91,19 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
-          
+
           // Show welcome message
           setShowWelcome(true);
-          
+
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/letterhome", loadTime);
+            }, 0);
+          });
+
           // Hide welcome message after 5 seconds
           setTimeout(() => {
             setShowWelcome(false);
@@ -112,67 +122,73 @@ export default function Home() {
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
-      <BackButton />
-      <WelcomeToast 
-        userName={userName}
-        isVisible={showWelcome}
-        onClose={() => setShowWelcome(false)}
-      />
-
-      <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-        <ProfileHeader 
+        <BackButton />
+        <WelcomeToast
           userName={userName}
-          country={country}
-          profileImage={profileImage}
-          id={userId}
+          isVisible={showWelcome}
+          onClose={() => setShowWelcome(false)}
         />
 
-        <main className="p-6">
-          <section className="mt-8">
-            <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
-              Recent letters
-            </h2>
-            {letters.length > 0 ? (
-              letters.map((letter, i) => (
-                <LetterCard key={letter.id + '_' + i} letter={letter} />
-              ))
-            ) : (
-              <EmptyState 
-                title="New friends are coming!"
-                description="Many friends are coming hang tight!"
-              />
-            )}
-          </section>
-        </main>
-        <BottomNavBar />
-      </div>
+        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+          <ProfileHeader
+            userName={userName}
+            country={country}
+            profileImage={profileImage}
+            id={userId}
+          />
 
-      {userType === "admin" && (
-        <Button
-          btnText="Check For Inactive Chats"
-          color="bg-black"
-          textColor="text-white"
-          rounded="rounded-md"
-          onClick={iterateLetterBoxes}
-        />
-      )}
-      
-      {/* Add animation keyframes */}
-      <style jsx global>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
+          <main className="p-6">
+            <section className="mt-8">
+              <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+                Recent letters
+              </h2>
+              {letters.length > 0 ? (
+                letters.map((letter, i) => (
+                  <LetterCard key={letter.id + "_" + i} letter={letter} />
+                ))
+              ) : (
+                <EmptyState
+                  title="New friends are coming!"
+                  description="Many friends are coming hang tight!"
+                />
+              )}
+            </section>
+          </main>
+          <BottomNavBar />
+        </div>
+
+        {userType === "admin" && (
+          <Button
+            btnText="Check For Inactive Chats"
+            color="bg-black"
+            textColor="text-white"
+            rounded="rounded-md"
+            onClick={() => {
+              logButtonEvent(
+                "check for inactive chats button clicked",
+                "/letterhome"
+              );
+              iterateLetterBoxes();
+            }}
+          />
+        )}
+
+        {/* Add animation keyframes */}
+        <style jsx global>{`
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateX(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateX(0);
+          .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
           }
-        }
-        .animate-slide-in {
-          animation: slideIn 0.3s ease-out forwards;
-        }
-      `}</style>
+        `}</style>
       </PageContainer>
     </PageBackground>
   );

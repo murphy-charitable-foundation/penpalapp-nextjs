@@ -1,22 +1,41 @@
-"use client"
+"use client";
 
-{/* pages/reset-password.js */}
-import { db, auth } from '../firebaseConfig'; 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import logo from '/public/murphylogo.png'; 
-import Image from 'next/image';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import Button from '../../components/general/Button';
-import Input from '../../components/general/Input'; 
-import Modal from '../../components/general/Modal';
-import {PageHeader} from '../../components/general/PageHeader';
-import {PageBackground} from '../../components/general/PageBackground';
-import { PageContainer } from '../../components/general/PageContainer';
+import { auth } from "../firebaseConfig";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
+import * as Sentry from "@sentry/nextjs";
+import { usePageAnalytics } from "@/app/useAnalytics";
+import { useEffect } from "react";
+{
+  /* pages/reset-password.js */
+}
+import logo from "/public/murphylogo.png";
+import Image from "next/image";
+import Button from "../../components/general/Button";
+import Input from "../../components/general/Input";
+import Modal from "../../components/general/Modal";
+import { PageHeader } from "../../components/general/PageHeader";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
 export default function ResetPassword() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+  usePageAnalytics("/reset-password");
+
+  useEffect(() => {
+    const startTime = performance.now();
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        logLoadingTime("/reset-password", loadTime);
+      }, 0);
+    });
+  }, []);
 
   function resetPassword() {
     sendPasswordResetEmail(auth, email)
@@ -26,43 +45,44 @@ export default function ResetPassword() {
       .catch((error) => {
         console.error(error);
       });
+    logButtonEvent("Reset Password clicked!", "/reset-password");
   }
 
   function closeModal() {
     setShowModal(false);
-    router.push('/login');
+    router.push("/login");
   }
 
   const modalContent = (
     <div>
-      <p style={{ color: 'black', marginTop:'20px', fontSize: '0.9rem'}}>Please check your email inbox and spam folder for a verification email to reset your password.</p>
+      <p style={{ color: "black", marginTop: "20px", fontSize: "0.9rem" }}>
+        Please check your email inbox and spam folder for a verification email
+        to reset your password.
+      </p>
       <div className="flex justify-center mt-4">
-        <Button onClick={closeModal} btnText="Understood" 
-          color="green"/>
+        <Button onClick={closeModal} btnText="Understood" color="green" />
       </div>
     </div>
-
   );
 
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
         <div className="p-0 bg-white">
-          <PageHeader title="Reset Your Password"/>
+          <PageHeader title="Reset Your Password" />
           <div className="mt-10">
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Ex: user@gmail.com"
-                name="email"
-                id="email"
-                required
-                label="Registered Email"
-              />
-
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ex: user@gmail.com"
+              name="email"
+              id="email"
+              required
+              label="Registered Email"
+            />
           </div>
-          
+
           <div className="mt-6 flex justify-center">
             <Button
               btnType="button"
@@ -73,10 +93,17 @@ export default function ResetPassword() {
               onClick={resetPassword}
             />
           </div>
-          
         </div>
-    </PageContainer>
-    <Modal isOpen={showModal} width="large" onClose={() => {setShowModal(false);}} title="Please Check Your Email" content={modalContent} />
-  </PageBackground>
+      </PageContainer>
+      <Modal
+        isOpen={showModal}
+        width="large"
+        onClose={() => {
+          setShowModal(false);
+        }}
+        title="Please Check Your Email"
+        content={modalContent}
+      />
+    </PageBackground>
   );
 }

@@ -1,148 +1,189 @@
 "use client";
 
-import { useState } from 'react';
+// pages/login.js
+import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { db, auth } from '../firebaseConfig';
+import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
-import Link from 'next/link';
-import Image from 'next/image';
-import logo from '/public/murphylogo.png';
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import Image from "next/image";
+import logo from "/public/murphylogo.png";
+import { useRouter } from "next/navigation";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import { BackButton } from '../../components/general/BackButton';
+import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageHeader } from '../../components/general/PageHeader';
+import { PageHeader } from "../../components/general/PageHeader";
+import { usePageAnalytics } from "@/app/useAnalytics";
+import { useEffect } from "react";
+import {
+  logInEvent,
+  logButtonEvent,
+  logLoadingTime,
+} from "@/app/utils/analytics";
 
 export default function Login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const uid = userCredential.user.uid;
-            const userRef = doc(db, "users", uid);
-            const userSnap = await getDoc(userRef);
-            
-            if (userSnap.exists()) {
-                router.push('/letterhome');
-            } else {
-                router.push('/create-acc');
+  const startTime = performance.now();
+
+  useEffect(() => {
+    // Check if the user is already logged in and retrieve the email
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        router.push("/letterhome");
+      } else {
+        router.push("/login");
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const endTime = performance.now();
+            const loadTime = endTime - startTime;
+            console.log(`Page render time: ${loadTime}ms`);
+            logLoadingTime("/login", loadTime);
+          }, 0);
+        });
+      }
+    });
+  }, [router]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    logButtonEvent("login button clicked", "/login");
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const uid = userCredential.user.uid;
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        router.push("/letterhome");
+      } else {
+        router.push("/create-acc");
+      }
+    } catch (error) {
+      console.error("Authentication error:", error.message);
+      switch (error.code) {
+        case "auth/user-not-found":
+          setError("No user found with this email.");
+          break;
+        case "auth/wrong-password":
+          setError("Wrong password.");
+          break;
+        case "auth/too-many-requests":
+          setError("Too many attempts. Try again later.");
+          break;
+        default:
+          setError("Failed to log in.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = () => {
+    setError("");
+  };
+
+  return (
+    <PageContainer maxWidth="md" padding="p-8">
+      <PageHeader title="Login" />
+
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <div>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="Ex. user@gmail.com"
+            id="email"
+            name="email"
+            required
+            label="Email"
+            error={error && error.toLowerCase().includes("email") ? error : ""}
+          />
+        </div>
+
+        <div>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="******"
+            id="password"
+            name="password"
+            required
+            label="Password"
+            error={
+              error && error.toLowerCase().includes("password") ? error : ""
             }
-        } catch (error) {
-            console.error("Authentication error:", error.message);
-            switch (error.code) {
-                case 'auth/user-not-found':
-                    setError('No user found with this email.');
-                    break;
-                case 'auth/wrong-password':
-                    setError('Wrong password.');
-                    break;
-                case 'auth/too-many-requests':
-                    setError('Too many attempts. Try again later.');
-                    break;
-                default:
-                    setError('Failed to log in.');
+          />
+        </div>
+
+        <div className="text-sm text-center">
+          <Link
+            href="/reset-password"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Forgot your password?
+          </Link>
+        </div>
+
+        <div className="flex justify-center space-x-4"></div>
+
+        <div className="flex items-center justify-center">
+          <Input
+            id="remember-me"
+            name="remember-me"
+            type="checkbox"
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label
+            htmlFor="remember-me"
+            className="ml-2 block text-sm text-gray-900"
+          >
+            Remember me
+          </label>
+        </div>
+
+        {error &&
+          !error.toLowerCase().includes("email") &&
+          !error.toLowerCase().includes("password") && (
+            <div className="text-red-500 text-sm text-center">{error}</div>
+          )}
+
+        <div className="flex justify-center">
+          <Button
+            btnType="submit"
+            btnText={
+              loading ? (
+                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
+              ) : (
+                "Log in"
+              )
             }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleInputChange = () => {
-        setError('');
-    };
-
-    return (
-        <PageContainer maxWidth="md" padding="p-8">
-            <PageHeader title="Login"/>
-
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                <div>
-                    <Input
-                        type="email"
-                        value={email}
-                        onChange={(e) => {
-                            setEmail(e.target.value);
-                            handleInputChange();
-                        }}
-                        placeholder="Ex. user@gmail.com"
-                        id="email"
-                        name="email"
-                        required
-                        label="Email"
-                        error={error && error.toLowerCase().includes('email') ? error : ''}
-                    />
-                </div>
-
-                <div>
-                    <Input
-                        type="password"
-                        value={password}
-                        onChange={(e) => {
-                            setPassword(e.target.value);
-                            handleInputChange();
-                        }}
-                        placeholder="******"
-                        id="password"
-                        name="password"
-                        required
-                        label="Password"
-                        error={error && error.toLowerCase().includes('password') ? error : ''}
-                    />
-                </div>
-
-                <div className="text-sm text-center">
-                    <Link href="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
-                        Forgot your password?
-                    </Link>
-                </div>
-
-                <div className="flex justify-center space-x-4">
-                    
-                    
-                </div>
-
-                <div className="flex items-center justify-center">
-                    <Input
-                        id="remember-me"
-                        name="remember-me"
-                        type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                        Remember me
-                    </label>
-                </div>
-
-                {error && !error.toLowerCase().includes('email') && !error.toLowerCase().includes('password') && (
-                    <div className="text-red-500 text-sm text-center">{error}</div>
-                )}
-
-                <div className="flex justify-center">
-                    <Button
-                        btnType="submit"
-                        btnText={
-                            loading ? (
-                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
-                            ) : (
-                                'Log in'
-                            )
-                        }
-                        color="green"
-                        textColor="text-white"
-                        disabled={loading}
-                    />
-                </div>
-            </form>
-        </PageContainer>
-    );
+            color="green"
+            textColor="text-white"
+            disabled={loading}
+          />
+        </div>
+      </form>
+    </PageContainer>
+  );
 }

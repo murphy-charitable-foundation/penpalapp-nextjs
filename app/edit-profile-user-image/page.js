@@ -6,6 +6,8 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
+import { logButtonEvent, logLoadingTime } from "@/app/utils/analytics";
+import { usePageAnalytics } from "@/app/useAnalytics";
 import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 
@@ -20,8 +22,10 @@ export default function EditProfileUserImage() {
 
   const cropperRef = useRef();
   const router = useRouter();
+  usePageAnalytics("/edit-profile-user-image");
 
   useEffect(() => {
+    const startTime = performance.now();
     const fetchUserData = async () => {
       console.log(auth);
       if (auth.currentUser) {
@@ -38,6 +42,15 @@ export default function EditProfileUserImage() {
       }
     };
     fetchUserData();
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/edit-profile-user-image", loadTime);
+      }, 0);
+    });
   }, [auth.currentUser]);
 
   useEffect(() => {
@@ -55,13 +68,10 @@ export default function EditProfileUserImage() {
     return () => unsubscribe();
   }, [router]);
 
-  
-
   const onUploadComplete = (url) => {
     console.log("Upload complete. File available at:", url);
     setStorageUrl(url);
   };
-
 
   const handleCrop = () => {
     if (
@@ -79,12 +89,11 @@ export default function EditProfileUserImage() {
     setImage(URL.createObjectURL(acceptedFiles[0]));
   };
 
-
   const saveImage = async () => {
     const uid = auth.currentUser?.uid;
-  
-    if (!uid) return;  // Make sure uid is available
-  
+
+    if (!uid) return; // Make sure uid is available
+
     uploadFile(
       croppedImage,
       `profile/${uid}/profile-image`,
@@ -99,6 +108,8 @@ export default function EditProfileUserImage() {
         }
       }
     );
+
+    logButtonEvent("Save Profile Picture clicked!", "/edit-profile-user-image");
   };
 
   return (
@@ -106,9 +117,11 @@ export default function EditProfileUserImage() {
       <div className="max-w-lg mx-auto p-6">
         <div className="flex flex-col justify-between items-center">
           <div className="block">
-            <BackButton/>
+            <BackButton />
 
-            <h1 className="ml-4 text-xl text-center font-bold text-gray-800">Edit image</h1>
+            <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
+              Edit image
+            </h1>
           </div>
         </div>
         <div className="flex flex-col items-center gap-6 mt-6">

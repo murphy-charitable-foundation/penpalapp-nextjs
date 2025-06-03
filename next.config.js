@@ -1,3 +1,5 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
@@ -16,6 +18,13 @@ const nextConfig = {
   },
   images: {
     domains: ["firebasestorage.googleapis.com"],
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(__dirname),
+    };
+    return config;
   },
 };
 
