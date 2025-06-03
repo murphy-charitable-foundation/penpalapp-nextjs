@@ -82,6 +82,7 @@ export default function CreateAccount() {
 
       setShowCreate(false);
       localStorage.setItem("userFirstName", firstName);
+      logButtonEvent("Create Account Button Clicked!", "/create-acc")
       // Redirect to profile page or any other page as needed
       router.push("/welcome/");
     } catch (error) {
