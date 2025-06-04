@@ -112,7 +112,7 @@ export default function EditProfile() {
         bio,
         education_level: educationLevel,
         is_orphan: isOrphan.toLowerCase() === "yes" ? true : false,
-        gaurdian: guardian,
+        guardian: guardian,
         dream_job: dreamJob,
         hobby,
         favorite_color: favoriteColor,
@@ -129,18 +129,8 @@ export default function EditProfile() {
         newErrors.last_name = "Last name is required";
       }
 
-      if (!userProfile.email.trim()) {
-        newErrors.email = "Email is required";
-      } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-        newErrors.email = "Invalid email format";
-      }
-
       if (!userProfile.birthday.trim()) {
         newErrors.birthday = "Birthday is required";
-      }
-
-      if (!userProfile.gender.trim()) {
-        newErrors.gender = "Gender is required";
       }
 
       if (!userProfile.country.trim()) {
@@ -155,8 +145,8 @@ export default function EditProfile() {
         newErrors.education_level = "Level is required";
       }
 
-      if (!userProfile.gaurdian.trim()) {
-        newErrors.gaurdian = "Guardian is required";
+      if (!userProfile.guardian.trim()) {
+        newErrors.guardian = "Guardian is required";
       }
 
       if (!userProfile.dream_job.trim()) {
@@ -597,7 +587,8 @@ export default function EditProfile() {
                     })
                     .catch((error) => {
                       Sentry.captureException(
-                        "Error saving profile data: ", error
+                        "Error saving profile data: ",
+                        error
                       );
                     });
                 }}
