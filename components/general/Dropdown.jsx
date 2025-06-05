@@ -8,7 +8,7 @@ export default function Dropdown({
   valueChange,
   currentValue,
   text, 
-
+  error
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const modalContent = (
@@ -31,7 +31,7 @@ export default function Dropdown({
             onClick={(e) => {
                 e.preventDefault();
                 setIsModalOpen(true)}}
-            className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
+            className={`w-full font-medium text-gray-900 bg-transparent border-b ${error ? "border-red-500" : "border-gray-300"} p-2 text-left flex justify-between items-center`}
         >
             <span>{currentValue || `Select ${text}`}</span>
             <svg
@@ -48,7 +48,7 @@ export default function Dropdown({
                 />
             </svg>
         </button>
-
+        {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         <Modal
         isOpen={isModalOpen} 
         onClose={() => {

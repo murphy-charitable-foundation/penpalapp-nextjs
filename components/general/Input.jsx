@@ -15,7 +15,7 @@ export default function Input({
       {label && (
         <label
           htmlFor={id}
-          className={`block text-sm font-medium mb-1 text-gray-700`}
+          className={`block text-sm font-medium mb-1 text-gray-500`}
         >
           {label}
         </label>
