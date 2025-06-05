@@ -83,7 +83,7 @@ export default function EditProfile() {
           setBio(userData.bio || "");
           setEducationLevel(userData.education_level || "");
           setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.gaurdian || "");
+          setGuardian(userData.guardian || "");
           setDreamJob(userData.dream_job || "");
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
