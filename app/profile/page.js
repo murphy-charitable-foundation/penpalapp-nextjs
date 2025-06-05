@@ -33,6 +33,7 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
+import Dialog from "../../components/general/Modal";
 
 export default function EditProfile() {
   // State initializations
@@ -54,6 +55,10 @@ export default function EditProfile() {
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
 
   // Modal state
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
@@ -168,9 +173,14 @@ export default function EditProfile() {
 
       try {
         await updateDoc(userProfileRef, userProfile);
-        alert("Profile saved successfully!");
+        setIsSaved(true);
+        setIsDialogOpen(true);
+        setDialogTitle("Congratulations!");
+        setDialogMessage("Profile saved successfully!");
       } catch (error) {
-        alert("Error saving profile");
+        setIsDialogOpen(true);
+        setDialogTitle("Oops!");
+        setDialogMessage("Error saving profile.");
         Sentry.captureException("Error saving profile " + error);
       }
     }
@@ -263,6 +273,15 @@ export default function EditProfile() {
 
   return (
     <PageBackground>
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          if (isSaved) router.push("/letterhome");
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
         <BackButton />
         <div className="max-w-lg mx-auto p-6 pt-4">
@@ -581,16 +600,7 @@ export default function EditProfile() {
                 className="transition-transform hover:scale-105 focus:outline-none"
                 onClick={(e) => {
                   e.preventDefault();
-                  saveProfileData()
-                    .then(() => {
-                      router.push("/letterhome");
-                    })
-                    .catch((error) => {
-                      Sentry.captureException(
-                        "Error saving profile data: ",
-                        error
-                      );
-                    });
+                  saveProfileData();
                 }}
               >
                 <Button
