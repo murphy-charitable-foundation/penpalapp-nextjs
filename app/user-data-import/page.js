@@ -12,6 +12,7 @@ import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
 import * as Sentry from "@sentry/nextjs";
 import Dialog from "../../components/general/Modal";
+import Dropdown from "../../components/general/Dropdown";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,6 +20,11 @@ export default function UserDataImport() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
+  const [gender, setGender] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [isOrphan, setIsOrphan] = useState("");
+  const [guardian, setGuardian] = useState("");
+
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -36,13 +42,13 @@ export default function UserDataImport() {
         country: formData.get("country"),
         village: formData.get("village"),
         bio: formData.get("bio"),
-        education_level: formData.get("educationLevel"),
-        is_orphan: formData.get("isOrphan") === "Yes",
-        guardian: formData.get("guardian"),
+        education_level: educationLevel,
+        is_orphan: isOrphan === "Yes",
+        guardian: guardian,
         dream_job: formData.get("dreamJob"),
         hobby: formData.get("hobby"),
         favorite_color: formData.get("favoriteColor"),
-        gender: formData.get("gender"),
+        gender: gender,
       };
 
       // Custom validation
@@ -171,29 +177,24 @@ export default function UserDataImport() {
                 type="date"
                 id="birthday"
                 name="birthday"
-                label="birthday"
+                label="Birthday"
                 error={errors.birthday ? errors.birthday : ""}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-500">
                 Gender
               </label>
-              <select
-                name="gender"
-                className={`mt-1 block w-full rounded-md border ${
-                  errors.gender ? "border-red-500" : "border-gray-300"
-                } px-3 py-2 text-gray-700`}
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-              {errors.gender && (
-                <p className="mt-1 text-sm text-red-500">{errors.gender}</p>
-              )}
+              <Dropdown
+                options={["Male", "Female", "Other"]}
+                valueChange={(option) => {
+                  setGender(option);
+                }}
+                currentValue={gender}
+                text="Gender"
+                error={errors.gender ? errors.gender : ""}
+              />
             </div>
 
             <div>
@@ -217,64 +218,62 @@ export default function UserDataImport() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-500">
                 Education Level
               </label>
-              <select
-                name="educationLevel"
-                className={`mt-1 block w-full rounded-md border ${
-                  errors.gender ? "border-red-500" : "border-gray-300"
-                } px-3 py-2 text-gray-700`}
-              >
-                <option value="">Select level</option>
-                <option value="Elementary">Elementary</option>
-                <option value="Middle">Middle</option>
-                <option value="High School">High School</option>
-                <option value="College/University">College/University</option>
-                <option value="No Grade">No Grade</option>
-              </select>
-              {errors.education_level && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.education_level}
-                </p>
-              )}
+              <Dropdown
+                options={[
+                  "Elementary",
+                  "Middle",
+                  "High School",
+                  "College/University",
+                  "No Grade",
+                ]}
+                valueChange={(option) => {
+                  setEducationLevel(option);
+                }}
+                currentValue={educationLevel}
+                text="Education"
+                error={errors.education_level ? errors.education_level : ""}
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-500">
                 Is Orphan
               </label>
-              <select
-                name="isOrphan"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-700"
-              >
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-              </select>
+              <Dropdown
+                options={["No", "Yes"]}
+                valueChange={(option) => {
+                  setIsOrphan(option);
+                }}
+                currentValue={isOrphan}
+                text="Status"
+                error={errors.is_orphan ? errors.is_orphan : ""}
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-500">
                 Guardian
               </label>
-              <select
-                name="guardian"
-                className={`mt-1 block w-full rounded-md border ${
-                  errors.gaurdian ? "border-red-500" : "border-gray-300"
-                } px-3 py-2 text-gray-700`}
-              >
-                <option value="">Select guardian</option>
-                <option value="Parents">Parents</option>
-                <option value="AdoptiveParents">Adoptive Parents</option>
-                <option value="Aunt/Uncle">Aunt/Uncle</option>
-                <option value="Grandparents">Grandparents</option>
-                <option value="Other Family">Other Family</option>
-                <option value="Friends">Friends</option>
-                <option value="Other">Other</option>
-              </select>
-              {errors.gaurdian && (
-                <p className="mt-1 text-sm text-red-500">{errors.gaurdian}</p>
-              )}
+              <Dropdown
+                options={[
+                  "Parents",
+                  "Adoptive Parents",
+                  "Aunt/Uncle",
+                  "Grandparents",
+                  "Other Family",
+                  "Friends",
+                  "Other",
+                ]}
+                valueChange={(option) => {
+                  setGuardian(option);
+                }}
+                currentValue={guardian}
+                text="Education"
+                error={errors.guardian ? errors.guardian : ""}
+              />
             </div>
 
             <div>
