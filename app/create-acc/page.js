@@ -17,6 +17,7 @@ import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import Dialog from "../../components/general/Modal";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -29,7 +30,9 @@ export default function CreateAccount() {
   const [showCreate, setShowCreate] = useState(false);
   const [errors, setErrors] = useState({});
   const [isValidPassword, setisValidPassword] = useState(false);
-
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
 
   // Pre-populate email from auth.currentUser
@@ -79,7 +82,11 @@ export default function CreateAccount() {
       } catch (error) {
         if (error.code == "auth/requires-recent-login") {
           console.error("Account creation timed out: ", error.message);
-          alert("Account creation timed out. Please try logging in again.");
+          setIsDialogOpen(true);
+          setDialogTitle("Oops!");
+          setDialogMessage(
+            "Account creation timed out. Please try logging in again."
+          );
           await signOut(auth);
           router.push("/login");
           return;
@@ -112,12 +119,22 @@ export default function CreateAccount() {
       router.push("/welcome/");
     } catch (error) {
       Sentry.captureException("Error creating account:", error);
-      alert(error.message);
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Error: " + error.message);
     }
   };
 
   return (
     <PageBackground className="flex flex-col items-center justify-center px-4">
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
       <PageContainer>
         <div className="flex items-center justify-between mb-4">
           <BackButton />

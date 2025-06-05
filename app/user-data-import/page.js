@@ -11,10 +11,14 @@ import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
 import * as Sentry from "@sentry/nextjs";
+import Dialog from "../../components/general/Modal";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -34,7 +38,7 @@ export default function UserDataImport() {
         bio: formData.get("bio"),
         education_level: formData.get("educationLevel"),
         is_orphan: formData.get("isOrphan") === "Yes",
-        gaurdian: formData.get("guardian"),
+        guardian: formData.get("guardian"),
         dream_job: formData.get("dreamJob"),
         hobby: formData.get("hobby"),
         favorite_color: formData.get("favoriteColor"),
@@ -76,8 +80,8 @@ export default function UserDataImport() {
         newErrors.education_level = "Level is required";
       }
 
-      if (!userData.gaurdian.trim()) {
-        newErrors.gaurdian = "Guardian is required";
+      if (!userData.guardian.trim()) {
+        newErrors.guardian = "Guardian is required";
       }
 
       if (!userData.dream_job.trim()) {
@@ -103,10 +107,14 @@ export default function UserDataImport() {
 
       // Reset form
       e.currentTarget.reset();
-      alert("User data imported successfully!");
+      setIsDialogOpen(true);
+      setDialogTitle("Congratulations!");
+      setDialogMessage("User data imported successfully!");
     } catch (error) {
       Sentry.captureException("Error importing user data: " + error);
-      alert("Error importing user data");
+      setIsDialogOpen(true);
+      setDialogTitle("Oops");
+      setDialogMessage("Error importing user data.");
     } finally {
       setIsSubmitting(false);
     }
@@ -114,6 +122,14 @@ export default function UserDataImport() {
 
   return (
     <PageBackground>
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
       <PageContainer maxWidth="lg">
         <PageHeader title="Import User Data" />
 
