@@ -59,6 +59,7 @@ export default function EditProfile() {
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [userType, setUserType] = useState("international_buddy");
 
   // Modal state
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
@@ -93,6 +94,7 @@ export default function EditProfile() {
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
+          setUserType(userData.user_type || "");
         } else {
           console.log("No such document!");
         }
@@ -142,16 +144,8 @@ export default function EditProfile() {
         newErrors.country = "Country is required";
       }
 
-      if (!userProfile.village.trim()) {
-        newErrors.village = "Village is required";
-      }
-
       if (!userProfile.education_level.trim()) {
         newErrors.education_level = "Level is required";
-      }
-
-      if (!userProfile.guardian.trim()) {
-        newErrors.guardian = "Guardian is required";
       }
 
       if (!userProfile.dream_job.trim()) {
@@ -391,28 +385,28 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <Home className="w-5 h-5 text-600" />
+              {userType !== "international_buddy" && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-100 rounded-lg">
+                    <Home className="w-5 h-5 text-600" />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      id="village"
+                      name="village"
+                      value={village}
+                      onChange={(e) => setVillage(e.target.value)}
+                      label="Village"
+                      placeholder="Ex: Village"
+                      borderColor="border-gray-300"
+                      focusBorderColor="focus:border-green-800"
+                      bgColor="bg-transparent"
+                      error={errors.village ? errors.village : ""}
+                    />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="village"
-                    name="village"
-                    value={village}
-                    onChange={(e) => setVillage(e.target.value)}
-                    label="Village"
-                    placeholder="Ex: Village"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                    error={errors.village ? errors.village : ""}
-                  />
-                </div>
-              </div>
-
+              )}
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-100 rounded-lg">
                   <FileText className="w-5 h-5 text-600" />
@@ -471,7 +465,11 @@ export default function EditProfile() {
             </ProfileSection>
 
             {/* Education & Family Section */}
-            <ProfileSection title="Education & Family">
+            <ProfileSection
+              title={`Education ${
+                userType !== "international_buddy" ? "& Family" : ""
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-100 rounded-lg">
                   <GraduationCap className="w-5 h-5 text-600" />
@@ -489,42 +487,44 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
+              {userType !== "international_buddy" && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-100 rounded-lg">
+                    <Users className="w-5 h-5 text-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">Guardian</p>
+                    <Dropdown
+                      options={guardianOptions}
+                      valueChange={(option) => {
+                        setGuardian(option);
+                      }}
+                      currentValue={guardian}
+                      text="Guardian"
+                      error={errors.guardian ? errors.guardian : ""}
+                    />
+                  </div>
+                </div>
+              )}
+              {userType !== "international_buddy" && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-100 rounded-lg">
+                    <Heart className="w-5 h-5 text-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">Is orphan</p>
 
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <Users className="w-5 h-5 text-600" />
+                    <Dropdown
+                      options={orphanOptions}
+                      valueChange={(option) => {
+                        setIsOrphan(option);
+                      }}
+                      currentValue={isOrphan}
+                      text="Orphan Status"
+                    />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Guardian</p>
-                  <Dropdown
-                    options={guardianOptions}
-                    valueChange={(option) => {
-                      setGuardian(option);
-                    }}
-                    currentValue={guardian}
-                    text="Guardian"
-                    error={errors.guardian ? errors.guardian : ""}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <Heart className="w-5 h-5 text-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Is orphan</p>
-
-                  <Dropdown
-                    options={orphanOptions}
-                    valueChange={(option) => {
-                      setIsOrphan(option);
-                    }}
-                    currentValue={isOrphan}
-                    text="Orphan Status"
-                  />
-                </div>
-              </div>
+              )}
             </ProfileSection>
 
             {/* Interest Section */}
