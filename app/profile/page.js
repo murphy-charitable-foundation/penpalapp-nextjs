@@ -128,44 +128,16 @@ export default function EditProfile() {
 
       // Custom validation
       const newErrors = {};
-      if (!userProfile.first_name.trim()) {
-        newErrors.first_name = "First name is required";
-      }
-
-      if (!userProfile.last_name.trim()) {
-        newErrors.last_name = "Last name is required";
-      }
-
-      if (!userProfile.birthday.trim()) {
-        newErrors.birthday = "Birthday is required";
-      }
-
-      if (!userProfile.country.trim()) {
-        newErrors.country = "Country is required";
-      }
-
-      if (!userProfile.education_level.trim()) {
-        newErrors.education_level = "Level is required";
-      }
-
-      if (!userProfile.dream_job.trim()) {
-        newErrors.dream_job = "Job is required";
-      }
-
-      if (userProfile.hobby.length === 0) {
-        newErrors.hobby = "Hobby is required";
-      }
-
-      if (!userProfile.favorite_color.trim()) {
-        newErrors.favorite_color = "Color is required";
-      }
-
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        throw new Error("Form validation error(s)");
+      if (!userProfile.first_name.trim() && !userProfile.last_name.trim()) {
+        newErrors.first_name = "Name is required";
+        newErrors.last_name = "Name is required";
       }
 
       try {
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+          throw new Error("Form validation error(s)");
+        }
         await updateDoc(userProfileRef, userProfile);
         setIsSaved(true);
         setIsDialogOpen(true);
@@ -381,7 +353,6 @@ export default function EditProfile() {
                     borderColor="border-gray-300"
                     focusBorderColor="focus:border-green-800"
                     bgColor="bg-transparent"
-                    error={errors.country ? errors.country : ""}
                   />
                 </div>
               </div>
@@ -402,7 +373,6 @@ export default function EditProfile() {
                       borderColor="border-gray-300"
                       focusBorderColor="focus:border-green-800"
                       bgColor="bg-transparent"
-                      error={errors.village ? errors.village : ""}
                     />
                   </div>
                 </div>
@@ -458,7 +428,6 @@ export default function EditProfile() {
                     borderColor="border-gray-300"
                     focusBorderColor="focus:border-green-800"
                     bgColor="bg-transparent"
-                    error={errors.birthday ? errors.birthday : ""}
                   />
                 </div>
               </div>
@@ -483,7 +452,6 @@ export default function EditProfile() {
                     }}
                     currentValue={educationLevel}
                     text="Education Level"
-                    error={errors.education_level ? errors.education_level : ""}
                   />
                 </div>
               </div>
@@ -501,7 +469,6 @@ export default function EditProfile() {
                       }}
                       currentValue={guardian}
                       text="Guardian"
-                      error={errors.guardian ? errors.guardian : ""}
                     />
                   </div>
                 </div>
@@ -545,7 +512,6 @@ export default function EditProfile() {
                     borderColor="border-gray-300"
                     focusBorderColor="focus:border-green-800"
                     bgColor="bg-transparent"
-                    error={errors.dream_job ? errors.dream_job : ""}
                   />
                 </div>
               </div>
@@ -566,7 +532,6 @@ export default function EditProfile() {
                     borderColor="border-gray-300"
                     focusBorderColor="focus:border-green-800"
                     bgColor="bg-transparent"
-                    error={errors.hobby ? errors.hobby : ""}
                   />
                 </div>
               </div>
@@ -589,7 +554,6 @@ export default function EditProfile() {
                   borderColor="border-gray-300"
                   focusBorderColor="focus:border-green-800"
                   bgColor="bg-transparent"
-                  error={errors.favorite_color ? errors.favorite_color : ""}
                 />
               </div>
             </div>

@@ -47,12 +47,10 @@ export default function CreateAccount() {
     e.preventDefault();
     // Custom validation
     const newErrors = {};
-    if (!firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    }
+    if (!firstName.trim() && !lastName.trim()) {
+      newErrors.firstName = "Name is required";
+      newErrors.lastName = "Name is required";
 
-    if (!lastName.trim()) {
-      newErrors.lastName = "Last name is required";
     }
 
     if (!email.trim()) {

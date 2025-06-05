@@ -52,54 +52,13 @@ export default function UserDataImport() {
       };
 
       // Custom validation
-      if (!userData.first_name.trim()) {
-        newErrors.first_name = "First name is required";
+      if (!userData.first_name.trim() && !userData.last_name.trim()) {
+        newErrors.first_name = "Name is required";
+        newErrors.last_name = "Name is required";
       }
 
-      if (!userData.last_name.trim()) {
-        newErrors.last_name = "Last name is required";
-      }
-
-      if (!userData.email.trim()) {
-        newErrors.email = "Email is required";
-      } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
+      if (userData.email.trim() && !/\S+@\S+\.\S+/.test(userData.email)) {
         newErrors.email = "Invalid email format";
-      }
-
-      if (!userData.birthday.trim()) {
-        newErrors.birthday = "Birthday is required";
-      }
-
-      if (!userData.gender.trim()) {
-        newErrors.gender = "Gender is required";
-      }
-
-      if (!userData.country.trim()) {
-        newErrors.country = "Country is required";
-      }
-
-      if (!userData.village.trim()) {
-        newErrors.village = "Village is required";
-      }
-
-      if (!userData.education_level.trim()) {
-        newErrors.education_level = "Level is required";
-      }
-
-      if (!userData.guardian.trim()) {
-        newErrors.guardian = "Guardian is required";
-      }
-
-      if (!userData.dream_job.trim()) {
-        newErrors.dream_job = "Job is required";
-      }
-
-      if (!userData.hobby.trim()) {
-        newErrors.hobby = "Hobby is required";
-      }
-
-      if (!userData.favorite_color.trim()) {
-        newErrors.favorite_color = "Color is required";
       }
 
       if (Object.keys(newErrors).length > 0) {
@@ -164,7 +123,7 @@ export default function UserDataImport() {
 
             <div>
               <Input
-                type="email"
+                type="text"
                 name="email"
                 id="email"
                 label="Email"
@@ -178,7 +137,6 @@ export default function UserDataImport() {
                 id="birthday"
                 name="birthday"
                 label="Birthday"
-                error={errors.birthday ? errors.birthday : ""}
               />
             </div>
 
@@ -193,28 +151,15 @@ export default function UserDataImport() {
                 }}
                 currentValue={gender}
                 text="Gender"
-                error={errors.gender ? errors.gender : ""}
               />
             </div>
 
             <div>
-              <Input
-                type="text"
-                name="country"
-                id="country"
-                label="Country"
-                error={errors.country ? errors.country : ""}
-              />
+              <Input type="text" name="country" id="country" label="Country" />
             </div>
 
             <div>
-              <Input
-                type="text"
-                id="village"
-                name="village"
-                label="Village"
-                error={errors.village ? errors.village : ""}
-              />
+              <Input type="text" id="village" name="village" label="Village" />
             </div>
 
             <div>
@@ -234,7 +179,6 @@ export default function UserDataImport() {
                 }}
                 currentValue={educationLevel}
                 text="Education"
-                error={errors.education_level ? errors.education_level : ""}
               />
             </div>
 
@@ -249,7 +193,6 @@ export default function UserDataImport() {
                 }}
                 currentValue={isOrphan}
                 text="Status"
-                error={errors.is_orphan ? errors.is_orphan : ""}
               />
             </div>
 
@@ -272,7 +215,6 @@ export default function UserDataImport() {
                 }}
                 currentValue={guardian}
                 text="Education"
-                error={errors.guardian ? errors.guardian : ""}
               />
             </div>
 
@@ -282,18 +224,11 @@ export default function UserDataImport() {
                 name="dreamJob"
                 id="dream-job"
                 label="Dream Job"
-                error={errors.dream_job ? errors.dream_job : ""}
               />
             </div>
 
             <div>
-              <Input
-                type="text"
-                id="hobby"
-                name="hobby"
-                label="Hobby"
-                error={errors.hobby ? errors.hobby : ""}
-              />
+              <Input type="text" id="hobby" name="hobby" label="Hobby" />
             </div>
 
             <div>
@@ -302,7 +237,6 @@ export default function UserDataImport() {
                 name="favoriteColor"
                 id="favorite-color"
                 label="Favorite Color"
-                error={errors.favorite_color ? errors.favorite_color : ""}
               />
             </div>
           </div>
