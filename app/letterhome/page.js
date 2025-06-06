@@ -17,7 +17,7 @@ import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import ProfileImage from "@/components/general/ProfileImage";
-import ConversationList from "@/components/ConversationList";
+import LetterList from "@/components/LetterList";
 import {
   fetchDraft,
   fetchLetterboxes,
@@ -35,6 +35,7 @@ const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   letterSnapshot.forEach((doc) => {
     letter = { id: doc.id, ...doc.data() };
   });
+  console.log(letter);
   return letter;
 };
 
@@ -42,10 +43,11 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
-  const [conversations, setConversations] = useState([]);
+  const [letters, setLetters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [currentUid, setCurrentUid] = useState("");
   const router = useRouter();
 
   const getUserData = async (uid) => {
@@ -59,13 +61,13 @@ export default function Home() {
     }
   };
 
-  const getConversations = async (uid) => {
+  const getLetterboxes = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
       if (letterboxes && letterboxes.length > 0) {
         const letterboxIds = letterboxes.map((l) => l.id);
 
-        const fetchedConversations = await Promise.all(
+        const fetchedLetterboxes = await Promise.all(
           letterboxIds.map(async (id) => {
             const userRef = doc(db, "users", uid);
             const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
@@ -81,11 +83,12 @@ export default function Home() {
               lastMessageDate: letter.created_at || "",
               status: letter.status || "",
               letterboxId: id || "",
+              recipient: recipient?.id || "",
             };
           })
         );
 
-        return fetchedConversations;
+        return fetchedLetterboxes;
       } else {
         setError("No conversations found.");
         throw new Error("No letterboxes found.");
@@ -113,13 +116,14 @@ export default function Home() {
         const uid = user.uid;
 
         const userData = await getUserData(uid);
+        setCurrentUid(uid);
         setUserName(userData.first_name || "Unknown User");
         setCountry(userData.country || "Unknown Country");
         setUserType(userData.user_type || "Unknown Type");
         setProfileImage(userData?.photo_uri || "");
 
-        const userConversations = await getConversations(uid);
-        setConversations(userConversations);
+        const userLetterboxes = await getLetterboxes(uid);
+        setLetters(userLetterboxes);
       } catch (err) {
         setError("Error fetching user data or conversations.");
         console.error(err);
@@ -153,8 +157,8 @@ export default function Home() {
 
           <main className="p-6 bg-white">
             <section className="mt-8">
-              {conversations.length > 0 ? (
-                <ConversationList conversations={conversations} />
+              {letters.length > 0 ? (
+                <LetterList letters={letters} user={currentUid} />
               ) : (
                 <p className="text-gray-500">No letters found.</p>
               )}

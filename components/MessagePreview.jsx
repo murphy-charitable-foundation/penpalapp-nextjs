@@ -7,7 +7,8 @@ const MessagePreview = ({
   lastMessage,
   lastMessageDate,
   letterboxId,
-  status
+  status,
+  isRecipient
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -17,21 +18,23 @@ const MessagePreview = ({
       typeof timestamp.toDate === "function"
         ? timestamp.toDate()
         : new Date(timestamp.seconds * 1000);
-  
+
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
-  
-    if (
-      date.toDateString() === today.toDateString()
-    ) {
-      return "Today";
-    } else if (
-      date.toDateString() === yesterday.toDateString()
-    ) {
-      return "Yesterday";
+
+    const timeString = date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+
+    if (date.toDateString() === today.toDateString()) {
+      return `Today ${timeString}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return `Yesterday ${timeString}`;
     }
-  
+
     return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
@@ -39,10 +42,12 @@ const MessagePreview = ({
     });
   };
 
+
   return (
     <a
       href={`/letters/${letterboxId}`}
-      className="block p-4 bg-white rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
+      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${isRecipient ? 'bg-green-50' : 'bg-white'
+        }`}
     >
       <div className="flex items-start">
         <img
@@ -53,11 +58,12 @@ const MessagePreview = ({
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
-            <div className="font-semibold text-gray-900">
-              {status === "draft" && <span className="text-red-500 mr-1">[Draft]</span>}
-              {name}
-            </div>
-
+              <div className="font-semibold text-gray-900">
+                {status === "draft" && lastMessage !== "" && (
+                  <span className="text-red-500 mr-1">[Draft]</span>
+                )}
+                {name}
+              </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
@@ -66,9 +72,14 @@ const MessagePreview = ({
           </div>
         </div>
       </div>
-      <div className="mt-2 text-sm text-gray-700 truncate">{lastMessage}</div>
+      <div
+        className={`mt-2 text-sm text-gray-700 truncate ${isRecipient ? 'font-semibold' : ''
+          }`}
+      >
+        {lastMessage}
+      </div>
     </a>
   );
 };
 
-export default MessagePreview;
+  export default MessagePreview;
