@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styles from './Tooltip.module.css';
+import { useRouter } from 'next/router'
 
-export default function FirstTimeChatGuide({ page, onUseTemplate }) {
+export default function FirstTimeChatGuide({ page, onUseTemplate, params }) {
   const [showGuide, setShowGuide] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -39,7 +40,7 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
     {
       target: '#message-input',
       content: 'Draft your response here. Here is a sample template on how to structure a letter response',
-      position: 'middle',
+      position: 'bottom',
       arrowDirection: 'top',
       advanceOn: 'focus',
       showTemplateOptions: true,
@@ -48,7 +49,7 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
       target: '#message-input',
       content: 'Use the keyboard to type. Ask for help if needed',
       position: 'middle',
-      arrowDirection: 'top',
+      arrowDirection: 'bottom',
       advanceOn: 'focus',
     },
     {
@@ -64,10 +65,10 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
     const isGuideCompleted = localStorage.getItem('hasSeenChatGuide') === 'true';
 
     if( !isGuideCompleted ) {
-      if( page == 'letterHome' ) {
+      if( page == 'letterHome' || params == '/letterhome' ) {
         setShowGuide(true);
         setCurrentStep(0);
-      } else if( page == 'letterDetail' ) {
+      } else if( page == 'letterDetail' || params.includes('/letters/') ) {
         setCurrentStep(1);
         setShowGuide(true);
       }
@@ -134,7 +135,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
   // Function to position tooltip relative to target element
   const positionTooltip = (targetElement, position) => {
     if (!tooltipRef.current || !targetElement) return;
-    console.log(targetElement);
     
     const targetRect = targetElement.getBoundingClientRect();
     const tooltipElement = tooltipRef.current;
@@ -145,11 +145,14 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
     console.log(targetRect);
     switch (position) {
       case 'top':
-        top = targetRect.top - tooltipRect.height - 10;
+        top = targetRect.top - tooltipRect.height - 10 + 'px';
         //left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
         break;
       case 'bottom':
-        top = targetRect.bottom + 10;
+        bottom = 10 + 'px';
+        top = 'unset';
+        left = 10 + 'px';
+      //top = targetRect.bottom + 10;
         //left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
         break;
       case 'left':
@@ -161,18 +164,19 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
         //left = targetRect.right + 10;
         break;
       case 'first-letter':
-        top = targetRect.bottom + 10;
+        top = targetRect.bottom + 10 + 'px';
         break;
       case 'typing-box':
-        top = targetRect.top;
+        top = targetRect.top / 2 + 'px';
         left = 0;
         break;
       case 'middle':
-        top = targetRect.top + ( targetRect.height / 2 );
-        left = 0;
+        top = targetRect.top + ( targetRect.height / 2 ) + 'px';
+        left = 10 + 'px';
+        bottom = 'unset';
         break;
       case 'send-letter':
-        top = targetRect.bottom;
+        top = targetRect.bottom + 'px';
         left = 'unset';
         right = 0;
         break;
@@ -182,9 +186,10 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
     }
     
     // Apply position
-    tooltipElement.style.top = `${Math.max(10, top)}px`;
-    tooltipElement.style.left = isNaN(left) ? left : `${Math.max(10, left)}px`;
-    tooltipElement.style.right = `${Math.max(10, right)}px`;
+    tooltipElement.style.top = top;
+    tooltipElement.style.left = left;
+    tooltipElement.style.right = right;
+    tooltipElement.style.bottom = bottom;
   };
 
   const nextStep = () => {
@@ -229,7 +234,7 @@ export default function FirstTimeChatGuide({ page, onUseTemplate }) {
           p-4 s
           hadow-lg 
           max-w-sm 
-          z-[51]
+          z-[1]
           ${styles.speechbubble} ${styles[currentStepData.arrowDirection]}`
         }
       >
