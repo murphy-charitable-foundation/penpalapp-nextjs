@@ -147,7 +147,7 @@ export default function Home() {
                 </Link>
               </h2>
 
-              { letters.length == 2 && <FirstTimeChatGuide page="letterHome" params={pathname} /> }
+              { letters.length == 1 && <FirstTimeChatGuide page="letterHome" params={pathname} /> }
               {letters.length > 0 ? (
                 letters.map((letter, i) => (
                   <div key={letter.id + "_" + i} className={i === 0 && 'first-letter relative'}>
