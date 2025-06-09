@@ -44,6 +44,7 @@ export default function Page({ params }) {
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
+  const [userType, setUserType] = useState("international_buddy");
 
   const router = useRouter();
 
@@ -66,11 +67,12 @@ export default function Page({ params }) {
           setBio(userData.bio || "");
           setEducationLevel(userData.education_level || "");
           setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.gaurdian || "");
+          setGuardian(userData.guardian || "");
           setDreamJob(userData.dream_job || "");
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
+          setUserType(userData.user_type || "");
         } else {
           console.log("No such document!");
         }
@@ -193,28 +195,31 @@ export default function Page({ params }) {
           <div className="space-y-8 mb-[120px]">
             {/* Personal Information Section */}
             <ProfileSection title="Personal Information">
-              <InfoDisplay title="Village" info={village}>
-                <Home className="w-5 h-5 text-600" />
-              </InfoDisplay>
-
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Village" info={village}>
+                  <Home className="w-5 h-5 text-600" />
+                </InfoDisplay>
+              )}
               <InfoDisplay title="Birthday" info={birthday}>
                 <Calendar className="w-5 h-5 text-600" />
               </InfoDisplay>
             </ProfileSection>
 
             {/* Education & Family Section */}
-            <ProfileSection title="Education & Family">
+            <ProfileSection title={`Education ${userType !== "international_buddy" ? "& Family" : ""}`}>
               <InfoDisplay title="Education level" info={educationLevel}>
                 <GraduationCap className="w-5 h-5 text-600" />
               </InfoDisplay>
-
-              <InfoDisplay title="Guardian" info={guardian}>
-                <Users className="w-5 h-5 text-600" />
-              </InfoDisplay>
-
-              <InfoDisplay title="Is orphan" info={isOrphan}>
-                <Heart className="w-5 h-5 text-600" />
-              </InfoDisplay>
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Guardian" info={guardian}>
+                  <Users className="w-5 h-5 text-600" />
+                </InfoDisplay>
+              )}
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Is orphan" info={isOrphan}>
+                  <Heart className="w-5 h-5 text-600" />
+                </InfoDisplay>
+              )}
             </ProfileSection>
 
             {/* Interest Section */}

@@ -8,6 +8,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
+import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import * as Sentry from "@sentry/nextjs";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -17,6 +19,8 @@ export default function EditProfileUserImage() {
   const [storageUrl, setStorageUrl] = useState(null);
   const [user, setUser] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const cropperRef = useRef();
   const router = useRouter();
@@ -41,6 +45,8 @@ export default function EditProfileUserImage() {
   }, [auth.currentUser]);
 
   useEffect(() => {
+    setIsSaving(false);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -55,13 +61,10 @@ export default function EditProfileUserImage() {
     return () => unsubscribe();
   }, [router]);
 
-  
-
   const onUploadComplete = (url) => {
     console.log("Upload complete. File available at:", url);
     setStorageUrl(url);
   };
-
 
   const handleCrop = () => {
     if (
@@ -79,17 +82,21 @@ export default function EditProfileUserImage() {
     setImage(URL.createObjectURL(acceptedFiles[0]));
   };
 
-
   const saveImage = async () => {
+    setIsSaving(true);
+
     const uid = auth.currentUser?.uid;
-  
-    if (!uid) return;  // Make sure uid is available
-  
+
+    if (!uid) return; // Make sure uid is available
+
     uploadFile(
       croppedImage,
       `profile/${uid}/profile-image`,
       () => {},
-      (error) => console.error("Upload error:", error),
+      (error) => {
+        Sentry.captureException("Upload error: ", error);
+        setIsSaving(false);
+      },
       async (url) => {
         setStorageUrl(url);
         console.log("Image Url:" + url);
@@ -102,33 +109,41 @@ export default function EditProfileUserImage() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-lg mx-auto p-6">
-        <div className="flex flex-col justify-between items-center">
-          <div className="block">
-            <BackButton/>
+    <div>
+      {isSaving ? (
+        <LoadingSpinner></LoadingSpinner>
+      ) : (
+        <div className="bg-gray-50 min-h-screen">
+          <div className="max-w-lg mx-auto p-6">
+            <div className="flex flex-col justify-between items-center">
+              <div className="block">
+                <BackButton />
 
-            <h1 className="ml-4 text-xl text-center font-bold text-gray-800">Edit image</h1>
+                <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
+                  Edit image
+                </h1>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-6 mt-6">
+              <EditProfileImage
+                image={image}
+                newProfileImage={newProfileImage}
+                previewURL={previewURL}
+                handleDrop={handleDrop}
+                handleCrop={handleCrop}
+                cropperRef={cropperRef}
+              />
+              <i>Click to edit</i>
+              <Button
+                btnType="button"
+                btnText="Save New Profile Picture"
+                color="green"
+                onClick={saveImage}
+              />
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-center gap-6 mt-6">
-          <EditProfileImage
-            image={image}
-            newProfileImage={newProfileImage}
-            previewURL={previewURL}
-            handleDrop={handleDrop}
-            handleCrop={handleCrop}
-            cropperRef={cropperRef}
-          />
-          <i>Click to edit</i>
-          <Button
-            btnType="button"
-            btnText="Save New Profile Picture"
-            color="green"
-            onClick={saveImage}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
