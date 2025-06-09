@@ -57,9 +57,11 @@ export default function UserDataImport() {
         newErrors.last_name = "Name is required";
       }
 
-      if (userData.email.trim() && !/\S+@\S+\.\S+/.test(userData.email)) {
-        newErrors.email = "Invalid email format";
-      }
+    if (!userData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
+      newErrors.email = "Invalid email format";
+    }
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);

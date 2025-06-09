@@ -18,6 +18,8 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import Dialog from "../../components/general/Modal";
+import { onAuthStateChanged } from "firebase/auth";
+import InfoDisplay from "../../components/general/profile/InfoDisplay";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -30,6 +32,7 @@ export default function CreateAccount() {
   const [showCreate, setShowCreate] = useState(false);
   const [errors, setErrors] = useState({});
   const [isValidPassword, setisValidPassword] = useState(false);
+  const [termsCheck, setTermsCheck] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
@@ -38,9 +41,12 @@ export default function CreateAccount() {
   // Pre-populate email from auth.currentUser
 
   useEffect(() => {
-    if (auth.currentUser?.email) {
-      setEmail(auth.currentUser.email);
-    }
+    const getEmail = onAuthStateChanged(auth, async (user) => {
+      if (user?.email) {
+        setEmail(user.email);
+      }
+    });
+    return () => getEmail();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -50,7 +56,6 @@ export default function CreateAccount() {
     if (!firstName.trim() && !lastName.trim()) {
       newErrors.firstName = "Name is required";
       newErrors.lastName = "Name is required";
-
     }
 
     if (!email.trim()) {
@@ -64,6 +69,9 @@ export default function CreateAccount() {
     }
     if (password !== repeatPassword) {
       newErrors.repeatPassword = "Passwords do not match.";
+    }
+    if (!termsCheck) {
+      newErrors.termsCheck = "You must agree to the terms and privacy policy.";
     }
 
     try {
@@ -185,17 +193,7 @@ export default function CreateAccount() {
           </div>
 
           <div>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              label="Email"
-              autoComplete="email"
-              placeholder="Ex: someone@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={errors.email ? errors.email : ""}
-            />
+            <InfoDisplay title="Email" info={email}></InfoDisplay>
           </div>
           <div>
             <Input
@@ -239,26 +237,32 @@ export default function CreateAccount() {
             />
           </div>
           {/*onClick={() => router.push('/terms-conditions')}  */}
-          <div className="flex items-center justify-center">
-            <Input
-              id="remember-me"
-              name="remember-me"
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="remember-me"
-              className="ml-2 block text-sm text-gray-900"
-            >
-              See the{" "}
-              <Link href="/terms-conditions" className="underline">
-                terms and conditions
-              </Link>{" "}
-              and{" "}
-              <Link className="underline" href="privacy-policy">
-                privacy policy
-              </Link>
-            </label>
+          <div className="justify-center">
+            <div className="flex items-center">
+              <Input
+                id="terms-check"
+                name="terms-check"
+                type="checkbox"
+                onChange={(e) => setTermsCheck(e.target.value)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="terms-check"
+                className="ml-2 block text-sm text-gray-900"
+              >
+                See the{" "}
+                <Link href="/terms-conditions" className="underline">
+                  terms and conditions
+                </Link>{" "}
+                and{" "}
+                <Link className="underline" href="privacy-policy">
+                  privacy policy
+                </Link>
+              </label>
+            </div>
+            {errors.termsCheck && (
+              <p className="mt-1 text-sm text-red-500">{errors.termsCheck}</p>
+            )}
           </div>
 
           <div className="flex justify-center">
