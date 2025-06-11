@@ -34,6 +34,7 @@ import Dropdown from "../../components/general/Dropdown";
 import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
+import { PageHeader } from '../../components/general/PageHeader';
 
 export default function EditProfile() {
   // State initializations
@@ -238,7 +239,7 @@ export default function EditProfile() {
   };
 
   return (
-    <PageBackground>
+    <div className="bg-gray-50 min-h-screen">
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => {
@@ -249,8 +250,8 @@ export default function EditProfile() {
         content={dialogMessage}
       ></Dialog>
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <BackButton title="Profile" />
-        <div className="max-w-lg mx-auto p-6 pt-4">
+        <PageHeader title="Profile" image={false} heading={false} />
+        <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
           {/* Bio Modal */}
           <Modal
             isOpen={isBioModalOpen}
@@ -540,6 +541,6 @@ export default function EditProfile() {
           </div>
         </div>
       </PageContainer>
-    </PageBackground>
+    </div>
   );
 }

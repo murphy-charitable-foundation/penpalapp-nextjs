@@ -25,6 +25,7 @@ import { BackButton } from "../../../components/general/BackButton";
 import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
+import { PageHeader } from '../../../components/general/PageHeader';
 
 export default function Page({ params }) {
   const { id } = params;
@@ -108,8 +109,8 @@ export default function Page({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen">
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <BackButton title="View Profile"/>
-        <div className="max-w-lg mx-auto p-6 pt-4">
+        <PageHeader title="View Profile" image={false} heading={false} />
+        <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
 
           {/* Profile Image */}
           <div className="my-6">
