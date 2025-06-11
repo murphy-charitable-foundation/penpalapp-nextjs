@@ -4,7 +4,7 @@ export default function InfoDisplay({children, title, info = ""}) {
       <div className="p-2 rounded-lg">{children}</div>
       <div className="flex-1">
         <p className="text-sm text-gray-500">{title}</p>
-        <span className={info != "" ? "" : "text-gray-500"}>
+        <span className={`font-semibold ${info != "" ? "" : "text-gray-500"}`}>
           {info != "" ? info : "Unknown"}
         </span>
       </div>

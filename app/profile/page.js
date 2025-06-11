@@ -249,7 +249,7 @@ export default function EditProfile() {
         content={dialogMessage}
       ></Dialog>
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <BackButton />
+        <BackButton title="Profile" />
         <div className="max-w-lg mx-auto p-6 pt-4">
           {/* Bio Modal */}
           <Modal
@@ -259,37 +259,24 @@ export default function EditProfile() {
             content={bioModalContent}
             width="large"
           />
-
           {/* Profile Image */}
           <div className="my-6">
-            <div className="relative w-24 h-24 mx-auto">
+            <div className="relative w-40 h-40 mx-auto">
               <Image
                 src={photoUri ? photoUri : "/murphylogo.png"}
                 layout="fill"
                 className="rounded-full"
                 alt="Profile picture"
               />
-              {/* Edit Icon */}
-              <div
-                className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full curspr-pointer"
-                onClick={() => {
-                  router.push("/edit-profile-user-image");
-                }}
+            </div>
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => router.push("/edit-profile-user-image")}
+                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
               >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-              </div>
+                Edit Photo
+              </button>
             </div>
           </div>
 
@@ -297,10 +284,9 @@ export default function EditProfile() {
           <div className="space-y-6 mb-[120px]">
             {/* Personal Information Section */}
             <ProfileSection title="Personal Information">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <User className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <Input
                     type="text"
@@ -318,9 +304,6 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <User className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <Input
                     type="text"
@@ -336,11 +319,8 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
-
+</div>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <MapPin className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <Input
                     type="text"
@@ -358,9 +338,6 @@ export default function EditProfile() {
               </div>
               {userType !== "international_buddy" && (
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-100 rounded-lg">
-                    <Home className="w-5 h-5 text-600" />
-                  </div>
                   <div className="flex-1">
                     <Input
                       type="text"
@@ -378,9 +355,6 @@ export default function EditProfile() {
                 </div>
               )}
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <FileText className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Bio/Challenges faced</p>
                   <button
@@ -414,9 +388,6 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <Calendar className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <Input
                     type="date"
@@ -440,9 +411,6 @@ export default function EditProfile() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <GraduationCap className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Education level</p>
                   <Dropdown
@@ -457,9 +425,6 @@ export default function EditProfile() {
               </div>
               {userType !== "international_buddy" && (
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-100 rounded-lg">
-                    <Users className="w-5 h-5 text-600" />
-                  </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-500">Guardian</p>
                     <Dropdown
@@ -475,9 +440,6 @@ export default function EditProfile() {
               )}
               {userType !== "international_buddy" && (
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-100 rounded-lg">
-                    <Heart className="w-5 h-5 text-600" />
-                  </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-500">Is orphan</p>
 
@@ -497,9 +459,6 @@ export default function EditProfile() {
             {/* Interest Section */}
             <ProfileSection title="Interest">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <Briefcase className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <Input
                     type="text"
@@ -517,9 +476,6 @@ export default function EditProfile() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-100 rounded-lg">
-                  <Square className="w-5 h-5 text-600" />
-                </div>
                 <div className="flex-1">
                   <Input
                     type="text"
@@ -539,9 +495,6 @@ export default function EditProfile() {
 
             {/* Favorite Color */}
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-100 rounded-lg">
-                <Palette className="w-5 h-5 text-600" />
-              </div>
               <div className="flex-1">
                 <Input
                   type="text"
