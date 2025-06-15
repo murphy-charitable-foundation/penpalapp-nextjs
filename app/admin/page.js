@@ -5,7 +5,7 @@ import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import BottomNavBar from "@/components/bottom-nav-bar";
+import BottomNavBar from '../../components/bottom-nav-bar';
 import * as Sentry from "@sentry/nextjs";
 import { getFirestore, collectionGroup, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
 import {
@@ -14,9 +14,19 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
+import { storage } from "../firebaseConfig"; // ✅ Use initialized instance
+import { ref, getDownloadURL } from "firebase/storage"; // keep these
 
-import ProfileImage from "@/components/general/ProfileImage";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+
+import ProfileImage from "../../components/general/ProfileImage";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
+import LetterCard from "../../components/general/letter/LetterCard";
+import EmptyState from "../../components/general/letterhome/EmptyState";
+import { BackButton } from "../../components/general/BackButton";
+import WelcomeToast from "../../components/general/WelcomeToast";
+import ProfileHeader from "../../components/general/letter/ProfileHeader";
+import { iterateLetterBoxes } from "../utils/deadChat";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -25,6 +35,7 @@ export default function Admin() {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
     const [userName, setUserName] = useState("");
+    const [userId, setUserId] = useState("");
     const [userType, setUserType] = useState("");
     const [country, setCountry] = useState("");
     const [letters, setLetters] = useState([]);
@@ -37,6 +48,7 @@ export default function Admin() {
     const [selectedStatus, setSelectedStatus] = useState("draft"); // Default filter
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
+    const [showWelcome, setShowWelcome] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -49,7 +61,8 @@ export default function Admin() {
           router.push("/login");
           return;
         }
-  
+        console.log("user", user);
+        setUserId(user.uid);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -82,15 +95,43 @@ export default function Admin() {
         queryConstraints.push(where("created_at", "<=", endDate));
       }
 
-      
+      console.log("first here");
       lettersQuery = query(lettersQuery, ...queryConstraints);
       const querySnapshot = await getDocs(lettersQuery);
-
+      console.log("second here");
       if (!querySnapshot.empty) {
-        const newDocs = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const newDocs = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const docData = doc.data();
+            let userData = null;
+            let pfp = "/usericon.png"; // default fallback image
+
+            try {
+              if (docData.sent_by) {
+                const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
+                if (userSnapshot.exists()) {
+                  userData = userSnapshot.data();
+
+                  if (userData.photo_uri) {
+                    const photoRef = ref(storage, userData.photo_uri);
+                    pfp = await getDownloadURL(photoRef);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching user or photo:", error);
+            }
+
+            return {
+              id: doc.id,
+              ...docData,
+              profileImage: pfp,
+              first_name: userData?.first_name || "",
+              last_name: userData?.last_name || "",
+              user: userData
+            };
+          })
+        );
 
         setDocuments((prev) => [...prev, ...newDocs]);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
@@ -108,34 +149,70 @@ export default function Admin() {
     }
     
     return (
-        <>
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
-                <p>Hello</p>
-                
-                {documents.map((doc) => (
-                      <div key={doc.id} className="letter" style={{backgroundColor: '#F1F8EB', padding: '1rem', color: 'black'}}>
-                          <h3>{doc.id || "Untitled"}</h3>
-                          <p>{doc.letter || "No content available."}</p>
-                      </div>
-                ))}
-                
-                {/* Load More Button */}
-                {hasMore && !isLoading && (
-                  <button
-                    onClick={() => fetchLetters(true)}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-                  >
-                    Load More
-                  </button>
-                )}
-
-                <button
-                  className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-                  onClick={iterateLetterBoxes}>
-                  Check For Inactive Chats
-                </button>
+        <PageBackground>
+              <PageContainer maxWidth="lg">
+              <BackButton />
+              <WelcomeToast 
+                userName={userName}
+                isVisible={showWelcome}
+                onClose={() => setShowWelcome(false)}
+              />
+        
+              <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+                <ProfileHeader 
+                  userName={userName}
+                  country={country}
+                  profileImage={profileImage}
+                  id={userId}
+                />
+        
+                <main className="p-6">
+                  <section className="mt-8">
+                    <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+                      Recent letters
+                    </h2>
+                    {documents.length > 0 ? (
+                      documents.map((document, i) => (
+                        <LetterCard key={document.id + '_' + i} letter={document} />
+                      ))
+                    ) : (
+                      <EmptyState 
+                        title="New friends are coming!"
+                        description="Many friends are coming hang tight!"
+                      />
+                    )}
+                  </section>
+                </main>
                 <BottomNavBar />
-            </div>
-        </>
-    );
+              </div>
+        
+              {userType === "admin" && (
+                <Button
+                  btnText="Check For Inactive Chats"
+                  color="bg-black"
+                  textColor="text-white"
+                  rounded="rounded-md"
+                  onClick={iterateLetterBoxes}
+                />
+              )}
+              
+              {/* Add animation keyframes */}
+              <style jsx global>{`
+                @keyframes slideIn {
+                  from {
+                    opacity: 0;
+                    transform: translateX(30px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateX(0);
+                  }
+                }
+                .animate-slide-in {
+                  animation: slideIn 0.3s ease-out forwards;
+                }
+              `}</style>
+              </PageContainer>
+            </PageBackground>
+          );
 }
