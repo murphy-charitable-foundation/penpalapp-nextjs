@@ -1,4 +1,5 @@
 import React from "react";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 
 const MessagePreview = ({
   profileImage,
@@ -8,7 +9,7 @@ const MessagePreview = ({
   lastMessageDate,
   letterboxId,
   status,
-  isRecipient
+  isRecipient,
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -26,7 +27,7 @@ const MessagePreview = ({
     const timeString = date.toLocaleTimeString(undefined, {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true
+      hour12: true,
     });
 
     if (date.toDateString() === today.toDateString()) {
@@ -42,12 +43,34 @@ const MessagePreview = ({
     });
   };
 
+  const getStatusIcon = () => {
+    if (status === "rejected") {
+      return <AlertTriangle className="text-red-500 w-6 h-6" />;
+    }
+    if (status === "approved") {
+      return <CheckCircle className="text-green-500 w-6 h-6" />;
+    }
+    if (status === "pending") {
+      return (
+        <div className="relative w-6 h-6">
+          <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
+          <CheckCircle className="absolute inset-0 m-auto w-4 h-4 text-gray-400" />
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <a
       href={`/letters/${letterboxId}`}
-      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${isRecipient ? 'bg-green-50' : 'bg-white'
-        }`}
+      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
+        status === "rejected"
+          ? "bg-red-50"
+          : isRecipient
+          ? "bg-green-50"
+          : "bg-white"
+      }`}
     >
       <div className="flex items-start">
         <img
@@ -73,13 +96,28 @@ const MessagePreview = ({
         </div>
       </div>
       <div
-        className={`mt-2 text-sm text-gray-700 truncate ${isRecipient ? 'font-semibold' : ''
-          }`}
+        className={`mt-2 text-sm text-gray-700 leading-snug ${
+          isRecipient ? "font-semibold" : ""
+        }`}
       >
-        {lastMessage}
+        {lastMessage ? (
+          <div className="relative">
+            <div className="float-left mr-2 mt-0.5">{getStatusIcon()}</div>
+            {status === "rejected" && <div className="font-normal text-red-500">Your letter was rejected</div>}
+            <div className="overflow-hidden">{lastMessage}</div>
+          </div>
+        ) : (
+          // No message: Show icon normally (not floated)
+          status && (
+            <div className="flex items-center gap-2">
+              {getStatusIcon()}
+              {status === "rejected" && <div className="font-normal text-red-500">Your letter was rejected</div>}
+            </div>
+          )
+        )}
       </div>
     </a>
   );
 };
 
-  export default MessagePreview;
+export default MessagePreview;
