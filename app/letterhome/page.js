@@ -12,6 +12,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
 } from "firebase/firestore";
 import BottomNavBar from "@/components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
@@ -25,11 +26,18 @@ import {
 } from "../utils/letterboxFunctions";
 
 const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
-  const draft = await fetchDraft(letterboxId, userRef, true);
+  const draft = await fetchDraft(letterboxId, userRef);
   if (draft) return draft;
 
-  const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
-  const q = query(lettersRef, orderBy("created_at", "desc"), limit(1));
+  const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
+  const lRef = collection(letterboxRef, "letters");
+  //const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
+  const q = query(
+    lRef,
+    where("status", "==", "sent"),
+    orderBy("created_at", "desc"),
+    limit(1)
+  );
   const letterSnapshot = await getDocs(q);
   let letter;
   letterSnapshot.forEach((doc) => {
@@ -70,14 +78,17 @@ export default function Home() {
         const fetchedLetterboxes = await Promise.all(
           letterboxIds.map(async (id) => {
             const userRef = doc(db, "users", uid);
-            const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const letter =
+              (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
 
             return {
               id,
               profileImage: recipient?.photo_uri || "",
-              name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
+              name: `${recipient.first_name ?? "Unknown"} ${
+                recipient.last_name ?? ""
+              }`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
               lastMessageDate: letter.created_at || "",
