@@ -161,6 +161,7 @@ export default function Page({ params }) {
         status: "sent",
         created_at: currentTime,
         deleted: null,
+        unread: true,
       };
 
       let messageRef;
@@ -349,6 +350,9 @@ export default function Page({ params }) {
                 if (recipient) {
                   message.senderLocation = recipient.location || "";
                 }
+                if (message.unread) {
+                  await updateDoc(doc(lRef, message.id), { unread: false });
+                }
               }
               return message;
             })
@@ -449,7 +453,8 @@ export default function Page({ params }) {
               !canSendMessage()
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-blue-200 rounded"
-            }`}>
+            }`}
+          >
             <Image
               src="/send-message-icon.png"
               alt="Send message"
@@ -473,10 +478,12 @@ export default function Page({ params }) {
                 key={messageId}
                 className={`border-b border-gray-200 ${
                   isSelected ? "bg-white" : "bg-gray-50"
-                }`}>
+                }`}
+              >
                 <div
                   className="px-4 py-3"
-                  onClick={() => selectMessage(messageId)}>
+                  onClick={() => selectMessage(messageId)}
+                >
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                       <ProfileImage
@@ -529,7 +536,8 @@ export default function Page({ params }) {
                             setReportContent(message.content);
                             setShowReportPopup(true);
                           }}
-                          className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                          className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                        >
                           <FaExclamationCircle className="mr-1" size={10} />
                           Report
                         </button>
@@ -597,12 +605,14 @@ export default function Page({ params }) {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
+                >
                   Continue
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
+                >
                   Close
                 </button>
               </div>
