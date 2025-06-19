@@ -100,6 +100,7 @@ const MessagePreview = ({
           isRecipient ? "font-semibold" : ""
         }`}
       >
+        {/* We need to float the status icon, otherwise there's a blank space when there's no icon */}
         {lastMessage ? (
           <div className="relative">
             <div className="float-left mr-2 mt-0.5">{getStatusIcon()}</div>
