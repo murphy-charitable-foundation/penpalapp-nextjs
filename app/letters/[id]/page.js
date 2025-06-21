@@ -350,7 +350,7 @@ export default function Page({ params }) {
                 if (recipient) {
                   message.senderLocation = recipient.location || "";
                 }
-                if (message.unread) {
+                if (message?.unread) {
                   await updateDoc(doc(lRef, message.id), { unread: false });
                 }
               }
