@@ -1,3 +1,5 @@
+//
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -66,6 +68,66 @@ export default function Page({ params }) {
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
       block: "end",
+    });
+  };
+
+  // Helper function to check if two dates are on different days
+  const isDifferentDay = (date1, date2) => {
+    if (!date1 || !date2) return false;
+
+    const d1 = date1 instanceof Date ? date1 : new Date(date1);
+    const d2 = date2 instanceof Date ? date2 : new Date(date2);
+
+    return (
+      d1.getFullYear() !== d2.getFullYear() ||
+      d1.getMonth() !== d2.getMonth() ||
+      d1.getDate() !== d2.getDate()
+    );
+  };
+
+  // Helper function to format date for separator
+  const formatDateSeparator = (timestamp) => {
+    if (!timestamp) return "";
+
+    let date;
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp === "number" || typeof timestamp === "string") {
+      date = new Date(timestamp);
+    } else {
+      return "";
+    }
+
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Check if it's today
+    if (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    ) {
+      return "Today";
+    }
+
+    // Check if it's yesterday
+    if (
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear()
+    ) {
+      return "Yesterday";
+    }
+
+    // Format as date
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -467,84 +529,104 @@ export default function Page({ params }) {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
-          {allMessages.map((message) => {
+          {allMessages.map((message, index) => {
             const messageId = message.id;
             const isSelected = selectedMessageId === messageId;
             const isSenderUser = message.sent_by?.id === user?.uid;
             const location = getSenderLocation(message);
 
-            return (
-              <div
-                key={messageId}
-                className={`border-b border-gray-200 ${
-                  isSelected ? "bg-white" : "bg-gray-50"
-                }`}
-              >
-                <div
-                  className="px-4 py-3"
-                  onClick={() => selectMessage(messageId)}
-                >
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
-                      <ProfileImage
-                        photo_uri={
-                          isSenderUser
-                            ? user?.photoURL
-                            : recipients[0]?.photo_uri
-                        }
-                        first_name={
-                          isSenderUser ? "You" : recipients[0]?.first_name
-                        }
-                        width={48}
-                        height={48}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <span className="font-bold text-black">
-                          {isSenderUser
-                            ? "Me"
-                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                        </span>
-                        {location && (
-                          <span className="text-black ml-2 text-sm">
-                            {location}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-gray-800">
-                        {isSelected ? "" : truncateMessage(message.content)}
-                      </div>
-                    </div>
-                    <div className="text-gray-500 text-sm">
-                      {formatTime(message.created_at)}
-                    </div>
-                  </div>
-                </div>
+            // Check if we need to show a date separator
+            const showDateSeparator =
+              index === 0 ||
+              isDifferentDay(
+                allMessages[index - 1]?.created_at,
+                message.created_at
+              );
 
-                {isSelected && (
-                  <div className="px-4 pb-3">
-                    <div className="ml-16">
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                      {!isSenderUser && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReportSender(message.sent_by.id);
-                            setReportContent(message.content);
-                            setShowReportPopup(true);
-                          }}
-                          className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                        >
-                          <FaExclamationCircle className="mr-1" size={10} />
-                          Report
-                        </button>
-                      )}
+            return (
+
+              <div key={messageId}>
+                {/* Date Separator */}
+                {showDateSeparator && (
+                  <div className="flex items-center my-4 px-4">
+                    <div className="flex-1 border-t border-gray-300"></div>
+                    <div className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">
+                      {formatDateSeparator(message.created_at)}
                     </div>
+                    <div className="flex-1 border-t border-gray-300"></div>
                   </div>
                 )}
+
+                {/* Message */}
+                <div
+                  className={`border-b border-gray-200 ${
+                    isSelected ? "bg-white" : "bg-gray-50"
+                  }`}>
+                  <div
+                    className="px-4 py-3"
+                    onClick={() => selectMessage(messageId)}>
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
+                        <ProfileImage
+                          photo_uri={
+                            isSenderUser
+                              ? user?.photoURL
+                              : recipients[0]?.photo_uri
+                          }
+                          first_name={
+                            isSenderUser ? "You" : recipients[0]?.first_name
+                          }
+                          width={48}
+                          height={48}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <span className="font-bold text-black">
+                            {isSenderUser
+                              ? "Me"
+                              : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                          </span>
+                          {location && (
+                            <span className="text-black ml-2 text-sm">
+                              {location}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-gray-800">
+                          {isSelected ? "" : truncateMessage(message.content)}
+                        </div>
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        {formatTime(message.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        {!isSenderUser && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReportSender(message.sent_by.id);
+                              setReportContent(message.content);
+                              setShowReportPopup(true);
+                            }}
+                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                            <FaExclamationCircle className="mr-1" size={10} />
+                            Report
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
