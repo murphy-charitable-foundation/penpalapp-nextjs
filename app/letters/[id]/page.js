@@ -223,6 +223,7 @@ export default function Page({ params }) {
         status: "sent",
         created_at: currentTime,
         deleted: null,
+        unread: true,
       };
 
       let messageRef;
@@ -411,6 +412,9 @@ export default function Page({ params }) {
                 if (recipient) {
                   message.senderLocation = recipient.location || "";
                 }
+                if (message?.unread) {
+                  await updateDoc(doc(lRef, message.id), { unread: false });
+                }
               }
               return message;
             })
@@ -511,7 +515,8 @@ export default function Page({ params }) {
               !canSendMessage()
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-blue-200 rounded"
-            }`}>
+            }`}
+          >
             <Image
               src="/send-message-icon.png"
               alt="Send message"
@@ -539,6 +544,7 @@ export default function Page({ params }) {
               );
 
             return (
+
               <div key={messageId}>
                 {/* Date Separator */}
                 {showDateSeparator && (
@@ -596,6 +602,7 @@ export default function Page({ params }) {
                       </div>
                     </div>
                   </div>
+
 
                   {isSelected && (
                     <div className="px-4 pb-3">
@@ -680,12 +687,14 @@ export default function Page({ params }) {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
+                >
                   Continue
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
+                >
                   Close
                 </button>
               </div>
