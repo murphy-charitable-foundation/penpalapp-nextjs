@@ -16,6 +16,7 @@ const LetterList = ({ letters, user }) => {
             letterboxId={letter.letterboxId}
             status={letter.status}
             isRecipient={letter.recipient === user}
+            unread={letter?.unread}
           />
         </div>
       ))}

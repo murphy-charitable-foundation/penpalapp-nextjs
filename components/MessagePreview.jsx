@@ -10,6 +10,7 @@ const MessagePreview = ({
   letterboxId,
   status,
   isRecipient,
+  unread = false,
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -67,7 +68,7 @@ const MessagePreview = ({
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
-          : isRecipient
+          : isRecipient && unread
           ? "bg-green-50"
           : "bg-white"
       }`}
@@ -96,25 +97,33 @@ const MessagePreview = ({
         </div>
       </div>
       <div
-        className={`mt-2 text-sm text-gray-700 leading-snug ${
-          isRecipient ? "font-semibold" : ""
+        className={`mt-2 text-sm text-gray-700 truncate ${
+          isRecipient && unread ? "font-semibold" : ""
         }`}
       >
-        {/* We need to float the status icon, otherwise there's a blank space when there's no icon */}
         {lastMessage ? (
-          <div className="relative">
-            <div className="float-left mr-2 mt-0.5">{getStatusIcon()}</div>
-            {status === "rejected" && <div className="font-normal text-red-500">Your letter was rejected</div>}
-            <div className="overflow-hidden">{lastMessage}</div>
+          <div className="flex">
+            {getStatusIcon() && (
+              <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
+            )}
+            <div className="flex-1">
+              {status === "rejected" && (
+                <div className="font-normal text-red-500">
+                  Your letter was rejected
+                </div>
+              )}
+              {lastMessage}
+            </div>
           </div>
         ) : (
-          // No message: Show icon normally (not floated)
-          status && (
-            <div className="flex items-center gap-2">
-              {getStatusIcon()}
-              {status === "rejected" && <div className="font-normal text-red-500">Your letter was rejected</div>}
-            </div>
-          )
+          <div className="flex">
+            <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
+            {status === "rejected" && (
+              <div className="flex-1 font-normal text-red-500">
+                Your letter was rejected
+              </div>
+            )}
+          </div>
         )}
       </div>
     </a>
