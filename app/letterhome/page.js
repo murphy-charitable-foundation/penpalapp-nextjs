@@ -73,7 +73,6 @@ export default function Home() {
             const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
-
             return {
               id,
               profileImage: recipient?.photo_uri || "",
@@ -84,6 +83,7 @@ export default function Home() {
               status: letter.status || "",
               letterboxId: id || "",
               recipient: recipient?.id || "",
+              unread: letter?.unread
             };
           })
         );
