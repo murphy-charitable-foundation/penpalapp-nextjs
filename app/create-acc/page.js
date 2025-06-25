@@ -1,7 +1,6 @@
 "use client";
 
-// pages/create-acc.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -10,8 +9,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
-import EditProfileImage from "@/components/edit-profile";
+import EditProfileImage from "../../components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
+import PasswordChecklist from "react-password-checklist";
+import Input from "../../components/general/Input";
+import Button from "../../components/general/Button";
+import { BackButton } from "../../components/general/BackButton";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
+import Dialog from "../../components/general/Modal";
+import { onAuthStateChanged } from "firebase/auth";
+import InfoDisplay from "../../components/general/profile/InfoDisplay";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -20,25 +28,58 @@ export default function CreateAccount() {
   const [birthday, setBirthday] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [showPasswordChecklist, setShowPasswordChecklist] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isValidPassword, setisValidPassword] = useState(false);
+  const [termsCheck, setTermsCheck] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
+
+  // Pre-populate email from auth.currentUser
+
+  useEffect(() => {
+    const getEmail = onAuthStateChanged(auth, async (user) => {
+      if (user?.email) {
+        setEmail(user.email);
+      }
+    });
+    return () => getEmail();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (password !== repeatPassword) {
-      alert("Passwords do not match.");
-      return;
+    // Custom validation
+    const newErrors = {};
+    if (!firstName.trim() && !lastName.trim()) {
+      newErrors.firstName = "Name is required";
+      newErrors.lastName = "Name is required";
     }
-    try {
-      // const userCredential = await createUserWithEmailAndPassword(
-      //   auth,
-      //   email,
-      //   password
-      // );
 
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (!isValidPassword) {
+      newErrors.isValidPassword = "Not a valid password.";
+    }
+    if (password !== repeatPassword) {
+      newErrors.repeatPassword = "Passwords do not match.";
+    }
+    if (!termsCheck) {
+      newErrors.termsCheck = "You must agree to the terms and privacy policy.";
+    }
+
+    try {
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        throw new Error("Form validation error(s)");
+      }
       const user = auth.currentUser;
-      // const user = userCredential.currentUser;
 
       console.log(`user is :${user}`);
       const uid = user.uid;
@@ -47,7 +88,11 @@ export default function CreateAccount() {
       } catch (error) {
         if (error.code == "auth/requires-recent-login") {
           console.error("Account creation timed out: ", error.message);
-          alert("Account creation timed out. Please try logging in again.");
+          setIsDialogOpen(true);
+          setDialogTitle("Oops!");
+          setDialogMessage(
+            "Account creation timed out. Please try logging in again."
+          );
           await signOut(auth);
           router.push("/login");
           return;
@@ -65,36 +110,40 @@ export default function CreateAccount() {
         birthday,
         connected_penpals_count: 0,
       });
+      // Create a document in Firestore in "users" collection with UID as the document key
+      await setDoc(doc(db, "users", uid), {
+        created_at: new Date(),
+        first_name: firstName,
+        last_name: lastName,
+        birthday,
+        connected_penpals_count: 0,
+      });
 
       setShowCreate(false);
-      localStorage.setItem('userFirstName', firstName);
+      localStorage.setItem("userFirstName", firstName);
       // Redirect to profile page or any other page as needed
-      router.push('/welcome/');
+      router.push("/welcome/");
     } catch (error) {
-      Sentry.captureException(error); //need to add password checks for size, and etc to make this defualt
-      console.error("Error creating account:", error);
-      alert(error.message);
+      Sentry.captureException("Error creating account:", error);
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Error: " + error.message);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 relative">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative min-h-[80vh]">
+    <PageBackground className="flex flex-col items-center justify-center px-4">
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
+      <PageContainer>
         <div className="flex items-center justify-between mb-4">
-          <svg
-            onClick={() => window.history.back()}
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 cursor-pointer"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="black">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <BackButton />
           <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">
             Create account
           </h2>
@@ -111,119 +160,118 @@ export default function CreateAccount() {
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label
-                htmlFor="first-name"
-                className="text-sm font-medium text-gray-700 block mb-2">
-                First name
-              </label>
-              <input
+              <Input
+                label="First name"
                 id="first-name"
+                placeholder="Ex: Jane"
                 type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                error={errors.firstName ? errors.firstName : ""}
               />
             </div>
             <div className="w-1/2">
-              <label
-                htmlFor="last-name"
-                className="text-sm font-medium text-gray-700 block mb-2">
-                Last name
-              </label>
-              <input
+              <Input
+                label="Last Name"
                 id="last-name"
+                placeholder="Ex: Doe"
                 type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                error={errors.lastName ? errors.lastName : ""}
               />
             </div>
           </div>
           <div>
-            <label
-              htmlFor="birthday"
-              className="text-sm font-medium text-gray-700 block mb-2">
-              Birthday
-            </label>
-            <input
+            <Input
               id="birthday"
               type="date"
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              label="Birthday"
               value={birthday}
               onChange={(e) => setBirthday(e.target.value)}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="text-sm font-medium text-gray-700 block mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <InfoDisplay title="Email" info={email}></InfoDisplay>
           </div>
           <div>
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-gray-700 block mb-2">
-              New Password
-            </label>
-            <input
+            <Input
               id="password"
               name="password"
               type="password"
+              label="New Password"
               autoComplete="new-password"
-              required
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setShowPasswordChecklist(e.target.value.length > 0);
+              }}
+              error={errors.isValidPassword ? errors.isValidPassword : ""}
             />
           </div>
+          {showPasswordChecklist && (
+            <PasswordChecklist
+              rules={["minLength", "specialChar", "number", "capital", "match"]}
+              minLength={8}
+              value={password}
+              valueAgain={repeatPassword}
+              onChange={(isValid, failedRules) => {
+                setisValidPassword(isValid);
+                if (failedRules.length === 1 && failedRules.includes("match")) {
+                  setisValidPassword(true);
+                }
+              }}
+              className="text-black"
+            />
+          )}
           <div>
-            <label
-              htmlFor="repeat-password"
-              className="text-sm font-medium text-gray-700 block mb-2">
-              Repeat Password
-            </label>
-            <input
+            <Input
               id="repeat-password"
               name="repeatPassword"
               type="password"
-              required
-              className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              label="Repeat Password"
               value={repeatPassword}
               onChange={(e) => setRepeatPassword(e.target.value)}
+              error={errors.repeatPassword ? errors.repeatPassword : ""}
             />
           </div>
-          <button
-            type="submit"
-            style={{
-              padding: "10px 20px",
-              width: "80%",
-              margin: "50px auto",
-              display: "block",
-              backgroundColor: "#48801c",
-              color: "white",
-              border: "none",
-              borderRadius: "20px",
-              cursor: "pointer",
-            }}>
-            Create Account
-          </button>
+          {/*onClick={() => router.push('/terms-conditions')}  */}
+          <div className="justify-center">
+            <div className="flex items-center">
+              <Input
+                id="terms-check"
+                name="terms-check"
+                type="checkbox"
+                onChange={(e) => setTermsCheck(e.target.value)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="terms-check"
+                className="ml-2 block text-sm text-gray-900"
+              >
+                See the{" "}
+                <Link href="/terms-conditions" className="underline">
+                  terms and conditions
+                </Link>{" "}
+                and{" "}
+                <Link className="underline" href="privacy-policy">
+                  privacy policy
+                </Link>
+              </label>
+            </div>
+            {errors.termsCheck && (
+              <p className="mt-1 text-sm text-red-500">{errors.termsCheck}</p>
+            )}
+          </div>
+
+          <div className="flex justify-center">
+            <Button btnType="submit" btnText="Create Account" color="green" />
+          </div>
         </form>
+
         {/* <EditProfileImage router={router} /> */}
-      </div>
-    </div>
+      </PageContainer>
+    </PageBackground>
   );
 }

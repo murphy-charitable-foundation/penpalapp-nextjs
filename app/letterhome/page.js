@@ -1,11 +1,12 @@
 "use client";
 
+// pages/index.js
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { db, auth } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig"; // Adjust the import path as necessary
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import BottomNavBar from "@/components/bottom-nav-bar";
+import BottomNavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
@@ -16,32 +17,65 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "@/components/general/ProfileImage";
+import ProfileImage from "/components/general/ProfileImage";
+import Button from "../../components/general/Button";
+import ProfileHeader from "../../components/general/letter/ProfileHeader";
+import LetterCard from "../../components/general/letter/LetterCard";
+import EmptyState from "../../components/general/letterhome/EmptyState";
+import { BackButton } from "../../components/general/BackButton";
+import { PageContainer } from "../../components/general/PageContainer";
+import { PageBackground } from "../../components/general/PageBackground";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
   const [letters, setLetters] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [userId, setUserId] = useState("");
   const router = useRouter();
 
   useEffect(() => {
+    setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoading(true);
-
       if (!user) {
+        // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
         setIsLoading(false);
         router.push("/login");
-        return;
+      } else {
+        const letterboxes = await fetchLetterboxes();
+        const letterboxIds = letterboxes.map((l) => l.id);
+        let letters = [];
+        for (const id of letterboxIds) {
+          const letterbox = { id };
+          const userRef = doc(db, "users", auth.currentUser.uid);
+          const draft = await fetchDraft(id, userRef, true);
+          if (draft) {
+            letterbox.letters = [draft];
+          } else {
+            letterbox.letters = await fetchLetterbox(id, 1);
+          }
+          letters.push(letterbox);
+        }
+        // this will be slow but may be the only way
+        for await (const l of letters) {
+          const rec = await fetchRecipients(l.id);
+          l.recipients = rec;
+        }
+        setLetters(letters);
       }
+    });
+    return () => unsubscribe();
+  }, []);
 
-      try {
-        // Fetch user data
-        const uid = user.uid;
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (auth.currentUser) {
+        const uid = auth.currentUser.uid;
+        setUserId(uid);
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
@@ -53,146 +87,75 @@ export default function Home() {
           setProfileImage(userData?.photo_uri || "");
         } else {
           console.log("No such document!");
-          setError("User data not found.");
         }
-
-        // Fetch letterboxes
-        const letterboxes = await fetchLetterboxes();
-        if (letterboxes && letterboxes.length > 0) {
-          const letterboxIds = letterboxes.map((l) => l.id);
-          let fetchedLetters = [];
-
-          for (const id of letterboxIds) {
-            const letterbox = { id };
-            const userRef = doc(db, "users", user.uid);
-            const draft = await fetchDraft(id, userRef, true);
-
-            if (draft) {
-              letterbox.letters = [draft];
-            } else {
-              letterbox.letters = await fetchLetterbox(id, 1);
-            }
-            fetchedLetters.push(letterbox);
-          }
-
-          // Fetch recipients for each letterbox
-          for await (const l of fetchedLetters) {
-            const rec = await fetchRecipients(l.id);
-            l.recipients = rec;
-          }
-
-          setLetters(fetchedLetters);
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        Sentry.captureException(err);
-        setError("Failed to load data.");
-      } finally {
-        setIsLoading(false);
+      } else {
+        console.log("No user logged in");
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, [router]);
+    fetchUserData();
+  }, []);
 
   return (
-    <div className="bg-gray-100 min-h-screen py-6">
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : (
-        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-          <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
-            <Link href="/profile">
-              <button className="flex items-center text-gray-700">
-                <ProfileImage photo_uri={profileImage} first_name={userName} />
-                <div className="ml-3">
-                  <div className="font-semibold text-lg">{userName}</div>
-                  <div className="text-sm text-gray-600">{country}</div>
-                </div>
-              </button>
-            </Link>
+    <PageBackground>
+      <PageContainer maxWidth="lg">
+        <BackButton />
 
-            <div className="flex items-center space-x-4">
-              <Link href="/settings">
-                <button className="text-gray-700 hover:text-blue-600">
-                  <FaCog className="h-7 w-7" />
-                </button>
-              </Link>
-              <Link href="/discover">
-                <button className="text-gray-700 hover:text-blue-600">
-                  <FaBell className="h-7 w-7" />
-                </button>
-              </Link>
-              <Link href="/letterwrite">
-                <button className="text-gray-700 hover:text-blue-600">
-                  <FaPen className="h-7 w-7" />
-                </button>
-              </Link>
-            </div>
-          </header>
+        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+          <ProfileHeader
+            userName={userName}
+            country={country}
+            profileImage={profileImage}
+            id={userId}
+          />
 
           <main className="p-6">
             <section className="mt-8">
-              <h2 className="font-bold text-xl mb-4 text-gray-800 flex justify-between items-center">
-                Last letters
-                <Link href="/letterhome">
-                  <button className="px-3 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                    Show more
-                  </button>
-                </Link>
+              <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+                Recent letters
               </h2>
               {letters.length > 0 ? (
                 letters.map((letter, i) => (
-                  <a
-                    key={letter.id + "_" + i}
-                    href={`/letters/${letter.id}`}
-                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-                    <div className="flex-grow">
-                      {letter.recipients?.map((rec) => (
-                        <div key={rec.id} className="flex mt-3">
-                          <ProfileImage
-                            photo_uri={rec?.photo_uri}
-                            first_name={rec?.first_name}
-                          />
-                          <div className="flex flex-col">
-                            <div className="flex">
-                              {letter.letters[0].status === "draft" && (
-                                <h4 className="mr-2">[DRAFT]</h4>
-                              )}
-                              <h3 className="font-semibold text-gray-800">
-                                {rec.first_name} {rec.last_name}
-                              </h3>
-                            </div>
-                            <div>{rec.country}</div>
-                          </div>
-                        </div>
-                      ))}
-                      <p className="text-gray-600 truncate">
-                        {letter.letters[0].content ?? ""}
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        {letter.letters[0].received}
-                      </span>
-                    </div>
-                  </a>
+                  <LetterCard key={letter.id + "_" + i} letter={letter} />
                 ))
               ) : (
-                <p className="text-gray-500">No letters found.</p>
+                <EmptyState
+                  title="New friends are coming!"
+                  description="Many friends are coming hang tight!"
+                />
               )}
             </section>
           </main>
           <BottomNavBar />
         </div>
-      )}
-      {userType === "admin" && (
-        <button
-          className="flex bg-black text-white rounded py-4 px-4 mt-4 mx-auto"
-          onClick={iterateLetterBoxes}>
-          Check For Inactive Chats
-        </button>
-      )}
-    </div>
+
+        {userType === "admin" && (
+          <Button
+            btnText="Check For Inactive Chats"
+            color="bg-black"
+            textColor="text-white"
+            rounded="rounded-md"
+            onClick={iterateLetterBoxes}
+          />
+        )}
+
+        {/* Add animation keyframes */}
+        <style jsx global>{`
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateX(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+          }
+        `}</style>
+      </PageContainer>
+    </PageBackground>
   );
 }
