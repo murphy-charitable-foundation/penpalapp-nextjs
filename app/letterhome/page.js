@@ -26,18 +26,29 @@ import {
 } from "../utils/letterboxFunctions";
 
 const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
-  const draft = await fetchDraft(letterboxId, userRef);
-  if (draft) return draft;
+  //const draft = await fetchDraft(letterboxId, userRef);
+  //if (draft) return draft;
 
   const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
   const lRef = collection(letterboxRef, "letters");
   //const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
-  const q = query(
+  
+  // My Letters
+   const userLettersQuery = query(
+    lRef,
+    where("sent_by", "==", userRef),
+    orderBy("created_at", "desc"),
+    limit(5) // grab a few in case of fallback
+  );
+  
+  // Your letters
+  const sentLettersQuery = query(
     lRef,
     where("status", "==", "sent"),
     orderBy("created_at", "desc"),
-    limit(1)
+    limit(5)
   );
+  /*
   const letterSnapshot = await getDocs(q);
   let letter;
   letterSnapshot.forEach((doc) => {
@@ -45,6 +56,27 @@ const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   });
   console.log(letter);
   return letter;
+  */
+   // Run both in parallel
+  const [userLettersSnap, sentLettersSnap] = await Promise.all([
+    getDocs(userLettersQuery),
+    getDocs(sentLettersQuery),
+  ]);
+
+  const allLetters = [];
+
+  userLettersSnap.forEach((doc) => {
+    allLetters.push({ id: doc.id, ...doc.data() });
+  });
+
+  // Sort again to be safe
+  allLetters.sort((a, b) => {
+    const aDate = a.created_at.toDate?.() ?? new Date(a.created_at.seconds * 1000);
+    const bDate = b.created_at.toDate?.() ?? new Date(b.created_at.seconds * 1000);
+    return bDate - aDate;
+  });
+
+  return allLetters[0] || null;
 };
 
 export default function Home() {
