@@ -26,38 +26,26 @@ import {
 } from "../utils/letterboxFunctions";
 
 const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
-  //const draft = await fetchDraft(letterboxId, userRef);
-  //if (draft) return draft;
-
   const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
   const lRef = collection(letterboxRef, "letters");
-  //const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
-  
+
   // My Letters
-   const userLettersQuery = query(
+  const userLettersQuery = query(
     lRef,
     where("sent_by", "==", userRef),
     orderBy("created_at", "desc"),
-    limit(5) // grab a few in case of fallback
+    limit(1) // grab a few in case of fallback
   );
-  
+
   // Your letters
   const sentLettersQuery = query(
     lRef,
     where("status", "==", "sent"),
     orderBy("created_at", "desc"),
-    limit(5)
+    limit(1)
   );
-  /*
-  const letterSnapshot = await getDocs(q);
-  let letter;
-  letterSnapshot.forEach((doc) => {
-    letter = { id: doc.id, ...doc.data() };
-  });
-  console.log(letter);
-  return letter;
-  */
-   // Run both in parallel
+
+  // Run both in parallel
   const [userLettersSnap, sentLettersSnap] = await Promise.all([
     getDocs(userLettersQuery),
     getDocs(sentLettersQuery),
@@ -65,18 +53,24 @@ const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
 
   const allLetters = [];
 
-  userLettersSnap.forEach((doc) => {
-    allLetters.push({ id: doc.id, ...doc.data() });
-  });
+  if (!userLettersSnap?.empty)
+    userLettersSnap.forEach((doc) => {
+      allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
 
-  // Sort again to be safe
-  allLetters.sort((a, b) => {
-    const aDate = a.created_at.toDate?.() ?? new Date(a.created_at.seconds * 1000);
-    const bDate = b.created_at.toDate?.() ?? new Date(b.created_at.seconds * 1000);
-    return bDate - aDate;
-  });
+  if (!sentLettersSnap?.empty)
+    sentLettersSnap.forEach((doc) => {
+      if (doc?.data()?.sent_by?.id !== userRef?.id)
+        allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
 
-  return allLetters[0] || null;
+  if (allLetters.length === 0) return null;
+  else if (allLetters.length === 1) return allLetters[0];
+  else if (
+    allLetters[0]?.created_at?.toDate?.() > allLetters[1]?.created_at?.toDate?.()
+  )
+    return allLetters[0];
+  else return allLetters[1];
 };
 
 export default function Home() {
@@ -116,7 +110,7 @@ export default function Home() {
             const recipient = rec?.[0] ?? {};
 
             return {
-              id,
+              id: letter.id || "",
               profileImage: recipient?.photo_uri || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
