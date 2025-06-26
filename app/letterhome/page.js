@@ -2,22 +2,19 @@
 
 // pages/index.js
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { db, auth } from "../firebaseConfig"; // Adjust the import path as necessary
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
 import {
   fetchDraft,
   fetchLetterbox,
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "/components/general/ProfileImage";
+import { iterateLetterBoxes } from "../utils/deadChat";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
@@ -25,6 +22,54 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+
+const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+  const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
+  const lRef = collection(letterboxRef, "letters");
+
+  // My Letters
+  const userLettersQuery = query(
+    lRef,
+    where("sent_by", "==", userRef),
+    orderBy("created_at", "desc"),
+    limit(1) // grab a few in case of fallback
+  );
+
+  // Your letters
+  const sentLettersQuery = query(
+    lRef,
+    where("status", "==", "sent"),
+    orderBy("created_at", "desc"),
+    limit(1)
+  );
+
+  // Run both in parallel
+  const [userLettersSnap, sentLettersSnap] = await Promise.all([
+    getDocs(userLettersQuery),
+    getDocs(sentLettersQuery),
+  ]);
+
+  const allLetters = [];
+
+  if (!userLettersSnap?.empty)
+    userLettersSnap.forEach((doc) => {
+      allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
+
+  if (!sentLettersSnap?.empty)
+    sentLettersSnap.forEach((doc) => {
+      if (doc?.data()?.sent_by?.id !== userRef?.id)
+        allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
+
+  if (allLetters.length === 0) return null;
+  else if (allLetters.length === 1) return allLetters[0];
+  else if (
+    allLetters[0]?.created_at?.toDate?.() > allLetters[1]?.created_at?.toDate?.()
+  )
+    return allLetters[0];
+  else return allLetters[1];
+};
 
 export default function Home() {
   const [userName, setUserName] = useState("");
