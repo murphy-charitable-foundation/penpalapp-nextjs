@@ -14,14 +14,14 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-import { storage } from "../firebaseConfig"; // ✅ Use initialized instance
+import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
 import { ref, getDownloadURL } from "firebase/storage"; // keep these
 
 
 import ProfileImage from "../../components/general/ProfileImage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import LetterCard from "../../components/general/letter/LetterCard";
+import LetterCard from "../../components/general/admin/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
@@ -83,7 +83,7 @@ export default function Admin() {
       let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
-      const queryConstraints = [where("status", "==", selectedStatus), limit(5)];
+      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), limit(5)];
       
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
@@ -95,10 +95,8 @@ export default function Admin() {
         queryConstraints.push(where("created_at", "<=", endDate));
       }
 
-      console.log("first here");
       lettersQuery = query(lettersQuery, ...queryConstraints);
       const querySnapshot = await getDocs(lettersQuery);
-      console.log("second here");
       if (!querySnapshot.empty) {
         const newDocs = await Promise.all(
           querySnapshot.docs.map(async (doc) => {
@@ -107,15 +105,20 @@ export default function Admin() {
             let pfp = "/usericon.png"; // default fallback image
 
             try {
+              console.log("Inside of try");
               if (docData.sent_by) {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
                   userData = userSnapshot.data();
+                  const userId = userSnapshot.ref.path.split("/").pop(); // Safe parsing
+                  console.log("userId", userId);
+                  const path = `profile/${userId}/profile-image`;
+                  const photoRef = ref(storage, `profile/${userId}/profile-image`);
+                  console.log(1);
+                  const downloaded = await getDownloadURL(photoRef);
 
-                  if (userData.photo_uri) {
-                    const photoRef = ref(storage, userData.photo_uri);
-                    pfp = await getDownloadURL(photoRef);
-                  }
+                  pfp = downloaded;
+ 
                 }
               }
             } catch (error) {
@@ -150,8 +153,14 @@ export default function Admin() {
     
     return (
         <PageBackground>
+              <div className="flex justify-center bg-blue-800 h-20 max-w-md w-full ml-[auto] mr-[auto] p-8 space-y-8 shadow-md rounded-lg">
+                <select>
+                  <option>Hello</option>
+                </select>
+              </div>
               <PageContainer maxWidth="lg">
               <BackButton />
+              
               <WelcomeToast 
                 userName={userName}
                 isVisible={showWelcome}
