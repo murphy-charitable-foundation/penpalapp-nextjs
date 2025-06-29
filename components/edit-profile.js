@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import SelectProfileImage from './select-profile-image-wrapper';
 import SelectProfileLocation from './select-location';
-import { auth, db, storage } from '@/app/firebaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
+import { auth, db, storage } from '../app/firebaseConfig';
+import Button from './general/Button';
 
 const EditProfileImage = ({ router }) => {
 	const [image, setImage] = useState(null);
@@ -20,7 +21,7 @@ const EditProfileImage = ({ router }) => {
 		if (!previewURL) {
 			return "w-[80%] mx-auto mt-[100px] p-2 bg-[#1C1B1F1F] text-[#1D1D00] font-semibold  rounded-[100px]"
 		}
-		return "w-[80%] mx-auto mt-[100px] p-2 bg-[#4E802A] text-white font-semibold  rounded-[100px]"
+		return "w-[80%] mx-auto mt-[100px] p-2 bg-[] text-white font-semibold  rounded-[100px]"
 	}
 	const [countries, setCountries] = useState([]);
 
@@ -127,9 +128,15 @@ const EditProfileImage = ({ router }) => {
 						<h2 className='text-[32px]'>Welcome {user?.firstName}</h2>
 						<p>We are so happy to be here, thanks for your support and help.
 							You are part of the family now. </p>
-						<button className='w-[80%] max-w-[240px] mx-auto mt-8 p-2 bg-white text-[#111] font-semibold  rounded-[100px]'
+						<Button
+							btnType="button"
+							btnText="Continue"
+							color="bg-white"
+							textColor="text-[#111]"
+							font="font-semibold"
+							rounded="rounded-[100px]"
 							onClick={() => updateStage(1)}
-						>Continue</button>
+						/>
 					</div>
 				</div>
 			)}
