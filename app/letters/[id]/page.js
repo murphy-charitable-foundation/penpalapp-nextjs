@@ -1,5 +1,3 @@
-//
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -297,6 +295,15 @@ export default function Page({ params }) {
     setShowCloseDialog(false);
   };
 
+  // Handle report button click
+  const handleReportClick = () => {
+    if (recipients.length > 0) {
+      setReportSender(recipients[0].id);
+      setReportContent("General report about user behavior");
+      setShowReportPopup(true);
+    }
+  };
+
   // Load messages
   const loadMessages = async () => {
     if (!user || !id || !recipients.length) return;
@@ -468,6 +475,33 @@ export default function Page({ params }) {
       return "";
     }
 
+    // Get today's date and day before yesterday
+    const today = new Date();
+    const dayBeforeYesterday = new Date(today);
+    dayBeforeYesterday.setDate(today.getDate() - 2);
+
+    // Reset time to start of day for accurate comparison
+    const messageDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    const dayBeforeYesterdayStart = new Date(
+      dayBeforeYesterday.getFullYear(),
+      dayBeforeYesterday.getMonth(),
+      dayBeforeYesterday.getDate()
+    );
+
+    // If message is older than day before yesterday, show MM/DD/YYYY
+    if (messageDate < dayBeforeYesterdayStart) {
+      return date.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      });
+    }
+
+    // Otherwise show time as before
     return date.toLocaleTimeString([], {
       hour: "numeric",
       minute: "2-digit",
@@ -635,15 +669,30 @@ export default function Page({ params }) {
 
         {/* Message Input */}
         <div className="bg-white">
-          <div className="flex items-center px-4 py-2">
-            <Image
-              src="/arrow-left.png"
-              alt="Back"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <span className="text-gray-700">To {recipientName}</span>
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center">
+              <Image
+                src="/arrow-left.png"
+                alt="Back"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
+              <span className="text-gray-700">To {recipientName}</span>
+            </div>
+            {/* Octagonal Report Button */}
+            <button
+              onClick={handleReportClick}
+              className="w-8 h-8 hover:opacity-80 transition-opacity duration-200 flex items-center justify-center"
+              title="Report user">
+              <Image
+                src="/Vector.png"
+                alt="Report"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </button>
           </div>
 
           <div className="p-4 relative" style={{ height: "40vh" }}>
