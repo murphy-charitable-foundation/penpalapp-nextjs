@@ -82,6 +82,60 @@ export default function Home() {
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
+  const getUserData = async (uid) => {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      setError("User data not found.");
+      throw new Error("No user document found.");
+    }
+  };
+
+  const getLetterboxes = async (uid) => {
+    try {
+      const letterboxes = await fetchLetterboxes();
+      if (letterboxes && letterboxes.length > 0) {
+        const letterboxIds = letterboxes.map((l) => l.id);
+
+        const fetchedLetterboxes = await Promise.all(
+          letterboxIds.map(async (id) => {
+            const userRef = doc(db, "users", uid);
+            const letter =
+              (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const rec = await fetchRecipients(id);
+            const recipient = rec?.[0] ?? {};
+
+            return {
+              id: letter.id || "",
+              profileImage: recipient?.photo_uri || "",
+              name: `${recipient.first_name ?? "Unknown"} ${
+                recipient.last_name ?? ""
+              }`,
+              country: recipient.country ?? "Unknown",
+              lastMessage: letter.content || "",
+              lastMessageDate: letter.created_at || "",
+              status: letter.status || "",
+              letterboxId: id || "",
+              recipient: recipient?.id || "",
+            };
+          })
+        );
+
+        return fetchedLetterboxes;
+      } else {
+        setError("No conversations found.");
+        throw new Error("No letterboxes found.");
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      Sentry.captureException(err);
+      setError("Failed to load data.");
+      throw err;
+    }
+  };
+
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -140,7 +194,6 @@ export default function Home() {
 
     fetchUserData();
   }, []);
-
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
@@ -161,7 +214,7 @@ export default function Home() {
               </h2>
               {letters.length > 0 ? (
                 letters.map((letter, i) => (
-                  <LetterCard key={letter.id + "_" + i} letter={letter} />
+                  <LetterCard key={letter.id + "_" + i} letter={letter} uid={auth.currentUser.uid} />
                 ))
               ) : (
                 <EmptyState
