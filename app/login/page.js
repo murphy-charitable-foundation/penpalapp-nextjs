@@ -13,6 +13,7 @@ import Input from "../../components/general/Input";
 import { BackButton } from '../../components/general/BackButton';
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from '../../components/general/PageHeader';
+import LoadingSpinner from '../../components/loading/LoadingSpinner';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -132,7 +133,7 @@ export default function Login() {
                         btnType="submit"
                         btnText={
                             loading ? (
-                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
+                                <LoadingSpinner />
                             ) : (
                                 'Log in'
                             )

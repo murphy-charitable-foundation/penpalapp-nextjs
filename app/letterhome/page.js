@@ -35,6 +35,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
@@ -113,6 +114,7 @@ export default function Home() {
         { isLoading ? (
             <LetterHomeSkeleton />
          ) : (
+          <>
           <BackButton />
 
           <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
@@ -152,6 +154,7 @@ export default function Home() {
               onClick={iterateLetterBoxes}
             />
           )}
+          </>
         )}
         </>
         {/* Add animation keyframes */}
