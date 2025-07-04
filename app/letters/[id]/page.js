@@ -443,7 +443,6 @@ export default function Page({ params }) {
 
   // This function will be passed as a prop to FirstTimeChatGuide
   const handleUseTemplate = (templateText) => {
-    console.log("Applying template:", templateText);
     setMessageContent(templateText);
     
     // Focus the input and set cursor at the end
@@ -464,13 +463,14 @@ export default function Page({ params }) {
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh] relative">
-      { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} /> }
+      { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
         {/* Header */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
           <button onClick={handleCloseMessage} className="text-gray-700">
             ✕
           </button>
           <button
+            id="send-letter"
             onClick={handleSendMessage}
             disabled={!canSendMessage()}
             className={`p-1 ${

@@ -2,6 +2,17 @@
   background-color: #4E802A;
 }
 
+.button-highlight::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid black;
+  width: 50px;
+  height: 50px;
+  top: -55px;
+  right: 8px;
+}
+
 .speechbubble::after {
     content: '';
     position: absolute;
@@ -15,7 +26,7 @@
   .topRight::after {
     top: -10px;
     border-width: 0 10px 10px;
-    right: 80px;
+    right: 20px;
   }
 
   .top::after {
