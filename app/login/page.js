@@ -54,7 +54,7 @@ export default function Login() {
                     setError('Failed to log in.');
             }
         } finally {
-            setLoading(false);
+        
         }
     };
 
@@ -64,8 +64,8 @@ export default function Login() {
 
     return (
         <PageContainer maxWidth="md" padding="p-8">
+            { loading && <LoadingSpinner /> }
             <PageHeader title="Login"/>
-
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div>
                     <Input
@@ -131,13 +131,7 @@ export default function Login() {
                 <div className="flex justify-center">
                     <Button
                         btnType="submit"
-                        btnText={
-                            loading ? (
-                                <LoadingSpinner />
-                            ) : (
-                                'Log in'
-                            )
-                        }
+                        btnText='Log in'
                         color="green"
                         textColor="text-white"
                         disabled={loading}

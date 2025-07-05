@@ -18,7 +18,7 @@ import {
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
-import LetterHomeSkeleton from "/components/loading/LetterHomeSkeleton";
+import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
@@ -32,7 +32,7 @@ export default function Home() {
   const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
   const [letters, setLetters] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [showWelcome, setShowWelcome] = useState(false);
@@ -45,7 +45,6 @@ export default function Home() {
       if (!user) {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
-        setIsLoading(false);
         router.push("/login");
       } else {
         const letterboxes = await fetchLetterboxes();
@@ -69,6 +68,7 @@ export default function Home() {
         }
         setLetters(letters);
       }
+      setIsLoading(false);
     });
     return () => unsubscribe();
   }, []);
