@@ -6,7 +6,7 @@ import styles from './LoadingSpinner.module.css';
 export default function LoadingSpinner() {
   return (
     <>
-        <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-full flex items-center justify-center min-h-screen bg-white fixed top-0 left-0 z-[100]">
             <div className="relative flex flex-col items-center">
                 <Image
                     src={logo}

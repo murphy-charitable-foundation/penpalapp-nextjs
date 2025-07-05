@@ -18,6 +18,7 @@ import {
 } from "../utils/letterboxFunctions";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
+import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
@@ -31,9 +32,10 @@ export default function Home() {
   const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
   const [letters, setLetters] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
@@ -43,7 +45,6 @@ export default function Home() {
       if (!user) {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
-        setIsLoading(false);
         router.push("/login");
       } else {
         const letterboxes = await fetchLetterboxes();
@@ -67,6 +68,7 @@ export default function Home() {
         }
         setLetters(letters);
       }
+      setIsLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -76,6 +78,7 @@ export default function Home() {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
         setUserId(uid);
+
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
@@ -85,6 +88,14 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+          
+          // Show welcome message
+          setShowWelcome(true);
+          
+          // Hide welcome message after 5 seconds
+          setTimeout(() => {
+            setShowWelcome(false);
+          }, 5000);
         } else {
           console.log("No such document!");
         }
@@ -99,46 +110,53 @@ export default function Home() {
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
-        <BackButton />
+        <>
+        { isLoading ? (
+            <LetterHomeSkeleton />
+         ) : (
+          <>
+          <BackButton />
 
-        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-          <ProfileHeader
-            userName={userName}
-            country={country}
-            profileImage={profileImage}
-            id={userId}
-          />
+          <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+            <ProfileHeader
+              userName={userName}
+              country={country}
+              profileImage={profileImage}
+              id={userId}
+            />
 
-          <main className="p-6">
-            <section className="mt-8">
-              <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
-                Recent letters
-              </h2>
-              {letters.length > 0 ? (
-                letters.map((letter, i) => (
-                  <LetterCard key={letter.id + "_" + i} letter={letter} />
-                ))
-              ) : (
-                <EmptyState
-                  title="New friends are coming!"
-                  description="Many friends are coming hang tight!"
-                />
-              )}
-            </section>
-          </main>
-          <BottomNavBar />
-        </div>
+            <main className="p-6">
+              <section className="mt-8">
+                <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+                  Recent letters
+                </h2>
+                {letters.length > 0 ? (
+                  letters.map((letter, i) => (
+                    <LetterCard key={letter.id + "_" + i} letter={letter} />
+                  ))
+                ) : (
+                  <EmptyState
+                    title="New friends are coming!"
+                    description="Many friends are coming hang tight!"
+                  />
+                )}
+              </section>
+            </main>
+            <BottomNavBar />
+          </div>
 
-        {userType === "admin" && (
-          <Button
-            btnText="Check For Inactive Chats"
-            color="bg-black"
-            textColor="text-white"
-            rounded="rounded-md"
-            onClick={iterateLetterBoxes}
-          />
+          {userType === "admin" && (
+            <Button
+              btnText="Check For Inactive Chats"
+              color="bg-black"
+              textColor="text-white"
+              rounded="rounded-md"
+              onClick={iterateLetterBoxes}
+            />
+          )}
+          </>
         )}
-
+        </>
         {/* Add animation keyframes */}
         <style jsx global>{`
           @keyframes slideIn {

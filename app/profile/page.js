@@ -35,6 +35,7 @@ import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
 import { PageHeader } from '../../components/general/PageHeader';
+import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function EditProfile() {
   // State initializations
@@ -525,7 +526,7 @@ export default function EditProfile() {
                   btnType="button"
                   btnText={
                     isSaving ? (
-                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
+                      <LoadingSpinner />
                     ) : (
                       "Save"
                     )

@@ -13,6 +13,7 @@ import Input from "../../components/general/Input";
 import { BackButton } from '../../components/general/BackButton';
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from '../../components/general/PageHeader';
+import LoadingSpinner from '../../components/loading/LoadingSpinner';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -53,7 +54,7 @@ export default function Login() {
                     setError('Failed to log in.');
             }
         } finally {
-            setLoading(false);
+        
         }
     };
 
@@ -63,8 +64,8 @@ export default function Login() {
 
     return (
         <PageContainer maxWidth="md" padding="p-8">
+            { loading && <LoadingSpinner /> }
             <PageHeader title="Login"/>
-
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div>
                     <Input
@@ -130,13 +131,7 @@ export default function Login() {
                 <div className="flex justify-center">
                     <Button
                         btnType="submit"
-                        btnText={
-                            loading ? (
-                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
-                            ) : (
-                                'Log in'
-                            )
-                        }
+                        btnText='Log in'
                         color="green"
                         textColor="text-white"
                         disabled={loading}
