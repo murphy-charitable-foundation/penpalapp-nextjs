@@ -8,8 +8,7 @@ import { uploadFile } from "../lib/uploadFile";
 
 import Image from 'next/image';
 import { useConfirm } from '@/components/ConfirmProvider';
-import { useLoading } from '@/components/LoadingProvider';
-import { useAlert } from '@/components/AlertProvider';
+import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import CountrySelect from '@/components/general/CountrySelect';
 import EditProfileImage from "@/components/edit-profile-image";
 import compressImage from "@/components/general/compress-image";
@@ -24,8 +23,7 @@ export default function AddProfile() {
   ///////////////////////
   const [showMenu, setShowMenu] = useState(false);
   const { confirm } = useConfirm();
-  const { setLoading } = useLoading();
-  const { showAlert } = useAlert();
+
   const [avatar, setAvatar] = useState(null)
   const [country, setCountry] = useState(null)
   const [mode, setMode] = useState(null) // 'camera' | 'gallery'
@@ -35,6 +33,8 @@ export default function AddProfile() {
   const [newProfileImage, setNewProfileImage] = useState(null);
   const [previewURL, setPreviewURL] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
+
+  const [loading, setLoading] = useState(false)
   const cropperRef = useRef();
   
   const handleCrop = () => {
@@ -112,7 +112,7 @@ export default function AddProfile() {
   
     if (!uid) return;  // Make sure uid is available
     if (!image) return;  // Make sure uid is available
-    setLoading(true, 'Saving your avatar, please wait...');
+    setLoading(true);
     uploadFile(
       croppedImage,
       `profile/${uid}/profile-image`,
@@ -136,16 +136,16 @@ export default function AddProfile() {
 
   const handleSaveCountry = async()=>{
     if(!country){
-      showAlert('Please select your country!', 'error')
+      alert('Please select your country!')
       return
     }
     const uid = auth.currentUser?.uid;
     console.log(uid, 'uid')
     if (!uid) return;  // Make sure uid is available
-    setLoading(true, 'Saving your location, please wait...');
+    setLoading(true);
     await updateDoc(doc(db, "users", uid), { country: country });
     setLoading(false)
-    showAlert('Your location has been saved!')
+    alert('Your location has been saved!')
     router.push("/discovery");
     //go next page
   }
@@ -167,7 +167,8 @@ export default function AddProfile() {
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
-      <div className="p-6 h-full flex flex-col flex-1">
+      {loading && <LoadingSpinner/>}
+      {!loading && <div className="p-6 h-full flex flex-col flex-1">
         <div className="flex justify-between items-center">
           <button onClick={() => window.history.back()}>
             <svg
@@ -241,7 +242,7 @@ export default function AddProfile() {
           <span className="py-6 font-semibold text-gray-900 cursor-pointer" onClick={handleToList}>Skip for now</span>
         </div>
 
-      </div>
+      </div>}
     </div>
   );
 }
