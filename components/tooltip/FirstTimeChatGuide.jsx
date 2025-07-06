@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styles from './Tooltip.module.css';
 
-export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipient }) {
+export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipient, user }) {
   const [showGuide, setShowGuide] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const tooltipRef = useRef(null);
   const [buttonHighlight, setButtonHighlight] = useState(false);
-
   const defaultTemplate = 
     `Dear ${recipient?.[0]?.first_name} ${recipient?.[0]?.last_name},
 
@@ -231,7 +230,7 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
   const currentStepData = steps[currentStep];
   return (
     <>
-      { showGuide && currentStepData &&
+      { showGuide && currentStepData && user == 'child' &&
 
       <div 
         ref={tooltipRef}

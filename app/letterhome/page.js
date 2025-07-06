@@ -30,11 +30,12 @@ export default function Home() {
   const [profileImage, setProfileImage] = useState("");
   const router = useRouter();
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsLoading(true);
-
+      
       if (!user) {
         setError("No user logged in.");
         setIsLoading(false);
@@ -54,6 +55,7 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+          setUser(userData.user_type);
         } else {
           console.log("No such document!");
           setError("User data not found.");
@@ -94,7 +96,7 @@ export default function Home() {
         setIsLoading(false);
       }
     });
-
+    
     return () => unsubscribe();
   }, [router]);
 
@@ -147,7 +149,7 @@ export default function Home() {
                 </Link>
               </h2>
 
-              { letters.length == 1 && <FirstTimeChatGuide page="letterHome" params={pathname} /> }
+              { letters.length == 1 && <FirstTimeChatGuide page="letterHome" params={pathname} user={user} /> }
               {letters.length > 0 ? (
                 letters.map((letter, i) => (
                   <div key={letter.id + "_" + i} className={i === 0 && 'first-letter relative'}>
