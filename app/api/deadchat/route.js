@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import * as Sentry from "@sentry/nextjs";
-
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 
 export async function POST(request) {
-  console.log("hello");
   if (auth == null) {
     return NextResponse.json(
       { message: 'Admin is null.', },
@@ -13,35 +11,23 @@ export async function POST(request) {
     );
   }
   try {
-    console.log("Inside of the try catch");
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { sender, users, id } = body; 
-    const senderSegments = sender._key?.path?.segments;
-    const sender_id = senderSegments[senderSegments.length - 1];
+    const { sender, id, emailId, reason} = body; 
     //const filtered = users.filter(element => element !== sender);
-    console.log("before emails");
-    const emails = await Promise.all(
-      users.map(async (user) => {
-        try {
-          const pathSegments = user._key?.path?.segments;
-          const uid = pathSegments[pathSegments.length - 1];
-          if (uid !== sender_id ){
-            const userRecord = await auth.getUser(uid); // Fetch user record by UID
-            console.log("Was able to getUser");
-            return userRecord.email; // Return the email
-          }
-        } catch (error) {
-          Sentry.captureException(error);
-          return null; 
-        }
-      })
-    );
-    console.log("Doesn't happen within user promise ");
+    const pathSegments = emailId._key?.path?.segments;
+    const uid = pathSegments[pathSegments.length - 1]; 
+    const userRecord = await auth.getUser(uid); // Fetch user record by UID
+    let message;
+    if (reason == "admin") {
+      message = `Hello Richard, it seems that a chat in a letterbox with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`
+    }
+    else {
+      message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
+    }
     // Remove null values (failed fetches)
-    const validEmails = emails.filter((email) => email !== null && email !== undefined);
-    const message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the users: ${validEmails}, has stalled. Consider contacting them to see if the chat can be reignited.`
+    
     const emailHtml = `
       <html>
         <head>
@@ -94,15 +80,25 @@ export async function POST(request) {
         </body>
       </html>
     `;
-
-    const msg = {
-      to: validEmails[0], 
-      from: 'penpal@murphycharity.org', // Your verified sender email
-      subject: "Message Reported",
-      text: message || 'No message provided.',
-      html:  emailHtml,
-    };
-
+    let msg;
+    if (reason == "admin") {
+      msg = {
+        to: 'penpal@murphycharity.org',
+        from: 'penpal@murphycharity.org', // Your verified sender email
+        subject: "Message Reported",
+        text: message || 'No message provided.',
+        html:  emailHtml,
+      };
+    } else {
+      msg = {
+        to: userRecord.email,
+        from: 'penpal@murphycharity.org', // Your verified sender email
+        subject: "Message Reported",
+        text: message || 'No message provided.',
+        html:  emailHtml,
+      };
+    }
+    
     // Send the email
     await sendgrid.send(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });

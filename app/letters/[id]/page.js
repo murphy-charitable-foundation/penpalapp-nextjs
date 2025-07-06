@@ -13,20 +13,40 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import BottomNavBar from "@/components/bottom-nav-bar";
-import {
-  fetchDraft,
-  fetchLetterbox,
-  fetchRecipients,
-} from "@/app/utils/letterboxFunctions";
-import ProfileImage from "@/components/general/ProfileImage";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { MdSend } from "react-icons/md";
+import { BsPaperclip } from "react-icons/bs";
+import { IoMdClose } from "react-icons/io";
+import { MdInsertDriveFile } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
-import ReportPopup from "../../../components/letter/ReportPopup";
-import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
+import ReportPopup from "../../../components/general/letter/ReportPopup";
+import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
+import Button from "../../../components/general/Button";
+import TextArea from "../../../components/general/TextArea";
+import Input from "../../../components/general/Input";
+
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
 import FirstTimeChatGuide from "@/components/tooltip/FirstTimeChatGuide";
 import { usePathname } from 'next/navigation';
+
+import LettersSkeleton from "../../../components/loading/LettersSkeleton";
+import { uploadFile } from "../../lib/uploadFile";
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchRecipients,
+  sendLetter,
+} from "../../utils/letterboxFunctions";
+
+import BottomNavBar from "../../../components/bottom-nav-bar";
+import ProfileImage from "../../../components/general/ProfileImage";
+import LetterHeader from "../../../components/general/letter/LetterHeader";
+import RecipientList from "../../../components/general/letter/RecipientList";
+import MessageBubble from "../../../components/general/letter/MessageBubble";
+import { PageContainer } from "../../../components/general/PageContainer";
+import { BackButton } from "../../../components/general/BackButton";
+import Dialog from "../../../components/general/Modal";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -63,90 +83,37 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
 
   const [content, setContent] = useState(null);
-  const [reportContent, setReportContent] = useState(null);
-  const [reportSender, setReportSender] = useState(null);
+  const [sender, setSender] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
 
-  // Auto-save draft timer
-  const [draftTimer, setDraftTimer] = useState(null);
-
-  const scrollToBottom = (instant = false) => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: instant ? "auto" : "smooth",
-      block: "end",
-    });
-  };
-
-  // Auto-save draft function
-  const saveDraft = async (content) => {
-    if (!user || !lettersRef || isSending) return;
-
-    try {
-      const letterUserRef = userRef || doc(db, "users", user.uid);
-
-      // If content is empty, delete existing draft
-      if (!content.trim()) {
-        if (draft?.id) {
-          await deleteDoc(doc(lettersRef, draft.id));
-          setDraft(null);
-        }
-        setHasDraftContent(false);
-        return;
-      }
-
-      const currentTime = new Date();
-      const draftData = {
-        sent_by: letterUserRef,
-        content: content.trim(),
-        status: "draft",
-        created_at: draft?.created_at || currentTime,
-        updated_at: currentTime,
-        deleted: null,
-      };
-
-      if (draft?.id) {
-        // Update existing draft
-        await updateDoc(doc(lettersRef, draft.id), draftData);
-        setDraft({ ...draftData, id: draft.id });
-      } else {
-        // Create new draft
-        const newDraftRef = doc(lettersRef);
-        await setDoc(newDraftRef, draftData);
-        setDraft({ ...draftData, id: newDraftRef.id });
-      }
-      setHasDraftContent(true);
-    } catch (error) {
-      console.error("Error saving draft:", error);
-    }
-  };
-
-  // Handle message content change
-  const handleMessageChange = (e) => {
-    const newContent = e.target.value;
-    setMessageContent(newContent);
-    setHasDraftContent(newContent.trim().length > 0);
-
-    // Clear existing timer
-    if (draftTimer) {
-      clearTimeout(draftTimer);
-    }
-
-    // Set new timer to save draft after 2 seconds
-    const timer = setTimeout(() => {
-      saveDraft(newContent);
-    }, 2000);
-
-    setDraftTimer(timer);
-  };
-
-  // Send message function
-  const handleSendMessage = async () => {
-    const trimmedContent = messageContent.trim();
-
-    if (!trimmedContent && !draft?.content?.trim()) {
-      alert("Please enter a message");
+  const PAGINATION_INCREMENT = 20;
+  const handleSendLetter = async () => {
+    if (!letterContent.trim() || !recipients?.length) {
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage(
+        "Please fill in the letter content and select a recipient."
+      );
       return;
     }
 
+    if (!auth.currentUser) {
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Sender not identified, please log in.");
+
+      return;
+    }
+    const letterUserRef = userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
+    const letterData = {
+      content: letterContent,
+      sent_by: letterUserRef,
+      status: "sent",
+      created_at: new Date(),
+      deleted: null,
+    };
     if (isSending) return;
 
     setIsSending(true);
@@ -218,64 +185,46 @@ export default function Page({ params }) {
     if (hasContent) {
       setShowCloseDialog(true);
     } else {
-      // No content, just go back
-      if (draft?.id && !messageContent.trim()) {
-        saveDraft(""); // This will delete the draft
-      }
-      router.back();
+      Sentry.captureException(e);
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Failed to send your letter, please try again.");
     }
   };
 
-  // Confirm close and save draft
-  const handleConfirmClose = async () => {
-    const trimmedContent = messageContent.trim();
-    if (trimmedContent) {
-      await saveDraft(trimmedContent);
+  const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+    id,
+    PAGINATION_INCREMENT
+  );
+  if( messages) {
+    setAllMessages(messages);
+    setLastVisible(newLastVisible);
+    setDraft(null);
+    const d = await fetchDraft(id, userRef, true);
+    setDraft(d);
+    setLetterContent(d.content);
+  };
+
+  useEffect(() => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      setUserRef(userDocRef);
+      const fetchMessages = async () => {
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+          id,
+          5
+        );
+        setAllMessages(messages);
+        setLastVisible(newLastVisible); // Store last visible letter for pagination
+        setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
+        if( messages.length > 0 ) {
+          setIsLoading(false);
+        }
+      };
+      fetchMessages();
     }
-    setShowCloseDialog(false);
-    router.back();
-  };
-
-  // Continue editing
-  const handleContinueEditing = () => {
-    setShowCloseDialog(false);
-  };
-
-  // Load messages
-  const loadMessages = async () => {
-    if (!user || !id || !recipients.length) return;
-
-    try {
-      const { messages } = await fetchLetterbox(id, 20);
-
-      const sortedMessages = messages.sort((a, b) => {
-        const aTime =
-          a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
-        const bTime =
-          b.created_at instanceof Date ? b.created_at : new Date(b.created_at);
-        return aTime.getTime() - bTime.getTime();
-      });
-
-      const messagesWithSenderInfo = await Promise.all(
-        sortedMessages.map(async (message) => {
-          if (message.sent_by?.id !== user.uid) {
-            const recipient = recipients.find(
-              (r) => r.id === message.sent_by?.id
-            );
-            if (recipient) {
-              message.senderLocation = recipient.location || "";
-            }
-          }
-          return message;
-        })
-      );
-
-      setAllMessages(messagesWithSenderInfo);
-      setTimeout(() => scrollToBottom(true), 300);
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    }
-  };
+    
+  }, [user]);
 
   // Initialize component
   useEffect(() => {
@@ -368,52 +317,44 @@ export default function Page({ params }) {
       } finally {
         setIsLoading(false);
       }
-    });
-
-    return () => unsubscribe();
-  }, [id]);
+    };
+    getSelectedUser();
+    
+  }, [recipients]);
 
   // Cleanup timer on unmount
   useEffect(() => {
-    return () => {
-      if (draftTimer) {
-        clearTimeout(draftTimer);
+    setDebounce(debounce + 1);
+    const updateDraft = async () => {
+      if (userRef && lettersRef) {
+        const letterData = {
+          content: letterContent,
+          sent_by: userRef,
+          created_at: new Date(),
+          deleted: null,
+          status: "draft",
+          attachments,
+        };
+        await sendLetter(letterData, lettersRef, draft.id);
       }
     };
-  }, [draftTimer]);
-
-  // Auto-scroll when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [allMessages]);
-
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div className="text-gray-500">Loading conversation...</div>
-      </div>
-    );
-  }
-
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-
-    let date;
-    if (timestamp.toDate && typeof timestamp.toDate === "function") {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-      date = new Date(timestamp);
-    } else {
-      return "";
+    if (debounce >= 20) {
+      updateDraft();
+      setDebounce(0);
     }
+  }, [letterContent]);
 
-    return date.toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+  const handleLoadMore = async () => {
+    setLoadingMore(true); // Set loading state to true while fetching more messages
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT,
+      lastVisible
+    );
+    setAllMessages((prevMessages) => [...prevMessages, ...messages]);
+    setLastVisible(newLastVisible); // Update lastVisible with the new last document
+    setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
+    setLoadingMore(false); // Reset loading state
   };
 
   const selectMessage = (messageId) => {
@@ -434,14 +375,63 @@ export default function Page({ params }) {
     }
   };
 
-  const canSendMessage = () => {
-    return (
-      (messageContent.trim().length > 0 || draft?.content?.trim().length > 0) &&
-      !isSending
+
+  const handleUpload = async (file) => {
+    uploadFile(
+      file,
+      `uploads/letterbox/${id}/${file.name}`,
+      setUploadProgress,
+      (error) => console.error("Upload error:", error),
+      onUploadComplete
     );
   };
 
-  // This function will be passed as a prop to FirstTimeChatGuide
+  const FileModal = () => (
+    <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full h-[90%]">
+        <div className="flex relative">
+          <Button
+            btnText=""
+            color="bg-transparent"
+            textColor="text-gray-600"
+            hoverColor="hover:bg-gray-100"
+            rounded="rounded-full"
+            size="w-8 h-8"
+            onClick={() => setIsFileModalOpen(false)}
+          >
+            <IoMdClose className="h-full w-full" />
+          </Button>
+          <h3 className="font-semibold text-xl text-gray-800 my-0 mx-auto">
+            Files
+          </h3>
+        </div>
+        <Input
+          type="file"
+          hidden
+          onChange={handleChange}
+          disabled={uploadProgress > 0 && uploadProgress < 100}
+          id="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        />
+        <label
+          htmlFor="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        >
+          <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
+          Select a file
+        </label>
+
+        <h3 className="font-600 mt-4">Selected</h3>
+        {attachments.map((att, index) => (
+          <div key={index}>
+            <img src={att} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  
+// This function will be passed as a prop to FirstTimeChatGuide
   const handleUseTemplate = (templateText) => {
     setMessageContent(templateText);
     
@@ -459,200 +449,96 @@ export default function Page({ params }) {
     }
   };
 
-
   return (
-    <div className="bg-gray-100 min-h-screen py-6">
-      <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh] relative">
-      { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
-        {/* Header */}
-        <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-          <button onClick={handleCloseMessage} className="text-gray-700">
-            ✕
-          </button>
-          <button
-            id="send-letter"
-            onClick={handleSendMessage}
-            disabled={!canSendMessage()}
-            className={`p-1 ${
-              !canSendMessage()
-                ? "cursor-not-allowed opacity-50"
-                : "hover:bg-blue-200 rounded"
-            }`}>
-            <Image
-              src="/send-message-icon.png"
-              alt="Send message"
-              width={24}
-              height={24}
-              className="object-contain"
-            />
-          </button>
-        </div>
+    <PageContainer maxWidth="lg">
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
+      <BackButton />
+      {showReportPopup && (
+        <ReportPopup
+          setShowPopup={setShowReportPopup}
+          setShowConfirmReportPopup={setShowConfirmReportPopup}
+          receiver_email={auth.currentUser.email}
+          sender={sender}
+          content={content}
+        />
+      )}
+      {showConfirmReportPopup && (
+        <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+      )}
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
-          {allMessages.map((message) => {
-            const messageId = message.id;
-            const isSelected = selectedMessageId === messageId;
-            const isSenderUser = message.sent_by?.id === user?.uid;
-            const location = getSenderLocation(message);
-
-            return (
-              <div
-                key={messageId}
-                className={`border-b border-gray-200 ${
-                  isSelected ? "bg-white" : "bg-gray-50"
-                }`}>
-                <div
-                  className="px-4 py-3"
-                  onClick={() => selectMessage(messageId)}>
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
-                      <ProfileImage
-                        photo_uri={
-                          isSenderUser
-                            ? user?.photoURL
-                            : recipients[0]?.photo_uri
-                        }
-                        first_name={
-                          isSenderUser ? "You" : recipients[0]?.first_name
-                        }
-                        width={48}
-                        height={48}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <span className="font-bold text-black">
-                          {isSenderUser
-                            ? "Me"
-                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                        </span>
-                        {location && (
-                          <span className="text-black ml-2 text-sm">
-                            {location}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-gray-800">
-                        {isSelected ? "" : truncateMessage(message.content)}
-                      </div>
-                    </div>
-                    <div className="text-gray-500 text-sm">
-                      {formatTime(message.created_at)}
-                    </div>
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div className="px-4 pb-3">
-                    <div className="ml-16">
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                      {!isSenderUser && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReportSender(message.sent_by.id);
-                            setReportContent(message.content);
-                            setShowReportPopup(true);
-                          }}
-                          className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
-                          <FaExclamationCircle className="mr-1" size={10} />
-                          Report
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Message Input */}
-        <div className="bg-white">
-          <div className="flex items-center px-4 py-2">
-            <Image
-              src="/arrow-left.png"
-              alt="Back"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <span className="text-gray-700">To {recipientName}</span>
-          </div>
-
-          <div className="p-4 relative" style={{ height: "40vh" }}>
-            <textarea
-            id="message-input"
-            ref={messageInputRef}
-              className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-              placeholder="Write your message..."
-              value={messageContent}
-              onChange={handleMessageChange}
-              autoFocus
-              style={{
-                overflowWrap: "break-word",
-                wordWrap: "break-word",
-                height: "calc(100% - 24px)",
-              }}
-            />
-            <div className="absolute bottom-6 right-6">
-              <Image
-                src="/arrow-right.png"
-                alt="Send"
-                width={20}
-                height={20}
-                className={`cursor-pointer ${
-                  !canSendMessage() && "opacity-50"
-                }`}
-                onClick={canSendMessage() ? handleSendMessage : undefined}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Close Dialog */}
-        {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                Close this message?
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Your message will be saved as a draft.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
-                  Continue
-                </button>
-                <button
-                  onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Report Popups */}
-        {showReportPopup && (
-          <ReportPopup
-            setShowPopup={setShowReportPopup}
-            setShowConfirmReportPopup={setShowConfirmReportPopup}
-            sender={reportSender}
-            content={reportContent}
+      {isLoading ? 
+      <LettersSkeleton /> : 
+      <div className="min-h-screen bg-[#E5E7EB] p-4">
+        <div className="bg-white shadow rounded-lg">
+        { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
+          <LetterHeader
+            attachmentsCount={attachments.length}
+            onAttach={() => setIsFileModalOpen(true)}
+            onSend={handleSendLetter}
+            onDelete={() => {
+              /* implement delete handler */
+            }}
           />
-        )}
-        {showConfirmReportPopup && (
-          <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
-        )}
+
+          <RecipientList recipients={recipients} />
+
+        {isFileModalOpen && <FileModal />}
+
+          <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
+            {allMessages?.length ? (
+              allMessages.map((message, index) => (
+                <MessageBubble
+                  key={index}
+                  message={message}
+                  isOwnMessage={message.sent_by.id === userRef?.id}
+                  onReport={() => {
+                    setSender(message.sent_by.id);
+                    setContent(message.content);
+                    setShowReportPopup(true);
+                  }}
+                />
+              ))
+            ) : (
+              <span>No messages</span>
+            )}
+
+            {hasMoreMessages && !loadingMore && (
+              <Button
+                btnText="Load More"
+                color="bg-blue-500"
+                textColor="text-white"
+                rounded="rounded"
+                size="py-2 px-4 mt-4 mb-8"
+                onClick={handleLoadMore}
+              />
+            )}
+
+          {loadingMore && <span>Loading...</span>}
+          </div>
+          <TextArea
+            id="message-input"
+            value={letterContent}
+            onChange={(e) => setLetterContent(e.target.value)}
+            placeholder="Tap to write letter..."
+            rows={10}
+          />
+
+          <div className="text-right text-sm mt-2 text-gray-600">
+            {letterContent.length} / 1000
+          </div>
+        </div>
+        <BottomNavBar />
+        {isFileModalOpen && <FileModal />}
+
       </div>
-    </div>
+      }
+    </PageContainer>
   );
 }
