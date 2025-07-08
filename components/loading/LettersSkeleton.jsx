@@ -26,6 +26,9 @@ export default function LettersSkeleton() {
                     <div className="h-full flex flex-wrap items-center justify-center py-4 px-10">
                       <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
                       <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
+                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
+                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
+                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
                       <div className="h-2 w-16 w-full bg-gray-300 rounded" />
                     </div>
                   </div>

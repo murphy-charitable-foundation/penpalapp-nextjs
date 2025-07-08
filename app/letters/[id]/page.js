@@ -21,6 +21,8 @@ import Input from "../../../components/general/Input";
 import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
+
+import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import { uploadFile } from "../../lib/uploadFile";
 import {
   fetchDraft,
@@ -28,6 +30,7 @@ import {
   fetchRecipients,
   sendLetter,
 } from "../../utils/letterboxFunctions";
+
 import BottomNavBar from "../../../components/bottom-nav-bar";
 import ProfileImage from "../../../components/general/ProfileImage";
 import LetterHeader from "../../../components/general/letter/LetterHeader";
@@ -60,6 +63,8 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
@@ -126,9 +131,13 @@ export default function Page({ params }) {
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
+        if( messages.length > 0 ) {
+          setIsLoading(false);
+        }
       };
       fetchMessages();
     }
+    
   }, [user]);
 
   useEffect(() => {
@@ -143,6 +152,7 @@ export default function Page({ params }) {
       }
     };
     getSelectedUser();
+    
   }, [recipients]);
 
   useEffect(() => {
@@ -287,6 +297,8 @@ export default function Page({ params }) {
         <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
       )}
 
+      {isLoading ? 
+      <LettersSkeleton /> : 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg">
           <LetterHeader
@@ -300,7 +312,7 @@ export default function Page({ params }) {
 
           <RecipientList recipients={recipients} />
 
-          {isFileModalOpen && <FileModal />}
+        {isFileModalOpen && <FileModal />}
 
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
             {allMessages?.length ? (
@@ -331,7 +343,7 @@ export default function Page({ params }) {
               />
             )}
 
-            {loadingMore && <span>Loading...</span>}
+          {loadingMore && <span>Loading...</span>}
           </div>
           <TextArea
             value={letterContent}

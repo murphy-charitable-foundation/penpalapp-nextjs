@@ -26,6 +26,7 @@ import {
 
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
+import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
@@ -56,6 +57,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
@@ -115,7 +117,6 @@ export default function Home() {
       if (!user) {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
-        setIsLoading(false);
         router.push("/login");
         return;
       } else {
@@ -136,7 +137,8 @@ export default function Home() {
       } finally {
         setIsLoading(false);
       }
-    }
+      setIsLoading(false);
+    });
     return () => unsubscribe();
   });
   return () => unsubscribe();
@@ -148,6 +150,7 @@ export default function Home() {
         try {
         const uid = auth.currentUser.uid;
         setUserId(uid);
+
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
@@ -157,6 +160,14 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+          
+          // Show welcome message
+          setShowWelcome(true);
+          
+          // Hide welcome message after 5 seconds
+          setTimeout(() => {
+            setShowWelcome(false);
+          }, 5000);
         } else {
           console.log("No such document!");
         }
@@ -198,16 +209,20 @@ export default function Home() {
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
-        <BackButton />
+        <>
+        { isLoading ? (
+            <LetterHomeSkeleton />
+         ) : (
+          <>
+          <BackButton />
 
-        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-          <ProfileHeader
-            userName={userName}
-            country={country}
-            profileImage={profileImage}
-            id={userId}
-          />
-
+          <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+            <ProfileHeader
+              userName={userName}
+              country={country}
+              profileImage={profileImage}
+              id={userId}
+            />
           <main className="p-6 bg-white">
             <section className="mt-8">
               {conversations.length > 0 ? (
@@ -223,17 +238,18 @@ export default function Home() {
 
           <NavBar />
         </div>
-
-        {userType === "admin" && (
-          <Button
-            btnText="Check For Inactive Chats"
-            color="bg-black"
-            textColor="text-white"
-            rounded="rounded-md"
-            onClick={iterateLetterBoxes}
-          />
+          {userType === "admin" && (
+            <Button
+              btnText="Check For Inactive Chats"
+              color="bg-black"
+              textColor="text-white"
+              rounded="rounded-md"
+              onClick={iterateLetterBoxes}
+            />
+          )}
+          </>
         )}
-
+        </>
         {/* Add animation keyframes */}
         <style jsx global>{`
           @keyframes slideIn {
