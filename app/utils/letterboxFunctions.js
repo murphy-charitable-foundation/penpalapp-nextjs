@@ -115,6 +115,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
     lRef,
     where("sent_by", "==", userRef),
     where("status", "==", "draft"),
+    where("content", "!=", ""),
     limit(1)
   );
   const draftSnapshot = await getDocs(letterboxQuery);
@@ -143,6 +144,20 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   }
 
   return null;
+};
+
+export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+  const draft = await fetchDraft(letterboxId, userRef, false);
+  if (draft) return draft;
+
+  const lettersRef = collection(db, "letterbox", letterboxId, "letters");
+  const q = query(lettersRef, where("status", "==", "sent"), orderBy("created_at", "desc"), limit(1));
+  const letterSnapshot = await getDocs(q);
+  let letter;
+  letterSnapshot.forEach((doc) => {
+    letter = { id: doc.id, ...doc.data() };
+  });
+  return letter;
 };
 
 export const fetchRecipients = async (id) => {

@@ -1,21 +1,24 @@
 "use client";
 
-// pages/index.js
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { db, auth } from "../firebaseConfig"; // Adjust the import path as necessary
+import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import BottomNavBar from "../../components/bottom-nav-bar";
+import {
+  doc,
+  getDoc
+} from "firebase/firestore";
+import NavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaCog, FaBell, FaPen } from "react-icons/fa";
+import ConversationList from "../../components/general/ConversationList";
 import {
-  fetchDraft,
-  fetchLetterbox,
+  fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
+
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
 import FirstTimeChatGuide from "../../components/tooltip/FirstTimeChatGuide";
@@ -34,7 +37,7 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
   const [country, setCountry] = useState("");
-  const [letters, setLetters] = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -43,6 +46,56 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+
+  const getUserData = async (uid) => {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      setError("User data not found.");
+      throw new Error("No user document found.");
+    }
+  };
+
+  const getConversations = async (uid) => {
+    try {
+      const letterboxes = await fetchLetterboxes();
+      if (letterboxes && letterboxes.length > 0) {
+        const letterboxIds = letterboxes.map((l) => l.id);
+
+        const fetchedConversations = await Promise.all(
+          letterboxIds.map(async (id) => {
+            const userRef = doc(db, "users", uid);
+            const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const rec = await fetchRecipients(id);
+            const recipient = rec?.[0] ?? {};
+
+            return {
+              id,
+              profileImage: recipient?.photo_uri || "",
+              name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
+              country: recipient.country ?? "Unknown",
+              lastMessage: letter.content || "",
+              lastMessageDate: letter.created_at || "",
+              status: letter.status || "",
+              letterboxId: id || "",
+            };
+          })
+        );
+
+        return fetchedConversations;
+      } else {
+        setError("No conversations found.");
+        throw new Error("No letterboxes found.");
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      Sentry.captureException(err);
+      setError("Failed to load data.");
+      throw err;
+    }
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -53,36 +106,34 @@ export default function Home() {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
         router.push("/login");
+        return;
       } else {
-        const letterboxes = await fetchLetterboxes();
-        const letterboxIds = letterboxes.map((l) => l.id);
-        let letters = [];
-        for (const id of letterboxIds) {
-          const letterbox = { id };
-          const userRef = doc(db, "users", auth.currentUser.uid);
-          const draft = await fetchDraft(id, userRef, true);
-          if (draft) {
-            letterbox.letters = [draft];
-          } else {
-            letterbox.letters = await fetchLetterbox(id, 1);
-          }
-          letters.push(letterbox);
-        }
-        // this will be slow but may be the only way
-        for await (const l of letters) {
-          const rec = await fetchRecipients(l.id);
-          l.recipients = rec;
-        }
-        setLetters(letters);
+        try {
+        const uid = user.uid;
+
+        const userData = await getUserData(uid);
+        setUserName(userData.first_name || "Unknown User");
+        setCountry(userData.country || "Unknown Country");
+        setUserType(userData.user_type || "Unknown Type");
+        setProfileImage(userData?.photo_uri || "");
+
+        const userConversations = await getConversations(uid);
+        setConversations(userConversations);
+      } catch (err) {
+        setError("Error fetching user data or conversations.");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+    }
+  });
+  return () => unsubscribe();
+}, [router]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
+        try {
         const uid = auth.currentUser.uid;
         setUserId(uid);
 
@@ -107,24 +158,51 @@ export default function Home() {
         } else {
           console.log("No such document!");
         }
-      } else {
-        console.log("No user logged in");
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setError("Failed to load user data");
       }
+    }
     };
 
     fetchUserData();
   }, []);
+
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //   setIsLoading(true);
+  //     try {
+  //       const uid = user.uid;
+
+  //       const userData = await getUserData(uid);
+  //       setUserName(userData.first_name || "Unknown User");
+  //       setCountry(userData.country || "Unknown Country");
+  //       setUserType(userData.user_type || "Unknown Type");
+  //       setProfileImage(userData?.photo_uri || "");
+
+  //       const userConversations = await getConversations(uid);
+  //       setConversations(userConversations);
+  //     } catch (err) {
+  //       setError("Error fetching user data or conversations.");
+  //       console.error(err);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  // };
+
+  //   fetchUserData();
+  // }, []);
 
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
         <>
         { isLoading ? (
-            <LetterHomeSkeleton />
+          <LetterHomeSkeleton />
          ) : (
           <>
+        <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
           <BackButton />
-
           <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
             <ProfileHeader
               userName={userName}
@@ -132,7 +210,18 @@ export default function Home() {
               profileImage={profileImage}
               id={userId}
             />
-
+          <main className="p-6 bg-white">
+            <section className="mt-8">
+              {conversations.length > 0 ? (
+                <ConversationList conversations={conversations} />
+              ) : (
+                <EmptyState
+                  title="New friends are coming!"
+                  description="Many friends are coming hang tight!"
+                />
+              )}
+            </section>
+          </main>
             <main className="p-6">
               <section className="mt-8">
                 <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
@@ -151,10 +240,9 @@ export default function Home() {
                 )}
               </section>
             </main>
-            <BottomNavBar />
+          <NavBar />
           </div>
-
-
+        </div>
           {userType === "admin" && (
             <Button
               btnText="Check For Inactive Chats"
