@@ -359,6 +359,7 @@ export default function Page({ params }) {
         <BottomNavBar />
         {isFileModalOpen && <FileModal />}
       </div>
+      }
     </PageContainer>
   );
 }
