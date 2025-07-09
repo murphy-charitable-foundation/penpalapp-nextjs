@@ -137,9 +137,7 @@ export default function Home() {
       } finally {
         setIsLoading(false);
       }
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
+    }
   });
   return () => unsubscribe();
 }, [router]);
