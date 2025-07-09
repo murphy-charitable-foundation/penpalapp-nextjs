@@ -3,7 +3,9 @@
 
 import React, { useEffect, useState } from 'react';
 import countries from 'i18n-iso-countries';
-import enLocale from 'i18n-iso-countries/langs/en.json'; // 你也可以换成 zh.json
+import enLocale from 'i18n-iso-countries/langs/en.json'; 
+
+import Dropdown from "./Dropdown";
 
 countries.registerLocale(enLocale);
 
@@ -20,8 +22,10 @@ export default function CountrySelect({ onChange }) {
     setCountryList(formatted);
   }, []);
 
+  const [countryName, setCountryName] = useState("");
   return (
-    <select
+    <>
+    {/* <select
       className="w-full border-b border-gray-400 focus:outline-none focus:border-blue-500 bg-transparent py-2"
       onChange={(e) => onChange(e.target.value)}
     >
@@ -31,6 +35,18 @@ export default function CountrySelect({ onChange }) {
           {country.name}
         </option>
       ))}
-    </select>
+    </select> */}
+    
+      <Dropdown
+        options={countryList.map(item => item.name)}
+        valueChange={(option) => {
+          setCountryName(option);
+          onChange(countryList.find(item => item.name === option)?.code);
+          
+        }}
+        currentValue={countryName}
+        text="Select a country"
+      />
+    </>
   );
 }
