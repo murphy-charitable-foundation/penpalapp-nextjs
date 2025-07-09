@@ -7,19 +7,14 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   doc,
-  getDoc,
-  getDocs,
-  collection,
-  query,
-  orderBy,
-  limit,
+  getDoc
 } from "firebase/firestore";
 import NavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
-  fetchDraft,
+  fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
@@ -34,20 +29,6 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-
-const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
-  const draft = await fetchDraft(letterboxId, userRef, true);
-  if (draft) return draft;
-
-  const lettersRef = collection(db, "letterboxes", letterboxId, "letters");
-  const q = query(lettersRef, orderBy("timestamp", "desc"), limit(1));
-  const letterSnapshot = await getDocs(q);
-  let letter;
-  letterSnapshot.forEach((doc) => {
-    letter = { id: doc.id, ...doc.data() };
-  });
-  return letter;
-};
 
 export default function Home() {
   const [userName, setUserName] = useState("");
