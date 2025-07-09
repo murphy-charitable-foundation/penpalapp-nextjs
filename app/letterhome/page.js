@@ -144,7 +144,6 @@ export default function Home() {
             const userData = docSnap.data();
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
-            localStorage.setItem("chat_user", userData.user_type);
             setUserType(userData.user_type || "Unknown Type");
             setProfileImage(userData?.photo_uri || "");
             setUser(userData.user_type);
@@ -213,17 +212,7 @@ export default function Home() {
                   <main className="p-6 bg-white">
                     <section className="mt-8">
                       {conversations.length > 0 ? (
-                        <>
-                          {conversations.length === 1 &&
-                            conversations[0].letters.length === 1 && (
-                              <FirstTimeChatGuide
-                                page="letterHome"
-                                params={pathname}
-                                user={user}
-                              />
-                            )}
-                          <ConversationList conversations={conversations} />
-                        </>
+                        <ConversationList conversations={conversations} />
                       ) : (
                         <EmptyState
                           title="New friends are coming!"

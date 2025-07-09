@@ -49,10 +49,10 @@ const MessagePreview = ({
     if (status === "rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
-    if (status === "sent") {
+    if (status === "approved") {
       return <CheckCircle className="text-green-500 w-6 h-6" />;
     }
-    if (status === "pending_review") {
+    if (status === "pending") {
       return (
         <div className="relative w-6 h-6">
           <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
@@ -71,8 +71,6 @@ const MessagePreview = ({
           ? "bg-red-50"
           : isRecipient && unread
           ? "bg-green-50"
-          : status === "pending_review"
-          ? "bg-gray-50"
           : "bg-white"
       }`}>
       <div className="flex items-start">
