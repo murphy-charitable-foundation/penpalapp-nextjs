@@ -209,11 +209,11 @@ export default function Home() {
       <PageContainer maxWidth="lg">
         <>
         { isLoading ? (
-            <LetterHomeSkeleton />
+          <LetterHomeSkeleton />
          ) : (
           <>
+        <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
           <BackButton />
-
           <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
             <ProfileHeader
               userName={userName}
@@ -235,6 +235,7 @@ export default function Home() {
           </main>
 
           <NavBar />
+          </div>
         </div>
           {userType === "admin" && (
             <Button
