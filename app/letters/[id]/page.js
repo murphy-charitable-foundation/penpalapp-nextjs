@@ -1,10 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { db } from "../../firebaseConfig"; // Adjust this path as necessary
-import { collection, doc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { MdSend } from "react-icons/md";
@@ -19,8 +26,9 @@ import TextArea from "../../../components/general/TextArea";
 import Input from "../../../components/general/Input";
 
 import { useRouter } from "next/navigation";
-
 import * as Sentry from "@sentry/nextjs";
+import FirstTimeChatGuide from "@/components/tooltip/FirstTimeChatGuide";
+import { usePathname } from 'next/navigation';
 
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import { uploadFile } from "../../lib/uploadFile";
@@ -44,27 +52,38 @@ export default function Page({ params }) {
   const { id } = params;
   const auth = getAuth();
   const router = useRouter();
+  const messagesEndRef = useRef(null);
 
-  const [letterContent, setLetterContent] = useState("");
-  const [debounce, setDebounce] = useState(0);
+  const [letterContent, setLetterContent] = useState("Tap to write letter...");
+  const messageInputRef = useRef(null);
   const [user, setUser] = useState(null);
-  const [isFileModalOpen, setIsFileModalOpen] = useState(false);
-  const [draft, setDraft] = useState(null);
   const [userRef, setUserRef] = useState(null);
+  const [userLocation, setUserLocation] = useState("");
+  const pathname = usePathname();
+
+  // Message and draft states
+  const [messageContent, setMessageContent] = useState("Tap to write letter...");
+  const [draft, setDraft] = useState(null);
+  const [hasDraftContent, setHasDraftContent] = useState(false);
+
+  // Chat states
   const [allMessages, setAllMessages] = useState([]);
-  const [recipients, setRecipients] = useState(null);
+  const [recipients, setRecipients] = useState([]);
+  const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
-  const [attachments, setAttachments] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState(null);
-  const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
-  const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
-  const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
+
+  // UI states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+
+  // Report states
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
+
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
-
-  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
@@ -95,22 +114,89 @@ export default function Page({ params }) {
       created_at: new Date(),
       deleted: null,
     };
+    if (isSending) return;
 
-    const letterStatus = await sendLetter(letterData, lettersRef, draft.id);
-    if (letterStatus) {
-      setLetterContent("");
-      setAttachments([]);
+    setIsSending(true);
+
+    try {
+      // Clear draft timer
+      if (draftTimer) {
+        clearTimeout(draftTimer);
+        setDraftTimer(null);
+      }
+
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const contentToSend = trimmedContent || draft?.content?.trim();
+      const currentTime = new Date();
+
+      const messageData = {
+        sent_by: letterUserRef,
+        content: contentToSend,
+        status: "sent",
+        created_at: currentTime,
+        deleted: null,
+      };
+
+      let messageRef;
+
+      if (draft?.id) {
+        // Update existing draft to sent
+        messageRef = doc(lettersRef, draft.id);
+        await updateDoc(messageRef, messageData);
+      } else {
+        // Create new message
+        messageRef = doc(lettersRef);
+        await setDoc(messageRef, messageData);
+      }
+
+      // Verify message was sent
+      const sentDoc = await getDoc(messageRef);
+      if (!sentDoc.exists() || sentDoc.data().status !== "sent") {
+        throw new Error("Message failed to send");
+      }
+
+      // Clear states
+      setMessageContent("");
+      setDraft(null);
+      setHasDraftContent(false);
+
+      // Add message to UI immediately
+      const messageWithId = {
+        ...messageData,
+        id: messageRef.id,
+        sent_by: { id: user.uid },
+      };
+      setAllMessages((prev) => [...prev, messageWithId]);
+
+      // Scroll to bottom
+      setTimeout(() => scrollToBottom(true), 100);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send message. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle close button
+  const handleCloseMessage = () => {
+    const hasContent = messageContent.trim().length > 0;
+
+    if (hasContent) {
+      setShowCloseDialog(true);
     } else {
       Sentry.captureException(e);
       setIsDialogOpen(true);
       setDialogTitle("Oops!");
       setDialogMessage("Failed to send your letter, please try again.");
     }
+  };
 
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
-      id,
-      PAGINATION_INCREMENT
-    );
+  const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+    id,
+    PAGINATION_INCREMENT
+  );
+  if( messages) {
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -140,21 +226,103 @@ export default function Page({ params }) {
     
   }, [user]);
 
+  // Initialize component
   useEffect(() => {
-    const getSelectedUser = async () => {
-      if (recipients?.length) {
-        const letterboxRef = doc(collection(db, "letterbox"), id);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setIsLoading(true);
+
+      if (!currentUser) {
+        router.push("/login");
+        return;
+      }
+
+      setUser(currentUser);
+
+      try {
+        // Check letterbox exists
+        const letterboxRef = doc(db, "letterbox", id);
+        const letterboxDoc = await getDoc(letterboxRef);
+
+        if (!letterboxDoc.exists()) {
+          console.error("Letterbox does not exist");
+          setIsLoading(false);
+          return;
+        }
+
+        // Set user ref and fetch user data
+        const userDocRef = doc(db, "users", currentUser.uid);
+        setUserRef(userDocRef);
+
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().location) {
+          setUserLocation(userDoc.data().location);
+        }
+
+        // Fetch recipients
+        const fetchedRecipients = await fetchRecipients(id);
+        setRecipients(fetchedRecipients || []);
+
+        if (fetchedRecipients?.length > 0) {
+          setRecipientName(
+            `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`
+          );
+        }
+
+        // Set letters ref
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
-        const d = await fetchDraft(id, userRef, true);
-        setDraft(d);
-        setLetterContent(d.content);
+
+        // Fetch existing draft
+        const draftData = await fetchDraft(id, userDocRef, false);
+        if (draftData?.status === "draft") {
+          setDraft(draftData);
+          setMessageContent(draftData.content || "");
+          setHasDraftContent(Boolean(draftData.content?.trim()));
+        }
+
+        // Load messages if we have recipients
+        if (fetchedRecipients?.length > 0) {
+          const { messages } = await fetchLetterbox(id, 20);
+
+          const sortedMessages = messages.sort((a, b) => {
+            const aTime =
+              a.created_at instanceof Date
+                ? a.created_at
+                : new Date(a.created_at);
+            const bTime =
+              b.created_at instanceof Date
+                ? b.created_at
+                : new Date(b.created_at);
+            return aTime.getTime() - bTime.getTime();
+          });
+
+          const messagesWithSenderInfo = await Promise.all(
+            sortedMessages.map(async (message) => {
+              if (message.sent_by?.id !== currentUser.uid) {
+                const recipient = fetchedRecipients.find(
+                  (r) => r.id === message.sent_by?.id
+                );
+                if (recipient) {
+                  message.senderLocation = recipient.location || "";
+                }
+              }
+              return message;
+            })
+          );
+
+          setAllMessages(messagesWithSenderInfo);
+        }
+      } catch (error) {
+        console.error("Initialization error:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     getSelectedUser();
     
   }, [recipients]);
 
+  // Cleanup timer on unmount
   useEffect(() => {
     setDebounce(debounce + 1);
     const updateDraft = async () => {
@@ -189,12 +357,24 @@ export default function Page({ params }) {
     setLoadingMore(false); // Reset loading state
   };
 
-  const handleChange = (event) => {
-    const selectedFile = event.target.files[0];
-    handleUpload(selectedFile);
+  const selectMessage = (messageId) => {
+    setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
   };
 
-  const onUploadComplete = (url) => setAttachments([...attachments, url]);
+  const truncateMessage = (message) => {
+    if (message.length <= 30) return message;
+    return `${message.substring(0, 30)}...`;
+  };
+
+  const getSenderLocation = (message) => {
+    const isSenderUser = message.sent_by?.id === user?.uid;
+    if (isSenderUser) {
+      return userLocation || "";
+    } else {
+      return message.senderLocation || recipients[0]?.location || "";
+    }
+  };
+
 
   const handleUpload = async (file) => {
     uploadFile(
@@ -250,28 +430,24 @@ export default function Page({ params }) {
       </div>
     </div>
   );
-
-  useEffect(() => {
-    const populateRecipients = async () => {
-      try {
-        const members = await fetchRecipients(id);
-        setRecipients(members);
-      } catch (e) {
-        console.error("err fetching members", e);
-      }
-    };
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        populateRecipients();
-      } else {
-        setUser(null);
-        router.push("/login");
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  
+// This function will be passed as a prop to FirstTimeChatGuide
+  const handleUseTemplate = (templateText) => {
+    setMessageContent(templateText);
+    
+    // Focus the input and set cursor at the end
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
+      
+      setTimeout(() => {
+        messageInputRef.current.setSelectionRange(
+          templateText.length, 
+          templateText.length
+        );
+      }, 0);
+      
+    }
+  };
 
   return (
     <PageContainer maxWidth="lg">
@@ -301,6 +477,7 @@ export default function Page({ params }) {
       <LettersSkeleton /> : 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg">
+        { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
           <LetterHeader
             attachmentsCount={attachments.length}
             onAttach={() => setIsFileModalOpen(true)}
@@ -346,6 +523,7 @@ export default function Page({ params }) {
           {loadingMore && <span>Loading...</span>}
           </div>
           <TextArea
+            id="message-input"
             value={letterContent}
             onChange={(e) => setLetterContent(e.target.value)}
             placeholder="Tap to write letter..."
@@ -358,6 +536,7 @@ export default function Page({ params }) {
         </div>
         <BottomNavBar />
         {isFileModalOpen && <FileModal />}
+
       </div>
       }
     </PageContainer>

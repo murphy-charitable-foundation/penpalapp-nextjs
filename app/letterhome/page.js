@@ -21,6 +21,8 @@ import {
 
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
+import FirstTimeChatGuide from "../../components/tooltip/FirstTimeChatGuide";
+import { usePathname } from 'next/navigation';
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
@@ -29,6 +31,7 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -41,6 +44,8 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
+  const [user, setUser] = useState(null);
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -95,6 +100,8 @@ export default function Home() {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
+      
       if (!user) {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
@@ -139,6 +146,7 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+          setUser(userData.user_type);
           
           // Show welcome message
           setShowWelcome(true);
@@ -214,7 +222,24 @@ export default function Home() {
               )}
             </section>
           </main>
-
+            <main className="p-6">
+              <section className="mt-8">
+                <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+                  Recent letters
+                </h2>
+                { letters.length == 1 && <FirstTimeChatGuide page="letterHome" params={pathname} user={user} /> }
+                {letters.length > 0 ? (
+                  letters.map((letter, i) => (
+                    <LetterCard key={letter.id + "_" + i} letter={letter} className={i === 0 && 'first-letter relative'} />
+                  ))
+                ) : (
+                  <EmptyState
+                    title="New friends are coming!"
+                    description="Many friends are coming hang tight!"
+                  />
+                )}
+              </section>
+            </main>
           <NavBar />
           </div>
         </div>
