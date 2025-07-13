@@ -549,8 +549,7 @@ export default function Page({ params }) {
               !canSendMessage()
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-blue-200 rounded"
-            }`}
-          >
+            }`}>
             <Image
               src="/send-message-icon.png"
               alt="Send message"
@@ -578,10 +577,9 @@ export default function Page({ params }) {
               );
 
             return (
-
               <div key={messageId}>
                 {/* Date Separator */}
-                {showDateSeparator && (
+                {/* {showDateSeparator && (
                   <div className="flex items-center my-4 px-4">
                     <div className="flex-1 border-t border-gray-300"></div>
                     <div className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">
@@ -589,7 +587,7 @@ export default function Page({ params }) {
                     </div>
                     <div className="flex-1 border-t border-gray-300"></div>
                   </div>
-                )}
+                )} */}
 
                 {/* Message */}
                 <div
@@ -636,7 +634,6 @@ export default function Page({ params }) {
                       </div>
                     </div>
                   </div>
-
 
                   {isSelected && (
                     <div className="px-4 pb-3">
@@ -686,7 +683,7 @@ export default function Page({ params }) {
               className="w-8 h-8 hover:opacity-80 transition-opacity duration-200 flex items-center justify-center"
               title="Report user">
               <Image
-                src="/Vector.png"
+                src="/Vector.svg"
                 alt="Report"
                 width={32}
                 height={32}
@@ -708,7 +705,7 @@ export default function Page({ params }) {
                 height: "calc(100% - 24px)",
               }}
             />
-            <div className="absolute bottom-6 right-6">
+            {/* <div className="absolute bottom-6 right-6">
               <Image
                 src="/arrow-right.png"
                 alt="Send"
@@ -719,7 +716,7 @@ export default function Page({ params }) {
                 }`}
                 onClick={canSendMessage() ? handleSendMessage : undefined}
               />
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -736,14 +733,12 @@ export default function Page({ params }) {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
-                >
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
                   Continue
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
-                >
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
                   Close
                 </button>
               </div>
