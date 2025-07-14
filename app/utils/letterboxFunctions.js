@@ -1,4 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
+import { ref as storageRef, getDownloadURL } from "@firebase/storage";
+import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig"
 import * as Sentry from "@sentry/nextjs";
 
@@ -140,13 +142,21 @@ export const fetchRecipients = async (id) => {
   const members = [];
 
   for (const user of users) {
+    const selectedUserDocRef = doc(db, "users", user.id);
+    const selUser = await getDoc(selectedUserDocRef);
     try {
-      const selectedUserDocRef = doc(db, "users", user.id);
-      const selUser = await getDoc(selectedUserDocRef);
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id });
+      const segments = selUser.ref._key.path.segments;
+      console.log("segments", segments);
+      const userId = segments[segments.length - 1];
+      console.log("UserId", userId)
+      const path = `profile/${userId}/profile-image`;
+      const photoRef = storageRef(storage, path);
+      const downloaded = await getDownloadURL(photoRef)
+      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: downloaded });
     } catch (e) {
       Sentry.captureException(e);
       console.error("Error fetching user:", e);
+      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
     }
   }
   return members;
