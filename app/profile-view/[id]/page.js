@@ -25,6 +25,7 @@ import { BackButton } from "../../../components/general/BackButton";
 import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
+import { PageHeader } from '../../../components/general/PageHeader';
 
 export default function Page({ params }) {
   const { id } = params;
@@ -44,6 +45,7 @@ export default function Page({ params }) {
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
+  const [userType, setUserType] = useState("international_buddy");
 
   const router = useRouter();
 
@@ -66,11 +68,12 @@ export default function Page({ params }) {
           setBio(userData.bio || "");
           setEducationLevel(userData.education_level || "");
           setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.gaurdian || "");
+          setGuardian(userData.guardian || "");
           setDreamJob(userData.dream_job || "");
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
+          setUserType(userData.user_type || "");
         } else {
           console.log("No such document!");
         }
@@ -106,81 +109,44 @@ export default function Page({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen">
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <BackButton />
-        <div className="max-w-lg mx-auto p-6 pt-4">
-          <div className="flex justify-end">
-            <Button
-              onClick={handleLogout}
-              color="bg-red-500"
-              textColor="text-white"
-              hoverColor="hover:bg-red-600"
-              btnType="submit"
-              rounded="rounded-lg"
-              btnText="Log out"
-              size="w-24"
-            />
-          </div>
+        <PageHeader title="View Profile" image={false} heading={false} />
+        <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
 
           {/* Profile Image */}
           <div className="my-6">
-            <div className="relative w-24 h-24 mx-auto">
+            <div className="relative w-40 h-40 mx-auto">
               <Image
                 src={photoUri ? photoUri : "/murphylogo.png"}
                 layout="fill"
                 className="rounded-full"
                 alt="Profile picture"
               />
-              {/* Edit Icon */}
-              {auth.currentUser?.uid === id && (
-                <div
-                  className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full curspr-pointer"
-                  onClick={() => {
-                    router.push("/profile");
-                  }}
-                >
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <defs>
-                      <marker
-                        id="arrow"
-                        viewBox="0 0 10 10"
-                        refX="5"
-                        refY="5"
-                        markerWidth="1"
-                        markerHeight="1"
-                        orient="auto-start-reverse"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="white" />
-                      </marker>
-                    </defs>
-                    <path
-                      strokeWidth="4"
-                      d="M18 6 L5 19"
-                      markerEnd="url(#arrow)"
-                    />
-                    <path strokeWidth="4" d="M22 2 L19 5" />
-                  </svg>
-                </div>
-              )}
             </div>
+            {auth.currentUser?.uid === id && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => router.push("/profile")}
+                  className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                >
+                  Edit Profile
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Name, Country & Bio */}
-          <div className="space-y-1 mb-6">
-            <div className="text-center text-2xl">
+          <div className="space-y-2 mb-6">
+            <div className="text-center text-2xl font-bold">
               <span>
                 {firstName != "" ? firstName : ""}{" "}
                 {lastName != "" ? lastName : ""}
               </span>
             </div>
-            <div className="text-center">
+            <div className="text-center font-semibold">
               <span>{country != "" ? country : ""}</span>
             </div>
-            <div className="text-center">
+            <div className="text-center font-semibold text-gray-500">
               <span>
                 {bio ? "\u0022" : ""}
                 {bio ? bio : ""}
@@ -193,43 +159,50 @@ export default function Page({ params }) {
           <div className="space-y-8 mb-[120px]">
             {/* Personal Information Section */}
             <ProfileSection title="Personal Information">
-              <InfoDisplay title="Village" info={village}>
-                <Home className="w-5 h-5 text-600" />
-              </InfoDisplay>
-
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Village" info={village}>
+                  <Home className="w-5 h-5 text-black stroke-[2.5]" />
+                </InfoDisplay>
+              )}
               <InfoDisplay title="Birthday" info={birthday}>
-                <Calendar className="w-5 h-5 text-600" />
+                <Calendar className="w-5 h-5 text-black stroke-[2.5]" />
               </InfoDisplay>
             </ProfileSection>
 
             {/* Education & Family Section */}
-            <ProfileSection title="Education & Family">
+            <ProfileSection
+              title={`Education ${
+                userType !== "international_buddy" ? "& Family" : ""
+              }`}
+            >
               <InfoDisplay title="Education level" info={educationLevel}>
-                <GraduationCap className="w-5 h-5 text-600" />
+                <GraduationCap className="w-5 h-5 text-black stroke-[2.5]" />
               </InfoDisplay>
-
-              <InfoDisplay title="Guardian" info={guardian}>
-                <Users className="w-5 h-5 text-600" />
-              </InfoDisplay>
-
-              <InfoDisplay title="Is orphan" info={isOrphan}>
-                <Heart className="w-5 h-5 text-600" />
-              </InfoDisplay>
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Guardian" info={guardian}>
+                  <Users className="w-5 h-5 text-black stroke-[2.5]" />
+                </InfoDisplay>
+              )}
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Is orphan" info={isOrphan}>
+                  <Heart className="w-5 h-5 text-black stroke-[2.5]" />
+                </InfoDisplay>
+              )}
             </ProfileSection>
 
             {/* Interest Section */}
             <ProfileSection title="Interest">
               <InfoDisplay title="Dream Job" info={dreamJob}>
-                <Briefcase className="w-5 h-5 text-600" />
+                <Briefcase className="w-5 h-5 text-black stroke-[2.5]" />
               </InfoDisplay>
 
               <InfoDisplay title="Hobby" info={hobby}>
-                <Square className="w-5 h-5 text-600" />
+                <Square className="w-5 h-5 text-black stroke-[2.5]" />
               </InfoDisplay>
 
               {/* Favorite Color */}
               <InfoDisplay title="Favorite Color" info={favoriteColor}>
-                <Palette className="w-5 h-5 text-600" />
+                <Palette className="w-5 h-5 text-black stroke-[2.5]" />
               </InfoDisplay>
             </ProfileSection>
           </div>

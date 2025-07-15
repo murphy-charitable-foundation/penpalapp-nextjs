@@ -18,12 +18,19 @@ import Button from "../../../components/general/Button";
 import TextArea from "../../../components/general/TextArea";
 import Input from "../../../components/general/Input";
 
-
 import { useRouter } from "next/navigation";
 
 import * as Sentry from "@sentry/nextjs";
+
+import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import { uploadFile } from "../../lib/uploadFile";
-import { fetchDraft, fetchLetterbox, fetchRecipients, sendLetter  } from "../../utils/letterboxFunctions";
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchRecipients,
+  sendLetter,
+} from "../../utils/letterboxFunctions";
+
 import BottomNavBar from "../../../components/bottom-nav-bar";
 import ProfileImage from "../../../components/general/ProfileImage";
 import LetterHeader from "../../../components/general/letter/LetterHeader";
@@ -31,6 +38,7 @@ import RecipientList from "../../../components/general/letter/RecipientList";
 import MessageBubble from "../../../components/general/letter/MessageBubble";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { BackButton } from "../../../components/general/BackButton";
+import Dialog from "../../../components/general/Modal";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -55,18 +63,31 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [content, setContent] = useState(null);
   const [sender, setSender] = useState(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogTitle, setDialogTitle] = useState("");
+
   const PAGINATION_INCREMENT = 20;
   const handleSendLetter = async () => {
     if (!letterContent.trim() || !recipients?.length) {
-      alert("Please fill in the letter content and select a recipient.");
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage(
+        "Please fill in the letter content and select a recipient."
+      );
       return;
     }
 
     if (!auth.currentUser) {
-      alert("Sender not identified, please log in.");
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Sender not identified, please log in.");
+
       return;
     }
-    const letterUserRef =  userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
+    const letterUserRef = userRef ?? doc(db, "users", auth.currentUser.uid); // TODO: make population of userRef blocking and cached to be available throughout the call
     const letterData = {
       content: letterContent,
       sent_by: letterUserRef,
@@ -81,10 +102,15 @@ export default function Page({ params }) {
       setAttachments([]);
     } else {
       Sentry.captureException(e);
-      alert("Failed to send your letter, please try again.");
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Failed to send your letter, please try again.");
     }
 
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT
+    );
     setAllMessages(messages);
     setLastVisible(newLastVisible);
     setDraft(null);
@@ -98,13 +124,20 @@ export default function Page({ params }) {
       const userDocRef = doc(db, "users", user.uid);
       setUserRef(userDocRef);
       const fetchMessages = async () => {
-        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, 5);
+        const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+          id,
+          5
+        );
         setAllMessages(messages);
         setLastVisible(newLastVisible); // Store last visible letter for pagination
         setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // Assuming 10 is the page limit
+        if( messages.length > 0 ) {
+          setIsLoading(false);
+        }
       };
       fetchMessages();
     }
+    
   }, [user]);
 
   useEffect(() => {
@@ -119,10 +152,11 @@ export default function Page({ params }) {
       }
     };
     getSelectedUser();
+    
   }, [recipients]);
 
   useEffect(() => {
-    setDebounce(debounce + 1)
+    setDebounce(debounce + 1);
     const updateDraft = async () => {
       if (userRef && lettersRef) {
         const letterData = {
@@ -131,20 +165,24 @@ export default function Page({ params }) {
           created_at: new Date(),
           deleted: null,
           status: "draft",
-          attachments
+          attachments,
         };
-        await sendLetter(letterData, lettersRef, draft.id)
+        await sendLetter(letterData, lettersRef, draft.id);
       }
-    }
+    };
     if (debounce >= 20) {
-      updateDraft()
-      setDebounce(0)
+      updateDraft();
+      setDebounce(0);
     }
-  }, [letterContent])
+  }, [letterContent]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true); // Set loading state to true while fetching more messages
-    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(id, PAGINATION_INCREMENT, lastVisible);
+    const { messages, lastVisible: newLastVisible } = await fetchLetterbox(
+      id,
+      PAGINATION_INCREMENT,
+      lastVisible
+    );
     setAllMessages((prevMessages) => [...prevMessages, ...messages]);
     setLastVisible(newLastVisible); // Update lastVisible with the new last document
     setHasMoreMessages(messages.length === PAGINATION_INCREMENT); // If fewer than 10 messages are returned, no more messages to load
@@ -163,10 +201,10 @@ export default function Page({ params }) {
       file,
       `uploads/letterbox/${id}/${file.name}`,
       setUploadProgress,
-      (error) => console.error('Upload error:', error),
+      (error) => console.error("Upload error:", error),
       onUploadComplete
     );
-  };  
+  };
 
   const FileModal = () => (
     <div className="fixed inset-0 flex justify-center items-center z-50 bg-black bg-opacity-40">
@@ -195,7 +233,10 @@ export default function Page({ params }) {
           id="raised-button-file"
           className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
         />
-        <label htmlFor="raised-button-file" className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer">
+        <label
+          htmlFor="raised-button-file"
+          className="flex items-center border border-[#603A35] px-4 py-2 rounded-md mt-4 w-[40%] cursor-pointer"
+        >
           <MdInsertDriveFile className="mr-2 fill-[#603A35] h-6 w-6" />
           Select a file
         </label>
@@ -234,6 +275,14 @@ export default function Page({ params }) {
 
   return (
     <PageContainer maxWidth="lg">
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
       <BackButton />
       {showReportPopup && (
         <ReportPopup
@@ -248,18 +297,22 @@ export default function Page({ params }) {
         <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
       )}
 
+      {isLoading ? 
+      <LettersSkeleton /> : 
       <div className="min-h-screen bg-[#E5E7EB] p-4">
         <div className="bg-white shadow rounded-lg">
           <LetterHeader
             attachmentsCount={attachments.length}
             onAttach={() => setIsFileModalOpen(true)}
             onSend={handleSendLetter}
-            onDelete={() => {/* implement delete handler */}}
+            onDelete={() => {
+              /* implement delete handler */
+            }}
           />
 
           <RecipientList recipients={recipients} />
 
-          {isFileModalOpen && <FileModal />}
+        {isFileModalOpen && <FileModal />}
 
           <div className="flex flex-col bg-grey gap-[8px] bg-[#F5F5F5]">
             {allMessages?.length ? (
@@ -290,7 +343,7 @@ export default function Page({ params }) {
               />
             )}
 
-            {loadingMore && <span>Loading...</span>}
+          {loadingMore && <span>Loading...</span>}
           </div>
           <TextArea
             value={letterContent}
@@ -306,6 +359,7 @@ export default function Page({ params }) {
         <BottomNavBar />
         {isFileModalOpen && <FileModal />}
       </div>
+      }
     </PageContainer>
   );
 }

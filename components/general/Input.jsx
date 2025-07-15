@@ -15,7 +15,7 @@ export default function Input({
       {label && (
         <label
           htmlFor={id}
-          className={`block text-sm font-medium mb-1 text-gray-700`}
+          className={`block text-sm font-medium mb-1 text-gray-500`}
         >
           {label}
         </label>
@@ -35,7 +35,7 @@ export default function Input({
           ${error ? "border-red-500" : "border-gray-300"}
           w-full
           px-4 py-2
-        
+          font-bold
           outline-none
           text-gray-900 
           placeholder:text-gray-400 focus:border-black
