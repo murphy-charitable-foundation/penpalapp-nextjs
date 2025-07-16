@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react"; // Added useCallback
 import { db } from "../../firebaseConfig";
 import {
   collection,
@@ -23,6 +23,11 @@ import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
+import {
+  isDifferentDay,
+  formatDateSeparator,
+  formatTime,
+} from "@/components/letter/DateHelpers";
 import Image from "next/image";
 
 export default function Page({ params }) {
@@ -30,6 +35,7 @@ export default function Page({ params }) {
   const auth = getAuth();
   const router = useRouter();
   const messagesEndRef = useRef(null);
+  const textAreaRef = useRef(null); // Ref for textarea to focus
 
   // User and auth states
   const [user, setUser] = useState(null);
@@ -40,6 +46,7 @@ export default function Page({ params }) {
   const [messageContent, setMessageContent] = useState("");
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
+  const [isDeletingDraft, setIsDeletingDraft] = useState(false); // New state to track draft deletion
 
   // Chat states
   const [allMessages, setAllMessages] = useState([]);
@@ -52,6 +59,7 @@ export default function Page({ params }) {
   const [isSending, setIsSending] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Report states
   const [showReportPopup, setShowReportPopup] = useState(false);
@@ -69,126 +77,106 @@ export default function Page({ params }) {
     });
   };
 
-  // Helper function to check if two dates are on different days
-  const isDifferentDay = (date1, date2) => {
-    if (!date1 || !date2) return false;
-
-    const d1 = date1 instanceof Date ? date1 : new Date(date1);
-    const d2 = date2 instanceof Date ? date2 : new Date(date2);
-
-    return (
-      d1.getFullYear() !== d2.getFullYear() ||
-      d1.getMonth() !== d2.getMonth() ||
-      d1.getDate() !== d2.getDate()
-    );
-  };
-
-  // Helper function to format date for separator
-  const formatDateSeparator = (timestamp) => {
-    if (!timestamp) return "";
-
-    let date;
-    if (timestamp.toDate && typeof timestamp.toDate === "function") {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-      date = new Date(timestamp);
-    } else {
-      return "";
-    }
-
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    // Check if it's today
-    if (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    ) {
-      return "Today";
-    }
-
-    // Check if it's yesterday
-    if (
-      date.getDate() === yesterday.getDate() &&
-      date.getMonth() === yesterday.getMonth() &&
-      date.getFullYear() === yesterday.getFullYear()
-    ) {
-      return "Yesterday";
-    }
-
-    // Format as date
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   // Auto-save draft function
-  const saveDraft = async (content) => {
-    if (!user || !lettersRef || isSending) return;
+  // Wrapped in useCallback to prevent re-creation on every render
+  const saveDraft = useCallback(
+    async (content) => {
+      if (!user || !lettersRef || isSending || isDeletingDraft) return; // Prevent concurrent operations
 
-    try {
-      const letterUserRef = userRef || doc(db, "users", user.uid);
+      try {
+        const letterUserRef = userRef || doc(db, "users", user.uid);
+        const trimmedContent = content.trim();
 
-      // If content is empty, delete existing draft
-      if (!content.trim()) {
-        if (draft?.id) {
-          await deleteDoc(doc(lettersRef, draft.id));
-          setDraft(null);
+        // If content is empty, delete existing draft
+        if (!trimmedContent) {
+          if (draft?.id) {
+            setIsDeletingDraft(true); // Indicate that deletion is in progress
+            await deleteDoc(doc(lettersRef, draft.id));
+            console.log("Draft deleted from Firestore."); // For debugging
+            setDraft(null);
+          }
+          setHasDraftContent(false);
+          setIsEditing(false); // Crucial: Exit edit mode if draft is cleared
+          setMessageContent(""); // Ensure messageContent is truly empty
+          setIsDeletingDraft(false); // Reset deletion state
+          return;
         }
-        setHasDraftContent(false);
-        return;
-      }
 
-      const currentTime = new Date();
-      const draftData = {
-        sent_by: letterUserRef,
-        content: content.trim(),
-        status: "draft",
-        created_at: draft?.created_at || currentTime,
-        updated_at: currentTime,
-        deleted: null,
-      };
+        // If there's content, proceed to save/update draft
+        const currentTime = new Date();
+        const draftData = {
+          sent_by: letterUserRef,
+          content: trimmedContent,
+          status: "draft",
+          created_at: draft?.created_at || currentTime,
+          updated_at: currentTime,
+          deleted: null,
+        };
 
-      if (draft?.id) {
-        // Update existing draft
-        await updateDoc(doc(lettersRef, draft.id), draftData);
-        setDraft({ ...draftData, id: draft.id });
-      } else {
-        // Create new draft
-        const newDraftRef = doc(lettersRef);
-        await setDoc(newDraftRef, draftData);
-        setDraft({ ...draftData, id: newDraftRef.id });
+        if (draft?.id) {
+          // Update existing draft
+          await updateDoc(doc(lettersRef, draft.id), draftData);
+          setDraft({ ...draftData, id: draft.id });
+          console.log("Draft updated in Firestore."); // For debugging
+        } else {
+          // Create new draft
+          const newDraftRef = doc(lettersRef);
+          await setDoc(newDraftRef, draftData);
+          setDraft({ ...draftData, id: newDraftRef.id });
+          console.log("New draft created in Firestore."); // For debugging
+        }
+        setHasDraftContent(true);
+        setIsEditing(true); // Ensure in edit mode if there's content
+      } catch (error) {
+        console.error("Error saving draft:", error);
+      } finally {
+        setIsDeletingDraft(false); // Always reset deletion state
       }
-      setHasDraftContent(true);
-    } catch (error) {
-      console.error("Error saving draft:", error);
-    }
-  };
+    },
+    [user, lettersRef, isSending, draft, userRef, isDeletingDraft]
+  ); // Added isDeletingDraft to dependencies
 
   // Handle message content change
-  const handleMessageChange = (e) => {
+  const handleMessageChange = async (e) => {
     const newContent = e.target.value;
     setMessageContent(newContent);
-    setHasDraftContent(newContent.trim().length > 0);
+    const trimmedContent = newContent.trim();
+    setHasDraftContent(trimmedContent.length > 0);
+
+    // Enter edit mode immediately when typing starts
+    if (!isEditing && trimmedContent.length > 0) {
+      setIsEditing(true);
+    }
+    // Exit edit mode immediately when content becomes empty
+    // And ensure draft is cleared by awaiting saveDraft
+    if (isEditing && trimmedContent.length === 0) {
+      setIsEditing(false);
+      setHasDraftContent(false);
+
+      if (draftTimer) {
+        clearTimeout(draftTimer);
+        setDraftTimer(null);
+      }
+      await saveDraft(""); // Await the deletion
+      return;
+    }
 
     // Clear existing timer
     if (draftTimer) {
       clearTimeout(draftTimer);
     }
 
-    // Set new timer to save draft after 2 seconds
-    const timer = setTimeout(() => {
-      saveDraft(newContent);
-    }, 2000);
+    // Set new timer to save draft after 2 seconds only if content is not empty
+    if (trimmedContent.length > 0) {
+      const timer = setTimeout(() => {
+        saveDraft(newContent);
+      }, 2000);
+      setDraftTimer(timer);
+    } else {
+      // If content is empty, ensure the draft is cleared quickly and no timer is pending
 
-    setDraftTimer(timer);
+      setDraftTimer(null);
+    }
   };
 
   // Send message function
@@ -246,6 +234,7 @@ export default function Page({ params }) {
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
+      setIsEditing(false); // Exit edit mode after sending
 
       // Add message to UI immediately
       const messageWithId = {
@@ -266,37 +255,53 @@ export default function Page({ params }) {
   };
 
   // Handle close button
-  const handleCloseMessage = () => {
-    const hasContent = messageContent.trim().length > 0;
+  const handleCloseMessage = async () => {
+    const trimmedMessageContent = messageContent.trim();
 
-    if (hasContent) {
+    console.log("This is what is going to be saved:");
+    console.log(trimmedMessageContent);
+    // if (isEditing && trimmedMessageContent.length > 0) {
+    //   setShowCloseDialog(true);
+    // } else {
+    // If there's unsent content or an active draft
+    if (trimmedMessageContent.length > 0 || draft?.content?.trim().length > 0) {
       setShowCloseDialog(true);
     } else {
-      // No content, just go back
-      if (draft?.id && !messageContent.trim()) {
-        saveDraft(""); // This will delete the draft
+      // If content is empty AND no active draft, ensure draft is cleared then go back
+      if (draft?.id) {
+        // Await deletion before navigating back
+        await saveDraft("");
       }
-      router.back();
+      // Add a small delay to allow Firestore to process the deletion before navigation
+      setTimeout(() => router.back(), 50);
     }
   };
 
   // Confirm close and save draft
   const handleConfirmClose = async () => {
     const trimmedContent = messageContent.trim();
-    if (trimmedContent) {
+
+    if (trimmedContent.length > 0) {
       await saveDraft(trimmedContent);
+    } else {
+      if (draft?.id) {
+        await saveDraft(""); // Ensure draft is cleared if user confirms close with empty content
+      }
     }
     setShowCloseDialog(false);
-    router.back();
+    // Add a small delay to allow Firestore to process the deletion before navigation
+    setTimeout(() => router.back(), 50);
   };
 
   // Continue editing
   const handleContinueEditing = () => {
     setShowCloseDialog(false);
+    setIsEditing(true); // Ensure we stay in edit mode
+    textAreaRef.current?.focus(); // Focus the textarea
   };
 
-  // Handle report button click
-  const handleReportClick = () => {
+  // Handle report button click for the user (not a specific message)
+  const handleReportUserClick = () => {
     if (recipients.length > 0) {
       setReportSender(recipients[0].id);
       setReportContent("General report about user behavior");
@@ -391,7 +396,26 @@ export default function Page({ params }) {
         if (draftData?.status === "draft") {
           setDraft(draftData);
           setMessageContent(draftData.content || "");
-          setHasDraftContent(Boolean(draftData.content?.trim()));
+          const hasContent = Boolean(draftData.content?.trim());
+          setHasDraftContent(hasContent);
+          setIsEditing(hasContent); // Set edit mode if draft exists AND has content
+          if (hasContent) {
+            // If there's draft content, focus the textarea after render
+            setTimeout(() => {
+              textAreaRef.current?.focus();
+              // Place cursor at the end of the text
+              textAreaRef.current?.setSelectionRange(
+                textAreaRef.current.value.length,
+                textAreaRef.current.value.length
+              );
+            }, 0);
+          }
+        } else {
+          // No draft found, ensure states are reset to reflect view mode
+          setIsEditing(false);
+          setMessageContent("");
+          setDraft(null);
+          setHasDraftContent(false);
         }
 
         // Load messages if we have recipients
@@ -437,7 +461,7 @@ export default function Page({ params }) {
     });
 
     return () => unsubscribe();
-  }, [id]);
+  }, [id]); // Added saveDraft to dependencies to ensure effect re-runs if saveDraft changes
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -448,10 +472,10 @@ export default function Page({ params }) {
     };
   }, [draftTimer]);
 
-  // Auto-scroll when messages change
+  // Auto-scroll when messages change or edit mode changes
   useEffect(() => {
     scrollToBottom();
-  }, [allMessages]);
+  }, [allMessages, isEditing]);
 
   if (isLoading) {
     return (
@@ -460,54 +484,6 @@ export default function Page({ params }) {
       </div>
     );
   }
-
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-
-    let date;
-    if (timestamp.toDate && typeof timestamp.toDate === "function") {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-      date = new Date(timestamp);
-    } else {
-      return "";
-    }
-
-    // Get today's date and day before yesterday
-    const today = new Date();
-    const dayBeforeYesterday = new Date(today);
-    dayBeforeYesterday.setDate(today.getDate() - 2);
-
-    // Reset time to start of day for accurate comparison
-    const messageDate = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-    const dayBeforeYesterdayStart = new Date(
-      dayBeforeYesterday.getFullYear(),
-      dayBeforeYesterday.getMonth(),
-      dayBeforeYesterday.getDate()
-    );
-
-    // If message is older than day before yesterday, show MM/DD/YYYY
-    if (messageDate < dayBeforeYesterdayStart) {
-      return date.toLocaleDateString("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric",
-      });
-    }
-
-    // Otherwise show time as before
-    return date.toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
 
   const selectMessage = (messageId) => {
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
@@ -542,22 +518,24 @@ export default function Page({ params }) {
           <button onClick={handleCloseMessage} className="text-gray-700">
             ✕
           </button>
-          <button
-            onClick={handleSendMessage}
-            disabled={!canSendMessage()}
-            className={`p-1 ${
-              !canSendMessage()
-                ? "cursor-not-allowed opacity-50"
-                : "hover:bg-blue-200 rounded"
-            }`}>
-            <Image
-              src="/send-message-icon.png"
-              alt="Send message"
-              width={24}
-              height={24}
-              className="object-contain"
-            />
-          </button>
+          {isEditing && ( // Only show send button in edit mode
+            <button
+              onClick={handleSendMessage}
+              disabled={!canSendMessage()}
+              className={`p-1 ${
+                !canSendMessage()
+                  ? "cursor-not-allowed opacity-50"
+                  : "hover:bg-blue-200 rounded"
+              }`}>
+              <Image
+                src="/send-message-icon.png"
+                alt="Send message"
+                width={24}
+                height={24}
+                className="object-contain"
+              />
+            </button>
+          )}
         </div>
 
         {/* Messages */}
@@ -568,7 +546,7 @@ export default function Page({ params }) {
             const isSenderUser = message.sent_by?.id === user?.uid;
             const location = getSenderLocation(message);
 
-            // Check if we need to show a date separator
+            // Check if we need to show a date separator (already in DateHelpers)
             const showDateSeparator =
               index === 0 ||
               isDifferentDay(
@@ -593,7 +571,7 @@ export default function Page({ params }) {
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
-                  }`}>
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                   <div
                     className="px-4 py-3"
                     onClick={() => selectMessage(messageId)}>
@@ -606,7 +584,7 @@ export default function Page({ params }) {
                               : recipients[0]?.photo_uri
                           }
                           first_name={
-                            isSenderUser ? "You" : recipients[0]?.first_name
+                            isSenderUser ? "Me" : recipients[0]?.first_name
                           }
                           width={48}
                           height={48}
@@ -664,7 +642,7 @@ export default function Page({ params }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message Input */}
+        {/* Message Input / View Mode Reply Box */}
         <div className="bg-white">
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center">
@@ -678,8 +656,8 @@ export default function Page({ params }) {
               <span className="text-gray-700">To {recipientName}</span>
             </div>
             {/* Octagonal Report Button */}
-            <button
-              onClick={handleReportClick}
+            {/* <button
+              onClick={handleReportUserClick}
               className="w-8 h-8 hover:opacity-80 transition-opacity duration-200 flex items-center justify-center"
               title="Report user">
               <Image
@@ -689,35 +667,39 @@ export default function Page({ params }) {
                 height={32}
                 className="object-contain"
               />
-            </button>
+            </button> */}
           </div>
 
-          <div className="p-4 relative" style={{ height: "40vh" }}>
-            <textarea
-              className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-              placeholder="Write your message..."
-              value={messageContent}
-              onChange={handleMessageChange}
-              autoFocus
-              style={{
-                overflowWrap: "break-word",
-                wordWrap: "break-word",
-                height: "calc(100% - 24px)",
-              }}
-            />
-            {/* <div className="absolute bottom-6 right-6">
-              <Image
-                src="/arrow-right.png"
-                alt="Send"
-                width={20}
-                height={20}
-                className={`cursor-pointer ${
-                  !canSendMessage() && "opacity-50"
-                }`}
-                onClick={canSendMessage() ? handleSendMessage : undefined}
+          {!isEditing ? (
+            // View Mode Input Box
+            <div className="p-4">
+              <div
+                className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
+                onClick={() => {
+                  setIsEditing(true);
+                  // Ensure focus immediately after switching to edit mode
+                  setTimeout(() => textAreaRef.current?.focus(), 0);
+                }}>
+                Reply to the letter...
+              </div>
+            </div>
+          ) : (
+            // Edit Mode Input Box
+            <div className="p-4 relative" style={{ height: "40vh" }}>
+              <textarea
+                ref={textAreaRef} // Attach ref to textarea
+                className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
+                placeholder="Write your message..."
+                value={messageContent}
+                onChange={handleMessageChange}
+                style={{
+                  overflowWrap: "break-word",
+                  wordWrap: "break-word",
+                  height: "calc(100% - 24px)",
+                }}
               />
-            </div> */}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Close Dialog */}
