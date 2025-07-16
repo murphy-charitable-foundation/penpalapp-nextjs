@@ -23,7 +23,6 @@ const MessagePreview = ({
       day: "numeric",
     });
   };
-
   return (
     <a
       href={`/letters/${letterboxId}`}

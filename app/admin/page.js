@@ -15,13 +15,14 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
-import { ref, getDownloadURL } from "firebase/storage"; // keep these
+import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
 
 
 import ProfileImage from "../../components/general/ProfileImage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import LetterCard from "../../components/general/admin/LetterCard";
+import ConversationList from "../../components/general/ConversationList";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
@@ -75,7 +76,7 @@ export default function Admin() {
       });
   
       return () => unsubscribe();
-    }, [router]);
+    }, []);
 
     
   const fetchLetters = async (nextPage = false) => {
@@ -101,26 +102,20 @@ export default function Admin() {
         const newDocs = await Promise.all(
           querySnapshot.docs.map(async (doc) => {
             const docData = doc.data();
-            let userData = null;
             let pfp = "/usericon.png"; // default fallback image
-
+            const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
+            const userData = userSnapshot.data();
             try {
-              console.log("Inside of try");
-              if (docData.sent_by) {
-                const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
-                if (userSnapshot.exists()) {
-                  userData = userSnapshot.data();
-                  const userId = userSnapshot.ref.path.split("/").pop(); // Safe parsing
-                  console.log("userId", userId);
+                
+                  const segments = userSnapshot._key.path.segments; // Safe parsing
+                  const userId = segments[segments.length - 1];
                   const path = `profile/${userId}/profile-image`;
-                  const photoRef = ref(storage, `profile/${userId}/profile-image`);
-                  console.log(1);
+                  const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
-
                   pfp = downloaded;
  
-                }
-              }
+                
+              
             } catch (error) {
               console.error("Error fetching user or photo:", error);
             }
@@ -129,14 +124,17 @@ export default function Admin() {
               id: doc.id,
               ...docData,
               profileImage: pfp,
-              first_name: userData?.first_name || "",
-              last_name: userData?.last_name || "",
+              name: userData?.first_name + userData?.last_name || "",
+              country: userData?.country,
+              lastMessage: doc.content,
+              lastMessageDate: doc.created_at,
               user: userData
             };
           })
         );
-
+        console.log("newDocs", newDocs);
         setDocuments((prev) => [...prev, ...newDocs]);
+        console.log("documents", documents);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
         setHasMore(false); // No more documents to load
@@ -181,9 +179,7 @@ export default function Admin() {
                       Recent letters
                     </h2>
                     {documents.length > 0 ? (
-                      documents.map((document, i) => (
-                        <LetterCard key={document.id + '_' + i} letter={document} />
-                      ))
+                      <ConversationList conversations={documents} /> 
                     ) : (
                       <EmptyState 
                         title="New friends are coming!"
