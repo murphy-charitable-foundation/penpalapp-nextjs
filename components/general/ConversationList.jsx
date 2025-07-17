@@ -1,6 +1,7 @@
 import MessagePreview from "./MessagePreview";
 
 const ConversationList = ({ conversations }) => {
+  console.log("conversations", conversations);
   return (
     <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
       {conversations.map((conversation) => (

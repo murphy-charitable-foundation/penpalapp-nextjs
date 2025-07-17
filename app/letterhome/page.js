@@ -5,7 +5,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc
+} from "firebase/firestore";
+import { ref as storageRef, getDownloadURL } from "@firebase/storage";
+import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
@@ -42,6 +47,7 @@ export default function Home() {
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
+    
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
@@ -105,11 +111,14 @@ export default function Home() {
         try {
           const uid = user.uid;
 
-          const userData = await getUserData(uid);
-          setUserName(userData.first_name || "Unknown User");
-          setCountry(userData.country || "Unknown Country");
-          setUserType(userData.user_type || "Unknown Type");
-          setProfileImage(userData?.photo_uri || "");
+        const userData = await getUserData(uid);
+        setUserName(userData.first_name || "Unknown User");
+        setCountry(userData.country || "Unknown Country");
+        setUserType(userData.user_type || "Unknown Type");
+        const path = `profile/${uid}/profile-image`;
+        const photoRef = storageRef(storage, path);
+        const downloaded = await getDownloadURL(photoRef);
+        setProfileImage(downloaded|| "");
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
@@ -134,28 +143,33 @@ export default function Home() {
           const docRef = doc(db, "users", uid);
           const docSnap = await getDoc(docRef);
 
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setUserName(userData.first_name || "Unknown User");
-            setCountry(userData.country || "Unknown Country");
-            setUserType(userData.user_type || "Unknown Type");
-            setProfileImage(userData?.photo_uri || "");
-
-            // Show welcome message
-            setShowWelcome(true);
-
-            // Hide welcome message after 5 seconds
-            setTimeout(() => {
-              setShowWelcome(false);
-            }, 5000);
-          } else {
-            console.log("No such document!");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setError("Failed to load user data");
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setUserName(userData.first_name || "Unknown User");
+          setCountry(userData.country || "Unknown Country");
+          setUserType(userData.user_type || "Unknown Type");
+          const segments = userSnapshot.ref._key.path.segments;
+          const userId = segments[segments.legnth - 1];
+          const path = `profile/${userId}/profile-image`;
+          const photoRef = storageRef(storage, path);
+          const downloaded = await getDownloadURL(photoRef)
+          setProfileImage(downloaded|| "");
+          
+          // Show welcome message
+          setShowWelcome(true);
+          
+          // Hide welcome message after 5 seconds
+          setTimeout(() => {
+            setShowWelcome(false);
+          }, 5000);
+        } else {
+          console.log("No such document!");
         }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setError("Failed to load user data");
       }
+    }
     };
 
     fetchUserData();

@@ -2,9 +2,9 @@ import React from "react";
 import Image from "next/image";
 import SendMessage from "./SendMessage";
 
+
 //Card for kid
-export default function KidCard({ kid, calculateAge }) {
-  console.log(kid)
+export default async function KidCard({ kid, calculateAge }) {
   return (
     <div
       key={kid?.id}
@@ -13,7 +13,7 @@ export default function KidCard({ kid, calculateAge }) {
     >
       <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
         <Image
-          src={kid?.photoURL || "/usericon.png"}
+          src={downloaded || "/usericon.png"}
           alt="Kid picture"
           width={220}
           height={220}
