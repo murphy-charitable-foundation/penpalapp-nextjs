@@ -65,23 +65,27 @@ export default function Home() {
         const fetchedConversations = await Promise.all(
           letterboxIds.map(async (id) => {
             const userRef = doc(db, "users", uid);
-            const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const letter =
+              (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
 
             return {
-              id,
+              id: letter?.id,
               profileImage: recipient?.photo_uri || "",
-              name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
+              name: `${recipient.first_name ?? "Unknown"} ${
+                recipient.last_name ?? ""
+              }`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
               lastMessageDate: letter.created_at || "",
               status: letter.status || "",
               letterboxId: id || "",
+              isRecipient: letter?.sent_by?.id !== uid,
+              unread: letter?.unread || false,
             };
           })
         );
-
         return fetchedConversations;
       } else {
         setError("No conversations found.");
@@ -105,7 +109,7 @@ export default function Home() {
         return;
       } else {
         try {
-        const uid = user.uid;
+          const uid = user.uid;
 
         const userData = await getUserData(uid);
         setUserName(userData.first_name || "Unknown User");
@@ -116,28 +120,28 @@ export default function Home() {
         const downloaded = await getDownloadURL(photoRef);
         setProfileImage(downloaded|| "");
 
-        const userConversations = await getConversations(uid);
-        setConversations(userConversations);
-      } catch (err) {
-        setError("Error fetching user data or conversations.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+          const userConversations = await getConversations(uid);
+          setConversations(userConversations);
+        } catch (err) {
+          setError("Error fetching user data or conversations.");
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
-  });
-  return () => unsubscribe();
-}, [router]);
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
         try {
-        const uid = auth.currentUser.uid;
-        setUserId(uid);
+          const uid = auth.currentUser.uid;
+          setUserId(uid);
 
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
+          const docRef = doc(db, "users", uid);
+          const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
@@ -200,46 +204,46 @@ export default function Home() {
     <PageBackground>
       <PageContainer maxWidth="lg">
         <>
-        { isLoading ? (
-          <LetterHomeSkeleton />
-         ) : (
-          <>
-        <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
-          <BackButton />
-          <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-            <ProfileHeader
-              userName={userName}
-              country={country}
-              profileImage={profileImage}
-              id={userId}
-            />
-          <main className="p-6 bg-white">
-            <section className="mt-8">
-              {conversations.length > 0 ? (
-                <ConversationList conversations={conversations} />
-              ) : (
-                <EmptyState
-                  title="New friends are coming!"
-                  description="Many friends are coming hang tight!"
+          {isLoading ? (
+            <LetterHomeSkeleton />
+          ) : (
+            <>
+              <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
+                <BackButton />
+                <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+                  <ProfileHeader
+                    userName={userName}
+                    country={country}
+                    profileImage={profileImage}
+                    id={userId}
+                  />
+                  <main className="p-6 bg-white">
+                    <section className="mt-8">
+                      {conversations.length > 0 ? (
+                        <ConversationList conversations={conversations} />
+                      ) : (
+                        <EmptyState
+                          title="New friends are coming!"
+                          description="Many friends are coming hang tight!"
+                        />
+                      )}
+                    </section>
+                  </main>
+
+                  <NavBar />
+                </div>
+              </div>
+              {userType === "admin" && (
+                <Button
+                  btnText="Check For Inactive Chats"
+                  color="bg-black"
+                  textColor="text-white"
+                  rounded="rounded-md"
+                  onClick={iterateLetterBoxes}
                 />
               )}
-            </section>
-          </main>
-
-          <NavBar />
-          </div>
-        </div>
-          {userType === "admin" && (
-            <Button
-              btnText="Check For Inactive Chats"
-              color="bg-black"
-              textColor="text-white"
-              rounded="rounded-md"
-              onClick={iterateLetterBoxes}
-            />
+            </>
           )}
-          </>
-        )}
         </>
         {/* Add animation keyframes */}
         <style jsx global>{`

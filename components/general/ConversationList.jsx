@@ -14,6 +14,8 @@ const ConversationList = ({ conversations }) => {
             lastMessageDate={conversation.lastMessageDate}
             letterboxId={conversation.letterboxId}
             status={conversation.status}
+            isRecipient={conversation.isRecipient}
+            unread={conversation.unread}
           />
         </div>
       ))}
