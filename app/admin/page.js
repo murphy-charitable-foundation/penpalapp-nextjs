@@ -127,9 +127,9 @@ export default function Admin() {
               id: doc.id,
               ...docData,
               profileImage: pfp,
-              first_name: userData?.first_name || "",
-              last_name: userData?.last_name || "",
-              user: userData
+              country: userData?.country || "",
+              user: userData,
+              name : userData?.first_name + userData?.last_name || ""
             };
           })
         );
