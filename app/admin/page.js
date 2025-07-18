@@ -27,6 +27,7 @@ import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import { iterateLetterBoxes } from "../utils/deadChat";
+import ConversationList from "../../components/general/ConversationList";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -105,7 +106,6 @@ export default function Admin() {
             let pfp = "/usericon.png"; // default fallback image
 
             try {
-              console.log("Inside of try");
               if (docData.sent_by) {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
@@ -129,7 +129,9 @@ export default function Admin() {
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
-              name : userData?.first_name + userData?.last_name || ""
+              name : userData?.first_name + userData?.last_name || "",
+              lastMessage: doc.content,
+              lastMessageDate: doc.created_at, 
             };
           })
         );
@@ -179,9 +181,7 @@ export default function Admin() {
                       Recent letters
                     </h2>
                     {documents.length > 0 ? (
-                      documents.map((document, i) => (
-                        <LetterCard key={document.id + '_' + i} letter={document} />
-                      ))
+                      <ConversationList conversations={documents}/>
                     ) : (
                       <EmptyState 
                         title="New friends are coming!"
