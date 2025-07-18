@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from '../../components/bottom-nav-bar';
 import * as Sentry from "@sentry/nextjs";
-import { getFirestore, collectionGroup, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
+import { getFirestore, collectionGroup, doc, getDoc, getDocs, collection, query, where, limit } from "firebase/firestore";
 import {
   fetchDraft,
   fetchLetterbox,
@@ -64,6 +64,22 @@ export default function Admin() {
         }
         console.log("user", user);
         setUserId(user.uid);
+        const userRef= doc(collection(db, "users"), user.uid);
+        const userSnapshot = getDoc(userRef);
+        const userData = (await userSnapshot).data()
+        if (userData.user_type != "admin") {
+          setError("User is not admin");
+          setIsLoading(false);
+          router.push("/login");
+          return;
+        }
+        setCountry(userData.country);
+        setUserName(userData.first_name + userData.last_name);
+        const path = `profile/${user.uid}/profile-image`;
+        const userPhotoRef = storageRef(storage, path);
+        const userUrl = await getDownloadURL(userPhotoRef);
+        setProfileImage(userUrl);
+        
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -122,14 +138,13 @@ export default function Admin() {
             } catch (error) {
               console.error("Error fetching user or photo:", error);
             }
-
             return {
               id: doc.id,
               ...docData,
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
-              name : userData?.first_name + userData?.last_name || "",
+              name : userData?.first_name + "" + userData?.last_name || "",
               lastMessage: doc.content,
               lastMessageDate: doc.created_at, 
             };
