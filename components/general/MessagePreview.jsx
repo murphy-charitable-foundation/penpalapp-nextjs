@@ -61,8 +61,6 @@ const MessagePreview = ({
     }
     return null;
   };
-  console.log("lastMessageDate", lastMessageDate);
-  console.log("content", lastMessage); 
   return (
     <a
       href={`/letters/${letterboxId}`}

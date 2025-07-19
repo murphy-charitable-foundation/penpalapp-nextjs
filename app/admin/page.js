@@ -6,8 +6,8 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from '../../components/bottom-nav-bar';
-import * as Sentry from "@sentry/nextjs";
-import { getFirestore, collectionGroup, doc, getDoc, getDocs, collection, query, where, limit } from "firebase/firestore";
+
+import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit } from "firebase/firestore";
 import {
   fetchDraft,
   fetchLetterbox,
@@ -21,13 +21,13 @@ import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep t
 import ProfileImage from "../../components/general/ProfileImage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import LetterCard from "../../components/general/admin/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
+import Header from "../../components/general/Header";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -50,6 +50,7 @@ export default function Admin() {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
+    const [activeFilter, setActiveFilter] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -74,7 +75,7 @@ export default function Admin() {
           return;
         }
         setCountry(userData.country);
-        setUserName(userData.first_name + userData.last_name);
+        setUserName(userData.first_name + " " + userData.last_name);
         const path = `profile/${user.uid}/profile-image`;
         const userPhotoRef = storageRef(storage, path);
         const userUrl = await getDownloadURL(userPhotoRef);
@@ -94,7 +95,8 @@ export default function Admin() {
       return () => unsubscribe();
     }, [router]);
 
-    
+
+
   const fetchLetters = async (nextPage = false) => {
     try {
       let lettersQuery = collectionGroup(db, "letters");
@@ -144,7 +146,7 @@ export default function Admin() {
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
-              name : userData?.first_name + "" + userData?.last_name || "",
+              name : userData?.first_name + " " + userData?.last_name || "",
               lastMessage: doc.content,
               lastMessageDate: doc.created_at, 
             };
@@ -168,45 +170,48 @@ export default function Admin() {
     
     return (
         <PageBackground>
-              <div className="flex justify-center bg-blue-800 h-20 max-w-md w-full ml-[auto] mr-[auto] p-8 space-y-8 shadow-md rounded-lg">
-                <select>
-                  <option>Hello</option>
-                </select>
-              </div>
               <PageContainer maxWidth="lg">
               <BackButton />
+              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
+            
+             
               
               <WelcomeToast 
                 userName={userName}
                 isVisible={showWelcome}
                 onClose={() => setShowWelcome(false)}
               />
-        
-              <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-                <ProfileHeader 
-                  userName={userName}
-                  country={country}
-                  profileImage={profileImage}
-                  id={userId}
-                />
-        
-                <main className="p-6">
-                  <section className="mt-8">
-                    <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
-                      Recent letters
-                    </h2>
-                    {documents.length > 0 ? (
-                      <ConversationList conversations={documents}/>
-                    ) : (
-                      <EmptyState 
-                        title="New friends are coming!"
-                        description="Many friends are coming hang tight!"
-                      />
-                    )}
-                  </section>
-                </main>
+              {activeFilter ? (
+                  <AdminFilter />
+                
+                ) : (
+                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+                    <ProfileHeader 
+                      userName={userName}
+                      country={country}
+                      profileImage={profileImage}
+                      id={userId}
+                    />
+            
+                    <main className="p-6">
+                      <section className="mt-8">
+                        <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
+                          Recent letters
+                        </h2>
+                        {documents.length > 0 ? (
+                          <ConversationList conversations={documents}/>
+                        ) : (
+                          <EmptyState 
+                            title="New friends are coming!"
+                            description="Many friends are coming hang tight!"
+                          />
+                        )}
+                      </section>
+                  </main>
+                  </div>
+                )}
                 <BottomNavBar />
-              </div>
+
         
               {userType === "admin" && (
                 <Button

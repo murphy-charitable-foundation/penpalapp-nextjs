@@ -209,7 +209,7 @@ export default function ChooseKid() {
       <BackButton />
       <div className="min-h-screen p-4 bg-white">
         <div className="bg-white">
-          <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+          <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Choose a kid to write to"} />
           {activeFilter ? (
             <div className="h-auto">
               <KidFilter
