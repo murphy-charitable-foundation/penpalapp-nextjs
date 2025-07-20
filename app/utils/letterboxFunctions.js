@@ -1,40 +1,55 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
-import { auth, db } from "../firebaseConfig"
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
 import * as Sentry from "@sentry/nextjs";
 
-const DELAY = 1000
-
+const DELAY = 1000;
 
 const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
-  return { userDocRef, userDocSnapshot }
-}
+  return { userDocRef, userDocSnapshot };
+};
 
 export const fetchLetterboxes = async () => {
   const retryFetch = () => setTimeout(() => fetchLetterboxes(), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
-    return
+    return;
   }
-  const { userDocRef, userDocSnapshot } = await getUserDoc()
-  if (!userDocSnapshot.exists()) return
+  const { userDocRef, userDocSnapshot } = await getUserDoc();
+  if (!userDocSnapshot.exists()) return;
 
-  const letterboxQuery = query(collection(db, "letterbox"), where("members", "array-contains", userDocRef));
+  const letterboxQuery = query(
+    collection(db, "letterbox"),
+    where("members", "array-contains", userDocRef)
+  );
   const letterboxQuerySnapshot = await getDocs(letterboxQuery);
-  const letterboxes = letterboxQuerySnapshot.docs
-  return letterboxes
-}
+  const letterboxes = letterboxQuerySnapshot.docs;
+  return letterboxes;
+};
 
 export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
-  const retryFetch = () => setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
+  const retryFetch = () =>
+    setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
-    return
+    return;
   }
-  const { userDocSnapshot } = await getUserDoc()
+  const { userDocSnapshot } = await getUserDoc();
 
   if (!userDocSnapshot.exists()) return;
 
@@ -45,14 +60,33 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   // TODO temporarily disable moderation until it is developed
   if (lim) {
     letterboxQuery = lastVisible
-      ? query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), startAfter(lastVisible), limit(lim))
-      : query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), limit(lim));
+      ? query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc"),
+          startAfter(lastVisible),
+          limit(lim)
+        )
+      : query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc"),
+          limit(lim)
+        );
   } else {
     letterboxQuery = lastVisible
-      ? query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), startAfter(lastVisible))
-      : query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"));
+      ? query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc"),
+          startAfter(lastVisible)
+        )
+      : query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc")
+        );
   }
-  
 
   /*if (lim) {
     letterboxQuery = lastVisible
@@ -67,23 +101,25 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
     const messages = lettersSnapshot.docs
-      .map((doc) => {return {id: doc.id, ...doc.data()}})
+      .map((doc) => {
+        return { id: doc.id, ...doc.data() };
+      })
       .filter((letterboxData) => letterboxData.status != "draft");
 
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
     return {
       messages: messages.length ? messages : [],
-      lastVisible: lastDoc
+      lastVisible: lastDoc,
     };
   } catch (e) {
     Sentry.captureException(e);
-    console.log("Error fetching letterbox: ", e)
+    console.log("Error fetching letterbox: ", e);
     return {
       messages: [],
-      lastVisible: null
-    }
+      lastVisible: null,
+    };
   }
-}
+};
 
 export const fetchDraft = async (id, userRef, createNew = false) => {
   const letterboxRef = doc(collection(db, "letterbox"), id);
@@ -97,25 +133,49 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   );
   const draftSnapshot = await getDocs(letterboxQuery);
   if (draftSnapshot.docs?.[0]?.data()) {
-    return { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
+    return {
+      ...draftSnapshot.docs?.[0].data(),
+      id: draftSnapshot.docs?.[0].id,
+    };
   }
 
   let draft;
   if (draftSnapshot.docs?.[0]?.data()) {
-    draft = { ...draftSnapshot.docs?.[0].data(), id: draftSnapshot.docs?.[0].id }
+    draft = {
+      ...draftSnapshot.docs?.[0].data(),
+      id: draftSnapshot.docs?.[0].id,
+    };
   } else if (createNew) {
-    const d = await addDoc(lRef, { sent_by: userRef, content: "", status: "draft", created_at: new Date(), deleted: null });
-    draft = { sent_by: userRef, content: "", status: "draft", created_at: new Date(), id: d.id, deleted: null }
+    const d = await addDoc(lRef, {
+      sent_by: userRef,
+      content: "",
+      status: "draft",
+      created_at: new Date(),
+      deleted: null,
+    });
+    draft = {
+      sent_by: userRef,
+      content: "",
+      status: "draft",
+      created_at: new Date(),
+      id: d.id,
+      deleted: null,
+    };
   }
-  return draft
-}
+  return draft;
+};
 
 export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   const draft = await fetchDraft(letterboxId, userRef, false);
   if (draft) return draft;
 
   const lettersRef = collection(db, "letterbox", letterboxId, "letters");
-  const q = query(lettersRef, where("status", "==", "sent"), orderBy("created_at", "desc"), limit(1));
+  const q = query(
+    lettersRef,
+    where("status", "==", "sent"),
+    orderBy("created_at", "desc"),
+    limit(1)
+  );
   const letterSnapshot = await getDocs(q);
   let letter;
   letterSnapshot.forEach((doc) => {
@@ -131,7 +191,7 @@ export const fetchRecipients = async (id) => {
   const retryFetch = () => setTimeout(() => fetchRecipients(id), DELAY);
   if (!auth.currentUser?.uid) {
     retryFetch();
-    return
+    return;
   }
 
   const currentUserUid = auth.currentUser.uid;
@@ -159,11 +219,11 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     sendingLetter = true;
     await updateDoc(doc(letterRef, draftId), letterData);
     sendingLetter = false;
-    return true
+    return true;
   } catch (e) {
     Sentry.captureException(e);
-    console.log("Failed to send letter: ", e)
+    console.log("Failed to send letter: ", e);
     sendingLetter = false;
-    return false
+    return false;
   }
-}
+};

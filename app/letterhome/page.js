@@ -71,7 +71,7 @@ export default function Home() {
             const recipient = rec?.[0] ?? {};
 
             return {
-              id,
+              id: letter?.id,
               profileImage: recipient?.photo_uri || "",
               name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
               country: recipient.country ?? "Unknown",
