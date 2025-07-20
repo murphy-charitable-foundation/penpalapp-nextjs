@@ -145,6 +145,7 @@ export default function Home() {
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
+            localStorage.setItem("chat_user", userData.user_type);
             setProfileImage(userData?.photo_uri || "");
             setUser(userData.user_type);
 

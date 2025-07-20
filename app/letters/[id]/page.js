@@ -56,6 +56,7 @@ export default function Page({ params }) {
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
+  const [userType, setUserType] = useState("");
 
   // UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -775,6 +776,7 @@ export default function Page({ params }) {
                 width={24}
                 height={24}
                 className="object-contain"
+                id="send-letter"
               />
             </button>
           )}
