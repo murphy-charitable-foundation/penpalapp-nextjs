@@ -69,7 +69,7 @@ export default function Page({ params }) {
 
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
-  
+
   const scrollToBottom = (instant = false) => {
     // console.log("📜 Scrolling to bottom, instant:", instant);
     messagesEndRef.current?.scrollIntoView({
@@ -604,7 +604,7 @@ const handleUseTemplate = (templateText) => {
           <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
             <button onClick={handleCloseMessage} className="text-gray-700">
               ✕
-            </button>
+          {isEditing && ( // Only show send button in edit mode
             <button
               onClick={handleSendMessage}
               disabled={!canSendMessage()}
@@ -622,6 +622,7 @@ const handleUseTemplate = (templateText) => {
                 id="send-letter"
               />
             </button>
+          )}
         </div>
 
         {/* Messages */}
@@ -823,7 +824,7 @@ const handleUseTemplate = (templateText) => {
         {showConfirmReportPopup && (
           <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
         )}
-    </div>
+      </div>
     </div>
   );
 }
