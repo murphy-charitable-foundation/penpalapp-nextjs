@@ -2,10 +2,7 @@
 
 import Button from "../Button";
 import {useEffect, useState} from "react"
-
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../../app/firebaseConfig"; 
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../firebaseConfig";
 import * as Sentry from "@sentry/nextjs";
 import { PageContainer } from "../PageContainer";
 
@@ -13,7 +10,6 @@ import { PageContainer } from "../PageContainer";
 const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}) => {
 
   const [pathParams, setPathParams] = useState('');
-  const auth = getAuth();
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;

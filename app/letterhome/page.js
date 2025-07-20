@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -19,12 +17,10 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "/components/general/ProfileImage";
+import { iterateLetterBoxes } from "../utils/deadChat";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
-import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -44,6 +40,7 @@ export default function Home() {
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
+    // Unnecessary getDoc
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -142,6 +139,7 @@ export default function Home() {
           setUserId(uid);
 
           const docRef = doc(db, "users", uid);
+          // Unnecessary getDoc
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {

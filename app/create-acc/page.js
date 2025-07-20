@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
-import { handleLogout } from "../profile/page";
-import EditProfileImage from "../../components/edit-profile";
 import * as Sentry from "@sentry/nextjs";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
@@ -102,14 +99,6 @@ export default function CreateAccount() {
         }
       }
 
-      // Create a document in Firestore in "users" collection with UID as the document key
-      await setDoc(doc(db, "users", uid), {
-        created_at: new Date(),
-        first_name: firstName,
-        last_name: lastName,
-        birthday,
-        connected_penpals_count: 0,
-      });
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {
         created_at: new Date(),

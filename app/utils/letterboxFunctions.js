@@ -8,6 +8,7 @@ const DELAY = 1000;
 
 const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+  // Unnecessary getDoc
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };
