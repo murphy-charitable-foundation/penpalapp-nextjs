@@ -1,27 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { db } from "../../firebaseConfig"; // Adjust this path as necessary
+import { db, auth } from "../../firebaseConfig"; // Adjust this path as necessary
 import { collection, doc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { RiDeleteBin6Line } from "react-icons/ri";
-import { MdSend } from "react-icons/md";
-import { BsPaperclip } from "react-icons/bs";
+import { onAuthStateChanged } from "firebase/auth";
 import { IoMdClose } from "react-icons/io";
 import { MdInsertDriveFile } from "react-icons/md";
-import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import Button from "../../../components/general/Button";
 import TextArea from "../../../components/general/TextArea";
 import Input from "../../../components/general/Input";
-
 import { useRouter } from "next/navigation";
-
 import * as Sentry from "@sentry/nextjs";
-
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import { uploadFile } from "../../lib/uploadFile";
 import {
@@ -30,9 +21,7 @@ import {
   fetchRecipients,
   sendLetter,
 } from "../../utils/letterboxFunctions";
-
 import BottomNavBar from "../../../components/bottom-nav-bar";
-import ProfileImage from "../../../components/general/ProfileImage";
 import LetterHeader from "../../../components/general/letter/LetterHeader";
 import RecipientList from "../../../components/general/letter/RecipientList";
 import MessageBubble from "../../../components/general/letter/MessageBubble";
@@ -42,7 +31,6 @@ import Dialog from "../../../components/general/Modal";
 
 export default function Page({ params }) {
   const { id } = params;
-  const auth = getAuth();
   const router = useRouter();
 
   const [letterContent, setLetterContent] = useState("");

@@ -18,13 +18,12 @@ export default function EditProfileUserImage() {
   const [croppedImage, setCroppedImage] = useState(null);
   const [storageUrl, setStorageUrl] = useState(null);
   const [user, setUser] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
 
   const cropperRef = useRef();
   const router = useRouter();
-
+// Unnecessary getDoc
   useEffect(() => {
     const fetchUserData = async () => {
       console.log(auth);

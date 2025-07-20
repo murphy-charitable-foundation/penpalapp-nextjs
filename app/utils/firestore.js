@@ -11,11 +11,13 @@ export const fetchData = async () => {
   }
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   console.log(auth.currentUser.uid)
+  // Unnecessary getDoc
   const userDocSnapshot = await getDoc(userDocRef);
   console.log(userDocSnapshot)
 
   if (userDocSnapshot.exists()) {
     const letterboxQuery = query(collection(db, "letterbox"), where("members", "array-contains", userDocRef));
+    // Unnecessary getDoc
     const letterboxQuerySnapshot = await getDocs(letterboxQuery);
 
     const messages = [];
@@ -32,7 +34,6 @@ export const fetchData = async () => {
         limit(1)
       )
       const draftSnapshot = await getDocs(draftQuery);
-      console.log("DRAFT", draftSnapshot)
       if (!draftSnapshot.empty) {
         const queryDocumentSnapshots = draftSnapshot.docs;
         const latestMessage = queryDocumentSnapshots[0].data();

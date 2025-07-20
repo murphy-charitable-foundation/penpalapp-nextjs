@@ -40,6 +40,7 @@ const EditProfileImage = ({ router }) => {
 	useEffect(() => {
 		const findUser = async () => {
 			const uid = auth.currentUser?.uid
+			// Unnecessary getDoc
 			const u = await getDoc(doc(db, "users", uid))
 			console.log(u.data())
 			setUser(u.data())
