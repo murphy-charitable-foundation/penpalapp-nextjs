@@ -21,6 +21,8 @@ import {
 
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
+import FirstTimeChatGuide from "../../components/tooltip/FirstTimeChatGuide";
+import { usePathname } from 'next/navigation';
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
@@ -41,6 +43,8 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
+  const [user, setUser] = useState(null);
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -95,6 +99,7 @@ export default function Home() {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
       if (!user) {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
@@ -139,7 +144,9 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           setProfileImage(userData?.photo_uri || "");
+          setUser(userData.user_type);
           
+          console.log(userData);
           // Show welcome message
           setShowWelcome(true);
           
@@ -205,7 +212,10 @@ export default function Home() {
           <main className="p-6 bg-white">
             <section className="mt-8">
               {conversations.length > 0 ? (
-                <ConversationList conversations={conversations} />
+                <>
+                  { conversations.length > 0 && <FirstTimeChatGuide page="letterHome" params={pathname} user={user} /> }
+                  <ConversationList conversations={conversations} />
+                </>
               ) : (
                 <EmptyState
                   title="New friends are coming!"

@@ -27,7 +27,7 @@ export default function LetterHomeSkeleton() {
                 <div className="h-8 w-20 bg-gray-300 rounded" />
               </div>
               <div>
-                {[...Array(5)].map((_, i) => (
+                {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
                     className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md animate-pulse"

@@ -22,9 +22,13 @@ import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
+import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
+import { usePathname } from 'next/navigation';
+import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
+import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -38,9 +42,10 @@ export default function Page({ params }) {
   const [userLocation, setUserLocation] = useState("");
 
   // Message and draft states
-  const [messageContent, setMessageContent] = useState("");
+  const [messageContent, setMessageContent] = useState("Tap to write letter...");
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
+  const pathname = usePathname();
 
   // Chat states
   const [allMessages, setAllMessages] = useState([]);
@@ -455,9 +460,7 @@ export default function Page({ params }) {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div className="text-gray-500">Loading conversation...</div>
-      </div>
+      <LettersSkeleton />
     );
   }
 
@@ -534,10 +537,31 @@ export default function Page({ params }) {
     );
   };
 
+    
+// This function will be passed as a prop to FirstTimeChatGuide
+const handleUseTemplate = (templateText) => {
+  setMessageContent(templateText);
+  
+  // Focus the input and set cursor at the end
+  if (messageInputRef.current) {
+    messageInputRef.current.focus();
+    
+    setTimeout(() => {
+      messageInputRef.current.setSelectionRange(
+        templateText.length, 
+        templateText.length
+      );
+    }, 0);
+    
+  }
+};
+
+
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
         <>
+          { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
           {/* Header */}
           <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
             <button onClick={handleCloseMessage} className="text-gray-700">

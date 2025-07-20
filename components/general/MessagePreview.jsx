@@ -7,7 +7,8 @@ const MessagePreview = ({
   lastMessage,
   lastMessageDate,
   letterboxId,
-  status
+  status,
+  className
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -27,7 +28,7 @@ const MessagePreview = ({
   return (
     <a
       href={`/letters/${letterboxId}`}
-      className="block p-4 bg-white rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
+      className={`block p-4 bg-white rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${className}`}
     >
       <div className="flex items-start">
         <img
