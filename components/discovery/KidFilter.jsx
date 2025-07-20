@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig";
 import HobbySelect from "../general/HobbySelect";
 import Input from "../general/Input";
 import Button from "../general/Button";

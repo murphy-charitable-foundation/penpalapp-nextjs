@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState, useEffect, useRef, useCallback } from "react";
 import { db } from "../../firebaseConfig";
 import {
@@ -23,6 +24,14 @@ import {
 import { formatTime, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
+=======
+import { useState, useEffect } from "react";
+import { db, auth } from "../../firebaseConfig"; // Adjust this path as necessary
+import { collection, doc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { IoMdClose } from "react-icons/io";
+import { MdInsertDriveFile } from "react-icons/md";
+>>>>>>> Removing unused imports and locating unnecessary database requests
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
@@ -31,6 +40,7 @@ import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import Button from "../../../components/general/Button";
+<<<<<<< HEAD
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
@@ -102,6 +112,30 @@ export default function Page({ params }) {
   const { id } = params;
 
   const auth = getAuth();
+=======
+import TextArea from "../../../components/general/TextArea";
+import Input from "../../../components/general/Input";
+import { useRouter } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
+import LettersSkeleton from "../../../components/loading/LettersSkeleton";
+import { uploadFile } from "../../lib/uploadFile";
+import {
+  fetchDraft,
+  fetchLetterbox,
+  fetchRecipients,
+  sendLetter,
+} from "../../utils/letterboxFunctions";
+import BottomNavBar from "../../../components/bottom-nav-bar";
+import LetterHeader from "../../../components/general/letter/LetterHeader";
+import RecipientList from "../../../components/general/letter/RecipientList";
+import MessageBubble from "../../../components/general/letter/MessageBubble";
+import { PageContainer } from "../../../components/general/PageContainer";
+import { BackButton } from "../../../components/general/BackButton";
+import Dialog from "../../../components/general/Modal";
+
+export default function Page({ params }) {
+  const { id } = params;
+>>>>>>> Removing unused imports and locating unnecessary database requests
   const router = useRouter();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);

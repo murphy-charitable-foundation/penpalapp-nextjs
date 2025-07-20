@@ -12,7 +12,6 @@ import { PageContainer } from "../PageContainer";
 const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}) => {
 
   const [pathParams, setPathParams] = useState('');
-  const auth = getAuth();
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;

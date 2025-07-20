@@ -40,6 +40,7 @@ const EditProfileImage = ({ router }) => {
     }
   }, [stage]);
 
+<<<<<<< HEAD
   useEffect(() => {
     const findUser = async () => {
       const uid = auth.currentUser?.uid;
@@ -49,6 +50,18 @@ const EditProfileImage = ({ router }) => {
     };
     findUser();
   }, []);
+=======
+	useEffect(() => {
+		const findUser = async () => {
+			const uid = auth.currentUser?.uid
+			// Unnecessary getDoc
+			const u = await getDoc(doc(db, "users", uid))
+			console.log(u.data())
+			setUser(u.data())
+		}
+		findUser()
+	}, [])
+>>>>>>> Removing unused imports and locating unnecessary database requests
 
   const handleDrop = (acceptedFiles) => {
     setImage(URL.createObjectURL(acceptedFiles[0]));

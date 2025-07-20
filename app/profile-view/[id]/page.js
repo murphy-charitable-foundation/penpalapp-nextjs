@@ -3,18 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../../firebaseConfig";
 import { usePageAnalytics } from "../../useAnalytics";
 import { logButtonEvent, logLoadingTime } from "../../utils/analytics";
 import React from "react";
 
 import {
-  User,
-  MapPin,
   Home,
-  FileText,
   Calendar,
   GraduationCap,
   Users,
@@ -23,8 +20,6 @@ import {
   Square,
   Palette,
 } from "lucide-react";
-import Button from "../../../components/general/Button";
-import { BackButton } from "../../../components/general/BackButton";
 import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
@@ -59,6 +54,7 @@ export default function Page({ params }) {
       if (auth.currentUser) {
         const uid = id;
         const docRef = doc(db, "users", uid);
+        // Unnecessary getDoc
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {

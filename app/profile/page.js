@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
@@ -27,7 +27,6 @@ import Input from "../../components/general/Input";
 import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
@@ -77,6 +76,7 @@ export default function EditProfile() {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
+        // Unnecessary getDoc
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {

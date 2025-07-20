@@ -5,12 +5,9 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
-import Image from "next/image";
-import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
@@ -48,6 +45,7 @@ export default function Login() {
       );
       const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
+      // Unnecessary getDoc (this will be the data progenitor)
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
