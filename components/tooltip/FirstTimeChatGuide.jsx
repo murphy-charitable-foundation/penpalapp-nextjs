@@ -32,7 +32,7 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
       target: '#message-input',
       content: 'Tap to reply and Draft your response here.',
       position: 'typing-box',
-      arrowDirection: 'bottom',
+      arrowDirection: 'top',
       advanceOn: 'click',
       showTemplateOptions: true,
     },
@@ -63,7 +63,7 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
     const isGuideCompleted = localStorage.getItem('hasSeenChatGuide') === 'true';
 
     if( !isGuideCompleted ) {
-      if( page == 'letterHome' || params == '/letterhome' ) {
+      if( page == 'letterHome' || params == 'letterhome' ) {
         setShowGuide(true);
         setCurrentStep(0);
       } else if( page == 'letterDetail' || params.includes('/letters/') ) {
@@ -109,7 +109,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
     }
 
     if (currentStepData.advanceOn) {
-      console.log('test');
       const handleTargetAction = () => {
         if (currentStepData.advanceOn === 'click' ) {
           // When the textarea is focused, automatically use the template
@@ -171,8 +170,9 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
         left = (targetRect.left + 20) + 'px';
         break;
       case 'typing-box':
-        top = (targetRect.top - targetRect.height + 30) + 'px';
-        left = 10 + 'px';
+        top = 'unset';
+        left = targetRect.left + 'px';
+        bottom = (targetRect.height / 2) + 'px';
         break;
       case 'middle':
         top = ( targetRect.top + 30 ) + 'px';
@@ -180,9 +180,10 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
         bottom = 'unset';
         break;
       case 'send-letter':
-        top = ( targetRect.bottom - 10 ) + 'px';
-        left = 'unset';
-        right = 0;
+        top = ( targetRect.top +  40.75 ) + 'px';
+        right = 'unset';
+        left = ( targetRect.left / 2 ) + 30 + 'px' ;
+        bottom = 'unset';
         break;
       default:
         top = targetRect.bottom + 10;
@@ -214,7 +215,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
   };
 
   const handleUseTemplate = () => {
-    console.log('saasada');
     if (onUseTemplate) {
       onUseTemplate(defaultTemplate);
     }

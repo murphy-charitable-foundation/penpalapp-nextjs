@@ -43,6 +43,7 @@ export default function Page({ params }) {
 
   // Message and draft states
   const [messageContent, setMessageContent] = useState("Tap to write letter...");
+  const messageInputRef = useRef(null);
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
   const pathname = usePathname();
@@ -52,6 +53,7 @@ export default function Page({ params }) {
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
+  const [userType, setUserType] = useState("");
 
   // UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function Page({ params }) {
 
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
-
+  
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
@@ -347,6 +349,8 @@ export default function Page({ params }) {
 
   // Initialize component
   useEffect(() => {
+    const chat_user = localStorage.getItem('chat_user');
+    setUserType(chat_user);
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
 
@@ -536,7 +540,6 @@ export default function Page({ params }) {
       !isSending
     );
   };
-
     
 // This function will be passed as a prop to FirstTimeChatGuide
 const handleUseTemplate = (templateText) => {
@@ -556,12 +559,11 @@ const handleUseTemplate = (templateText) => {
   }
 };
 
-
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
         <>
-          { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
+          { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} user={userType} recipient={recipients} /> }
           {/* Header */}
           <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
             <button onClick={handleCloseMessage} className="text-gray-700">
@@ -582,6 +584,7 @@ const handleUseTemplate = (templateText) => {
                 width={24}
                 height={24}
                 className="object-contain"
+                id="send-letter"
               />
             </button>
           </div>
@@ -717,6 +720,7 @@ const handleUseTemplate = (templateText) => {
 
             <div className="p-4 relative" style={{ height: "40vh" }}>
               <textarea
+                id="message-input"
                 className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
                 placeholder="Write your message..."
                 value={messageContent}
