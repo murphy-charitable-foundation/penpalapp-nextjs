@@ -197,7 +197,6 @@ export default function FirstTimeChatGuide({
         top = targetRect.bottom + 10;
         left = targetRect.left;
     }
-
     // Apply position
     tooltipElement.style.top = top;
     tooltipElement.style.left = left;

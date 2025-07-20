@@ -11,7 +11,7 @@ const MessagePreview = ({
   letterboxId,
   status,
   isRecipient,
-  unread = false,
+  unread = false
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 

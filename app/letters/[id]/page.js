@@ -41,12 +41,10 @@ export default function Page({ params }) {
   const [userLocation, setUserLocation] = useState("");
 
   // Message and draft states
-  const [messageContent, setMessageContent] = useState(
-    "Tap to write letter..."
-  );
+  const [messageContent, setMessageContent] = useState("Tap to write letter...");
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
-  const [isDeletingDraft, setIsDeletingDraft] = useState(false); // New state to track draft deletion
+  const pathname = usePathname();
 
   // Chat states
   const [allMessages, setAllMessages] = useState([]);
@@ -533,7 +531,9 @@ export default function Page({ params }) {
   }, [allMessages, isEditing]);
 
   if (isLoading) {
-    return <LettersSkeleton />;
+    return (
+      <LettersSkeleton />
+    );
   }
 
   const selectMessage = (messageId) => {
@@ -574,15 +574,35 @@ export default function Page({ params }) {
     }, 0);
   };
 
+    
+// This function will be passed as a prop to FirstTimeChatGuide
+const handleUseTemplate = (templateText) => {
+  setMessageContent(templateText);
+  
+  // Focus the input and set cursor at the end
+  if (messageInputRef.current) {
+    messageInputRef.current.focus();
+    
+    setTimeout(() => {
+      messageInputRef.current.setSelectionRange(
+        templateText.length, 
+        templateText.length
+      );
+    }, 0);
+    
+  }
+};
+
+
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-        {/* Header */}
-        <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-          <button onClick={handleCloseMessage} className="text-gray-700">
-            ✕
-          </button>
-          {isEditing && ( // Only show send button in edit mode
+          { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
+          {/* Header */}
+          <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
+            <button onClick={handleCloseMessage} className="text-gray-700">
+              ✕
+            </button>
             <button
               onClick={handleSendMessage}
               disabled={!canSendMessage()}
@@ -599,7 +619,6 @@ export default function Page({ params }) {
                 className="object-contain"
               />
             </button>
-          )}
         </div>
 
         {/* Messages */}
@@ -800,7 +819,7 @@ export default function Page({ params }) {
         {showConfirmReportPopup && (
           <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
         )}
-      </div>
+    </div>
     </div>
   );
 }
