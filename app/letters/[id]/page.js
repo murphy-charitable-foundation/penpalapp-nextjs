@@ -26,9 +26,6 @@ import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
 import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
-import { PageContainer } from "../../../components/general/PageContainer";
-import { AlertTriangle } from "lucide-react";
-import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -49,14 +46,13 @@ export default function Page({ params }) {
   );
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
-  const pathname = usePathname();
+  const [isDeletingDraft, setIsDeletingDraft] = useState(false); // New state to track draft deletion
 
   // Chat states
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
-  const [userType, setUserType] = useState("");
 
   // UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -776,7 +772,6 @@ export default function Page({ params }) {
                 width={24}
                 height={24}
                 className="object-contain"
-                id="send-letter"
               />
             </button>
           )}
