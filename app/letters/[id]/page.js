@@ -42,6 +42,7 @@ export default function Page({ params }) {
 
   // Message and draft states
   const [messageContent, setMessageContent] = useState("Tap to write letter...");
+  const messageInputRef = useRef(null);
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
   const pathname = usePathname();
@@ -51,6 +52,7 @@ export default function Page({ params }) {
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
+  const [userType, setUserType] = useState("");
 
   // UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function Page({ params }) {
 
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
-
+  
   const scrollToBottom = (instant = false) => {
     // console.log("📜 Scrolling to bottom, instant:", instant);
     messagesEndRef.current?.scrollIntoView({
@@ -391,6 +393,8 @@ export default function Page({ params }) {
 
   // Initialize component
   useEffect(() => {
+    const chat_user = localStorage.getItem('chat_user');
+    setUserType(chat_user);
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
 
@@ -573,7 +577,6 @@ export default function Page({ params }) {
       textAreaRef.current?.focus();
     }, 0);
   };
-
     
 // This function will be passed as a prop to FirstTimeChatGuide
 const handleUseTemplate = (templateText) => {
@@ -592,7 +595,6 @@ const handleUseTemplate = (templateText) => {
     
   }
 };
-
 
   return (
     <div className="bg-gray-100 min-h-screen py-6">
@@ -617,6 +619,7 @@ const handleUseTemplate = (templateText) => {
                 width={24}
                 height={24}
                 className="object-contain"
+                id="send-letter"
               />
             </button>
         </div>
@@ -767,6 +770,7 @@ const handleUseTemplate = (templateText) => {
             <div className="p-4 relative" style={{ height: "40vh" }}>
               <textarea
                 ref={textAreaRef} // Attach ref to textarea
+                id="message-input"
                 className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
                 placeholder="Write your message..."
                 value={messageContent}
