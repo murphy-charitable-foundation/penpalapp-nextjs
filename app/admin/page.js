@@ -28,6 +28,7 @@ import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
+import AdminFilter from "../../components/general/admin/AdminFilter";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -182,7 +183,13 @@ export default function Admin() {
                 onClose={() => setShowWelcome(false)}
               />
               {activeFilter ? (
-                  <AdminFilter />
+                  <AdminFilter setStatus={setSelectedStatus} 
+                  status={selectedStatus} 
+                  setStart={setStartDate} 
+                  start={startDate} 
+                  setEnd={setEndDate} 
+                  end={endDate}
+                  filter={activeFilter} />
                 
                 ) : (
                   <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">

@@ -2,98 +2,91 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
-import HobbySelect from "../general/HobbySelect";
-import Input from "../general/Input";
-import Button from "../general/Button";
-import Dropdown from "../general/Dropdown";
+import Input from "../Input";
+import Button from "../Button";
+import Dropdown from "../Dropdown";
 
 export default function AdmminFilter({
-  setHobbies,
-  hobbies,
-  setAge,
-  age,
-  setGender,
-  gender,
+  setStatus,
+  status,
+  setStart,
+  start,
+  setEnd,
+  end,
   filter,
 }) {
-  const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
-  const [ageFilter, setAgeFilter] = useState(age !== 0 ? age : "");
-  const [genderFilter, setGenderFilter] = useState(gender || "");
+  const [statusFilter, setStatusFilter] = useState(status || "");
+  const [startFilter, setStartFilter] = useState(start || "2025-01-01");
+  const [endFilter, setEndFilter] = useState(end || "2025-01-01");
 
   useEffect(() => {
-    setHobbiesFilter(hobbies || []);
-    setAgeFilter(age !== 0 && age !== null ? age : "");
-    setGenderFilter(gender || "");
-  }, [age, gender, hobbies]);
+    setStatusFilter(status || "");
+    setStartFilter(start !== 0 && start !== null ? start : "");
+    setEndFilter(end || "");
+  }, [status, start, end]);
 
 
 
   const applyFilter = (e) => {
     e.preventDefault();
-    filter(ageFilter, hobbyFilter, genderFilter);
+    filter(statusFilter, startFilter, endFilter);
   };
 
 
 
   const clearFilter = () => {
-    setHobbies(null);
-    setAge(null);
-    setGender(null);
-    setHobbiesFilter([]);
-    setAgeFilter("");
-    setGenderFilter("");
+    setStatus(null);
+    setStart(null);
+    setEnd(null);
+    setStatusFilter([]);
+    setStartFilter("");
+    setEndFilter("");
   };
 
-  const genderOptions = ["Male", "Female", "Non-binary", "Other"];
+  const genderOptions = ["Draft", "Approved", "Pending", "Rejected"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
       <form className="flex flex-col gap-6">
         <div>
-          <label
-            htmlFor="village"
-            className="text-sm font-medium text-gray-700 block mb-2"
-          >
-            Hobby
-          </label>
-          
-          <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} wantBorder={false}/>
+        <label for="start">Start date:</label>
+
+        <input
+          type="date"
+          id="start"
+          name="start"
+          value={start}
+          onChange={(e) => {setStartFilter(e.target.value)}}
+          min="2018-01-01"
+           />
+        </div>
+        <div>
+          <label for="start">End date:</label>
+
+          <input
+            type="date"
+            id="end"
+            name="end"
+            value={"end"}
+            min={start}
+            />
         </div>
         <div>
           <label
             htmlFor="gender"
             className="text-sm font-medium text-gray-700 block mb-2"
           >
-            Gender
+            Status
           </label>
           
           <Dropdown
           options={genderOptions}
-          valueChange={setGenderFilter}
-          currentValue={genderFilter}
-          text="Gender"
+          valueChange={setStatusFilter}
+          currentValue={statusFilter}
+          text="Status"
           />
         </div>
-        <div>
-          <label
-            htmlFor="age"
-            className="text-md font-medium text-gray-700 block mb-2 px-2"
-          >
-            Age
-          </label>
-          <Input
-            type="number"
-            id="age"
-            value={ageFilter}
-            onChange={(e) => setAgeFilter(e.target.value)}
-            placeholder="Input your age"
-            size="w-full"
-            padding="p-2"
-            borderColor="border-black"
-            textColor="text-black"
-          />
-        </div>
+        
         <div className="flex justify-center mt-24">
           <div className="flex flex-col gap-2">
             <Button
