@@ -1,4 +1,4 @@
-import Button from "../Button";
+import Button from "../general/Button";
 import { FaExclamationCircle } from "react-icons/fa";
 
 const ConfirmReportPopup = ({ setShowPopup }) => {
@@ -13,12 +13,7 @@ const ConfirmReportPopup = ({ setShowPopup }) => {
           the content of the message.
         </p>
         <div className="flex justify-around w-full">
-          <Button 
-          onClick={() => setShowPopup(false)} 
-          color="blue"
-          btnType="success"
-          size="small"
-          >
+          <Button onClick={() => setShowPopup(false)} type="success" size="sm">
             Got It
           </Button>
         </div>

@@ -1,9 +1,9 @@
 .medium-green-btn {
-  background-color: #4E802A;
+  background-color: #4e802a;
 }
 
 .button-highlight::before {
-  content: '';
+  content: "";
   position: absolute;
   border-radius: 50%;
   border: 1px solid black;
@@ -14,27 +14,27 @@
 }
 
 .speechbubble::after {
-    content: '';
-    position: absolute;
-    border-style: solid;
-    border-color: var(--primary-green) transparent;
-    display: block;
-    width: 0;
-    z-index: 1;
-  }
+  content: "";
+  position: absolute;
+  border-style: solid;
+  border-color: var(--primary-green) transparent;
+  display: block;
+  width: 0;
+  z-index: 1;
+}
 
-  .topRight::after {
-    top: -10px;
-    border-width: 0 10px 10px;
-    right: 20px;
-  }
+.topRight::after {
+  top: -10px;
+  border-width: 0 10px 10px;
+  right: 20px;
+}
 
-  .top::after {
-    top: -10px;
-    border-width: 0 10px 10px;
-  }
+.top::after {
+  top: -10px;
+  border-width: 0 10px 10px;
+}
 
-  .bottom::after {
-    bottom: -10px;
-    border-width: 10px 10px 0;
-  }
+.bottom::after {
+  bottom: -10px;
+  border-width: 10px 10px 0;
+}
