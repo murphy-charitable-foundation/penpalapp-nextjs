@@ -165,7 +165,10 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   return draft;
 };
 
-export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+export const fetchLatestLetterFromLetterboxOld = async (
+  letterboxId,
+  userRef
+) => {
   const draft = await fetchDraft(letterboxId, userRef, false);
   if (draft) return draft;
 
@@ -182,6 +185,55 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     letter = { id: doc.id, ...doc.data() };
   });
   return letter;
+};
+
+export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+  const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
+  const lRef = collection(letterboxRef, "letters");
+
+  // My Letters
+  const userLettersQuery = query(
+    lRef,
+    where("sent_by", "==", userRef),
+    orderBy("created_at", "desc"),
+    limit(1) // grab a few in case of fallback
+  );
+
+  // Your letters
+  const sentLettersQuery = query(
+    lRef,
+    where("status", "==", "sent"),
+    orderBy("created_at", "desc"),
+    limit(1)
+  );
+
+  // Run both in parallel
+  const [userLettersSnap, sentLettersSnap] = await Promise.all([
+    getDocs(userLettersQuery),
+    getDocs(sentLettersQuery),
+  ]);
+
+  const allLetters = [];
+
+  if (!userLettersSnap?.empty)
+    userLettersSnap.forEach((doc) => {
+      allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
+
+  if (!sentLettersSnap?.empty)
+    sentLettersSnap.forEach((doc) => {
+      if (doc?.data()?.sent_by?.id !== userRef?.id)
+        allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
+
+  if (allLetters.length === 0) return null;
+  else if (allLetters.length === 1) return allLetters[0];
+  else if (
+    allLetters[0]?.created_at?.toDate?.() >
+    allLetters[1]?.created_at?.toDate?.()
+  )
+    return allLetters[0];
+  else return allLetters[1];
 };
 
 export const fetchRecipients = async (id) => {
