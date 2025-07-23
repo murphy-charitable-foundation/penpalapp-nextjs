@@ -40,8 +40,6 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
-  const pathname = usePathname();
-  const [user, setUser] = useState(null);
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -100,7 +98,6 @@ export default function Home() {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoading(true);
       if (!user) {
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
