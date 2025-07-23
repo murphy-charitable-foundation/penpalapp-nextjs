@@ -9,12 +9,8 @@ const MessagePreview = ({
   lastMessageDate,
   letterboxId,
   status,
-<<<<<<< HEAD
   isRecipient,
   unread = false,
-=======
-  className
->>>>>>> 60a2387 (Added Tooltip component)
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -69,20 +65,15 @@ const MessagePreview = ({
   return (
     <a
       href={`/letters/${letterboxId}`}
-<<<<<<< HEAD
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
           : isRecipient && unread
           ? "bg-green-50"
-          : status === "pending_review" ?
-          "bg-gray-50" :
-          "bg-white"
-      }`}
-=======
-      className={`block p-4 bg-white rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${className}`}
->>>>>>> 60a2387 (Added Tooltip component)
-    >
+          : status === "pending_review"
+          ? "bg-gray-50"
+          : "bg-white"
+      }`}>
       <div className="flex items-start">
         <Image
           src={imageSrc}
