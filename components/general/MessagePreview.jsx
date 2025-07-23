@@ -71,6 +71,8 @@ const MessagePreview = ({
           ? "bg-red-50"
           : isRecipient && unread
           ? "bg-green-50"
+          : status === "pending_review"
+          ? "bg-gray-50"
           : "bg-white"
       }`}>
       <div className="flex items-start">
