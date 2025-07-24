@@ -241,7 +241,7 @@ export default function Page({ params }) {
         id: messageRef.id,
         sent_by: { id: user.uid },
       };
-      setAllMessages((prev) => [messageWithId, ...prev]);
+      setAllMessages((prev) => [ ...prev, messageWithId]);
 
       // Scroll to bottom
       setTimeout(() => scrollToBottom(true), 100);
@@ -431,7 +431,7 @@ export default function Page({ params }) {
                 ? b.created_at
                 : new Date(b.created_at);
             return aTime.getTime() - bTime.getTime();
-          });
+          }).reverse();
 
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
@@ -486,6 +486,7 @@ export default function Page({ params }) {
 
   const selectMessage = (messageId) => {
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
+    setIsEditing(false); // Exit edit mode when selecting a message
   };
 
   const truncateMessage = (message) => {
