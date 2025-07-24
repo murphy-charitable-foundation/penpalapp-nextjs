@@ -425,13 +425,13 @@ export default function Page({ params }) {
             const aTime =
               a.created_at instanceof Date
                 ? a.created_at
-                : new Date(a.created_at);
+                : a.created_at.toDate();
             const bTime =
               b.created_at instanceof Date
                 ? b.created_at
-                : new Date(b.created_at);
+                : b.created_at.toDate();
             return aTime.getTime() - bTime.getTime();
-          }).reverse();
+          });
 
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
