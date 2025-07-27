@@ -26,6 +26,9 @@ import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
 import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
+import { PageContainer } from "../../../components/general/PageContainer";
+import { AlertTriangle } from "lucide-react";
+import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 
 export default function Page({ params }) {
   const { id } = params;
