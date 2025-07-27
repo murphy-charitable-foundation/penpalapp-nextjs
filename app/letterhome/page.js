@@ -146,7 +146,9 @@ export default function Home() {
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
             setProfileImage(userData?.photo_uri || "");
+            setUser(userData.user_type);
 
+            console.log(userData);
             // Show welcome message
             setShowWelcome(true);
 
@@ -212,7 +214,16 @@ export default function Home() {
                   <main className="p-6 bg-white">
                     <section className="mt-8">
                       {conversations.length > 0 ? (
-                        <ConversationList conversations={conversations} />
+                        <>
+                          {conversations.length > 0 && (
+                            <FirstTimeChatGuide
+                              page="letterHome"
+                              params={pathname}
+                              user={user}
+                            />
+                          )}
+                          <ConversationList conversations={conversations} />
+                        </>
                       ) : (
                         <EmptyState
                           title="New friends are coming!"

@@ -22,14 +22,13 @@ import ReportPopup from "../../../components/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
-import {
-  isDifferentDay,
-  formatDateSeparator,
-  formatTime,
-} from "../../utils/dateHelpers";
-
-// /components/letter/DateHelpers";
+import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
+import { usePathname } from "next/navigation";
+import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
+import { PageContainer } from "../../../components/general/PageContainer";
+import { AlertTriangle } from "lucide-react";
+import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -45,10 +44,12 @@ export default function Page({ params }) {
   const [userLocation, setUserLocation] = useState("");
 
   // Message and draft states
-  const [messageContent, setMessageContent] = useState("");
+  const [messageContent, setMessageContent] = useState(
+    "Tap to write letter..."
+  );
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
-  const [isDeletingDraft, setIsDeletingDraft] = useState(false); // New state to track draft deletion
+  const pathname = usePathname();
 
   // Chat states
   const [allMessages, setAllMessages] = useState([]);
@@ -687,11 +688,7 @@ export default function Page({ params }) {
 
   if (isLoading) {
     console.log("⏳ Showing loading screen");
-    return (
-      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div className="text-gray-500">Loading conversation...</div>
-      </div>
-    );
+    return <LettersSkeleton />;
   }
 
   const selectMessage = (messageId) => {
