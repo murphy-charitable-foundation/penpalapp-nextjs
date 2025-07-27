@@ -26,7 +26,9 @@ import {
   isDifferentDay,
   formatDateSeparator,
   formatTime,
-} from "../../../components/letter/DateHelpers";
+} from "../../utils/dateHelpers";
+
+// /components/letter/DateHelpers";
 import Image from "next/image";
 
 export default function Page({ params }) {
@@ -34,6 +36,7 @@ export default function Page({ params }) {
   const auth = getAuth();
   const router = useRouter();
   const messagesEndRef = useRef(null);
+  // const textAreaRef = useRef(null); // Ref for textarea to focus
   const textAreaRef = useRef(null); // Ref for textarea to focus
 
   // User and auth states
@@ -70,170 +73,294 @@ export default function Page({ params }) {
   const [draftTimer, setDraftTimer] = useState(null);
 
   const scrollToBottom = (instant = false) => {
+    console.log("📜 Scrolling to bottom, instant:", instant);
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
       block: "end",
     });
   };
 
-  // Auto-save draft function
-  // Wrapped in useCallback to prevent re-creation on every render
+  // Enhanced draft save function with better logging
   const saveDraft = useCallback(
     async (content) => {
-      if (!user || !lettersRef || isSending || isDeletingDraft) return; // Prevent concurrent operations
+      console.log(
+        "💾 SaveDraft called with content length:",
+        content?.length || 0
+      );
+      console.log("💾 SaveDraft - User exists:", !!user);
+      console.log("💾 SaveDraft - User ID:", user?.uid);
+      console.log("💾 SaveDraft - LettersRef exists:", !!lettersRef);
+      console.log("💾 SaveDraft - LettersRef path:", lettersRef?.path);
+      console.log("💾 SaveDraft - Is sending:", isSending);
+
+      if (!user || !lettersRef || isSending) {
+        console.log("💾 SaveDraft - Early return due to missing dependencies");
+        return;
+      }
 
       try {
         const letterUserRef = userRef || doc(db, "users", user.uid);
         const trimmedContent = content.trim();
-
-        // If content is empty, delete existing draft
-        if (!trimmedContent) {
-          if (draft?.id) {
-            setIsDeletingDraft(true); // Indicate that deletion is in progress
-            await deleteDoc(doc(lettersRef, draft.id));
-            console.log("Draft deleted from Firestore."); // For debugging
-            setDraft(null);
-          }
-          setHasDraftContent(false);
-          setIsEditing(false); // Crucial: Exit edit mode if draft is cleared
-          setMessageContent(""); // Ensure messageContent is truly empty
-          setIsDeletingDraft(false); // Reset deletion state
-          return;
-        }
-
-        // If there's content, proceed to save/update draft
         const currentTime = new Date();
-        const draftData = {
-          sent_by: letterUserRef,
-          content: trimmedContent,
-          status: "draft",
-          created_at: draft?.created_at || currentTime,
-          updated_at: currentTime,
-          deleted: null,
-        };
+
+        console.log(
+          "💾 SaveDraft - Trimmed content length:",
+          trimmedContent.length
+        );
+        console.log("💾 SaveDraft - Existing draft ID:", draft?.id);
+        console.log("💾 SaveDraft - Letter user ref path:", letterUserRef.path);
 
         if (draft?.id) {
-          // Update existing draft
-          await updateDoc(doc(lettersRef, draft.id), draftData);
-          setDraft({ ...draftData, id: draft.id });
-          console.log("Draft updated in Firestore."); // For debugging
-        } else {
-          // Create new draft
+          console.log("💾 Updating existing draft with ID:", draft.id);
+
+          // Verify draft document exists
+          const draftDocRef = doc(lettersRef, draft.id);
+          console.log("💾 Draft document path:", draftDocRef.path);
+
+          const draftDoc = await getDoc(draftDocRef);
+          if (!draftDoc.exists()) {
+            console.error("💾 Draft document does not exist:", draft.id);
+            // Create new draft instead
+            console.log(
+              "💾 Creating new draft since existing one doesn't exist"
+            );
+            const draftData = {
+              sent_by: letterUserRef,
+              content: trimmedContent,
+              status: "draft",
+              created_at: currentTime,
+              updated_at: currentTime,
+              deleted: null,
+              unread: true,
+            };
+
+            const newDraftRef = doc(lettersRef);
+            await setDoc(newDraftRef, draftData);
+            setDraft({ ...draftData, id: newDraftRef.id });
+            console.log("💾 New draft created with ID:", newDraftRef.id);
+          } else {
+            // Update existing draft (even if content is empty - this handles requirement 2.5)
+            const draftData = {
+              sent_by: letterUserRef,
+              content: trimmedContent, // Can be empty string
+              status: "draft",
+              created_at: draft.created_at,
+              updated_at: currentTime,
+              deleted: null,
+              unread: true,
+            };
+
+            await updateDoc(draftDocRef, draftData);
+            setDraft({ ...draftData, id: draft.id });
+            console.log(
+              "💾 Draft updated successfully with content:",
+              trimmedContent ? "has content" : "empty"
+            );
+          }
+        } else if (trimmedContent) {
+          console.log("💾 Creating new draft");
+          // Create new draft only if there's content
+          const draftData = {
+            sent_by: letterUserRef,
+            content: trimmedContent,
+            status: "draft",
+            created_at: currentTime,
+            updated_at: currentTime,
+            deleted: null,
+            unread: true,
+          };
+
           const newDraftRef = doc(lettersRef);
+          console.log("💾 New draft ref path:", newDraftRef.path);
           await setDoc(newDraftRef, draftData);
           setDraft({ ...draftData, id: newDraftRef.id });
-          console.log("New draft created in Firestore."); // For debugging
+          console.log("💾 New draft created with ID:", newDraftRef.id);
+        } else {
+          console.log("💾 No content and no existing draft - nothing to save");
         }
-        setHasDraftContent(true);
-        setIsEditing(true); // Ensure in edit mode if there's content
+
+        // Update UI state
+        const hasContent = Boolean(trimmedContent);
+        console.log("💾 Setting hasDraftContent to:", hasContent);
+        setHasDraftContent(hasContent);
+
+        // If content is empty, exit edit mode (requirement 2.5)
+        if (!hasContent) {
+          console.log("💾 No content - exiting edit mode");
+          setIsEditing(false);
+        }
       } catch (error) {
-        console.error("Error saving draft:", error);
-      } finally {
-        setIsDeletingDraft(false); // Always reset deletion state
+        console.error("💾 Error saving draft:", error);
+        console.error("💾 Error code:", error.code);
+        console.error("💾 Error details:", error.message);
+        console.error("💾 Full error object:", error);
+
+        // More specific error handling for drafts
+        if (error.code === "permission-denied") {
+          console.error("💾 Permission denied when saving draft");
+        } else if (error.code === "unauthenticated") {
+          console.error("💾 User not authenticated when saving draft");
+        }
       }
     },
-    [user, lettersRef, isSending, draft, userRef, isDeletingDraft]
-  ); // Added isDeletingDraft to dependencies
+    [user, lettersRef, isSending, draft, userRef]
+  );
 
-  // Handle message content change
+  // Enhanced message change handler with automatic mode switching and immediate draft saving
   const handleMessageChange = async (e) => {
     const newContent = e.target.value;
+    console.log("✏️ Message content changed, new length:", newContent.length);
+
     setMessageContent(newContent);
     const trimmedContent = newContent.trim();
-    setHasDraftContent(trimmedContent.length > 0);
 
-    // Enter edit mode immediately when typing starts
-    if (!isEditing && trimmedContent.length > 0) {
-      setIsEditing(true);
+    console.log("✏️ Trimmed content length:", trimmedContent.length);
+
+    // Clear any existing timer
+    if (draftTimer) {
+      clearTimeout(draftTimer);
+      setDraftTimer(null);
     }
-    // Exit edit mode immediately when content becomes empty
-    // And ensure draft is cleared by awaiting saveDraft
-    if (isEditing && trimmedContent.length === 0) {
+
+    // Update UI state based on content
+    if (trimmedContent.length > 0) {
+      console.log("✏️ Content exists - entering edit mode");
+      setIsEditing(true);
+      setHasDraftContent(true);
+
+      // Auto-save draft after 1 second of no typing (debounced)
+      const timer = setTimeout(async () => {
+        console.log("✏️ Auto-saving draft after typing pause");
+        await saveDraft(newContent);
+      }, 1000);
+      setDraftTimer(timer);
+    } else {
+      console.log(
+        "✏️ No content - exiting edit mode and saving empty draft IMMEDIATELY (requirement 2.5)"
+      );
       setIsEditing(false);
       setHasDraftContent(false);
 
-      if (draftTimer) {
-        clearTimeout(draftTimer);
-        setDraftTimer(null);
+      // IMMEDIATELY and SYNCHRONOUSLY save empty draft if we had a draft before (requirement 2.5)
+      if (draft?.id) {
+        console.log(
+          "✏️ IMMEDIATELY saving empty draft to clear existing draft - this must complete NOW"
+        );
+        // Save immediately without setTimeout to ensure it completes before any navigation
+        try {
+          await saveDraft(newContent);
+          console.log("✏️ Empty draft save completed successfully");
+        } catch (error) {
+          console.error("✏️ Failed to save empty draft:", error);
+        }
       }
-      await saveDraft(""); // Await the deletion
-      return;
-    }
-
-    // Clear existing timer
-    if (draftTimer) {
-      clearTimeout(draftTimer);
-    }
-
-    // Set new timer to save draft after 2 seconds only if content is not empty
-    if (trimmedContent.length > 0) {
-      const timer = setTimeout(() => {
-        saveDraft(newContent);
-      }, 2000);
-      setDraftTimer(timer);
-    } else {
-      // If content is empty, ensure the draft is cleared quickly and no timer is pending
-
-      setDraftTimer(null);
     }
   };
 
-  // Send message function
+  // Enhanced send message function
   const handleSendMessage = async () => {
+    console.log("📤 Send message initiated");
     const trimmedContent = messageContent.trim();
 
-    if (!trimmedContent && !draft?.content?.trim()) {
+    if (!trimmedContent) {
+      console.log("📤 Send failed - no content");
       alert("Please enter a message");
       return;
     }
 
-    if (isSending) return;
+    if (isSending) {
+      console.log("📤 Send failed - already sending");
+      return;
+    }
+
+    console.log("📤 Starting send process");
+    console.log("📤 User:", user?.uid);
+    console.log("📤 LettersRef exists:", !!lettersRef);
+    console.log("📤 UserRef exists:", !!userRef);
 
     setIsSending(true);
 
     try {
-      // Clear draft timer
-      if (draftTimer) {
-        clearTimeout(draftTimer);
-        setDraftTimer(null);
+      // Validate required dependencies
+      if (!user || !lettersRef) {
+        throw new Error("Missing required dependencies: user or lettersRef");
       }
 
       const letterUserRef = userRef || doc(db, "users", user.uid);
-      const contentToSend = trimmedContent || draft?.content?.trim();
       const currentTime = new Date();
+
+      console.log("📤 Letter user ref path:", letterUserRef.path);
 
       const messageData = {
         sent_by: letterUserRef,
-        content: contentToSend,
+        content: trimmedContent,
         status: "sent",
         created_at: currentTime,
         deleted: null,
         unread: true,
       };
 
+      console.log("📤 Message data prepared:", {
+        content: trimmedContent,
+        status: messageData.status,
+        sent_by_path: letterUserRef.path,
+        created_at: currentTime.toISOString(),
+      });
+
       let messageRef;
 
       if (draft?.id) {
+        console.log("📤 Converting draft to sent message, draft ID:", draft.id);
+        console.log(
+          "📤 Draft document path:",
+          lettersRef.path + "/" + draft.id
+        );
         // Update existing draft to sent
         messageRef = doc(lettersRef, draft.id);
+
+        // Verify draft document exists before updating
+        const draftDoc = await getDoc(messageRef);
+        if (!draftDoc.exists()) {
+          console.error("📤 Draft document does not exist:", draft.id);
+          throw new Error("Draft document not found");
+        }
+
         await updateDoc(messageRef, messageData);
+        console.log("📤 Draft successfully converted to sent message");
       } else {
-        // Create new message
+        console.log("📤 Creating new message via draft-then-send workflow");
+        console.log("📤 Letters collection path:", lettersRef.path);
+
+        // STEP 1: Create as draft first (required by security rules)
+        const draftData = {
+          sent_by: letterUserRef,
+          content: trimmedContent,
+          status: "draft", // Create as draft first
+          created_at: currentTime,
+          deleted: null,
+          unread: true,
+        };
+
         messageRef = doc(lettersRef);
-        await setDoc(messageRef, messageData);
+        console.log("📤 Creating draft first at path:", messageRef.path);
+        await setDoc(messageRef, draftData);
+        console.log("📤 Draft created successfully");
+
+        // STEP 2: Immediately update to sent status
+        console.log("📤 Converting draft to sent message");
+        await updateDoc(messageRef, messageData);
+        console.log(
+          "📤 Message successfully sent via draft-then-send workflow"
+        );
       }
 
-      // Verify message was sent
-      const sentDoc = await getDoc(messageRef);
-      if (!sentDoc.exists() || sentDoc.data().status !== "sent") {
-        throw new Error("Message failed to send");
-      }
+      console.log("📤 Message sent successfully with ID:", messageRef.id);
 
       // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
-      setIsEditing(false); // Exit edit mode after sending
+      setIsEditing(false);
 
       // Add message to UI immediately
       const messageWithId = {
@@ -241,52 +368,83 @@ export default function Page({ params }) {
         id: messageRef.id,
         sent_by: { id: user.uid },
       };
-      setAllMessages((prev) => [ ...prev, messageWithId]);
+      setAllMessages((prev) => [...prev, messageWithId]);
 
       // Scroll to bottom
       setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
-      console.error("Error sending message:", error);
-      alert("Failed to send message. Please try again.");
+      console.error("📤 Error sending message:", error);
+      console.error("📤 Error code:", error.code);
+      console.error("📤 Error details:", error.message);
+      console.error("📤 Full error object:", error);
+
+      // More specific error handling
+      if (error.code === "permission-denied") {
+        alert(
+          "Permission denied. Please check your access rights to this conversation."
+        );
+      } else if (error.code === "unauthenticated") {
+        alert("You are not authenticated. Please log in again.");
+      } else if (
+        error.message.includes("Missing or insufficient permissions")
+      ) {
+        alert(
+          "Insufficient permissions to send message. Please contact support."
+        );
+      } else {
+        alert("Failed to send message. Please try again.");
+      }
     } finally {
+      console.log("📤 Send process completed, setting isSending to false");
       setIsSending(false);
     }
   };
 
-  // Handle close button
+  // Enhanced close message handler
   const handleCloseMessage = async () => {
+    console.log("❌ Close message initiated");
     const trimmedMessageContent = messageContent.trim();
+    console.log(
+      "❌ Current message content length:",
+      trimmedMessageContent.length
+    );
 
-    console.log("This is what is going to be saved:");
-    console.log(trimmedMessageContent);
-    // if (isEditing && trimmedMessageContent.length > 0) {
-    //   setShowCloseDialog(true);
-    // } else {
-    // If there's unsent content or an active draft
-    if (trimmedMessageContent.length > 0 || draft?.content?.trim().length > 0) {
+    // CRITICAL: If content is empty but we have a draft, save empty draft immediately before checking dialog
+    if (trimmedMessageContent.length === 0 && draft?.id) {
+      console.log(
+        "❌ Content is empty but draft exists - saving empty draft before close"
+      );
+      try {
+        await saveDraft(messageContent);
+        console.log("❌ Empty draft saved successfully before close");
+      } catch (error) {
+        console.error("❌ Failed to save empty draft before close:", error);
+      }
+    }
+
+    // Only show dialog if there's content to save (requirement 2)
+    if (trimmedMessageContent.length > 0) {
+      console.log("❌ Content exists - showing close dialog");
       setShowCloseDialog(true);
     } else {
-      // If content is empty AND no active draft, ensure draft is cleared then go back
-      if (draft?.id) {
-        // Await deletion before navigating back
-        await saveDraft("");
-      }
-      // Add a small delay to allow Firestore to process the deletion before navigation
-      setTimeout(() => router.back(), 50);
+      console.log("❌ No content - closing directly");
+      router.back();
     }
   };
 
-  // Confirm close and save draft
+  // Enhanced confirm close handler
   const handleConfirmClose = async () => {
+    console.log("✅ Confirm close initiated");
     const trimmedContent = messageContent.trim();
+    console.log("✅ Content to save length:", trimmedContent.length);
 
-    if (trimmedContent.length > 0) {
-      await saveDraft(trimmedContent);
-    } else {
-      if (draft?.id) {
-        await saveDraft(""); // Ensure draft is cleared if user confirms close with empty content
-      }
+    // Save draft before closing if there's content OR if we're updating an existing draft to empty
+    if (trimmedContent || draft?.id) {
+      console.log("✅ Saving draft before closing");
+      await saveDraft(messageContent); // Use original content, not trimmed, to handle empty case
     }
+
+    console.log("✅ Closing dialog and navigating back");
     setShowCloseDialog(false);
     // Add a small delay to allow Firestore to process the deletion before navigation
     setTimeout(() => router.back(), 50);
@@ -294,13 +452,15 @@ export default function Page({ params }) {
 
   // Continue editing
   const handleContinueEditing = () => {
+    console.log("📝 Continue editing selected");
     setShowCloseDialog(false);
-    setIsEditing(true); // Ensure we stay in edit mode
-    textAreaRef.current?.focus(); // Focus the textarea
+    setIsEditing(true);
+    textAreaRef.current?.focus();
   };
 
   // Handle report button click for the user (not a specific message)
   const handleReportUserClick = () => {
+    console.log("🚨 Report user clicked");
     if (recipients.length > 0) {
       setReportSender(recipients[0].id);
       setReportContent("General report about user behavior");
@@ -310,9 +470,14 @@ export default function Page({ params }) {
 
   // Load messages
   const loadMessages = async () => {
-    if (!user || !id || !recipients.length) return;
+    console.log("📨 Loading messages");
+    if (!user || !id || !recipients.length) {
+      console.log("📨 Cannot load messages - missing dependencies");
+      return;
+    }
 
     try {
+      console.log("📨 Fetching letterbox messages");
       const { messages } = await fetchLetterbox(id, 20);
 
       const sortedMessages = messages.sort((a, b) => {
@@ -322,6 +487,8 @@ export default function Page({ params }) {
           b.created_at instanceof Date ? b.created_at : new Date(b.created_at);
         return aTime.getTime() - bTime.getTime();
       });
+
+      console.log("📨 Processing", sortedMessages.length, "messages");
 
       const messagesWithSenderInfo = await Promise.all(
         sortedMessages.map(async (message) => {
@@ -338,18 +505,22 @@ export default function Page({ params }) {
       );
 
       setAllMessages(messagesWithSenderInfo);
+      console.log("📨 Messages loaded successfully");
       setTimeout(() => scrollToBottom(true), 300);
     } catch (error) {
-      console.error("Error loading messages:", error);
+      console.error("📨 Error loading messages:", error);
     }
   };
 
   // Initialize component
   useEffect(() => {
+    console.log("🚀 Component initializing");
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log("🔐 Auth state changed, user exists:", !!currentUser);
       setIsLoading(true);
 
       if (!currentUser) {
+        console.log("🔐 No user - redirecting to login");
         router.push("/login");
         return;
       }
@@ -357,60 +528,84 @@ export default function Page({ params }) {
       setUser(currentUser);
 
       try {
+        console.log("📪 Checking letterbox exists for ID:", id);
         // Check letterbox exists
         const letterboxRef = doc(db, "letterbox", id);
         const letterboxDoc = await getDoc(letterboxRef);
 
         if (!letterboxDoc.exists()) {
-          console.error("Letterbox does not exist");
+          console.error("📪 Letterbox does not exist");
           setIsLoading(false);
           return;
         }
 
+        console.log("📪 Letterbox exists, setting up user data");
         // Set user ref and fetch user data
         const userDocRef = doc(db, "users", currentUser.uid);
         setUserRef(userDocRef);
 
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists() && userDoc.data().location) {
-          setUserLocation(userDoc.data().location);
+          const location = userDoc.data().location;
+          console.log("📍 User location set:", location);
+          setUserLocation(location);
         }
 
+        console.log("👥 Fetching recipients");
         // Fetch recipients
         const fetchedRecipients = await fetchRecipients(id);
         setRecipients(fetchedRecipients || []);
+        console.log("👥 Recipients fetched:", fetchedRecipients?.length || 0);
 
         if (fetchedRecipients?.length > 0) {
-          setRecipientName(
-            `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`
-          );
+          const recipientName = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
+          console.log("👥 Recipient name set:", recipientName);
+          setRecipientName(recipientName);
         }
 
         // Set letters ref
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
+        console.log("📝 Letters reference set");
 
+        console.log("📋 Fetching existing draft");
         // Fetch existing draft
         const draftData = await fetchDraft(id, userDocRef, false);
+        console.log("📋 Draft data received:", draftData ? "exists" : "none");
+
         if (draftData?.status === "draft") {
+          console.log("📋 Processing existing draft");
           setDraft(draftData);
-          setMessageContent(draftData.content || "");
-          const hasContent = Boolean(draftData.content?.trim());
+          const draftContent = draftData.content || "";
+          const hasContent = Boolean(draftContent.trim());
+
+          console.log("📋 Draft content length:", draftContent.length);
+          console.log("📋 Draft has content:", hasContent);
+
+          setMessageContent(draftContent);
           setHasDraftContent(hasContent);
-          setIsEditing(hasContent); // Set edit mode if draft exists AND has content
+
+          // Only enter edit mode if draft has actual content
+          // If draft is empty (requirement 2.5), stay in view mode so user feels like there's no draft
           if (hasContent) {
-            // If there's draft content, focus the textarea after render
+            console.log("📋 Draft has content - entering edit mode");
+            setIsEditing(true);
             setTimeout(() => {
               textAreaRef.current?.focus();
-              // Place cursor at the end of the text
               textAreaRef.current?.setSelectionRange(
                 textAreaRef.current.value.length,
                 textAreaRef.current.value.length
               );
             }, 0);
+          } else {
+            console.log(
+              "📋 Draft is empty - staying in view mode (user should feel like no draft exists)"
+            );
+            setIsEditing(false);
           }
         } else {
-          // No draft found, ensure states are reset to reflect view mode
+          console.log("📋 No draft found - initializing empty state");
+          // No draft found
           setIsEditing(false);
           setMessageContent("");
           setDraft(null);
@@ -419,6 +614,7 @@ export default function Page({ params }) {
 
         // Load messages if we have recipients
         if (fetchedRecipients?.length > 0) {
+          console.log("📨 Loading messages with recipients");
           const { messages } = await fetchLetterbox(id, 20);
 
           const sortedMessages = messages.sort((a, b) => {
@@ -451,10 +647,16 @@ export default function Page({ params }) {
           );
 
           setAllMessages(messagesWithSenderInfo);
+          console.log(
+            "📨 Initial messages loaded:",
+            messagesWithSenderInfo.length
+          );
         }
       } catch (error) {
-        console.error("Initialization error:", error);
+        console.error("🚀 Initialization error:", error);
+        console.error("🚀 Error details:", error.message);
       } finally {
+        console.log("🚀 Initialization complete");
         setIsLoading(false);
       }
     });
@@ -466,6 +668,7 @@ export default function Page({ params }) {
   useEffect(() => {
     return () => {
       if (draftTimer) {
+        console.log("🧹 Cleaning up draft timer");
         clearTimeout(draftTimer);
       }
     };
@@ -473,10 +676,17 @@ export default function Page({ params }) {
 
   // Auto-scroll when messages change or edit mode changes
   useEffect(() => {
+    console.log(
+      "📜 Auto-scroll triggered - messages:",
+      allMessages.length,
+      "isEditing:",
+      isEditing
+    );
     scrollToBottom();
   }, [allMessages, isEditing]);
 
   if (isLoading) {
+    console.log("⏳ Showing loading screen");
     return (
       <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
         <div className="text-gray-500">Loading conversation...</div>
@@ -485,6 +695,7 @@ export default function Page({ params }) {
   }
 
   const selectMessage = (messageId) => {
+    console.log("👆 Message selected:", messageId);
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
     setIsEditing(false); // Exit edit mode when selecting a message
   };
@@ -504,11 +715,45 @@ export default function Page({ params }) {
   };
 
   const canSendMessage = () => {
-    return (
-      (messageContent.trim().length > 0 || draft?.content?.trim().length > 0) &&
-      !isSending
+    const canSend = messageContent.trim().length > 0 && !isSending;
+    console.log(
+      "🚀 Can send message:",
+      canSend,
+      "- content length:",
+      messageContent.trim().length,
+      "- is sending:",
+      isSending
     );
+    return canSend;
   };
+
+  // Enhanced function to handle switching to edit mode from view mode
+  const handleReplyClick = () => {
+    console.log("💬 Reply clicked - switching to edit mode");
+    console.log("💬 Current draft exists:", !!draft?.id);
+    console.log("💬 Current message content:", messageContent);
+
+    setIsEditing(true);
+
+    // If we have an empty draft, the user should feel like they're starting fresh
+    // but when they start typing, it will update the existing empty draft
+    console.log(
+      "💬 User starting to reply, ready to update draft when they type"
+    );
+
+    // Ensure focus immediately after switching to edit mode
+    setTimeout(() => {
+      console.log("💬 Focusing textarea after reply click");
+      textAreaRef.current?.focus();
+    }, 0);
+  };
+
+  console.log(
+    "🎨 Rendering component - isEditing:",
+    isEditing,
+    "messageContent length:",
+    messageContent.length
+  );
 
   return (
     <div className="bg-gray-100 min-h-screen py-6">
@@ -675,11 +920,7 @@ export default function Page({ params }) {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={() => {
-                  setIsEditing(true);
-                  // Ensure focus immediately after switching to edit mode
-                  setTimeout(() => textAreaRef.current?.focus(), 0);
-                }}>
+                onClick={handleReplyClick}>
                 Reply to the letter...
               </div>
             </div>
