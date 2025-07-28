@@ -16,10 +16,11 @@ import {
   fetchLetterbox,
   fetchRecipients,
 } from "../../../app/utils/letterboxFunctions";
+import { formatTime, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
-import ReportPopup from "../../../components/letter/ReportPopup";
-import ConfirmReportPopup from "../../../components/letter/ConfirmReportPopup";
+import ReportPopup from "../../../components/general/letter/ReportPopup";
+import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
 import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
@@ -598,16 +599,26 @@ const handleUseTemplate = (templateText) => {
     
   }
 };
-
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-          { <FirstTimeChatGuide page="letterDetail" onUseTemplate={handleUseTemplate} params={pathname} recipient={recipients} /> }
-          {/* Header */}
-          <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-            <button onClick={handleCloseMessage} className="text-gray-700">
-              ✕
-          {isEditing && ( // Only show send button in edit mode
+        <FirstTimeChatGuide
+          page="letterDetail"
+          onUseTemplate={handleUseTemplate}
+          params={pathname}
+          recipient={recipients}
+        />
+
+        {/* Header */}
+        <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
+          <button
+            onClick={handleCloseMessage}
+            className="text-gray-700"
+          >
+            ✕
+          </button>
+
+          {isEditing && (  /* Only show send button in edit mode */
             <button
               onClick={handleSendMessage}
               disabled={!canSendMessage()}
@@ -615,7 +626,8 @@ const handleUseTemplate = (templateText) => {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}>
+              }`}
+            >
               <Image
                 src="/send-message-icon.png"
                 alt="Send message"
@@ -636,7 +648,6 @@ const handleUseTemplate = (templateText) => {
             const isSenderUser = message.sent_by?.id === user?.uid;
             const location = getSenderLocation(message);
 
-            // Check if we need to show a date separator (already in DateHelpers)
             const showDateSeparator =
               index === 0 ||
               isDifferentDay(
@@ -646,25 +657,16 @@ const handleUseTemplate = (templateText) => {
 
             return (
               <div key={messageId}>
-                {/* Date Separator */}
-                {/* {showDateSeparator && (
-                  <div className="flex items-center my-4 px-4">
-                    <div className="flex-1 border-t border-gray-300"></div>
-                    <div className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">
-                      {formatDateSeparator(message.created_at)}
-                    </div>
-                    <div className="flex-1 border-t border-gray-300"></div>
-                  </div>
-                )} */}
-
                 {/* Message */}
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                >
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}>
+                    onClick={() => selectMessage(messageId)}
+                  >
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
@@ -694,7 +696,9 @@ const handleUseTemplate = (templateText) => {
                           )}
                         </div>
                         <div className="text-gray-800">
-                          {isSelected ? "" : truncateMessage(message.content)}
+                          {isSelected
+                            ? ""
+                            : truncateMessage(message.content)}
                         </div>
                       </div>
                       <div className="text-gray-500 text-sm">
@@ -717,8 +721,12 @@ const handleUseTemplate = (templateText) => {
                               setReportContent(message.content);
                               setShowReportPopup(true);
                             }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
-                            <FaExclamationCircle className="mr-1" size={10} />
+                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                          >
+                            <FaExclamationCircle
+                              className="mr-1"
+                              size={10}
+                            />
                             Report
                           </button>
                         )}
@@ -746,10 +754,12 @@ const handleUseTemplate = (templateText) => {
               <span className="text-gray-700">To {recipientName}</span>
             </div>
             {/* Octagonal Report Button */}
-            {/* <button
+            {/*
+            <button
               onClick={handleReportUserClick}
               className="w-8 h-8 hover:opacity-80 transition-opacity duration-200 flex items-center justify-center"
-              title="Report user">
+              title="Report user"
+            >
               <Image
                 src="/Vector.svg"
                 alt="Report"
@@ -757,7 +767,8 @@ const handleUseTemplate = (templateText) => {
                 height={32}
                 className="object-contain"
               />
-            </button> */}
+            </button>
+            */}
           </div>
 
           {!isEditing ? (
@@ -765,7 +776,8 @@ const handleUseTemplate = (templateText) => {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}>
+                onClick={handleReplyClick}
+              >
                 Reply to the letter...
               </div>
             </div>
@@ -773,7 +785,7 @@ const handleUseTemplate = (templateText) => {
             // Edit Mode Input Box
             <div className="p-4 relative" style={{ height: "40vh" }}>
               <textarea
-                ref={textAreaRef} // Attach ref to textarea
+                ref={textAreaRef}
                 id="message-input"
                 className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
                 placeholder="Write your message..."
@@ -802,12 +814,14 @@ const handleUseTemplate = (templateText) => {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
-                  Continue
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
+                >
+                  Stay on page
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
+                >
                   Close
                 </button>
               </div>
