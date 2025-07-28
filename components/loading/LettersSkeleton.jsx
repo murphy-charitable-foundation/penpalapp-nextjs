@@ -18,7 +18,7 @@ export default function LettersSkeleton() {
           <main className="p-6">
             <section className="mt-8">
               <div>
-                {[...Array(3)].map((_, i) => (
+                {[...Array(5)].map((_, i) => (
                   <div
                     key={i}
                     className="animate-pulse w-full bg-gray-100 h-24 rounded-lg mb-5"
