@@ -234,7 +234,7 @@ export default function FirstTimeChatGuide({
     return null;
   }
 
-  console.log(user);
+  //console.log(user);
   const currentStepData = steps[currentStep];
   return (
     <>
