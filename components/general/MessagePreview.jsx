@@ -49,10 +49,10 @@ const MessagePreview = ({
     if (status === "rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
-    if (status === "approved") {
+    if (status === "sent") {
       return <CheckCircle className="text-green-500 w-6 h-6" />;
     }
-    if (status === "pending") {
+    if (status === "pending_review") {
       return (
         <div className="relative w-6 h-6">
           <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
