@@ -145,7 +145,6 @@ export default function Home() {
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
             setProfileImage(userData?.photo_uri || "");
-            setUser(userData.user_type);
             // Show welcome message
             setShowWelcome(true);
 
