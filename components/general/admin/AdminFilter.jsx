@@ -5,6 +5,8 @@ import React, { useState, useEffect } from "react";
 import Input from "../Input";
 import Button from "../Button";
 import Dropdown from "../Dropdown";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function AdmminFilter({
   setStatus,
@@ -43,33 +45,31 @@ export default function AdmminFilter({
     setEndFilter("");
   };
 
-  const genderOptions = ["Draft", "Approved", "Pending", "Rejected"];
+
+  const genderOptions = ["Draft", "sent", "Pending", "Rejected"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
       <form className="flex flex-col gap-6">
         <div>
-        <label for="start">Start date:</label>
+        <text className="text-black">Start date:</text>
 
-        <input
-          type="date"
-          id="start"
-          name="start"
-          value={start}
-          onChange={(e) => {setStartFilter(e.target.value)}}
-          min="2018-01-01"
-           />
+        <DatePicker selected={startFilter}
+         placeHolder={"Select A Date"}
+         maxDate={endFilter} 
+         onChange={(date) => setStartFilter(date)} 
+         className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
+         calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
         </div>
         <div>
-          <label for="start">End date:</label>
+          <text className="text-black" >End date:</text>
 
-          <input
-            type="date"
-            id="end"
-            name="end"
-            value={"end"}
-            min={start}
-            />
+          <DatePicker selected={endFilter}
+           placeHolder={"Select A Date"}
+           minDate={startFilter} 
+           onChange={(date) => setEndFilter(date)} 
+           className="w-full px-4 py-2 text-black border rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300"
+           calendarClassName="rounded-lg shadow-xl bg-white border p-2"/>
         </div>
         <div>
           <label

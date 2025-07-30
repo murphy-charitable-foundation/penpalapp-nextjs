@@ -7,18 +7,11 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from '../../components/bottom-nav-bar';
 
-import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit } from "firebase/firestore";
-import {
-  fetchDraft,
-  fetchLetterbox,
-  fetchLetterboxes,
-  fetchRecipients,
-} from "../utils/letterboxFunctions";
+import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter } from "firebase/firestore";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
 import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
 
 
-import ProfileImage from "../../components/general/ProfileImage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import EmptyState from "../../components/general/letterhome/EmptyState";
@@ -29,6 +22,7 @@ import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
+import { dateToTimestamp } from "../utils/timestampToDate";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -82,6 +76,15 @@ export default function Admin() {
         const userUrl = await getDownloadURL(userPhotoRef);
         setProfileImage(userUrl);
         
+      });
+  
+      return () => unsubscribe();
+    }, [router]);
+
+    useEffect(() => {
+      const letterGrab = async() => {
+        console.log("Start Date", startDate);
+        setDocuments([]);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -91,11 +94,10 @@ export default function Admin() {
         } finally {
           setIsLoading(false);
         }
-      });
-  
-      return () => unsubscribe();
-    }, [router]);
+      }
+      letterGrab();
 
+    }, [selectedStatus, startDate, endDate])
 
 
   const fetchLetters = async (nextPage = false) => {
@@ -109,10 +111,10 @@ export default function Admin() {
         queryConstraints.push(startAfter(lastDoc));
       }
       if (startDate) {
-        queryConstraints.push(where("created_at", ">=", startDate));
+        queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
       }
       if (endDate) {
-        queryConstraints.push(where("created_at", "<=", endDate));
+        queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
       }
 
       lettersQuery = query(lettersQuery, ...queryConstraints);
@@ -148,12 +150,14 @@ export default function Admin() {
               country: userData?.country || "",
               user: userData,
               name : userData?.first_name + " " + userData?.last_name || "",
-              lastMessage: doc.content,
-              lastMessageDate: doc.created_at, 
+              lastMessage: docData.content,
+              lastMessageDate: docData.created_at, 
             };
           })
         );
-
+        console.log("New Docs");
+        console.log(newDocs);
+        console.log("-----------------");
         setDocuments((prev) => [...prev, ...newDocs]);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
@@ -164,6 +168,13 @@ export default function Admin() {
       setError("Failed to load more data.");
     }
   };
+
+  const filter = (status, start, end ) => {
+    setSelectedStatus(status);
+    setStartDate(start);
+    setEndDate(end);
+    setActiveFilter(false);
+  }
 
     if (documents == null) {
       return <p>Loading....</p>
@@ -189,7 +200,7 @@ export default function Admin() {
                   start={startDate} 
                   setEnd={setEndDate} 
                   end={endDate}
-                  filter={activeFilter} />
+                  filter={filter} />
                 
                 ) : (
                   <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
