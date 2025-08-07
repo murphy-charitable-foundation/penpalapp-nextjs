@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react"; // Added useCallback
+import { useState, useEffect, useRef, useCallback } from "react";
 import { db } from "../../firebaseConfig";
 import {
   collection,
@@ -9,10 +9,14 @@ import {
   updateDoc,
   setDoc,
   deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-  fetchDraft,
   fetchLetterbox,
   fetchRecipients,
 } from "../../../app/utils/letterboxFunctions";
@@ -31,21 +35,83 @@ import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 
+// FIXED: Enhanced fetchDraft function that prevents duplicate drafts
+const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
+  try {
+    const letterboxRef = doc(db, "letterbox", letterboxId);
+    const lettersRef = collection(letterboxRef, "letters");
+
+    // FIXED: Query for existing drafts by this user (order by updated_at desc to get most recent)
+    const draftQuery = query(
+      lettersRef,
+      where("sent_by", "==", userRef),
+      where("status", "==", "draft"),
+      orderBy("updated_at", "desc"),
+      limit(1)
+    );
+
+    const draftSnapshot = await getDocs(draftQuery);
+
+    if (!draftSnapshot.empty) {
+      const draftDoc = draftSnapshot.docs[0];
+      const draftData = {
+        id: draftDoc.id,
+        ...draftDoc.data(),
+        created_at:
+          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
+        updated_at:
+          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+      };
+
+      // CRITICAL: Always return the existing draft, even if content is empty
+      // This prevents creating duplicate drafts
+      return draftData;
+    }
+
+    // Only create new draft if explicitly requested and no existing draft
+    if (shouldCreate) {
+      const newDraftData = {
+        sent_by: userRef,
+        content: "",
+        status: "draft",
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted: null,
+        unread: true,
+      };
+
+      const newDraftRef = doc(lettersRef);
+      await setDoc(newDraftRef, newDraftData);
+
+      return {
+        id: newDraftRef.id,
+        ...newDraftData,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("❌ FETCH DRAFT ERROR:", error);
+    return null;
+  }
+};
+
 export default function Page({ params }) {
   const { id } = params;
+
   const auth = getAuth();
   const router = useRouter();
   const messagesEndRef = useRef(null);
-  // const textAreaRef = useRef(null); // Ref for textarea to focus
-  const textAreaRef = useRef(null); // Ref for textarea to focus
+  const textAreaRef = useRef(null);
 
   // User and auth states
   const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
+  const [profileImage, setProfileImage] = useState(""); // ADDED: Profile image state
 
   // Message and draft states
-  const [messageContent, setMessageContent] = useState("Tap to write letter...");
+  const [messageContent, setMessageContent] = useState(""); // FIXED: Start with empty string
   const messageInputRef = useRef(null);
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
@@ -65,6 +131,9 @@ export default function Page({ params }) {
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
+  // NEW: State for disabling X button after select all and delete
+  const [isXButtonDisabled, setIsXButtonDisabled] = useState(false);
+
   // Report states
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
@@ -74,15 +143,27 @@ export default function Page({ params }) {
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
 
+  // Debug logging for state changes
+  useEffect(() => {}, [messageContent]);
+
+  useEffect(() => {}, [draft]);
+
+  useEffect(() => {}, [hasDraftContent]);
+
+  useEffect(() => {}, [isEditing]);
+
+  useEffect(() => {}, [user]);
+
+  useEffect(() => {}, [lettersRef]);
+
   const scrollToBottom = (instant = false) => {
-    // console.log("📜 Scrolling to bottom, instant:", instant);
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
       block: "end",
     });
   };
 
-  // Enhanced draft save function with better logging
+  // FIXED: Enhanced saveDraft function that properly handles existing drafts
   const saveDraft = useCallback(
     async (content) => {
       if (!user || !lettersRef || isSending) {
@@ -94,74 +175,91 @@ export default function Page({ params }) {
         const trimmedContent = content.trim();
         const currentTime = new Date();
 
-        if (draft?.id) {
-          // Verify draft document exists
-          const draftDocRef = doc(lettersRef, draft.id);
+        // FIXED: Always check for existing draft first
+        let existingDraft = draft;
 
-          const draftDoc = await getDoc(draftDocRef);
-          if (!draftDoc.exists()) {
-            const draftData = {
-              sent_by: letterUserRef,
-              content: trimmedContent,
-              status: "draft",
-              created_at: currentTime,
-              updated_at: currentTime,
-              deleted: null,
-              unread: true,
-            };
+        // If no draft in state, fetch from database
+        if (!existingDraft?.id) {
+          existingDraft = await fetchDraft(id, letterUserRef, false);
 
-            const newDraftRef = doc(lettersRef);
-            await setDoc(newDraftRef, draftData);
-            setDraft({ ...draftData, id: newDraftRef.id });
-          } else {
-            // Update existing draft (even if content is empty - this handles requirement 2.5)
-            const draftData = {
-              sent_by: letterUserRef,
-              content: trimmedContent, // Can be empty string
-              status: "draft",
-              created_at: draft.created_at,
-              updated_at: currentTime,
-              deleted: null,
-              unread: true,
-            };
-
-            await updateDoc(draftDocRef, draftData);
-            setDraft({ ...draftData, id: draft.id });
+          if (existingDraft) {
+            setDraft(existingDraft); // Update state with found draft
           }
-        } else if (trimmedContent) {
-          // Create new draft only if there's content
-          const draftData = {
-            sent_by: letterUserRef,
-            content: trimmedContent,
-            status: "draft",
+        }
+
+        // FIXED: Prepare draft data with proper structure
+        const baseDraftData = {
+          sent_by: letterUserRef,
+          content: trimmedContent, // Store actual content (can be empty)
+          status: "draft",
+          updated_at: currentTime,
+          deleted: null,
+          unread: true,
+        };
+
+        if (existingDraft?.id) {
+          const draftDocRef = doc(lettersRef, existingDraft.id);
+
+          // FIXED: Always update existing draft, don't check if it exists
+          const updateData = {
+            ...baseDraftData,
+            created_at: existingDraft.created_at || currentTime, // Preserve original created_at
+          };
+
+          await updateDoc(draftDocRef, updateData);
+          // Update local state
+          setDraft({ ...updateData, id: existingDraft.id });
+        } else {
+          // Create new draft
+          const newDraftData = {
+            ...baseDraftData,
             created_at: currentTime,
-            updated_at: currentTime,
-            deleted: null,
-            unread: true,
           };
 
           const newDraftRef = doc(lettersRef);
+          await setDoc(newDraftRef, newDraftData);
 
-          await setDoc(newDraftRef, draftData);
-          setDraft({ ...draftData, id: newDraftRef.id });
-        } else {
+          // Update local state
+          setDraft({ ...newDraftData, id: newDraftRef.id });
         }
 
-        // Update UI state
+        // FIXED: Update UI state consistently
         const hasContent = Boolean(trimmedContent);
 
         setHasDraftContent(hasContent);
 
-        // If content is empty, exit edit mode (requirement 2.5)
-        if (!hasContent) {
+        // If content is empty, exit edit mode
+        if (!hasContent && isEditing) {
           setIsEditing(false);
         }
-      } catch (error) {}
+      } catch (error) {
+        // More specific error handling
+        if (error.code === "permission-denied") {
+          alert("Permission denied. Please check your access rights.");
+        } else if (error.code === "not-found") {
+          // Reset draft state and try again if we have content
+          setDraft(null);
+          if (trimmedContent) {
+            try {
+              const newDraftData = {
+                ...baseDraftData,
+                created_at: currentTime,
+              };
+              const newDraftRef = doc(lettersRef);
+              await setDoc(newDraftRef, newDraftData);
+
+              setDraft({ ...newDraftData, id: newDraftRef.id });
+            } catch (retryError) {
+              console.error("❌ Failed to create new draft:", retryError);
+            }
+          }
+        }
+      }
     },
-    [user, lettersRef, isSending, draft, userRef]
+    [user, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
-  // Enhanced message change handler with automatic mode switching and immediate draft saving
+  // FIXED: Enhanced message change handler with X button disable functionality
   const handleMessageChange = async (e) => {
     const newContent = e.target.value;
 
@@ -174,7 +272,7 @@ export default function Page({ params }) {
       setDraftTimer(null);
     }
 
-    // Update UI state based on content
+    // FIXED: Update UI state based on content
     if (trimmedContent.length > 0) {
       setIsEditing(true);
       setHasDraftContent(true);
@@ -185,19 +283,25 @@ export default function Page({ params }) {
       }, 1000);
       setDraftTimer(timer);
     } else {
-      setIsEditing(false);
       setHasDraftContent(false);
 
-      // IMMEDIATELY and SYNCHRONOUSLY save empty draft if we had a draft before (requirement 2.5)
-      if (draft?.id) {
-        // Save immediately without setTimeout to ensure it completes before any navigation
-        try {
-          await saveDraft(newContent);
-          console.log("✏️ Empty draft save completed successfully");
-        } catch (error) {
-          console.error("✏️ Failed to save empty draft:", error);
-        }
+      // FIXED: Always save empty content to existing draft, exit edit mode immediately
+      setIsEditing(false); // Exit edit mode immediately for empty content
+
+      // NEW: Disable X button for 6 seconds when draft is updated to blank after select all and delete
+      setIsXButtonDisabled(true);
+
+      try {
+        await saveDraft(newContent);
+      } catch (error) {
+        console.error("❌ Failed to save empty draft:", error);
       }
+
+      // Re-enable X button after 6 seconds
+      setTimeout(() => {
+        console.log("✅ RE-ENABLING X BUTTON");
+        setIsXButtonDisabled(false);
+      }, 6000);
     }
   };
 
@@ -219,6 +323,12 @@ export default function Page({ params }) {
     try {
       // Validate required dependencies
       if (!user || !lettersRef) {
+        console.error(
+          "❌ Missing dependencies - user:",
+          !!user,
+          "lettersRef:",
+          !!lettersRef
+        );
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -230,6 +340,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "sent",
         created_at: currentTime,
+        updated_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -237,37 +348,22 @@ export default function Page({ params }) {
       let messageRef;
 
       if (draft?.id) {
-        // Update existing draft to sent
         messageRef = doc(lettersRef, draft.id);
 
-        // Verify draft document exists before updating
-        const draftDoc = await getDoc(messageRef);
-        if (!draftDoc.exists()) {
-          throw new Error("Draft document not found");
-        }
-
-        await updateDoc(messageRef, messageData);
-      } else {
-        // STEP 1: Create as draft first (required by security rules)
-        const draftData = {
-          sent_by: letterUserRef,
-          content: trimmedContent,
-          status: "draft", // Create as draft first
-          created_at: currentTime,
-          deleted: null,
-          unread: true,
+        // Update existing draft to sent
+        const updateData = {
+          ...messageData,
+          created_at: draft.created_at || currentTime, // Preserve original created_at
         };
 
+        await updateDoc(messageRef, updateData);
+      } else {
         messageRef = doc(lettersRef);
-
-        await setDoc(messageRef, draftData);
-
-        // STEP 2: Immediately update to sent status
-
-        await updateDoc(messageRef, messageData);
+        await setDoc(messageRef, messageData);
       }
 
       // Clear states
+
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -279,10 +375,17 @@ export default function Page({ params }) {
         id: messageRef.id,
         sent_by: { id: user.uid },
       };
-      setAllMessages((prev) => [...prev, messageWithId]);
+
+      setAllMessages((prev) => {
+        const newMessages = [...prev, messageWithId];
+
+        return newMessages;
+      });
 
       // Scroll to bottom
-      setTimeout(() => scrollToBottom(true), 100);
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 100);
     } catch (error) {
       // More specific error handling
       if (error.code === "permission-denied") {
@@ -291,12 +394,6 @@ export default function Page({ params }) {
         );
       } else if (error.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
-      } else if (
-        error.message.includes("Missing or insufficient permissions")
-      ) {
-        alert(
-          "Insufficient permissions to send message. Please contact support."
-        );
       } else {
         alert("Failed to send message. Please try again.");
       }
@@ -305,16 +402,22 @@ export default function Page({ params }) {
     }
   };
 
-  // Enhanced close message handler
+  // FIXED: Enhanced close message handler
   const handleCloseMessage = async () => {
+    // NEW: Prevent closing if X button is disabled
+    if (isXButtonDisabled) {
+      console.log("🚫 CLOSE BLOCKED - X button is disabled");
+      return;
+    }
+
     const trimmedMessageContent = messageContent.trim();
 
-    // CRITICAL: If content is empty but we have a draft, save empty draft immediately before checking dialog
-    if (trimmedMessageContent.length === 0 && draft?.id) {
+    // If we're in edit mode, save current state before proceeding
+    if (isEditing) {
       try {
         await saveDraft(messageContent);
       } catch (error) {
-        console.error("❌ Failed to save empty draft before close:", error);
+        console.error("❌ Failed to save state before close:", error);
       }
     }
 
@@ -322,30 +425,25 @@ export default function Page({ params }) {
     if (trimmedMessageContent.length > 0) {
       setShowCloseDialog(true);
     } else {
-      console.log("❌ No content - closing directly");
       router.back();
     }
   };
 
   // Enhanced confirm close handler
   const handleConfirmClose = async () => {
-    const trimmedContent = messageContent.trim();
-
-    // Save draft before closing if there's content OR if we're updating an existing draft to empty
-    if (trimmedContent || draft?.id) {
-      await saveDraft(messageContent); // Use original content, not trimmed, to handle empty case
-    }
-
     setShowCloseDialog(false);
-    // Add a small delay to allow Firestore to process the deletion before navigation
-    setTimeout(() => router.back(), 50);
+
+    router.back();
   };
 
-  // Continue editing
+  // Continue editing with logging
   const handleContinueEditing = () => {
     setShowCloseDialog(false);
     setIsEditing(true);
-    textAreaRef.current?.focus();
+
+    setTimeout(() => {
+      textAreaRef.current?.focus();
+    }, 100);
   };
 
   // Handle report button click for the user (not a specific message)
@@ -357,10 +455,9 @@ export default function Page({ params }) {
     }
   };
 
-  // Load messages
+  // Load messages with comprehensive logging
   const loadMessages = async () => {
     if (!user || !id || !recipients.length) {
-      console.log("📨 Cannot load messages - missing dependencies");
       return;
     }
 
@@ -390,15 +487,59 @@ export default function Page({ params }) {
       );
 
       setAllMessages(messagesWithSenderInfo);
-
-      setTimeout(() => scrollToBottom(true), 300);
-    } catch (error) {}
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 300);
+    } catch (error) {
+      console.error("❌ LOAD MESSAGES ERROR:", error);
+    }
   };
 
-  // Initialize component
+  // FIXED: Enhanced handleReplyClick to properly handle existing drafts
+  const handleReplyClick = async () => {
+    setIsEditing(true);
+
+    // Check if we need to fetch draft from database
+    if (!draft?.id) {
+      try {
+        const letterUserRef = userRef || doc(db, "users", user.uid);
+        const existingDraft = await fetchDraft(id, letterUserRef, false);
+
+        if (existingDraft) {
+          setDraft(existingDraft);
+          setMessageContent(existingDraft.content || "");
+          setHasDraftContent(Boolean(existingDraft.content?.trim()));
+        } else {
+          setMessageContent("");
+          setHasDraftContent(false);
+        }
+      } catch (error) {
+        setMessageContent("");
+        setHasDraftContent(false);
+      }
+    } else {
+      // Use existing draft from state
+
+      setMessageContent(draft.content || "");
+      setHasDraftContent(Boolean(draft.content?.trim()));
+    }
+
+    // Focus the textarea after switching to edit mode
+    setTimeout(() => {
+      textAreaRef.current?.focus();
+      // Set cursor at the end
+      if (textAreaRef.current) {
+        const length = textAreaRef.current.value.length;
+        textAreaRef.current.setSelectionRange(length, length);
+      }
+    }, 100);
+  };
+
+  // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
-    const chat_user = localStorage.getItem('chat_user');
+    const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
 
@@ -408,6 +549,7 @@ export default function Page({ params }) {
       }
 
       setUser(currentUser);
+      console.log("👤 User set in state:", currentUser.uid);
 
       try {
         // Check letterbox exists
@@ -415,23 +557,27 @@ export default function Page({ params }) {
         const letterboxDoc = await getDoc(letterboxRef);
 
         if (!letterboxDoc.exists()) {
-          console.error("📪 Letterbox does not exist");
           setIsLoading(false);
           return;
         }
-
         // Set user ref and fetch user data
         const userDocRef = doc(db, "users", currentUser.uid);
         setUserRef(userDocRef);
 
         const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data().location) {
-          const location = userDoc.data().location;
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.location) {
+            const location = userData.location;
 
-          setUserLocation(location);
+            setUserLocation(location);
+          }
+          // ADDED: Set profile image
+          setProfileImage(userData?.photo_uri || "");
         }
 
         // Fetch recipients
+
         const fetchedRecipients = await fetchRecipients(id);
         setRecipients(fetchedRecipients || []);
 
@@ -445,33 +591,30 @@ export default function Page({ params }) {
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
 
-        // Fetch existing draft
+        // ENHANCED: Improved draft fetching with better error handling
         const draftData = await fetchDraft(id, userDocRef, false);
 
-        if (draftData?.status === "draft") {
+        if (draftData && draftData.status === "draft") {
           setDraft(draftData);
           const draftContent = draftData.content || "";
           const hasContent = Boolean(draftContent.trim());
 
+          // FIXED: Always set the draft content, even if empty
           setMessageContent(draftContent);
           setHasDraftContent(hasContent);
 
-          // Only enter edit mode if draft has actual content
-          // If draft is empty (requirement 2.5), stay in view mode so user feels like there's no draft
+          // Enter edit mode only if draft has actual content
           if (hasContent) {
             setIsEditing(true);
             setTimeout(() => {
               textAreaRef.current?.focus();
-              textAreaRef.current?.setSelectionRange(
-                textAreaRef.current.value.length,
-                textAreaRef.current.value.length
-              );
-            }, 0);
+              const length = draftContent.length;
+              textAreaRef.current?.setSelectionRange(length, length);
+            }, 100);
           } else {
             setIsEditing(false);
           }
         } else {
-          // No draft found
           setIsEditing(false);
           setMessageContent("");
           setDraft(null);
@@ -503,6 +646,7 @@ export default function Page({ params }) {
                 if (recipient) {
                   message.senderLocation = recipient.location || "";
                 }
+                // Mark as read
                 if (message?.unread) {
                   await updateDoc(doc(lRef, message.id), { unread: false });
                 }
@@ -510,19 +654,20 @@ export default function Page({ params }) {
               return message;
             })
           );
-
           setAllMessages(messagesWithSenderInfo);
         }
       } catch (error) {
-        console.error("🚀 Initialization error:", error);
-        console.error("🚀 Error details:", error.message);
+        console.error("❌ INITIALIZATION ERROR:", error);
+        console.error("❌ Error details:", error.message);
       } finally {
         setIsLoading(false);
       }
     });
 
-    return () => unsubscribe();
-  }, [id]); // Added saveDraft to dependencies to ensure effect re-runs if saveDraft changes
+    return () => {
+      unsubscribe();
+    };
+  }, [id, router]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -539,14 +684,12 @@ export default function Page({ params }) {
   }, [allMessages, isEditing]);
 
   if (isLoading) {
-    return (
-      <LettersSkeleton />
-    );
+    return <LettersSkeleton />;
   }
 
   const selectMessage = (messageId) => {
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
-    setIsEditing(false); // Exit edit mode when selecting a message
+    // Don't exit edit mode when selecting a message if we're editing
   };
 
   const truncateMessage = (message) => {
@@ -569,56 +712,24 @@ export default function Page({ params }) {
     return canSend;
   };
 
-  // Enhanced function to handle switching to edit mode from view mode
-  const handleReplyClick = () => {
-    setIsEditing(true);
-
-    // If we have an empty draft, the user should feel like they're starting fresh
-    // but when they start typing, it will update the existing empty draft
-
-    // Ensure focus immediately after switching to edit mode
-    setTimeout(() => {
-      textAreaRef.current?.focus();
-    }, 0);
-  };
-    
-// This function will be passed as a prop to FirstTimeChatGuide
-const handleUseTemplate = (templateText) => {
-  setMessageContent(templateText);
-  
-  // Focus the input and set cursor at the end
-  if (messageInputRef.current) {
-    messageInputRef.current.focus();
-    
-    setTimeout(() => {
-      messageInputRef.current.setSelectionRange(
-        templateText.length, 
-        templateText.length
-      );
-    }, 0);
-    
-  }
-};
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-        <FirstTimeChatGuide
-          page="letterDetail"
-          onUseTemplate={handleUseTemplate}
-          params={pathname}
-          recipient={recipients}
-        />
-
         {/* Header */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-          <button
-            onClick={handleCloseMessage}
-            className="text-gray-700"
-          >
-            ✕
-          </button>
+          {isXButtonDisabled ? (
+            <div className="w-6 h-6 flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-gray-700 rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <button
+              onClick={handleCloseMessage}
+              className="text-gray-700 cursor-pointer hover:text-gray-900">
+              ✕
+            </button>
+          )}
 
-          {isEditing && (  /* Only show send button in edit mode */
+          {isEditing && (
             <button
               onClick={handleSendMessage}
               disabled={!canSendMessage()}
@@ -626,8 +737,7 @@ const handleUseTemplate = (templateText) => {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}
-            >
+              }`}>
               <Image
                 src="/send-message-icon.png"
                 alt="Send message"
@@ -661,18 +771,16 @@ const handleUseTemplate = (templateText) => {
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                >
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}
-                  >
+                    onClick={() => selectMessage(messageId)}>
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
                           photo_uri={
                             isSenderUser
-                              ? user?.photoURL
+                              ? profileImage // CHANGED: Use profileImage instead of user?.photoURL
                               : recipients[0]?.photo_uri
                           }
                           first_name={
@@ -696,9 +804,7 @@ const handleUseTemplate = (templateText) => {
                           )}
                         </div>
                         <div className="text-gray-800">
-                          {isSelected
-                            ? ""
-                            : truncateMessage(message.content)}
+                          {isSelected ? "" : truncateMessage(message.content)}
                         </div>
                       </div>
                       <div className="text-gray-500 text-sm">
@@ -717,16 +823,16 @@ const handleUseTemplate = (templateText) => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              console.log(
+                                "🚨 REPORT MESSAGE CLICKED:",
+                                message.id
+                              );
                               setReportSender(message.sent_by.id);
                               setReportContent(message.content);
                               setShowReportPopup(true);
                             }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                          >
-                            <FaExclamationCircle
-                              className="mr-1"
-                              size={10}
-                            />
+                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                            <FaExclamationCircle className="mr-1" size={10} />
                             Report
                           </button>
                         )}
@@ -753,22 +859,6 @@ const handleUseTemplate = (templateText) => {
               />
               <span className="text-gray-700">To {recipientName}</span>
             </div>
-            {/* Octagonal Report Button */}
-            {/*
-            <button
-              onClick={handleReportUserClick}
-              className="w-8 h-8 hover:opacity-80 transition-opacity duration-200 flex items-center justify-center"
-              title="Report user"
-            >
-              <Image
-                src="/Vector.svg"
-                alt="Report"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            </button>
-            */}
           </div>
 
           {!isEditing ? (
@@ -776,9 +866,10 @@ const handleUseTemplate = (templateText) => {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}
-              >
-                Reply to the letter...
+                onClick={handleReplyClick}>
+                {hasDraftContent
+                  ? "Continue draft..."
+                  : "Reply to the letter..."}
               </div>
             </div>
           ) : (
@@ -814,14 +905,12 @@ const handleUseTemplate = (templateText) => {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
-                >
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
                   Stay on page
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
-                >
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
                   Close
                 </button>
               </div>
