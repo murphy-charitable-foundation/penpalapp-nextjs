@@ -23,13 +23,15 @@ export default function LettersSkeleton() {
                     key={i}
                     className="animate-pulse w-full bg-gray-100 h-24 rounded-lg mb-5"
                   >
-                    <div className="h-full flex flex-wrap items-center justify-center py-4 px-10">
-                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
-                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
-                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
-                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
-                      <div className="h-2 w-16 w-full bg-gray-300 rounded mb-1" />
-                      <div className="h-2 w-16 w-full bg-gray-300 rounded" />
+                    <div className="h-full flex flex-wrap items-center justify-between py-4 px-10">
+                      <div className="flex items-center">
+                        <div className="w-12 h-12 bg-gray-300 rounded-full" />
+                        <div className="ml-3">
+                          <div className="h-3 w-16 bg-gray-300 rounded mb-2" />
+                          <div className="h-4 w-60 bg-gray-300 rounded" />
+                        </div>
+                      </div>
+                      <div className="h-3 w-16 bg-gray-300 rounded" />
                     </div>
                   </div>
                 ))}

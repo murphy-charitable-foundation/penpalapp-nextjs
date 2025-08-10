@@ -9,6 +9,7 @@ const MessagePreview = ({
   lastMessageDate,
   letterboxId,
   status,
+  className,
   isRecipient,
   unread = false,
 }) => {
@@ -65,7 +66,7 @@ const MessagePreview = ({
   return (
     <a
       href={`/letters/${letterboxId}`}
-      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
+      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${className} ${
         status === "rejected"
           ? "bg-red-50"
           : isRecipient && unread
