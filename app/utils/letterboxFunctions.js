@@ -10,7 +10,6 @@ import {
   startAfter,
   updateDoc,
   where,
-  setDoc,
 } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import * as Sentry from "@sentry/nextjs";
@@ -43,68 +42,76 @@ export const fetchLetterboxes = async () => {
 };
 
 export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
+  const retryFetch = () =>
+    setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
   if (!auth.currentUser?.uid) {
-    return { messages: [], lastVisible: null };
+    retryFetch();
+    return;
   }
-
+  const { userDocSnapshot } = await getUserDoc();
+  if (!userDocSnapshot.exists()) return;
+  const letterboxRef = doc(collection(db, "letterbox"), id);
+  const lRef = collection(letterboxRef, "letters");
+  let letterboxQuery;
+  // TODO temporarily disable moderation until it is developed
+  if (lim) {
+    letterboxQuery = lastVisible
+      ? query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc"),
+          startAfter(lastVisible),
+          limit(lim)
+        )
+      : query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc"),
+          limit(lim)
+        );
+  } else {
+    letterboxQuery = lastVisible
+      ? query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc"),
+          startAfter(lastVisible)
+        )
+      : query(
+          lRef,
+          where("status", "==", "sent"),
+          orderBy("created_at", "desc")
+        );
+  }
+  /*if (lim) {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible), limit(lim))
+      : query(lRef, orderBy("created_at", "desc"), limit(lim));
+  } else {
+    letterboxQuery = lastVisible
+      ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible))
+      : query(lRef, orderBy("created_at", "desc"));
+  }*/
   try {
-    const { userDocSnapshot } = await getUserDoc();
-    if (!userDocSnapshot.exists()) return { messages: [], lastVisible: null };
-
-    // Ensure this letterbox is accessible to the current user
-    const letterboxRef = doc(db, "letterbox", id);
-    const letterboxDoc = await getDoc(letterboxRef);
-
-    if (!letterboxDoc.exists()) {
-      console.error("Letterbox does not exist");
-      return { messages: [], lastVisible: null };
-    }
-
-    // Verify current user is a member of this letterbox
-    const members = letterboxDoc.data().members || [];
-    const userRef = doc(db, "users", auth.currentUser.uid);
-    const isMember = members.some(
-      (member) => member.id === auth.currentUser.uid
-    );
-
-    if (!isMember) {
-      console.error("User is not a member of this letterbox");
-      return { messages: [], lastVisible: null };
-    }
-
-    // Now query the letters subcollection
-    const lRef = collection(letterboxRef, "letters");
-
-    const baseConditions = [
-      where("status", "==", "sent"), // Only get sent messages
-      orderBy("created_at", "desc"),
-    ];
-
-    if (lastVisible) baseConditions.push(startAfter(lastVisible));
-    if (lim) baseConditions.push(limit(lim));
-
-    const letterboxQuery = query(lRef, ...baseConditions);
     const lettersSnapshot = await getDocs(letterboxQuery);
+    const messages = lettersSnapshot.docs
+      .map((doc) => {
+        return { id: doc.id, ...doc.data() };
+      })
+      .filter((letterboxData) => letterboxData.status != "draft");
 
-    const messages = lettersSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      created_at: doc.data().created_at?.toDate?.() || doc.data().created_at,
-    }));
-
+    const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
     return {
-      messages: messages,
-      lastVisible: lettersSnapshot.docs[lettersSnapshot.docs.length - 1],
+      messages: messages.length ? messages : [],
+      lastVisible: lastDoc,
     };
   } catch (e) {
-    console.error("Error fetching letterbox:", {
-      error: e,
-      id,
-      lim,
-      lastVisible: lastVisible?.id,
-    });
     Sentry.captureException(e);
-    return { messages: [], lastVisible: null };
+    console.log("Error fetching letterbox: ", e);
+    return {
+      messages: [],
+      lastVisible: null,
+    };
   }
 };
 
@@ -119,45 +126,110 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
     limit(1)
   );
   const draftSnapshot = await getDocs(letterboxQuery);
-
-  if (draftSnapshot.docs?.[0]) {
+  if (draftSnapshot.docs?.[0]?.data()) {
     return {
-      ...draftSnapshot.docs[0].data(),
-      id: draftSnapshot.docs[0].id,
+      ...draftSnapshot.docs?.[0].data(),
+      id: draftSnapshot.docs?.[0].id,
     };
   }
 
-  // Only create new draft if explicitly requested
-  if (createNew) {
-    const draftData = {
+  let draft;
+  if (draftSnapshot.docs?.[0]?.data()) {
+    draft = {
+      ...draftSnapshot.docs?.[0].data(),
+      id: draftSnapshot.docs?.[0].id,
+    };
+  } else if (createNew) {
+    const d = await addDoc(lRef, {
       sent_by: userRef,
       content: "",
       status: "draft",
       created_at: new Date(),
       deleted: null,
-    };
-    const d = await addDoc(lRef, draftData);
-    return {
-      ...draftData,
+    });
+    draft = {
+      sent_by: userRef,
+      content: "",
+      status: "draft",
+      created_at: new Date(),
       id: d.id,
+      deleted: null,
     };
   }
-
-  return null;
+  return draft;
 };
 
-export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+export const fetchLatestLetterFromLetterboxOld = async (
+  letterboxId,
+  userRef
+) => {
   const draft = await fetchDraft(letterboxId, userRef, false);
   if (draft) return draft;
 
   const lettersRef = collection(db, "letterbox", letterboxId, "letters");
-  const q = query(lettersRef, where("status", "==", "sent"), orderBy("created_at", "desc"), limit(1));
+  const q = query(
+    lettersRef,
+    where("status", "==", "sent"),
+    orderBy("created_at", "desc"),
+    limit(1)
+  );
   const letterSnapshot = await getDocs(q);
   let letter;
   letterSnapshot.forEach((doc) => {
     letter = { id: doc.id, ...doc.data() };
   });
   return letter;
+};
+
+export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
+  const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
+  const lRef = collection(letterboxRef, "letters");
+
+  // My Letters
+  const userLettersQuery = query(
+    lRef,
+    where("sent_by", "==", userRef),
+    where("content", "!=", ""),
+    orderBy("created_at", "desc"),
+    limit(1) // grab a few in case of fallback
+  );
+
+  // Your letters
+  const sentLettersQuery = query(
+    lRef,
+    where("status", "==", "sent"),
+    where("content", "!=", ""),
+    orderBy("created_at", "desc"),
+    limit(1)
+  );
+
+  // Run both in parallel
+  const [userLettersSnap, sentLettersSnap] = await Promise.all([
+    getDocs(userLettersQuery),
+    getDocs(sentLettersQuery),
+  ]);
+
+  const allLetters = [];
+
+  if (!userLettersSnap?.empty)
+    userLettersSnap.forEach((doc) => {
+      allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
+
+  if (!sentLettersSnap?.empty)
+    sentLettersSnap.forEach((doc) => {
+      if (doc?.data()?.sent_by?.id !== userRef?.id)
+        allLetters.push({ id: doc?.id, ...doc?.data() });
+    });
+
+  if (allLetters.length === 0) return null;
+  else if (allLetters.length === 1) return allLetters[0];
+  else if (
+    allLetters[0]?.created_at?.toDate?.() >
+    allLetters[1]?.created_at?.toDate?.()
+  )
+    return allLetters[0];
+  else return allLetters[1];
 };
 
 export const fetchRecipients = async (id) => {
@@ -190,61 +262,17 @@ export const fetchRecipients = async (id) => {
 
 let sendingLetter = false;
 export const sendLetter = async (letterData, lettersRef, draftId = null) => {
-  if (sendingLetter) {
-    console.warn("Letter sending already in progress");
-    return null;
-  }
+  if (sendingLetter) return;
 
   try {
     sendingLetter = true;
-    let letterRef;
-
-    // Make sure sent_by is always a reference
-    if (typeof letterData.sent_by === "string") {
-      letterData.sent_by = doc(db, "users", letterData.sent_by);
-    }
-
-    // Make sure created_at is a proper timestamp
-    if (!(letterData.created_at instanceof Date)) {
-      letterData.created_at = new Date();
-    }
-
-    // Ensure status is "sent" when actually sending
-    letterData.status = "sent";
-
-    console.log("Sending letter with data:", letterData);
-
-    if (draftId) {
-      // Update existing draft to sent status
-      letterRef = doc(lettersRef, draftId);
-      console.log("Updating draft:", draftId, "to sent status");
-
-      // Use updateDoc with only the fields that need to change
-      await updateDoc(letterRef, {
-        content: letterData.content,
-        status: "sent",
-        // Don't update created_at or sent_by for existing drafts
-      });
-
-      console.log("Successfully updated draft to sent");
-      return { id: draftId, ...letterData };
-    } else {
-      // Create new letter with sent status
-      console.log("Creating new letter with sent status");
-      letterRef = await addDoc(lettersRef, letterData);
-      console.log("Successfully created new letter:", letterRef.id);
-      return { id: letterRef.id, ...letterData };
-    }
-  } catch (error) {
-    console.error("Error sending letter:", {
-      error: error.message,
-      code: error.code,
-      letterData,
-      draftId,
-    });
-    Sentry.captureException(error);
-    throw error;
-  } finally {
+    await updateDoc(doc(letterRef, draftId), letterData);
     sendingLetter = false;
+    return true;
+  } catch (e) {
+    Sentry.captureException(e);
+    console.log("Failed to send letter: ", e);
+    sendingLetter = false;
+    return false;
   }
 };
