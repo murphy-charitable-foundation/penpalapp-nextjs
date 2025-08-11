@@ -12,6 +12,13 @@ const getUserDoc = async () => {
   return { userDocRef, userDocSnapshot };
 };
 
+export const getUserPfp = async(uid) => {
+  const path = `profile/${uid}/profile-image`;
+  const photoRef = storageRef(storage, path);
+  const downloaded = await getDownloadURL(photoRef)
+  return downloaded;
+}
+
 export const fetchLetterboxes = async () => {
   const retryFetch = () => setTimeout(() => fetchLetterboxes(), DELAY);
 
@@ -243,13 +250,7 @@ export const fetchRecipients = async (id) => {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
     try {
-      const segments = selUser.ref._key.path.segments;
-      console.log("segments", segments);
-      const userId = segments[segments.length - 1];
-      console.log("UserId", userId)
-      const path = `profile/${userId}/profile-image`;
-      const photoRef = storageRef(storage, path);
-      const downloaded = await getDownloadURL(photoRef)
+      const downloaded = await getUserPfp(selectedUserDocRef.id);
       members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: downloaded });
     } catch (e) {
       Sentry.captureException(e);

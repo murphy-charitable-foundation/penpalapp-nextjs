@@ -203,7 +203,7 @@ export default function ChooseKid() {
     if (loading) return;
     fetchKids();
   };
-  console.log(kids);
+  
   return (
     <PageContainer maxWidth="lg">
       <BackButton />
