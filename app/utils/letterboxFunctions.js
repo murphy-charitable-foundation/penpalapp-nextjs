@@ -196,7 +196,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     lRef,
     where("sent_by", "==", userRef),
     where("content", "!=", ""),
-    orderBy("created_at", "desc"),
+    orderBy("updated_at", "desc"),
     limit(1) // grab a few in case of fallback
   );
 
@@ -205,7 +205,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     lRef,
     where("status", "==", "sent"),
     where("content", "!=", ""),
-    orderBy("created_at", "desc"),
+    orderBy("updated_at", "desc"),
     limit(1)
   );
 
@@ -231,8 +231,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   if (allLetters.length === 0) return null;
   else if (allLetters.length === 1) return allLetters[0];
   else if (
-    allLetters[0]?.created_at?.toDate?.() >
-    allLetters[1]?.created_at?.toDate?.()
+    allLetters[0]?.updated_at?.toDate?.() >
+    allLetters[1]?.updated_at?.toDate?.()
   )
     return allLetters[0];
   else return allLetters[1];
