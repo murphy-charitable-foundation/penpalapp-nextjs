@@ -134,6 +134,9 @@ export default function Page({ params }) {
   // NEW: State for disabling X button after select all and delete
   const [isXButtonDisabled, setIsXButtonDisabled] = useState(false);
 
+  // NEW: State to track Firebase update status
+  const [isUpdatingFirebase, setIsUpdatingFirebase] = useState(false);
+
   // Report states
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
@@ -163,12 +166,15 @@ export default function Page({ params }) {
     });
   };
 
-  // FIXED: Enhanced saveDraft function that properly handles existing drafts
+  // ENHANCED: saveDraft function with Firebase update tracking
   const saveDraft = useCallback(
     async (content) => {
       if (!user || !lettersRef || isSending) {
-        return;
+        return Promise.resolve();
       }
+
+      // Set updating status when starting Firebase operation
+      setIsUpdatingFirebase(true);
 
       try {
         const letterUserRef = userRef || doc(db, "users", user.uid);
@@ -232,7 +238,12 @@ export default function Page({ params }) {
         if (!hasContent && isEditing) {
           setIsEditing(false);
         }
+
+        console.log("✅ Firebase draft update completed");
+        return Promise.resolve();
       } catch (error) {
+        console.error("❌ Firebase draft save error:", error);
+
         // More specific error handling
         if (error.code === "permission-denied") {
           alert("Permission denied. Please check your access rights.");
@@ -254,12 +265,17 @@ export default function Page({ params }) {
             }
           }
         }
+
+        return Promise.reject(error);
+      } finally {
+        // Clear updating status when Firebase operation completes
+        setIsUpdatingFirebase(false);
       }
     },
     [user, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
-  // FIXED: Enhanced message change handler with X button disable functionality
+  // ENHANCED: Message change handler with Promise-based X button management
   const handleMessageChange = async (e) => {
     const newContent = e.target.value;
 
@@ -279,7 +295,11 @@ export default function Page({ params }) {
 
       // Auto-save draft after 1 second of no typing (debounced)
       const timer = setTimeout(async () => {
-        await saveDraft(newContent);
+        try {
+          await saveDraft(newContent);
+        } catch (error) {
+          console.error("❌ Failed to auto-save draft:", error);
+        }
       }, 1000);
       setDraftTimer(timer);
     } else {
@@ -288,20 +308,26 @@ export default function Page({ params }) {
       // FIXED: Always save empty content to existing draft, exit edit mode immediately
       setIsEditing(false); // Exit edit mode immediately for empty content
 
-      // NEW: Disable X button for 6 seconds when draft is updated to blank after select all and delete
+      // NEW: Disable X button and track Firebase update completion
       setIsXButtonDisabled(true);
+      console.log("🔄 Starting Firebase update for empty draft...");
 
       try {
+        // Wait for Firebase update to complete
         await saveDraft(newContent);
+        console.log("✅ Firebase update completed, re-enabling X button");
+
+        // Re-enable X button after Firebase update completes
+        setIsXButtonDisabled(false);
       } catch (error) {
         console.error("❌ Failed to save empty draft:", error);
-      }
 
-      // Re-enable X button after 6 seconds
-      setTimeout(() => {
-        console.log("✅ RE-ENABLING X BUTTON");
-        setIsXButtonDisabled(false);
-      }, 6000);
+        // Re-enable X button even if there was an error (fallback after 3 seconds)
+        setTimeout(() => {
+          console.log("⚠️ Re-enabling X button after error (fallback)");
+          setIsXButtonDisabled(false);
+        }, 3000);
+      }
     }
   };
 
@@ -402,11 +428,11 @@ export default function Page({ params }) {
     }
   };
 
-  // FIXED: Enhanced close message handler
+  // ENHANCED: Close message handler with Firebase status awareness
   const handleCloseMessage = async () => {
-    // NEW: Prevent closing if X button is disabled
-    if (isXButtonDisabled) {
-      console.log("🚫 CLOSE BLOCKED - X button is disabled");
+    // NEW: Prevent closing if X button is disabled OR Firebase is updating
+    if (isXButtonDisabled || isUpdatingFirebase) {
+      console.log("🚫 CLOSE BLOCKED - Firebase operation in progress");
       return;
     }
 
@@ -415,7 +441,9 @@ export default function Page({ params }) {
     // If we're in edit mode, save current state before proceeding
     if (isEditing) {
       try {
+        console.log("💾 Saving draft before close...");
         await saveDraft(messageContent);
+        console.log("✅ Draft saved successfully before close");
       } catch (error) {
         console.error("❌ Failed to save state before close:", error);
       }
@@ -715,16 +743,17 @@ export default function Page({ params }) {
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-        {/* Header */}
+        {/* ENHANCED: Header with improved loading indicator */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-          {isXButtonDisabled ? (
+          {isXButtonDisabled || isUpdatingFirebase ? (
             <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-gray-700 rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : (
             <button
               onClick={handleCloseMessage}
-              className="text-gray-700 cursor-pointer hover:text-gray-900">
+              className="text-gray-700 cursor-pointer hover:text-gray-900"
+              title="Close conversation">
               ✕
             </button>
           )}
