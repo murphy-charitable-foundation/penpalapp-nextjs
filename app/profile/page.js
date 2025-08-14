@@ -35,6 +35,7 @@ import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
 import { PageHeader } from '../../components/general/PageHeader';
+import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { useConfirm } from '@/components/ConfirmProvider';
@@ -677,32 +678,31 @@ export default function EditProfile() {
                 </div>
               </div>
 
-              <div className="flex justify-center">
-                <Link
-                  href="/letterhome"
-                  className="transition-transform hover:scale-105 focus:outline-none"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    saveProfileData();
-                  }}
-                >
-                  <Button
-                    btnType="button"
-                    btnText={
-                      isSaving ? (
-                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-400"></div>
-                      ) : (
-                        "Save"
-                      )
-                    }
-                    color="green"
-                    hoverColor="hover:bg-[#48801c]"
-                    textColor="text-gray-200"
-                    disabled={isSaving}
-                    rounded="rounded-full"
-                  />
-                </Link>
-              </div>
+            <div className="flex justify-center">
+              <Link
+                href="/letterhome"
+                className="transition-transform hover:scale-105 focus:outline-none"
+                onClick={(e) => {
+                  e.preventDefault();
+                  saveProfileData();
+                }}
+              >
+                <Button
+                  btnType="button"
+                  btnText={
+                    isSaving ? (
+                      <LoadingSpinner />
+                    ) : (
+                      "Save"
+                    )
+                  }
+                  color="green"
+                  hoverColor="hover:bg-[#48801c]"
+                  textColor="text-gray-200"
+                  disabled={isSaving}
+                  rounded="rounded-full"
+                />
+              </Link>
             </div>
           </div>
         </PageContainer>
