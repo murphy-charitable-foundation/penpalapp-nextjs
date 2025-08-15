@@ -41,7 +41,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { saveAvatar, base64ToBlob, confirmDeleteAvatar } from '@/app/utils/avatarUtils';
 import AvatarCropper from '@/components/general/AvatarCropper';
-import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import { uploadFile } from "../lib/uploadFile";
 
 
@@ -420,6 +419,7 @@ export default function EditProfile() {
               </button>
             </div>
           </div> */}
+          </div>
             {
               <div className="flex justify-center">
                 <div className="w-48 h-48 rounded-full bg-[#4E802A] flex items-center justify-center relative"
