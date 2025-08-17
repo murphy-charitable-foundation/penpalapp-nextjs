@@ -31,6 +31,7 @@ import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
 import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
+import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
@@ -754,7 +755,7 @@ export default function Page({ params }) {
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
               title="Close conversation">
-              ✕
+              X
             </button>
           )}
 
@@ -770,8 +771,8 @@ export default function Page({ params }) {
               <Image
                 src="/send-message-icon.png"
                 alt="Send message"
-                width={24}
-                height={24}
+                width={30}
+                height={30}
                 className="object-contain"
                 id="send-letter"
               />
@@ -849,7 +850,7 @@ export default function Page({ params }) {
                           {message.content}
                         </p>
                         {!isSenderUser && (
-                          <button
+                          <Button
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log(
@@ -863,7 +864,7 @@ export default function Page({ params }) {
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
                             <FaExclamationCircle className="mr-1" size={10} />
                             Report
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -932,16 +933,16 @@ export default function Page({ params }) {
                 Your message will be saved as a draft.
               </p>
               <div className="flex space-x-3">
-                <button
+                <Button
                   onClick={handleContinueEditing}
                   className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
                   Stay on page
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleConfirmClose}
                   className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
                   Close
-                </button>
+                </Button>
               </div>
             </div>
           </div>
