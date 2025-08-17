@@ -101,7 +101,9 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
     const messages = lettersSnapshot.docs
-      .map((doc) => doc.data())
+      .map((doc) => {
+        return { id: doc.id, ...doc.data() };
+      })
       .filter((letterboxData) => letterboxData.status != "draft");
 
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
@@ -193,7 +195,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   const userLettersQuery = query(
     lRef,
     where("sent_by", "==", userRef),
-    orderBy("created_at", "desc"),
+    where("content", "!=", ""),
+    orderBy("updated_at", "desc"),
     limit(1) // grab a few in case of fallback
   );
 
@@ -201,7 +204,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   const sentLettersQuery = query(
     lRef,
     where("status", "==", "sent"),
-    orderBy("created_at", "desc"),
+    where("content", "!=", ""),
+    orderBy("updated_at", "desc"),
     limit(1)
   );
 
@@ -227,8 +231,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   if (allLetters.length === 0) return null;
   else if (allLetters.length === 1) return allLetters[0];
   else if (
-    allLetters[0]?.created_at?.toDate?.() >
-    allLetters[1]?.created_at?.toDate?.()
+    allLetters[0]?.updated_at?.toDate?.() >
+    allLetters[1]?.updated_at?.toDate?.()
   )
     return allLetters[0];
   else return allLetters[1];
