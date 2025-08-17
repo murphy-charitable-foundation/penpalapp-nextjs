@@ -92,7 +92,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     return null;
   } catch (error) {
-    console.error("❌ FETCH DRAFT ERROR:", error);
     return null;
   }
 };
@@ -146,19 +145,6 @@ export default function Page({ params }) {
 
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
-
-  // Debug logging for state changes
-  useEffect(() => {}, [messageContent]);
-
-  useEffect(() => {}, [draft]);
-
-  useEffect(() => {}, [hasDraftContent]);
-
-  useEffect(() => {}, [isEditing]);
-
-  useEffect(() => {}, [user]);
-
-  useEffect(() => {}, [lettersRef]);
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -240,11 +226,8 @@ export default function Page({ params }) {
           setIsEditing(false);
         }
 
-        console.log("✅ Firebase draft update completed");
         return Promise.resolve();
       } catch (error) {
-        console.error("❌ Firebase draft save error:", error);
-
         // More specific error handling
         if (error.code === "permission-denied") {
           alert("Permission denied. Please check your access rights.");
@@ -262,7 +245,7 @@ export default function Page({ params }) {
 
               setDraft({ ...newDraftData, id: newDraftRef.id });
             } catch (retryError) {
-              console.error("❌ Failed to create new draft:", retryError);
+              Sentry.captureException("Retry Error:", retryError);
             }
           }
         }
@@ -299,7 +282,7 @@ export default function Page({ params }) {
         try {
           await saveDraft(newContent);
         } catch (error) {
-          console.error("❌ Failed to auto-save draft:", error);
+          Sentry.captureException("Failed to auto-save draft:", error);
         }
       }, 1000);
       setDraftTimer(timer);
@@ -311,18 +294,15 @@ export default function Page({ params }) {
 
       // NEW: Disable X button and track Firebase update completion
       setIsXButtonDisabled(true);
-      console.log("🔄 Starting Firebase update for empty draft...");
 
       try {
         // Wait for Firebase update to complete
         await saveDraft(newContent);
-        console.log("✅ Firebase update completed, re-enabling X button");
 
         // Re-enable X button after Firebase update completes
         setIsXButtonDisabled(false);
       } catch (error) {
-        console.error("❌ Failed to save empty draft:", error);
-
+        Sentry.captureException("Failed to save empty draft:", error);
         // Re-enable X button even if there was an error (fallback after 3 seconds)
         setTimeout(() => {
           console.log("⚠️ Re-enabling X button after error (fallback)");
@@ -350,12 +330,6 @@ export default function Page({ params }) {
     try {
       // Validate required dependencies
       if (!user || !lettersRef) {
-        console.error(
-          "❌ Missing dependencies - user:",
-          !!user,
-          "lettersRef:",
-          !!lettersRef
-        );
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -433,7 +407,6 @@ export default function Page({ params }) {
   const handleCloseMessage = async () => {
     // NEW: Prevent closing if X button is disabled OR Firebase is updating
     if (isXButtonDisabled || isUpdatingFirebase) {
-      console.log("🚫 CLOSE BLOCKED - Firebase operation in progress");
       return;
     }
 
@@ -442,11 +415,9 @@ export default function Page({ params }) {
     // If we're in edit mode, save current state before proceeding
     if (isEditing) {
       try {
-        console.log("💾 Saving draft before close...");
         await saveDraft(messageContent);
-        console.log("✅ Draft saved successfully before close");
       } catch (error) {
-        console.error("❌ Failed to save state before close:", error);
+        Sentry.captureException("Failed to save state before close:", error);
       }
     }
 
@@ -520,7 +491,7 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 300);
     } catch (error) {
-      console.error("❌ LOAD MESSAGES ERROR:", error);
+      Sentry.captureException("LOAD MESSAGES ERROR:", error);
     }
   };
 
@@ -686,8 +657,7 @@ export default function Page({ params }) {
           setAllMessages(messagesWithSenderInfo);
         }
       } catch (error) {
-        console.error("❌ INITIALIZATION ERROR:", error);
-        console.error("❌ Error details:", error.message);
+        Sentry.captureException("INITIALIZATION ERROR:", error);
       } finally {
         setIsLoading(false);
       }
