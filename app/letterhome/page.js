@@ -18,6 +18,8 @@ import {
 
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
+import FirstTimeChatGuide from "../../components/tooltip/FirstTimeChatGuide";
+import { usePathname } from 'next/navigation';
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
@@ -38,6 +40,8 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
+  const [user, setUser] = useState(null);
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -114,6 +118,7 @@ export default function Home() {
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
+          localStorage.setItem('chat_user', userData.user_type);
           setProfileImage(userData?.photo_uri || "");
 
           const userConversations = await getConversations(uid);
@@ -144,6 +149,7 @@ export default function Home() {
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
+            localStorage.setItem('chat_user', userData.user_type);
             setProfileImage(userData?.photo_uri || "");
             // Show welcome message
             setShowWelcome(true);
@@ -164,6 +170,8 @@ export default function Home() {
 
     fetchUserData();
   }, []);
+
+  const getUserTypefromLocalStorage = localStorage.getItem('chat_user');
 
   // useEffect(() => {
   //   const fetchUserData = async () => {
@@ -210,7 +218,14 @@ export default function Home() {
                   <main className="p-6 bg-white">
                     <section className="mt-8">
                       {conversations.length > 0 ? (
-                        <ConversationList conversations={conversations} />
+                        <>
+                          { 
+                            // change this conditional to check length is 1.
+                            conversations.length > 0 && 
+                            <FirstTimeChatGuide page="letterHome" params={pathname} user={getUserTypefromLocalStorage} /> 
+                          }
+                          <ConversationList conversations={conversations} />                        
+                        </>
                       ) : (
                         <EmptyState
                           title="New friends are coming!"

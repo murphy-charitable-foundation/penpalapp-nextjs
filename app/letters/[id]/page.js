@@ -711,9 +711,37 @@ export default function Page({ params }) {
     return canSend;
   };
 
+  const handleUseTemplate = (templateText) => {
+    setMessageContent(templateText);
+  
+    // Focus the input and set cursor at the end
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
+  
+      setTimeout(() => {
+        messageInputRef.current.setSelectionRange(
+          templateText.length, 
+          templateText.length
+        );
+      }, 0);
+  
+    }
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
+        {
+          allMessages && allMessages.length > 0 &&
+          <FirstTimeChatGuide
+            page="letterDetail"
+            onUseTemplate={handleUseTemplate}
+            params={pathname}
+            user={userType}
+            recipient={recipients}
+            isDraft={hasDraftContent}
+          />
+        }
         {/* ENHANCED: Header with improved loading indicator */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
           {isXButtonDisabled || isUpdatingFirebase ? (
