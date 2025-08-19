@@ -50,7 +50,7 @@ export const fetchData = async () => {
           lRef,
           where("content", "!=", ''), // Exclude empty messages
           where("deleted", "==", false),
-          where("status", "==", "approved"),
+          where("status", "==", "sent"),
           orderBy("created_at")
         );
   

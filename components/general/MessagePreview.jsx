@@ -1,5 +1,6 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
+import Image from "next/image";
 
 const MessagePreview = ({
   profileImage,
@@ -70,16 +71,17 @@ const MessagePreview = ({
           ? "bg-red-50"
           : isRecipient && unread
           ? "bg-green-50"
-          : status === "pending_review" ?
-          "bg-gray-50" :
-          "bg-white"
-      }`}
-    >
+          : status === "pending_review"
+          ? "bg-gray-50"
+          : "bg-white"
+      }`}>
       <div className="flex items-start">
-        <img
+        <Image
           src={imageSrc}
           alt={`${name}'s profile`}
           className="w-12 h-12 rounded-full object-cover mr-4"
+          width={36}
+          height={36}
         />
         <div className="flex-1">
           <div className="flex justify-between items-start">
@@ -101,8 +103,7 @@ const MessagePreview = ({
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}
-      >
+        }`}>
         {lastMessage ? (
           <div className="flex">
             {getStatusIcon() && (
