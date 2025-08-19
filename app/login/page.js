@@ -14,13 +14,21 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
-
+import { analytics } from "../firebaseConfig";
+import { logEvent } from "firebase/analytics";
+import { useEffect } from "react";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+    useEffect(() => {
+    if (analytics) {
+      logEvent(analytics, "page_view"); // log a page view
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
