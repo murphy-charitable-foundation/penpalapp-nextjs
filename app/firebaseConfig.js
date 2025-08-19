@@ -17,7 +17,7 @@ const firebaseConfig = {
   storageBucket: "penpalmagicapp.appspot.com",
   messagingSenderId: "45289060638",
   appId: "1:45289060638:web:33121bc47d40ceef83f10f",
-  measurementId: "G-FG3MPZ8JV6",
+  measurementId: "G-X9B0DR6YVK",
 };
 
 // // Initialize Firebase
