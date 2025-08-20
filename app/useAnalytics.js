@@ -4,7 +4,7 @@ import {
   logError,
   logDeadClick,
   logInternetDisconnection,
-} from "@/app/utils/analytics";
+} from "./utils/analytics";
 import * as Sentry from "@sentry/nextjs";
 
 // Throttle function to limit the rate at which a function can fire

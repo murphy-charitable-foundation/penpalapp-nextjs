@@ -20,6 +20,8 @@ import { PageContainer } from "../../components/general/PageContainer";
 import Dialog from "../../components/general/Modal";
 import { onAuthStateChanged } from "firebase/auth";
 import InfoDisplay from "../../components/general/profile/InfoDisplay";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -38,6 +40,18 @@ export default function CreateAccount() {
   const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
 
+  usePageAnalytics("/create-acc");
+  useEffect(() => {
+    const startTime = performance.now();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/create-acc", loadTime);
+      }, 0);
+    });
+  }, []);
   // Pre-populate email from auth.currentUser
 
   useEffect(() => {
@@ -121,6 +135,8 @@ export default function CreateAccount() {
 
       setShowCreate(false);
       localStorage.setItem("userFirstName", firstName);
+      logButtonEvent("Create Account Button Clicked!", "/create-acc");
+
       // Redirect to profile page or any other page as needed
       router.push("/welcome/");
     } catch (error) {
