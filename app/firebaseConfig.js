@@ -3,7 +3,6 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
-import { getAnalytics, isSupported } from "firebase/analytics";
 
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
@@ -25,20 +24,14 @@ const firebaseConfig = {
 // Only initialize if no apps have been initialized
 
 // const app = initializeApp(firebaseConfig);
-let analytics;
-if (typeof window !== "undefined") {
-  isSupported().then((yes) => {
-    if (yes) {
-      analytics = getAnalytics(app);
-    }
-  });
-}
+// const analytics = getAnalytics(app);
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app, "gs://penpalmagicapp.appspot.com/");
 
-export { db, auth, storage, FieldPath, analytics, app };
+export { db, auth, storage, FieldPath };
 
 // Initialize Firebase Authentication and export
