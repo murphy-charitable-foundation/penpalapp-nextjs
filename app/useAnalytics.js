@@ -96,6 +96,19 @@ const usePageAnalytics = (pagePath) => {
 };
 
 // Track the uncaught errors
+/*
+This app automatically tracks and reports global (unhandled) errors and 
+unhandled promise rejections. Errors are sent to both Firebase (via logError) 
+and Sentry for monitoring and debugging.
+
+Global Error Listeners are registered in GlobalTracker.addErrorListeners():
+window.onerror captures uncaught JavaScript errors.
+window.onunhandledrejection captures unhandled promise rejections.
+
+When an error occurs:
+The error is logged to Firebase using logError.
+The error is also sent to Sentry using Sentry.captureException.
+*/
 class GlobalTracker {
   static instance = null;
   isInitialized = false;
