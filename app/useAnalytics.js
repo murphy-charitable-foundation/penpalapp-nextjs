@@ -5,6 +5,7 @@ import {
   logDeadClick,
   logInternetDisconnection,
 } from "@/app/utils/analytics";
+import * as Sentry from "@sentry/nextjs";
 
 // Throttle function to limit the rate at which a function can fire
 const throttle = (func, limit) => {
@@ -116,6 +117,7 @@ class GlobalTracker {
         line: lineno,
         column: colno,
       });
+      Sentry.captureException(error || new Error(message)); // Send to Sentry
     };
 
     // Handle unhandled promise rejections
@@ -123,6 +125,7 @@ class GlobalTracker {
       logError(event.reason, {
         type: "unhandled_promise_rejection",
       });
+      Sentry.captureException(event.reason); // Send to Sentry
     };
   }
 
