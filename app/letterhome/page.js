@@ -29,6 +29,8 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -41,6 +43,8 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+
+  usePageAnalytics("/letterhome");
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -103,6 +107,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const startTime = performance.now();
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -131,6 +136,16 @@ export default function Home() {
         }
       }
     });
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/letterhome", loadTime);
+      }, 0);
+    });
+
     return () => unsubscribe();
   }, [router]);
 
@@ -236,7 +251,13 @@ export default function Home() {
                   color="bg-black"
                   textColor="text-white"
                   rounded="rounded-md"
-                  onClick={iterateLetterBoxes}
+                  onClick={() => {
+                    logButtonEvent(
+                      "check for inactive chats button clicked",
+                      "/letterhome"
+                    );
+                    iterateLetterBoxes();
+                  }}
                 />
               )}
             </>

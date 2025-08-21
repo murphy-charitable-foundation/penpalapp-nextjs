@@ -10,6 +10,8 @@ import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import * as Sentry from "@sentry/nextjs";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -25,7 +27,10 @@ export default function EditProfileUserImage() {
   const cropperRef = useRef();
   const router = useRouter();
 
+  usePageAnalytics("/edit-profile-user-image");
+
   useEffect(() => {
+    const startTime = performance.now();
     const fetchUserData = async () => {
       console.log(auth);
       if (auth.currentUser) {
@@ -42,6 +47,15 @@ export default function EditProfileUserImage() {
       }
     };
     fetchUserData();
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/edit-profile-user-image", loadTime);
+      }, 0);
+    });
   }, [auth.currentUser]);
 
   useEffect(() => {
@@ -106,6 +120,7 @@ export default function EditProfileUserImage() {
         }
       }
     );
+    logButtonEvent("Save Profile Picture clicked!", "/edit-profile-user-image");
   };
 
   return (
