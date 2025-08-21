@@ -1,3 +1,6 @@
+/**
+ * Usage is commented in useAnalytics.js and donate/page.js
+ */
 import { getAnalytics, logEvent } from "firebase/analytics";
 import { app } from "../firebaseConfig";
 
