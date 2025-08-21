@@ -19,6 +19,11 @@ const throttle = (func, limit) => {
   };
 };
 
+  /**
+   * Handles logging page views, time spent on page, and dead clicks
+   * @param {string} pagePath the path of the page to log
+   * @returns {void}
+   */
 const usePageAnalytics = (pagePath) => {
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -52,6 +57,11 @@ const usePageAnalytics = (pagePath) => {
       // Log page views and time spent on page
       let startTime = Date.now();
 
+      /**
+       * Handles logging page views. Records time spent on page and logs it.
+       * @private
+       * @returns {void}
+       */
       const handlePageView = () => {
         const viewTime = Math.round((Date.now() - startTime) / 1000); // Convert to seconds
         if (viewTime > 0) {
@@ -121,6 +131,15 @@ class GlobalTracker {
     GlobalTracker.instance = this;
   }
 
+  /**
+   * Adds global error listeners to track uncaught errors and unhandled promise
+   * rejections. When an error occurs, it is logged to Firebase using logError
+   * and also sent to Sentry using Sentry.captureException.
+   *
+   * Listeners are registered for:
+   * - window.onerror: captures uncaught JavaScript errors
+   * - window.onunhandledrejection: captures unhandled promise rejections
+   */
   addErrorListeners() {
     // Handle regular uncaught errors
     window.onerror = (message, source, lineno, colno, error) => {
@@ -142,6 +161,11 @@ class GlobalTracker {
     };
   }
 
+  /**
+   * Adds listeners for online and offline events to track internet connectivity.
+   * When the connection is lost, it logs the start time of the disconnection.
+   * When the connection is restored, it logs the duration of the disconnection.
+   */
   initializeConnectivityTracking() {
     window.addEventListener("online", () => {
       if (this.disconnectionStartTime) {
@@ -160,6 +184,11 @@ class GlobalTracker {
     });
   }
 
+  /**
+   * Initializes the global error listeners and connectivity tracking.
+   * This should only be called once per app lifetime.
+   * @returns {void}
+   */
   initialize() {
     if (typeof window !== "undefined" && !this.isInitialized) {
       this.addErrorListeners();

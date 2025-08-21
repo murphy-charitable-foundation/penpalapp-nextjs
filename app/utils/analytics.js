@@ -5,6 +5,13 @@ import { app } from "../firebaseConfig";
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
 
 // Function to track page views
+/**
+ * Logs page views to Firebase Analytics.
+ *
+ * @param {string} pagePath The path of the page.
+ * @param {number} viewTime The time taken viewing the page.
+ * @returns {void}
+ */
 const logPageView = (pagePath, viewTime) => {
   if (analytics) {
     logEvent(analytics, "page_view", {
@@ -15,6 +22,13 @@ const logPageView = (pagePath, viewTime) => {
   }
 };
 
+/**
+ * Logs button clicks to Firebase Analytics.
+ *
+ * @param {string} buttonName The name of the button clicked.
+ * @param {string} pagePath The path of the page where the button was clicked.
+ * @returns {void}
+ */
 const logButtonEvent = (buttonName, pagePath) => {
   if (analytics) {
     logEvent(analytics, "button_click", {
@@ -33,6 +47,13 @@ const logInEvent = (status, message) => {
   }
 };
 
+/**
+ * Logs an uncaught error to Firebase Analytics.
+ *
+ * @param {Error} error The error object to log.
+ * @param {Object} errorInfo Additional information to include in the error event.
+ * @returns {void}
+ */
 const logError = (error, errorInfo) => {
   if (analytics) {
     console.log("Logging uncaught error", error, errorInfo);
@@ -45,6 +66,18 @@ const logError = (error, errorInfo) => {
   }
 };
 
+/**
+ * Logs a dead click event to Firebase Analytics.
+ *
+ * A dead click is a click that didn't result in any action, such as clicking
+ * a non-interactive element or clicking outside any interactive element.
+ *
+ * @param {number} x The x-coordinate of the click.
+ * @param {number} y The y-coordinate of the click.
+ * @param {string} elementClicked The tag name of the element that was clicked.
+ * @param {string} pagePath The path of the page where the click occurred.
+ * @returns {void}
+ */
 const logDeadClick = (x, y, elementClicked, pagePath) => {
   if (analytics) {
     logEvent(analytics, "dead_click", {
@@ -66,6 +99,13 @@ const logInternetDisconnection = (duration, reconnected = false) => {
   }
 };
 
+/**
+ * Logs the time it took for a page to load to Firebase Analytics.
+ *
+ * @param {string} pagePath The path of the page where the loading time occurred.
+ * @param {number} loadingTime The time it took for the page to load in milliseconds.
+ * @returns {void}
+ */
 const logLoadingTime = (pagePath, loadingTime) => {
   if (analytics) {
     logEvent(analytics, "page_loading_time", {
