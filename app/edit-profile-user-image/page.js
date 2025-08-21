@@ -43,19 +43,19 @@ export default function EditProfileUserImage() {
           // setImage(userData.photo_uri || '/murphylogo.png');
           setNewProfileImage(userData.photo_uri || "/murphylogo.png");
           setPreviewURL(userData.photo_uri || "/murphylogo.png");
+
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/edit-profile-user-image", loadTime);
+            }, 0);
+          });
         }
       }
     };
     fetchUserData();
-
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/edit-profile-user-image", loadTime);
-      }, 0);
-    });
   }, [auth.currentUser]);
 
   useEffect(() => {

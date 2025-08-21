@@ -133,17 +133,16 @@ export default function Home() {
           console.error(err);
         } finally {
           setIsLoading(false);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/letterhome", loadTime);
+            }, 0);
+          });
         }
       }
-    });
-
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/letterhome", loadTime);
-      }, 0);
     });
 
     return () => unsubscribe();

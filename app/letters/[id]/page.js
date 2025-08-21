@@ -35,6 +35,9 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
+import { logButtonEvent, logLoadingTime } from "../../utils/analytics";
+import { usePageAnalytics } from "../../useAnalytics";
+import React from "react";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -97,7 +100,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
-  const { id } = params;
+  const { id } = React.use(params);
 
   const auth = getAuth();
   const router = useRouter();
@@ -535,8 +538,12 @@ export default function Page({ params }) {
     }, 100);
   };
 
+  usePageAnalytics(`/letters/letterId`);
+
   // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
+    const startTime = performance.now();
+
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
 
@@ -660,6 +667,14 @@ export default function Page({ params }) {
         Sentry.captureException("INITIALIZATION ERROR:", error);
       } finally {
         setIsLoading(false);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const endTime = performance.now();
+            const loadTime = endTime - startTime;
+            console.log(`Page render time: ${loadTime}ms`);
+            logLoadingTime("/letters/letterId", loadTime);
+          }, 0);
+        });
       }
     });
 
@@ -834,6 +849,10 @@ export default function Page({ params }) {
                               setReportSender(message.sent_by.id);
                               setReportContent(message.content);
                               setShowReportPopup(true);
+                              logButtonEvent(
+                                "Report message clicked!",
+                                "/letters/letterId"
+                              );
                             }}
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
                           >
