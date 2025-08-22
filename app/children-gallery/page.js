@@ -5,10 +5,10 @@ import {auth, db} from "../firebaseConfig";
 import {onAuthStateChanged} from "firebase/auth";
 import {useRouter} from "next/navigation";
 import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
-import ProfileImage from "../components/general/ProfileImage";
+import ProfileImage from "../../components/general/ProfileImage";
 import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from "../utils/letterboxFunctions";
-import LoadingSpinner from "../components/loadingSpinner/LoadingSpinner";
-import Button from "../components/general/Button";
+import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import Button from "../../components/general/Button";
 import bcrypt from "bcryptjs";
 
 export default function ChildrenGallery() {
