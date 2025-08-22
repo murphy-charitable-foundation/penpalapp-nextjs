@@ -60,15 +60,6 @@ export default function OnboardingProfile() {
 
     }
 
-    // if (
-    //   cropperRef.current &&
-    //   typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
-    // ) {
-    //   const canvas = cropperRef.current.cropper.getCroppedCanvas();
-    //   canvas.toBlob((blob) => {
-    //     setCroppedImage(blob);
-    //   });
-    // }
   }
 
 
@@ -110,88 +101,6 @@ export default function OnboardingProfile() {
     return () => unsubscribe();
   }, [router]);
 
-  // const handleSaveImage = async () => {
-  //   const uid = auth.currentUser?.uid;
-
-  //   if (!uid) return;  // Make sure uid is available
-  //   if (!image) return;  // Make sure uid is available
-  //   setLoading(true);
-  //   uploadFile(
-  //     croppedImage,
-  //     `profile/${uid}/profile-image`,
-  //     () => {},
-  //     (error) => {
-  //       setLoading(false);
-  //       console.error("Upload error:", error)
-  //     },
-  //     async (url) => {
-  //       setStorageUrl(url);
-  //       console.log("Image Url:" + url);
-  //       if (url) {
-  //         await updateDoc(doc(db, "users", uid), { photo_uri: url });
-  //         setStep(1);
-  //       }
-  //       setLoading(false);
-  //     }
-  //   );
-  // };
-
-  // const handleSaveAvatar = async () => {
-
-  //   if(!avatar){
-  //     alert('Please select an avatar!')
-  //     return
-  //   }
-
-  //   const uid = auth.currentUser?.uid;
-  //   if (!uid) {return;}  // Make sure uid is available
-
-  //   //setLoading(true, 'Saving your avatar, please wait...');
-  //   setLoading(true);
-  //   uploadFile(
-  //     base64ToBlob(avatar),
-  //     `profile/${uid}/profile-image`,
-  //     () => {},
-  //     (error) => {
-  //       console.error("Upload error:", error)
-  //       setLoading(false)
-  //       alert("Upload error:" + error)
-  //     },
-  //     async (url) => {
-  //       setStorageUrl(url);
-  //       if (url) {
-  //         await updateDoc(doc(db, "users", uid), { photo_uri: url });
-  //         //console.log(url, 'url')
-  //         setLoading(false)
-  //         setStep(1)
-  //         //showAlert('Your avatar has been saved!')
-  //       }
-  //     }
-  //   );
-  // };
-
-
-  // const onImageDelete = async () => {
-  //   const ok = await confirm('Are you sure you want to delete the current profile picture?');
-  //   if (ok) {
-  //     setAvatar(null);
-  //     setShowMenu(false)
-  //   } else {
-  //     console.log('no');
-  //   }
-  // }
-
-
-  // const base64ToBlob =(base64, type = 'image/jpeg') => {
-  //   const byteCharacters = atob(base64.split(',')[1]);
-  //   const byteArrays = [];
-
-  //   for (let i = 0; i < byteCharacters.length; i++) {
-  //     byteArrays.push(byteCharacters.charCodeAt(i));
-  //   }
-
-  //   return new Blob([new Uint8Array(byteArrays)], { type });
-  // }
 
   const handleGetAvatar = (type) => {
     setMode(type)

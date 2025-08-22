@@ -259,91 +259,6 @@ export default function EditProfile() {
     setIsBioModalOpen(true);
   };
 
-  //avatar area
-
-  // const handleSaveImage = async () => {
-  //   const uid = auth.currentUser?.uid;
-
-  //   if (!uid) return;  // Make sure uid is available
-  //   if (!image) return;  // Make sure uid is available
-  //   setLoading(true);
-  //   uploadFile(
-  //     croppedImage,
-  //     `profile/${uid}/profile-image`,
-  //     () => {},
-  //     (error) => {
-  //       setLoading(false);
-  //       console.error("Upload error:", error)
-  //     },
-  //     async (url) => {
-  //       setStorageUrl(url);
-  //       console.log("Image Url:" + url);
-  //       if (url) {
-  //         await updateDoc(doc(db, "users", uid), { photo_uri: url });
-  //         setStep(1);
-  //       }
-  //       setLoading(false);
-  //     }
-  //   );
-  // };
-
-  // const handleSaveAvatar = async (avatarBlob) => {
-
-  //   if(!avatarBlob){
-  //     alert('Please select an avatar!')
-  //     return
-  //   }
-  //   console.log(avatarBlob, 'avatar')
-  //   const uid = auth.currentUser?.uid;
-  //   if (!uid) {return;}  // Make sure uid is available
-
-  //   //setLoading(true, 'Saving your avatar, please wait...');
-  //   setLoading(true);
-  //   uploadFile(
-  //     base64ToBlob(avatarBlob),
-  //     `profile/${uid}/profile-image`,
-  //     () => {},
-  //     (error) => {
-  //       console.error("Upload error:", error)
-  //       setLoading(false)
-  //       alert("Upload error:" + error)
-  //     },
-  //     async (url) => {
-  //       setStorageUrl(url);
-  //       if (url) {
-  //         await updateDoc(doc(db, "users", uid), { photo_uri: url });
-  //         console.log(url, 'url')
-  //         setLoading(false)
-  //         //setStep(1)
-  //         //showAlert('Your avatar has been saved!')
-  //       }
-  //     }
-  //   );
-  // };
-
-
-
-  // const onImageDelete = async () => {
-  //   const ok = await confirm('Are you sure you want to delete the current profile picture?');
-  //   if (ok) {
-  //     setAvatar(null);
-  //     setShowMenu(false)
-  //   } else {
-  //     console.log('no');
-  //   }
-  // }
-
-  // const base64ToBlob =(base64, type = 'image/jpeg') => {
-  //   const byteCharacters = atob(base64.split(',')[1]);
-  //   const byteArrays = [];
-
-  //   for (let i = 0; i < byteCharacters.length; i++) {
-  //     byteArrays.push(byteCharacters.charCodeAt(i));
-  //   }
-
-  //   return new Blob([new Uint8Array(byteArrays)], { type });
-  // }
-
 
   const handleSaveAvatar = async (inputAvatar) => {
     await saveAvatar({
@@ -399,26 +314,7 @@ export default function EditProfile() {
               content={bioModalContent}
               width="large"
             />
-            {/* Profile Image */}
-            {/* <div className="my-6">
-            <div className="relative w-40 h-40 mx-auto">
-              <Image
-                src={photoUri ? photoUri : "/murphylogo.png"}
-                layout="fill"
-                className="rounded-full"
-                alt="Profile picture"
-              />
-            </div>
-            <div className="mt-4 flex justify-center">
-              <button
-                type="button"
-                onClick={() => router.push("/edit-profile-user-image")}
-                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
-              >
-                Edit Photo
-              </button>
-            </div>
-          </div> */}
+
           </div>
             {
               <div className="flex justify-center">

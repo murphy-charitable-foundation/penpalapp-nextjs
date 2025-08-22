@@ -25,18 +25,6 @@ export default function CountrySelect({ onChange }) {
   const [countryName, setCountryName] = useState("");
   return (
     <>
-    {/* <select
-      className="w-full border-b border-gray-400 focus:outline-none focus:border-blue-500 bg-transparent py-2"
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">Select a country</option>
-      {countryList.map((country) => (
-        <option key={country.code} value={country.name}>
-          {country.name}
-        </option>
-      ))}
-    </select> */}
-    
       <Dropdown
         options={countryList.map(item => item.name)}
         valueChange={(option) => {
