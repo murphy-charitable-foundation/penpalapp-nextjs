@@ -254,8 +254,8 @@ export const fetchRecipients = async (id) => {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
     try {
-      const downloaded = await getUserPfp(selectedUserDocRef.id);
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: downloaded });
+      const downloaded = await getUserPfp(user.id);
+      members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
     } catch (e) {
       Sentry.captureException(e);
       console.error("Error fetching user:", e);
