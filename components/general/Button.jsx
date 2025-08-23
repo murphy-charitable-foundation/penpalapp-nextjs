@@ -6,7 +6,8 @@ export default function Button({
   btnType,
   disabled,
   size = 'default',
-  onClick
+  onClick,
+  className,
 }) {
   const colors = {
     blue: 'bg-blue-700 hover:bg-blue-800 text-white',
@@ -38,6 +39,7 @@ export default function Button({
         rounded-full
         text-md font-bold py-3 px-4
         disabled:opacity-50 disabled:cursor-not-allowed
+        ${className}
       `}
     >
       {btnText}
