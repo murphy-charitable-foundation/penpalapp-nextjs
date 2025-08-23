@@ -35,6 +35,7 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
+import Popover from "../../../components/general/Popover";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -891,31 +892,29 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* Close Dialog */}
-        {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                Close this message?
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Your message will be saved as a draft.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
-                  Stay on page
-                </button>
-                <button
-                  onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Close Dialog using Popover */}
+        <Popover
+          type="dialog"
+          isOpen={showCloseDialog}
+          onClose={() => setShowCloseDialog(false)}
+          title="Close this message?"
+          message="Your message will be saved as a draft."
+          showBackdrop={true}
+          backdropBlur={true}
+          size="dialog"
+          primaryButton={{
+            text: "Stay on page",
+            onClick: handleContinueEditing,
+            className:
+              "flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors",
+          }}
+          secondaryButton={{
+            text: "Close",
+            onClick: handleConfirmClose,
+            className:
+              "flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors",
+          }}
+        />
 
         {/* Report Popups */}
         {showReportPopup && (
