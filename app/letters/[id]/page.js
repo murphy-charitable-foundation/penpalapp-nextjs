@@ -732,7 +732,7 @@ export default function Page({ params }) {
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
         {
-          allMessages && allMessages.length > 0 &&
+          allMessages && allMessages.length === 1 &&
           <FirstTimeChatGuide
             page="letterDetail"
             onUseTemplate={handleUseTemplate}

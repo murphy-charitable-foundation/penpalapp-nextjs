@@ -221,7 +221,7 @@ export default function Home() {
                         <>
                           { 
                             // change this conditional to check length is 1.
-                            conversations.length > 0 && 
+                            conversations.length === 1 && 
                             <FirstTimeChatGuide page="letterHome" params={pathname} user={getUserTypefromLocalStorage} /> 
                           }
                           <ConversationList conversations={conversations} />                        
