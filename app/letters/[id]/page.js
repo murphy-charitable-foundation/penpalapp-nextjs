@@ -35,7 +35,7 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
-import Popover from "../../../components/general/Popover";
+import Modal from "../../../components/general/Modal";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -892,28 +892,23 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* Close Dialog using Popover */}
-        <Popover
-          type="dialog"
+        {/* Close Dialog using Modal Component */}
+        <Modal
           isOpen={showCloseDialog}
           onClose={() => setShowCloseDialog(false)}
+          isCloseDialog={true}
           title="Close this message?"
-          message="Your message will be saved as a draft."
-          showBackdrop={true}
-          backdropBlur={true}
-          size="dialog"
-          primaryButton={{
-            text: "Stay on page",
-            onClick: handleContinueEditing,
-            className:
-              "flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors",
-          }}
-          secondaryButton={{
-            text: "Close",
-            onClick: handleConfirmClose,
-            className:
-              "flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors",
-          }}
+          subtitle="Your message will be saved as a draft."
+          primaryButtonText="Stay on page"
+          secondaryButtonText="Close"
+          onPrimaryAction={handleContinueEditing}
+          onSecondaryAction={handleConfirmClose}
+          primaryButtonColor="#4E802A"
+          secondaryButtonColor="gray-200"
+          primaryTextColor="white"
+          secondaryTextColor="#4E802A"
+          closeOnOverlay={false}
+          showCloseButton={false}
         />
 
         {/* Report Popups */}
