@@ -10,6 +10,9 @@ import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from ".
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import bcrypt from "bcryptjs";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer }  from "../../components/general/PageContainer";
+import Input from  "../../components/general/Input";
 
 export default function ChildrenGallery() {
     const [users, setUsers] = useState([]);
@@ -144,8 +147,8 @@ export default function ChildrenGallery() {
     }
 
     return (
-        <div className="bg-white min-h-screen py-10">
-            <div className="max-w-lg mx-auto rounded-lg overflow-hidden">
+        <PageBackground>
+            <PageContainer max-width={"md"} padding={"p-8"}>
                 <section className="p-4 max-w-[260px] m-auto">
                     <div className="flex flex-col gap-[8px] items-center justify-center flex-grow">
                         <h1 className="font-bold text-black text-center font-size-[18px]">
@@ -178,7 +181,7 @@ export default function ChildrenGallery() {
                                         <div
                                             className="min-w-[60px] h-[20px] rounded-[15px] bg-[#4E802A] px-[8px] flex items-center justify-center whitespace-nowrap absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10">
                                             <h3 className="font-semibold text-[14px] leading-[20px] tracking-[-0.5%] text-white text-center">
-                                                {user.first_name.split(" ")[0]} {user.last_name.charAt(0)}.
+                                            {user.first_name?.split(" ")[0] || ""} {user.last_name?.split(" ")[0] || ""}
                                             </h3>
                                         </div>
                                     </div>
@@ -189,7 +192,7 @@ export default function ChildrenGallery() {
                         )}
                     </div>
                 </section>
-            </div>
+            </PageContainer>
 
             {selectedUser && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -263,7 +266,7 @@ export default function ChildrenGallery() {
                                     </button>
                                 </div>
                                 <div className="mt-6 flex justify-center">
-                                    <Button color={"bg-[#4E802A]"} btnText={"Log in"} textColor={"text-white"}
+                                    <Button color={"green"} btnText={"Log in"} 
                                             btnType="submit"/>
                                 </div>
                             </form>
@@ -271,6 +274,6 @@ export default function ChildrenGallery() {
                     </div>
                 </div>
             )}
-        </div>
+        </PageBackground>
     );
 }
