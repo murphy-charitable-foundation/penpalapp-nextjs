@@ -10,6 +10,8 @@ import Image from 'next/image';
 import { useConfirm } from '@/components/ConfirmProvider';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import CountrySelect from '@/components/general/CountrySelect';
+import { BackButton } from "@/components/general/BackButton";
+
 import EditProfileImage from "@/components/edit-profile-image";
 import { AnimatePresence, motion } from 'framer-motion';
 import compressImage from "@/components/general/compress-image";
@@ -154,26 +156,12 @@ export default function OnboardingProfile() {
     router.push("/discovery");
   }
 
+  if (loading) return <LoadingSpinner />;
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
-      {loading && <LoadingSpinner />}
-      {!loading && <div className="p-6 h-full flex flex-col flex-1">
+      {<div className="p-6 h-full flex flex-col flex-1">
         <div className="flex justify-between items-center">
-          <button onClick={() => window.history.back()}>
-            <svg
-              className="h-6 w-6 text-gray-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
+          <BackButton />
         </div>
 
         <h3 className="text-[#034792] font-[700] text-3xl w-full text-center pt-12 pb-5 ">

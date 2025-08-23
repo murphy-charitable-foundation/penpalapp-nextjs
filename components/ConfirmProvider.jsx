@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import Button from "@/components/general/Button";
 
 const ConfirmContext = createContext(null);
 
@@ -53,18 +54,24 @@ export function ConfirmProvider({ children }) {
               <h2 className="text-lg font-semibold mb-4">{title}</h2>
               <p className="text-gray-700 mb-6">{message}</p>
               <div className="flex justify-end gap-3">
-                <button
+                <Button
+                  btnText="Cancel"
+                  color="bg-gray-200"
+                  hoverColor="hover:bg-gray-300"
+                  textColor="text-white"
+                  rounded="rounded-lg"
+                  size="w-24"
                   onClick={handleCancel}
-                  className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
+                />
+                <Button
+                  btnText="Confirm"
+                  color="bg-green-700"
+                  hoverColor="hover:bg-green-800"
+                  textColor="text-white"
+                  rounded="rounded-lg"
+                  size="w-24"
                   onClick={handleConfirm}
-                  className="px-4 py-2 rounded-lg bg-green-700 text-white hover:bg-green-800"
-                >
-                  Confirm
-                </button>
+                />
               </div>
             </motion.div>
           </motion.div>

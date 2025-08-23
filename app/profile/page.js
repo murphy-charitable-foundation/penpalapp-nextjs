@@ -289,11 +289,10 @@ export default function EditProfile() {
     }, 50)
   }
   //Avatar end
-
+  if (loading) return <LoadingSpinner />;
   return (
     <div className="bg-gray-50 min-h-screen">
-      {loading && <LoadingSpinner />}
-      {!loading && <div>
+      {<div>
         <Dialog
           isOpen={isDialogOpen}
           onClose={() => {
