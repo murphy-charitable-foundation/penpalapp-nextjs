@@ -495,7 +495,6 @@ export default function Page({ params }) {
     }
   };
 
-  // FIXED: Enhanced handleReplyClick to properly handle existing drafts
   const handleReplyClick = async () => {
     setIsEditing(true);
 
@@ -666,7 +665,7 @@ export default function Page({ params }) {
     return () => {
       unsubscribe();
     };
-  }, [id, router]);
+  }, [auth, id, router]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -903,16 +902,16 @@ export default function Page({ params }) {
                 Your message will be saved as a draft.
               </p>
               <div className="flex space-x-3">
-                <Button
+                <button
                   onClick={handleContinueEditing}
                   className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
                   Stay on page
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={handleConfirmClose}
                   className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
                   Close
-                </Button>
+                </button>
               </div>
             </div>
           </div>
