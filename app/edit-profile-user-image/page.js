@@ -10,6 +10,7 @@ import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import * as Sentry from "@sentry/nextjs";
+import { useUserData } from "../../context/UserDataContext";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -23,21 +24,14 @@ export default function EditProfileUserImage() {
 
   const cropperRef = useRef();
   const router = useRouter();
-// Unnecessary getDoc
+
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log(auth);
       if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          // setImage(userData.photo_uri || '/murphylogo.png');
-          setNewProfileImage(userData.photo_uri || "/murphylogo.png");
-          setPreviewURL(userData.photo_uri || "/murphylogo.png");
-        }
+        const userData = useUserData();
+        // setImage(userData.photo_uri || '/murphylogo.png');
+        setNewProfileImage(userData.photo_uri || "/murphylogo.png");
+        setPreviewURL(userData.photo_uri || "/murphylogo.png");
       }
     };
     fetchUserData();

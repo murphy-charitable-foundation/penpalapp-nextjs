@@ -23,6 +23,7 @@ import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { useUserData } from "@/context/UserDataContext";
 
 export default function EditProfile() {
   // State initializations
@@ -62,32 +63,22 @@ export default function EditProfile() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        // Unnecessary getDoc
-        const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setFirstName(userData.first_name || "");
-          setLastName(userData.last_name || "");
-          setEmail(userData.email || "");
-          setBirthday(userData.birthday || "");
-          setCountry(userData.country || "");
-          setVillage(userData.village || "");
-          setBio(userData.bio || "");
-          setEducationLevel(userData.education_level || "");
-          setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.guardian || "");
-          setDreamJob(userData.dream_job || "");
-          setHobby(userData.hobby || "");
-          setFavoriteColor(userData.favorite_color || "");
-          setPhotoUri(userData.photo_uri || "");
-          setUserType(userData.user_type || "");
-        } else {
-          console.log("No such document!");
-        }
+        const userData = useUserData();
+        setFirstName(userData.first_name || "");
+        setLastName(userData.last_name || "");
+        setEmail(userData.email || "");
+        setBirthday(userData.birthday || "");
+        setCountry(userData.country || "");
+        setVillage(userData.village || "");
+        setBio(userData.bio || "");
+        setEducationLevel(userData.education_level || "");
+        setIsOrphan(userData.is_orphan ? "Yes" : "No");
+        setGuardian(userData.guardian || "");
+        setDreamJob(userData.dream_job || "");
+        setHobby(userData.hobby || "");
+        setFavoriteColor(userData.favorite_color || "");
+        setPhotoUri(userData.photo_uri || "");
+        setUserType(userData.user_type || "");
       }
     };
     fetchUserData();

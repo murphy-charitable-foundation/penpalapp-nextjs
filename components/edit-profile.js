@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useRef, useEffect } from "react";
 import SelectProfileImage from "./select-profile-image-wrapper";
 import SelectProfileLocation from "./select-location";
@@ -6,6 +7,16 @@ import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { auth, db, storage } from "../app/firebaseConfig";
 import Button from "./general/Button";
 import Image from "next/image";
+=======
+import { useState, useRef, useEffect } from 'react';
+import SelectProfileImage from './select-profile-image-wrapper';
+import SelectProfileLocation from './select-location';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
+import { auth, db, storage } from '../app/firebaseConfig';
+import Button from './general/Button';
+import { useUserData } from '../context/UserDataContext';
+>>>>>>> WIP removing unecessary DB calls
 
 const EditProfileImage = ({ router }) => {
   const [image, setImage] = useState(null);
@@ -40,28 +51,13 @@ const EditProfileImage = ({ router }) => {
     }
   }, [stage]);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    const findUser = async () => {
-      const uid = auth.currentUser?.uid;
-      const u = await getDoc(doc(db, "users", uid));
-      console.log(u.data());
-      setUser(u.data());
-    };
-    findUser();
-  }, []);
-=======
 	useEffect(() => {
 		const findUser = async () => {
-			const uid = auth.currentUser?.uid
-			// Unnecessary getDoc
-			const u = await getDoc(doc(db, "users", uid))
-			console.log(u.data())
-			setUser(u.data())
+			const userData = useUserData();
+			setUser(userData);
 		}
 		findUser()
 	}, [])
->>>>>>> Removing unused imports and locating unnecessary database requests
 
   const handleDrop = (acceptedFiles) => {
     setImage(URL.createObjectURL(acceptedFiles[0]));

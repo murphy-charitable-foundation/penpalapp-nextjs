@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { db, auth } from "../../firebaseConfig";
+import { auth } from "../../firebaseConfig";
 
 import {
   Home,
@@ -20,7 +19,8 @@ import {
 import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
-import { PageHeader } from "../../../components/general/PageHeader";
+import { PageHeader } from '../../../components/general/PageHeader';
+import { useUserData } from "@/context/UserDataContext";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -47,32 +47,22 @@ export default function Page({ params }) {
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
-        const uid = id;
-        const docRef = doc(db, "users", uid);
-        // Unnecessary getDoc
-        const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setFirstName(userData.first_name || "");
-          setLastName(userData.last_name || "");
-          setEmail(userData.email || "");
-          setBirthday(userData.birthday || "");
-          setCountry(userData.country || "");
-          setVillage(userData.village || "");
-          setBio(userData.bio || "");
-          setEducationLevel(userData.education_level || "");
-          setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.guardian || "");
-          setDreamJob(userData.dream_job || "");
-          setHobby(userData.hobby || "");
-          setFavoriteColor(userData.favorite_color || "");
-          setPhotoUri(userData.photo_uri || "");
-          setUserType(userData.user_type || "");
-        } else {
-          console.log("No such document!");
-        }
+        const userData = useUserData();;
+        setFirstName(userData.first_name || "");
+        setLastName(userData.last_name || "");
+        setEmail(userData.email || "");
+        setBirthday(userData.birthday || "");
+        setCountry(userData.country || "");
+        setVillage(userData.village || "");
+        setBio(userData.bio || "");
+        setEducationLevel(userData.education_level || "");
+        setIsOrphan(userData.is_orphan ? "Yes" : "No");
+        setGuardian(userData.guardian || "");
+        setDreamJob(userData.dream_job || "");
+        setHobby(userData.hobby || "");
+        setFavoriteColor(userData.favorite_color || "");
+        setPhotoUri(userData.photo_uri || "");
+        setUserType(userData.user_type || "");
       }
     };
     fetchUserData();
