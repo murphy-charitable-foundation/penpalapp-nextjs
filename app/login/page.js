@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
+import { getUserDoc } from "../utils/letterboxFunctions";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -43,12 +44,28 @@ export default function Login() {
         email,
         password
       );
-      const uid = userCredential.user.uid;
-      const userRef = doc(db, "users", uid);
-      // Unnecessary getDoc (this will be the data progenitor)
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
+      
+      const { userDocRef, userDocSnapshot }  = await getUserDoc();
+      if (userDocSnapshot.exists()) {
+        const userData = userDocSnapshot.data();
+        setUserData({
+          first_name: userData.first_name || "",
+          last_name: userData.last_name || "",
+          email: userData.email || "",
+          uid: userDocRef.id,
+          photoUri: userData.photo_uri || "",
+          country: userData.country || "",
+          user_type: userData.user_type || "",
+          birthday: userData.birthday || "",
+          village: userData.village || "",
+          bio: userData.bio || "",
+          education_level: userData.education_level || "",
+          is_orphan: userData.is_orphan || false,
+          guardian: userData.guardian || "",
+          dream_job: userData.dream_job || "",
+          hobby: userData.hobby || "",
+          favorite_color: userData.favorite_color || ""
+        });
         router.push("/letterhome");
       } else {
         router.push("/create-acc");

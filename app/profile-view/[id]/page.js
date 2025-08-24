@@ -23,7 +23,8 @@ import {
 import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
-import { PageHeader } from "../../../components/general/PageHeader";
+import { PageHeader } from '../../../components/general/PageHeader';
+import { useUserData } from "@/context/UserDataContext";
 
 export default function Page({ params }) {
   const { id } = params;

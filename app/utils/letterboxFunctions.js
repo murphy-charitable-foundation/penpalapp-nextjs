@@ -6,9 +6,8 @@ import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
-const getUserDoc = async () => {
-  const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
-  // Unnecessary getDoc
+export const getUserDoc = async () => {
+  const userDocRef = doc(db, "users", auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };

@@ -12,8 +12,7 @@ export const fetchData = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   console.log(auth.currentUser.uid)
   // Unnecessary getDoc
-  const userDocSnapshot = await getDoc(userDocRef);
-  console.log(userDocSnapshot)
+  
 
   if (userDocSnapshot.exists()) {
     const letterboxQuery = query(collection(db, "letterbox"), where("members", "array-contains", userDocRef));
