@@ -6,6 +6,7 @@ import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,wher
 import { useRouter } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
 import Button from "../general/Button";
+import { useUserData } from "../../context/UserDataContext";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {

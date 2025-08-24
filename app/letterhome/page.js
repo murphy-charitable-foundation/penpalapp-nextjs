@@ -22,6 +22,7 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { useUserData } from "../../context/UserDataContext";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -102,7 +103,7 @@ export default function Home() {
         try {
           const uid = user.uid;
 
-          const userData = await getUserData(uid);
+          const userData = await useUserData();
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
@@ -158,31 +159,6 @@ export default function Home() {
 
     fetchUserData();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //   setIsLoading(true);
-  //     try {
-  //       const uid = user.uid;
-
-  //       const userData = await getUserData(uid);
-  //       setUserName(userData.first_name || "Unknown User");
-  //       setCountry(userData.country || "Unknown Country");
-  //       setUserType(userData.user_type || "Unknown Type");
-  //       setProfileImage(userData?.photo_uri || "");
-
-  //       const userConversations = await getConversations(uid);
-  //       setConversations(userConversations);
-  //     } catch (err) {
-  //       setError("Error fetching user data or conversations.");
-  //       console.error(err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  // };
-
-  //   fetchUserData();
-  // }, []);
 
   return (
     <PageBackground>
