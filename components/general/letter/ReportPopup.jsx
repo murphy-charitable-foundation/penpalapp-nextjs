@@ -5,7 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../app/firebaseConfig";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import * as Sentry from "@sentry/nextjs";
-import { PageContainer } from "../PageContainer";
+import Modal from "../Modal";
 
 const ReportPopup = ({
   setShowPopup,
@@ -45,42 +45,32 @@ const ReportPopup = ({
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-      <PageContainer
-        maxWidth="sm"
-        padding="p-4"
-        bgColor="bg-transparent"
-        className="!min-h-0 ">
-        <div className="bg-white space-y-4 shadow-md w-full rounded-md p-4 flex flex-col items-center">
-          <h1 className="font-semibold text-sm text-red-500">
-            Are you sure that you want to report this letter?
-          </h1>
-          <p className="text-gray-700 text-sm">
-            This action will not be undone afterwards.
-          </p>
-          <div className="flex justify-between gap-2 w-full">
-            {/* Cancel Button - Grey with green text */}
-            <button
-              onClick={() => setShowPopup(false)}
-              className="flex-1 py-2 px-4 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-colors"
-              style={{ color: "#4E802A" }}>
-              Cancel
-            </button>
-            {/* Report Button - Green */}
-            <button
-              onClick={() => {
-                handleButtonClick(content);
-                setShowPopup(false);
-                setShowConfirmReportPopup(true);
-              }}
-              className="flex-1 py-2 px-4 rounded-2xl text-white hover:opacity-90 transition-colors"
-              style={{ backgroundColor: "#4E802A" }}>
-              Report
-            </button>
-          </div>
-        </div>
-      </PageContainer>
-    </div>
+    <Modal
+      isOpen={true}
+      onClose={() => setShowPopup(false)}
+      variant="confirmation"
+      title="Are you sure that you want to report this letter?"
+      content="This action will not be undone afterwards."
+      titleClassName="text-red-500"
+      buttons={[
+        {
+          text: "Cancel",
+          onClick: () => setShowPopup(false),
+          variant: "secondary",
+          className: "flex-1",
+        },
+        {
+          text: "Report",
+          onClick: () => {
+            handleButtonClick(content);
+            setShowPopup(false);
+            setShowConfirmReportPopup(true);
+          },
+          variant: "primary",
+          className: "flex-1",
+        },
+      ]}
+    />
   );
 };
 
