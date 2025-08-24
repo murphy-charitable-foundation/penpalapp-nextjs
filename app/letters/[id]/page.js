@@ -820,7 +820,7 @@ export default function Page({ params }) {
                           {message.content}
                         </p>
                         {!isSenderUser && (
-                          <Button
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log(
@@ -831,10 +831,16 @@ export default function Page({ params }) {
                               setReportContent(message.content);
                               setShowReportPopup(true);
                             }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
-                            <FaExclamationCircle className="mr-1" size={10} />
-                            Report
-                          </Button>
+                            className="mt-2 w-6 h-6 bg-black hover:bg-gray-800 transition-colors flex items-center justify-center transform rotate-0"
+                            style={{
+                              clipPath:
+                                "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                            }}
+                            title="Report message">
+                            <span className="text-white text-xs font-bold">
+                              !
+                            </span>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -893,7 +899,7 @@ export default function Page({ params }) {
         </div>
 
         {/* Close Dialog using Modal Component */}
-        <Modal
+        {/* <Modal
           isOpen={showCloseDialog}
           onClose={() => setShowCloseDialog(false)}
           isCloseDialog={true}
@@ -907,6 +913,20 @@ export default function Page({ params }) {
           secondaryButtonColor="gray-200"
           primaryTextColor="white"
           secondaryTextColor="#4E802A"
+          closeOnOverlay={false}
+          showCloseButton={false}
+        /> */}
+
+        <Modal
+          isOpen={showCloseDialog}
+          onClose={() => setShowCloseDialog(false)}
+          isCloseDialog={true}
+          title="Close this message?"
+          subtitle="Your message will be saved as a draft."
+          primaryButtonText="Stay on page"
+          secondaryButtonText="Close"
+          onPrimaryAction={handleContinueEditing}
+          onSecondaryAction={handleConfirmClose}
           closeOnOverlay={false}
           showCloseButton={false}
         />

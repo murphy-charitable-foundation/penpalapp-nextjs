@@ -8,7 +8,6 @@ const sizes = {
   small: "w-48 max-w-sm",
   large: "w-full max-w-sm",
   xs: "w-12 max-w-sm",
-  // Add new size for your close dialog
   closeDialog: "w-[345px] max-w-sm",
 };
 
@@ -27,10 +26,6 @@ export default function Dialog({
   secondaryButtonText,
   onPrimaryAction,
   onSecondaryAction,
-  primaryButtonColor = "#4E802A",
-  secondaryButtonColor = "gray-200",
-  primaryTextColor = "white",
-  secondaryTextColor = "#4E802A",
 }) {
   const dialogRef = useRef(null);
 
@@ -57,25 +52,18 @@ export default function Dialog({
           </h2>
           {subtitle && <p className="text-gray-600 mb-6 text-sm">{subtitle}</p>}
           <div className="flex space-x-3">
+            {/* Primary Button - Green */}
             <button
               onClick={onPrimaryAction}
-              className={`flex-1 py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors`}
-              style={{
-                backgroundColor: primaryButtonColor,
-                color: primaryTextColor,
-              }}>
+              className="flex-1 py-3 px-4 rounded-2xl text-white hover:opacity-90 transition-colors"
+              style={{ backgroundColor: "#4E802A" }}>
               {primaryButtonText}
             </button>
+            {/* Secondary Button - Grey with green text */}
             <button
               onClick={onSecondaryAction}
-              className={`flex-1 py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors`}
-              style={{
-                backgroundColor:
-                  secondaryButtonColor === "gray-200"
-                    ? "#e5e7eb"
-                    : secondaryButtonColor,
-                color: secondaryTextColor,
-              }}>
+              className="flex-1 py-3 px-4 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-colors"
+              style={{ color: "#4E802A" }}>
               {secondaryButtonText}
             </button>
           </div>

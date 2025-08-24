@@ -1,8 +1,6 @@
 "use client";
 
-import Button from "../Button";
 import { useEffect, useState } from "react";
-
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../app/firebaseConfig";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -17,6 +15,7 @@ const ReportPopup = ({
 }) => {
   const [pathParams, setPathParams] = useState("");
   const auth = getAuth();
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const path = window.location.pathname;
@@ -60,26 +59,24 @@ const ReportPopup = ({
             This action will not be undone afterwards.
           </p>
           <div className="flex justify-between gap-2 w-full">
+            {/* Cancel Button - Grey with green text */}
             <button
               onClick={() => setShowPopup(false)}
-              btnType="button"
-              btnText="Cancel"
-              color="gray"
-              textColor="gray"
-              size="xs"
-            />
+              className="flex-1 py-2 px-4 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-colors"
+              style={{ color: "#4E802A" }}>
+              Cancel
+            </button>
+            {/* Report Button - Green */}
             <button
               onClick={() => {
                 handleButtonClick(content);
                 setShowPopup(false);
                 setShowConfirmReportPopup(true);
               }}
-              btnType="button"
-              btnText="Report"
-              color="red"
-              textColor="black"
-              size="xs"
-            />
+              className="flex-1 py-2 px-4 rounded-2xl text-white hover:opacity-90 transition-colors"
+              style={{ backgroundColor: "#4E802A" }}>
+              Report
+            </button>
           </div>
         </div>
       </PageContainer>
