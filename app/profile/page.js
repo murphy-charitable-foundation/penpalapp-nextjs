@@ -36,6 +36,8 @@ import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 
 export default function EditProfile() {
   // State initializations
@@ -71,8 +73,11 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  usePageAnalytics("/profile");
 
   useEffect(() => {
+    const startTime = performance.now();
+
     const fetchUserData = async () => {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -97,6 +102,14 @@ export default function EditProfile() {
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/profile", loadTime);
+            }, 0);
+          });
         } else {
           console.log("No such document!");
         }
@@ -519,6 +532,7 @@ export default function EditProfile() {
                 onClick={(e) => {
                   e.preventDefault();
                   saveProfileData();
+                  logButtonEvent("save profile button clicked", "/profile");
                 }}
               >
                 <Button
