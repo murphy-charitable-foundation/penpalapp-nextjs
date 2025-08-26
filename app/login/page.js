@@ -14,6 +14,13 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { usePageAnalytics } from "../useAnalytics";
+import { useEffect } from "react";
+import {
+  logInEvent,
+  logButtonEvent,
+  logLoadingTime,
+} from "../utils/analytics";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -21,11 +28,25 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  
+  usePageAnalytics(`/login`);
+  useEffect(() => {
+    const startTime = performance.now();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/login", loadTime);
+      }, 0);
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    logButtonEvent("login button clicked", "/login");
 
     try {
       if (!email) throw new Error("Please enter your email.");
