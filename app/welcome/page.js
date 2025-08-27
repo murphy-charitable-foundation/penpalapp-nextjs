@@ -29,11 +29,10 @@ export default function Welcome() {
                 We are so happy to be here, thanks for your support. Now you are part of the family. 
                 </div>
                 <div className='text-center w-full pt-10 pb-20'>
-                    <Link href="/edit-profile-user-image">
-                        <Button 
-                            btnText="Continue"
-                            color="white"
-                        />
+                    <Link href="/onboarding-profile">
+                        <button className="bg-white text-[#111111] px-16 py-2 rounded-full font-semibold">
+                        Continue
+                        </button>
                     </Link>
                 </div>
             </div>

@@ -49,14 +49,25 @@ export default function Dropdown({
             </svg>
         </button>
         {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-        <Modal
+        {/* <Modal
         isOpen={isModalOpen} 
         onClose={() => {
             setIsModalOpen(false);}}
         title={text}
         content={modalContent}
         width="large"
-        />
+        /> */}
+        <Modal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            title={text}
+            width="large"
+            content={
+                <div className="max-h-[400px] overflow-y-auto">
+                {modalContent}
+                </div>
+            }
+            />
     </>
   );
 }
