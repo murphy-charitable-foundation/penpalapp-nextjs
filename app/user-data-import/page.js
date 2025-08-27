@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../app/firebaseConfig";
@@ -13,6 +13,8 @@ import TextArea from "../../components/general/TextArea";
 import * as Sentry from "@sentry/nextjs";
 import Dialog from "../../components/general/Modal";
 import Dropdown from "../../components/general/Dropdown";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,9 +29,24 @@ export default function UserDataImport() {
 
   const router = useRouter();
 
+  usePageAnalytics("/user-data-import");
+
+  useEffect(() => {
+    const startTime = performance.now();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/user-data-import", loadTime);
+      });
+    });
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    logButtonEvent("/user-data-import", "Import User Data button clicked!");
 
     try {
       const newErrors = {};
