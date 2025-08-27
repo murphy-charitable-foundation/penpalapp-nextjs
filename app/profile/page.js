@@ -83,7 +83,6 @@ export default function EditProfile() {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
 
         if (docSnap.exists()) {
           const userData = docSnap.data();

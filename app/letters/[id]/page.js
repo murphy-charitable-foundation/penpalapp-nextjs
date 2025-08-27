@@ -538,7 +538,7 @@ export default function Page({ params }) {
     }, 100);
   };
 
-  usePageAnalytics(`/letters/letterId`);
+  usePageAnalytics(`/letters/[id]`);
 
   // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
@@ -672,7 +672,7 @@ export default function Page({ params }) {
             const endTime = performance.now();
             const loadTime = endTime - startTime;
             console.log(`Page render time: ${loadTime}ms`);
-            logLoadingTime("/letters/letterId", loadTime);
+            logLoadingTime("/letters/[id]", loadTime);
           }, 0);
         });
       }
@@ -851,7 +851,7 @@ export default function Page({ params }) {
                               setShowReportPopup(true);
                               logButtonEvent(
                                 "Report message clicked!",
-                                "/letters/letterId"
+                                "/letters/[id]"
                               );
                             }}
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
