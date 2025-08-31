@@ -6,6 +6,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { auth, db, storage } from "../app/firebaseConfig";
 import Button from "./general/Button";
 import Image from "next/image";
+
 const EditProfileImage = ({ router }) => {
   const [image, setImage] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
