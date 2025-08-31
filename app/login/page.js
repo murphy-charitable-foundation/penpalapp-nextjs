@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { useState, useEffect } from "react";
+import {browserSessionPersistence, setPersistence, signInWithEmailAndPassword, signOut} from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
@@ -20,7 +20,38 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const isFormFilled = email && password;
   const router = useRouter();
+
+
+  const redirectBasedOnUserType = async (uid) => {
+    try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && userSnap.data().user_type === "local_volunteer") {
+            router.push("/children-gallery");
+        } else {
+          await signOut(auth);
+          setError("Please log in as a Local Volunteer.");
+          setLoading(false);
+        }
+    } catch (err) {
+        console.error("Error fetching user data:", err.message);
+        setError("Failed to redirect. Please try again.");
+        setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            await redirectBasedOnUserType(user.uid);
+        } else {
+            setLoading(false);
+        }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,48 +59,27 @@ export default function Login() {
     setLoading(true);
 
     try {
-      if (!email) throw new Error("Please enter your email.");
-      if (!password) throw new Error("Please enter your password.");
-
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const uid = userCredential.user.uid;
-      const userRef = doc(db, "users", uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        router.push("/letterhome");
-      } else {
-        router.push("/create-acc");
-      }
+      await setPersistence(auth, browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+      await redirectBasedOnUserType(auth.currentUser.uid);
     } catch (error) {
-      setLoading(false);
-      console.error("Authentication error:", error.message);
-      switch (error.code) {
-        case "auth/user-not-found":
-          setError("No user found with this email.");
-          break;
-        case "auth/wrong-password":
-          setError("Wrong password.");
-          break;
-        case "auth/too-many-requests":
-          setError("Too many attempts. Try again later.");
-          break;
-        default: {
-          if (!error.code) setError(error.message);
-          else setError("Failed to log in.");
+        console.error("Authentication error:", error.message);
+        const message = errorMessages[error.code] || errorMessages.default;
+        setError(message);
+        if (error.code === "auth/too-many-requests") {
+            setShowModal(true);
         }
-      }
-    } finally {
     }
   };
+
 
   const handleInputChange = () => {
     setError("");
   };
+
+  if (loading) {
+    return <LoadingSpinner/>;
+  }
 
   return (
     <PageContainer maxWidth="md" padding="p-8">
