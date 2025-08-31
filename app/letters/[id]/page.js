@@ -898,25 +898,6 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* Close Dialog using Modal Component */}
-        {/* <Modal
-          isOpen={showCloseDialog}
-          onClose={() => setShowCloseDialog(false)}
-          isCloseDialog={true}
-          title="Close this message?"
-          subtitle="Your message will be saved as a draft."
-          primaryButtonText="Stay on page"
-          secondaryButtonText="Close"
-          onPrimaryAction={handleContinueEditing}
-          onSecondaryAction={handleConfirmClose}
-          primaryButtonColor="#4E802A"
-          secondaryButtonColor="gray-200"
-          primaryTextColor="white"
-          secondaryTextColor="#4E802A"
-          closeOnOverlay={false}
-          showCloseButton={false}
-        /> */}
-
         <Modal
           isOpen={showCloseDialog}
           onClose={() => setShowCloseDialog(false)}
