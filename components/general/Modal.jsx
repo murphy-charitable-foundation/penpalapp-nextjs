@@ -1,138 +1,3 @@
-/**
- * // ===== USAGE EXAMPLES FOR THE NEW MODAL COMPONENT =====
-
-// 1. CLOSE DIALOG (your current use case) - Legacy support
-<Modal
-  isOpen={showCloseDialog}
-  onClose={() => setShowCloseDialog(false)}
-  isCloseDialog={true}
-  title="Close this message?"
-  subtitle="Your message will be saved as a draft."
-  primaryButtonText="Stay on page"
-  secondaryButtonText="Close"
-  onPrimaryAction={handleContinueEditing}
-  onSecondaryAction={handleConfirmClose}
-  closeOnOverlay={false}
-  showCloseButton={false}
-/>
-
-// 2. CLOSE DIALOG (new flexible way)
-<Modal
-  isOpen={showCloseDialog}
-  onClose={() => setShowCloseDialog(false)}
-  variant="closeDialog"
-  title="Close this message?"
-  subtitle="Your message will be saved as a draft."
-  buttons={[
-    {
-      text: "Stay on page",
-      onClick: handleContinueEditing,
-      variant: "primary",
-      className: "flex-1"
-    },
-    {
-      text: "Close",
-      onClick: handleConfirmClose,
-      variant: "secondary",
-      className: "flex-1"
-    }
-  ]}
-  closeOnOverlay={false}
-  showCloseButton={false}
-/>
-
-// 3. CONFIRMATION DIALOG (like ReportPopup)
-<Modal
-  isOpen={showReportDialog}
-  onClose={() => setShowReportDialog(false)}
-  variant="confirmation"
-  title="Are you sure that you want to report this letter?"
-  content="This action will not be undone afterwards."
-  titleClassName="text-red-500"
-  buttons={[
-    {
-      text: "Cancel",
-      onClick: () => setShowReportDialog(false),
-      variant: "secondary",
-      className: "flex-1"
-    },
-    {
-      text: "Report",
-      onClick: handleReport,
-      variant: "primary",
-      className: "flex-1"
-    }
-  ]}
-/>
-
-// 4. SUCCESS ALERT (like ConfirmReportPopup)
-<Modal
-  isOpen={showSuccessAlert}
-  onClose={() => setShowSuccessAlert(false)}
-  variant="alert"
-  title="Was Successful"
-  titleClassName="text-green-700"
-  content={
-    <>
-      <FaExclamationCircle className="text-green-700 h-10 w-10 mx-auto mb-2" />
-      <p>Thank you for reporting the inappropriate message. We greatly appreciate your feedback, as it helps us improve. Our team will review the content of the message.</p>
-    </>
-  }
-  buttons={[
-    {
-      text: "Got It",
-      onClick: () => setShowSuccessAlert(false),
-      variant: "primary"
-    }
-  ]}
-/>
-
-// 5. CUSTOM DIALOG with multiple buttons
-<Modal
-  isOpen={showCustomDialog}
-  onClose={() => setShowCustomDialog(false)}
-  title="Choose an action"
-  content="What would you like to do with this item?"
-  buttons={[
-    {
-      text: "Edit",
-      onClick: handleEdit,
-      variant: "primary"
-    },
-    {
-      text: "Delete",
-      onClick: handleDelete,
-      variant: "danger"
-    },
-    {
-      text: "Cancel",
-      onClick: () => setShowCustomDialog(false),
-      variant: "secondary"
-    }
-  ]}
-/>
-
-// 6. DEFAULT MODAL (your existing functionality)
-<Modal
-  isOpen={showModal}
-  onClose={() => setShowModal(false)}
-  title="Modal Title"
-  content={<div>Custom content here</div>}
-/>
-
-// ===== BUTTON VARIANTS AVAILABLE =====
-// - primary: Green background (#4E802A) with white text
-// - secondary: Gray background with green text (#4E802A)  
-// - danger: Red background with white text
-// You can add more variants to the buttonVariants object in Modal.jsx
-
-// ===== LAYOUT VARIANTS =====
-// - default: Standard modal layout
-// - closeDialog: Your current close dialog style
-// - alert: Centered content with icon support
-// - confirmation: Two-button confirmation style
- */
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -245,46 +110,63 @@ export default function Modal({
     );
   };
 
-  // Close Dialog Layout (legacy support)
-  if (isCloseDialog || variant === "closeDialog") {
+  // Unified Dialog Layout (close dialog, alert, confirmation)
+  if (
+    isCloseDialog ||
+    variant === "closeDialog" ||
+    variant === "alert" ||
+    variant === "confirmation"
+  ) {
+    // Determine styling based on variant
+    const isCloseDialogStyle = isCloseDialog || variant === "closeDialog";
+    const backgroundOpacity = isCloseDialogStyle
+      ? "bg-opacity-30"
+      : "bg-opacity-70";
+    const containerBg = isCloseDialogStyle ? "bg-gray-100" : "bg-white";
+    const containerWidth = isCloseDialogStyle ? "w-[345px]" : "w-[300px]";
+    const containerRounding = isCloseDialogStyle ? "rounded-2xl" : "rounded-md";
+    const containerPadding = isCloseDialogStyle ? "p-6" : "p-4";
+    const titleSize = isCloseDialogStyle ? "text-xl" : "text-sm";
+    const titleWeight = isCloseDialogStyle ? "font-semibold" : "font-semibold";
+    const titleColor = isCloseDialogStyle ? "text-black" : titleClassName || "";
+    const buttonSpacing = isCloseDialogStyle ? "space-x-3" : "gap-2";
+    const buttonLayout = isCloseDialogStyle
+      ? "flex"
+      : "flex justify-between w-full";
+    const contentAlignment =
+      variant === "alert" || variant === "confirmation"
+        ? "flex flex-col items-center"
+        : "";
+
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}>
         <div
-          className={`bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto ${containerClassName}`}>
+          className={`${containerBg} ${containerPadding} ${containerRounding} shadow-lg ${containerWidth} mx-auto ${contentAlignment} ${containerClassName}`}>
           <h2
-            className={`text-xl font-semibold mb-1 text-black leading-tight ${titleClassName}`}>
+            className={`${titleSize} ${titleWeight} mb-1 leading-tight ${titleColor} ${
+              variant === "alert" || variant === "confirmation"
+                ? "text-center"
+                : ""
+            }`}>
             {title}
           </h2>
           {subtitle && <p className="text-gray-600 mb-6 text-sm">{subtitle}</p>}
-          {content && <div className="mb-4">{content}</div>}
-
-          {resolvedButtons.length > 0 && (
-            <div className="flex space-x-3">
-              {resolvedButtons.map(renderButton)}
+          {content && (
+            <div
+              className={`mb-4 ${
+                variant === "alert" || variant === "confirmation"
+                  ? "text-gray-700 text-sm text-center"
+                  : ""
+              }`}>
+              {content}
             </div>
           )}
-        </div>
-      </div>
-    );
-  }
-
-  // Alert/Confirmation Layout
-  if (variant === "alert" || variant === "confirmation") {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-        <div
-          className={`bg-white space-y-4 shadow-md w-[300px] rounded-md p-4 flex flex-col items-center ${containerClassName}`}>
-          {title && (
-            <h1 className={`font-semibold text-sm ${titleClassName}`}>
-              {title}
-            </h1>
-          )}
-          {content && (
-            <div className="text-gray-700 text-sm text-center">{content}</div>
-          )}
 
           {resolvedButtons.length > 0 && (
-            <div className="flex justify-between gap-2 w-full">
+            <div
+              className={buttonLayout}
+              style={{ gap: isCloseDialogStyle ? "12px" : "8px" }}>
               {resolvedButtons.map(renderButton)}
             </div>
           )}
