@@ -25,6 +25,7 @@ export default function NavBar() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      localStorage.deleteItem('child');
       router.push("/login");
     } catch (error) {
       console.error("Error signing out: ", error);

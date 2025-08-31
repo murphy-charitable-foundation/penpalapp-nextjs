@@ -39,7 +39,14 @@ export default function Home() {
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
-  const getUserData = async (uid) => {
+  const getUserData = async () => {
+    const storedDoc = JSON.parse(localStorage.getItem("child"));
+    let uid;
+    if (storedDoc) {
+      uid = storedDoc.id
+    } else { 
+      uid = auth.currentUser.uid
+    }
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {

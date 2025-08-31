@@ -17,7 +17,14 @@ import * as Sentry from "@sentry/nextjs";
 const DELAY = 1000;
 
 const getUserDoc = async () => {
-  const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+  const storedDoc = JSON.parse(localStorage.getItem("child"));
+  let id = "";
+  if (storedDoc) {
+    id = storedDoc.id
+  } else { 
+    id = auth.currentUser.uid
+  }
+  const userDocRef = doc(collection(db, "users"), id);
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };

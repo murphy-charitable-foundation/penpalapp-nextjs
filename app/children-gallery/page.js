@@ -114,13 +114,14 @@ export default function ChildrenGallery() {
                 alert("This user is not a child.");
                 return;
             }
-
+      
             const isMatch = await bcrypt.compare(passwordInput, selectedUser.passwordHash);
             if (!isMatch) {
                 alert("Wrong password. Please try again.");
                 setPasswordInput("");
                 return;
             }
+           
 
             if (selectedUser.localVolunteerId !== auth.currentUser.uid) {
                 alert("This user is not associated with your account.");
@@ -131,6 +132,7 @@ export default function ChildrenGallery() {
             console.log("Selected user:", selectedUser.first_name);
             setSelectedUser(null);
             setError("");
+            localStorage.setItem('child', JSON.stringify(selectedUser));
             router.push("/letterhome");
         } catch (err) {
             alert("Error logging in: " + err.message);
