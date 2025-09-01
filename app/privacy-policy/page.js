@@ -35,8 +35,7 @@ export default function TermsCondition() {
 
         <div className="flex flex-col gap-10 mt-16">
           <div
-            className="container"
-            className="flex items-center justify-between  word-break:break-all"
+            className="container flex items-center justify-between  word-break:break-all"
           >
             <p className="font-medium font-inter text-black leading-[1.8rem] margin-20px">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
@@ -50,8 +49,7 @@ export default function TermsCondition() {
           </div>
 
           <div
-            className="container"
-            className="flex items-center justify-between  word-break:break-all"
+            className="container flex items-center justify-between  word-break:break-all"
           >
             <p className="font-medium font-inter text-black leading-[1.8rem]">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
