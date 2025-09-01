@@ -34,7 +34,7 @@ import Dropdown from "../../components/general/Dropdown";
 import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
-import { PageHeader } from '../../components/general/PageHeader';
+import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function EditProfile() {
@@ -286,42 +286,41 @@ export default function EditProfile() {
           <div className="space-y-6 mb-[120px]">
             {/* Personal Information Section */}
             <ProfileSection title="Personal Information">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      label="First name"
+                      borderColor="border-gray-300"
+                      focusBorderColor="focus:border-green-800"
+                      bgColor="bg-transparent"
+                      error={errors.first_name ? errors.first_name : ""}
+                    />
+                  </div>
+                </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    label="First name"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                    error={errors.first_name ? errors.first_name : ""}
-                  />
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      label="Last name"
+                      borderColor="border-gray-300"
+                      focusBorderColor="focus:border-green-800"
+                      bgColor="bg-transparent"
+                      error={errors.last_name ? errors.last_name : ""}
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    label="Last name"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                    error={errors.last_name ? errors.last_name : ""}
-                  />
-                </div>
-              </div>
-</div>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <Input
@@ -524,13 +523,7 @@ export default function EditProfile() {
               >
                 <Button
                   btnType="button"
-                  btnText={
-                    isSaving ? (
-                      <LoadingSpinner />
-                    ) : (
-                      "Save"
-                    )
-                  }
+                  btnText={isSaving ? <LoadingSpinner /> : "Save"}
                   color="green"
                   hoverColor="hover:bg-[#48801c]"
                   textColor="text-gray-200"

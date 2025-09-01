@@ -5,10 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import {
-  doc,
-  getDoc
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
@@ -48,7 +45,7 @@ export default function Home() {
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
@@ -115,14 +112,14 @@ export default function Home() {
         return;
       } else {
         try {
-        const uid = user.uid;
+          const uid = user.uid;
 
-        const userData = await getUserData(uid);
-        setUserName(userData.first_name || "Unknown User");
-        setCountry(userData.country || "Unknown Country");
-        setUserType(userData.user_type || "Unknown Type");
-        const downloaded = await getUserPfp(uid);
-        setProfileImage(downloaded|| "");
+          const userData = await getUserData(uid);
+          setUserName(userData.first_name || "Unknown User");
+          setCountry(userData.country || "Unknown Country");
+          setUserType(userData.user_type || "Unknown Type");
+          const downloaded = await getUserPfp(uid);
+          setProfileImage(downloaded || "");
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
@@ -152,12 +149,12 @@ export default function Home() {
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
-            const downloaded = await getUserPfp(uid)
-            setProfileImage(downloaded|| "");
-            
+            const downloaded = await getUserPfp(uid);
+            setProfileImage(downloaded || "");
+
             // Show welcome message
             setShowWelcome(true);
-            
+
             // Hide welcome message after 5 seconds
             setTimeout(() => {
               setShowWelcome(false);
@@ -165,11 +162,11 @@ export default function Home() {
           } else {
             console.log("No such document!");
           }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setError("Failed to load user data");
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setError("Failed to load user data");
+        }
       }
-    }
     };
 
     fetchUserData();
