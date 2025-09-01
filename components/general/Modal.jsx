@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Button from "./Button";
 
 const sizes = {
@@ -9,6 +9,8 @@ const sizes = {
   large: "w-full max-w-sm",
   xs: "w-12 max-w-sm",
   closeDialog: "w-[345px] max-w-sm",
+  alert: "w-[300px] max-w-sm",
+  confirmation: "w-[300px] max-w-sm",
 };
 
 // Button variants for consistent styling
@@ -25,7 +27,6 @@ const buttonVariants = {
     className: "bg-red-500 text-white hover:bg-red-600 transition-colors",
     style: {},
   },
-  // Add more variants as needed
 };
 
 export default function Modal({
@@ -33,25 +34,12 @@ export default function Modal({
   onClose,
   title,
   content,
+  subtitle,
   width = "default",
   closeOnOverlay = true,
   showCloseButton = true,
-
-  // Button configuration - can be array of button objects or legacy props
   buttons = [],
-
-  // Legacy props for backward compatibility (close dialog)
-  isCloseDialog = false,
-  subtitle,
-  primaryButtonText,
-  secondaryButtonText,
-  onPrimaryAction,
-  onSecondaryAction,
-
-  // Layout variants
   variant = "default", // "default" | "closeDialog" | "alert" | "confirmation"
-
-  // Custom styling overrides
   containerClassName = "",
   titleClassName = "",
 }) {
@@ -70,30 +58,11 @@ export default function Modal({
 
   if (!isOpen) return null;
 
-  // Legacy support: Convert old props to new button format
-  const resolvedButtons = buttons.length > 0 ? buttons : [];
-
-  if (isCloseDialog && primaryButtonText && secondaryButtonText) {
-    resolvedButtons.push(
-      {
-        text: primaryButtonText,
-        onClick: onPrimaryAction,
-        variant: "primary",
-        className: "flex-1",
-      },
-      {
-        text: secondaryButtonText,
-        onClick: onSecondaryAction,
-        variant: "secondary",
-        className: "flex-1",
-      }
-    );
-  }
-
   // Render button with consistent styling
   const renderButton = (button, index) => {
-    const variant = buttonVariants[button.variant] || buttonVariants.primary;
-    const combinedClassName = `${variant.className} ${
+    const variantStyle =
+      buttonVariants[button.variant] || buttonVariants.primary;
+    const combinedClassName = `${variantStyle.className} ${
       button.className || ""
     } py-3 px-4 rounded-2xl`;
 
@@ -103,7 +72,7 @@ export default function Modal({
         onClick={button.onClick}
         disabled={button.disabled}
         className={combinedClassName}
-        style={{ ...variant.style, ...(button.style || {}) }}
+        style={{ ...variantStyle.style, ...(button.style || {}) }}
         type={button.type || "button"}>
         {button.text}
       </button>
@@ -112,13 +81,12 @@ export default function Modal({
 
   // Unified Dialog Layout (close dialog, alert, confirmation)
   if (
-    isCloseDialog ||
     variant === "closeDialog" ||
     variant === "alert" ||
     variant === "confirmation"
   ) {
     // Determine styling based on variant
-    const isCloseDialogStyle = isCloseDialog || variant === "closeDialog";
+    const isCloseDialogStyle = variant === "closeDialog";
     const backgroundOpacity = isCloseDialogStyle
       ? "bg-opacity-30"
       : "bg-opacity-70";
@@ -163,11 +131,11 @@ export default function Modal({
             </div>
           )}
 
-          {resolvedButtons.length > 0 && (
+          {buttons.length > 0 && (
             <div
               className={buttonLayout}
               style={{ gap: isCloseDialogStyle ? "12px" : "8px" }}>
-              {resolvedButtons.map(renderButton)}
+              {buttons.map(renderButton)}
             </div>
           )}
         </div>
@@ -207,9 +175,9 @@ export default function Modal({
 
         {content && <div className="mt-4 text-center">{content}</div>}
 
-        {resolvedButtons.length > 0 && (
+        {buttons.length > 0 && (
           <div className="mt-6 flex flex-col gap-2">
-            {resolvedButtons.map(renderButton)}
+            {buttons.map(renderButton)}
           </div>
         )}
       </div>

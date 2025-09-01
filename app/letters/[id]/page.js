@@ -901,13 +901,23 @@ export default function Page({ params }) {
         <Modal
           isOpen={showCloseDialog}
           onClose={() => setShowCloseDialog(false)}
-          isCloseDialog={true}
+          variant="closeDialog"
           title="Close this message?"
           subtitle="Your message will be saved as a draft."
-          primaryButtonText="Stay on page"
-          secondaryButtonText="Close"
-          onPrimaryAction={handleContinueEditing}
-          onSecondaryAction={handleConfirmClose}
+          buttons={[
+            {
+              text: "Stay on page",
+              onClick: handleContinueEditing,
+              variant: "primary",
+              className: "flex-1",
+            },
+            {
+              text: "Close",
+              onClick: handleConfirmClose,
+              variant: "secondary",
+              className: "flex-1",
+            },
+          ]}
           closeOnOverlay={false}
           showCloseButton={false}
         />
