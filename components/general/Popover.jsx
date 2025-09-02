@@ -3,18 +3,19 @@
 import { useState, useRef, useEffect } from "react";
 
 const sizes = {
-  default: 'w-48 h-48',
-  small: 'w-24 h-24',
-  large: 'w-72 h-72',
-  xs: 'w-12 h-12',
+  default: "w-48",
+  small: "w-32",
+  large: "w-72",
+  xs: "w-24",
 };
 
 export default function Popover({
   triggerContent,
   popoverContent,
-  position,
-  size,
+  position = "bottom",
+  size = "default",
   hoverEffect,
+  trigger = "click", // 'click' or 'hover'
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef(null);
@@ -32,9 +33,12 @@ export default function Popover({
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    if (trigger === "click") {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [trigger]);
 
   const getPositionClasses = () => {
     switch (position) {
@@ -49,23 +53,45 @@ export default function Popover({
     }
   };
 
+  const handleTrigger = () => {
+    if (trigger === "click") {
+      setIsOpen(!isOpen);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (trigger === "hover") {
+      setIsOpen(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (trigger === "hover") {
+      setIsOpen(false);
+    }
+  };
+
   return (
     <div className="relative inline-block">
       <div
         ref={triggerRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer"
-      >
+        onClick={handleTrigger}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="cursor-pointer">
         {triggerContent}
       </div>
       {isOpen && (
         <div
           ref={popoverRef}
-          className={`absolute z-50 ${sizes[size]} bg-white rounded-xl shadow-xl border border border-gray-200 p-4 text-gray-800 ${hoverEffect} ${getPositionClasses()} transition-all duration-200 text-center`}
-        >
+          className={`absolute z-50 ${
+            sizes[size]
+          } bg-white rounded-xl shadow-xl border border-gray-200 p-4 text-gray-800 ${hoverEffect} ${getPositionClasses()} transition-all duration-200`}
+          onMouseEnter={trigger === "hover" ? handleMouseEnter : undefined}
+          onMouseLeave={trigger === "hover" ? handleMouseLeave : undefined}>
           {popoverContent}
         </div>
       )}
     </div>
   );
-} 
+}

@@ -35,6 +35,7 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
+import Modal from "../../../components/general/Modal";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -495,7 +496,6 @@ export default function Page({ params }) {
     }
   };
 
-  // FIXED: Enhanced handleReplyClick to properly handle existing drafts
   const handleReplyClick = async () => {
     setIsEditing(true);
 
@@ -666,7 +666,7 @@ export default function Page({ params }) {
     return () => {
       unsubscribe();
     };
-  }, [id, router]);
+  }, [auth, id, router]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -824,7 +824,7 @@ export default function Page({ params }) {
                           {message.content}
                         </p>
                         {!isSenderUser && (
-                          <Button
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log(
@@ -835,11 +835,17 @@ export default function Page({ params }) {
                               setReportContent(message.content);
                               setShowReportPopup(true);
                             }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                          >
-                            <FaExclamationCircle className="mr-1" size={10} />
-                            Report
-                          </Button>
+                            className="mt-2 w-6 h-6 bg-black hover:bg-gray-800 transition-colors flex items-center justify-center transform rotate-0"
+                            style={{
+                              clipPath:
+                                "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                            }}
+                            title="Report message">
+                            <span className="text-white text-xs font-bold">
+                              !
+                            </span>
+                          </button>
+
                         )}
                       </div>
                     </div>
@@ -898,33 +904,30 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* Close Dialog */}
-        {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                Close this message?
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Your message will be saved as a draft.
-              </p>
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
-                >
-                  Stay on page
-                </Button>
-                <Button
-                  onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <Modal
+          isOpen={showCloseDialog}
+          onClose={() => setShowCloseDialog(false)}
+          variant="closeDialog"
+          title="Close this message?"
+          subtitle="Your message will be saved as a draft."
+          buttons={[
+            {
+              text: "Stay on page",
+              onClick: handleContinueEditing,
+              variant: "primary",
+              className: "flex-1",
+            },
+            {
+              text: "Close",
+              onClick: handleConfirmClose,
+              variant: "secondary",
+              className: "flex-1",
+            },
+          ]}
+          closeOnOverlay={false}
+          showCloseButton={false}
+        />
+
 
         {/* Report Popups */}
         {showReportPopup && (
