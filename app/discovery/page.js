@@ -50,14 +50,22 @@ export default function ChooseKid() {
         try {
           const uid = user.uid;
           setUserId(uid);
-          fetchKids(startTime, uid);
+          await fetchKids(uid);
         } catch (err) {
           setError("Error fetching user data");
           console.error(err);
         } finally {
           setLoading(false);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/discovery", loadTime);
+            }, 0);
+          });
+        }
       }
-    }
     });
     return () => unsubscribe();
   }, [age, gender, hobbies]);
@@ -66,7 +74,7 @@ export default function ChooseKid() {
     console.log("Age:", age);
   }, [age]);
 
-  const fetchKids = async (startTime, uid) => {
+  const fetchKids = async (uid) => {
     setLoading(true);
     try {
       if (!uid) {
@@ -177,14 +185,6 @@ export default function ChooseKid() {
     } finally {
       setLoading(false);
       setInitialLoad(false);
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          const endTime = performance.now();
-          const loadTime = endTime - startTime;
-          console.log(`Page render time: ${loadTime}ms`);
-          logLoadingTime("/discovery", loadTime);
-        }, 0);
-      });
     }
   };
 
@@ -243,7 +243,7 @@ export default function ChooseKid() {
 
   const loadMoreKids = () => {
     if (loading) return;
-    fetchKids(performance.now(), userId);
+    fetchKids(userId);
     logButtonEvent("Load more button clicked!", "/discovery");
   };
 
