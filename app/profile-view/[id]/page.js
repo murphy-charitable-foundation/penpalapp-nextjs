@@ -6,6 +6,9 @@ import Image from "next/image";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../../firebaseConfig";
+import { usePageAnalytics } from "../../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../../utils/analytics";
+import React from "react";
 
 import {
   User,
@@ -28,7 +31,7 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../../components/general/PageHeader";
 
 export default function Page({ params }) {
-  const { id } = params;
+  const { id } = React.use(params);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -49,13 +52,16 @@ export default function Page({ params }) {
 
   const router = useRouter();
 
+  usePageAnalytics(`/profile-view/[id]`);
+
   useEffect(() => {
     const fetchUserData = async () => {
+      const startTime = performance.now();
+
       if (auth.currentUser) {
         const uid = id;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
@@ -74,6 +80,15 @@ export default function Page({ params }) {
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
+
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/profile-view/[id]", loadTime);
+            });
+          });
         } else {
           console.log("No such document!");
         }
@@ -125,7 +140,13 @@ export default function Page({ params }) {
               <div className="mt-4 flex justify-center">
                 <button
                   type="button"
-                  onClick={() => router.push("/profile")}
+                  onClick={() => {
+                    logButtonEvent(
+                      "Edit profile button clicked!",
+                      "/profile-view/[id]"
+                    );
+                    router.push("/profile");
+                  }}
                   className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
                 >
                   Edit Profile

@@ -20,6 +20,10 @@ import Header from "../../components/general/Header";
 import KidsList from "../../components/discovery/KidsList";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
+import { onAuthStateChanged } from "firebase/auth";
+
 const PAGE_SIZE = 10; // Number of kids per page
 
 export default function ChooseKid() {
@@ -28,24 +32,51 @@ export default function ChooseKid() {
   const [lastKidDoc, setLastKidDoc] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [userId, setUserId] = useState("");
 
   const [age, setAge] = useState(0);
   const [gender, setGender] = useState("");
   const [hobbies, setHobbies] = useState([]);
+  usePageAnalytics("/discovery");
 
   useEffect(() => {
-    fetchKids();
+    const startTime = performance.now();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        //redirect if everything is loaded and still no user
+        router.push("/login");
+        return;
+      } else {
+        try {
+          const uid = user.uid;
+          setUserId(uid);
+          await fetchKids(uid);
+        } catch (err) {
+          setError("Error fetching user data");
+          console.error(err);
+        } finally {
+          setLoading(false);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const endTime = performance.now();
+              const loadTime = endTime - startTime;
+              console.log(`Page render time: ${loadTime}ms`);
+              logLoadingTime("/discovery", loadTime);
+            }, 0);
+          });
+        }
+      }
+    });
+    return () => unsubscribe();
   }, [age, gender, hobbies]);
 
   useEffect(() => {
     console.log("Age:", age);
   }, [age]);
 
-  const fetchKids = async () => {
+  const fetchKids = async (uid) => {
     setLoading(true);
-
     try {
-      const uid = auth.currentUser.uid;
       if (!uid) {
         throw new Error("Login error. User may not be logged in properly.");
       }
@@ -212,7 +243,8 @@ export default function ChooseKid() {
 
   const loadMoreKids = () => {
     if (loading) return;
-    fetchKids();
+    fetchKids(userId);
+    logButtonEvent("Load more button clicked!", "/discovery");
   };
 
   return (

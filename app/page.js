@@ -6,8 +6,25 @@ import logo from "/public/murphylogo.png";
 import Link from "next/link";
 import Button from "../components/general/Button";
 import { BackButton } from "../components/general/BackButton";
+import { usePageAnalytics } from "./useAnalytics";
+import { logButtonEvent, logLoadingTime } from "./utils/analytics";
+import { useEffect } from "react";
 
 export default function Home() {
+  usePageAnalytics("/");
+
+  useEffect(() => {
+    const startTime = performance.now();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const endTime = performance.now();
+        const loadTime = endTime - startTime;
+        console.log(`Page render time: ${loadTime}ms`);
+        logLoadingTime("/", loadTime);
+      }, 0);
+    });
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
       <div className="w-full max-w-md space-y-8">
@@ -31,10 +48,20 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-10 jsu mb-36 items-center">
             <Link href="/login">
-              <Button color={"green"} btnText={"Log in"} />
+              <Button
+                color={"green"}
+                btnText={"Log in"}
+                onClick={() => logButtonEvent("log in clicked", "/")}
+              />
             </Link>
             <Link href="https://calendly.com/murphycharity/60min">
-              <Button color={"blue"} btnText={"Become a Pen Pal Volunteer"} />
+              <Button
+                color={"blue"}
+                btnText={"Become a Pen Pal Volunteer"}
+                onClick={() =>
+                  logButtonEvent("become a pen pal volunteer clicked", "/")
+                }
+              />
             </Link>
           </div>
         </div>
