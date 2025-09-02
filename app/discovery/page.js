@@ -214,7 +214,7 @@ export default function ChooseKid() {
     if (loading) return;
     fetchKids();
   };
-  
+
   return (
     <PageContainer maxWidth="lg">
       <BackButton />
