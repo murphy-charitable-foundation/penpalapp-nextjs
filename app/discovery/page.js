@@ -40,7 +40,6 @@ export default function ChooseKid() {
   usePageAnalytics("/discovery");
 
   useEffect(() => {
-    const startTime = performance.now();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         //redirect if everything is loaded and still no user
@@ -56,14 +55,6 @@ export default function ChooseKid() {
           console.error(err);
         } finally {
           setLoading(false);
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const endTime = performance.now();
-              const loadTime = endTime - startTime;
-              console.log(`Page render time: ${loadTime}ms`);
-              logLoadingTime("/discovery", loadTime);
-            }, 0);
-          });
         }
       }
     });

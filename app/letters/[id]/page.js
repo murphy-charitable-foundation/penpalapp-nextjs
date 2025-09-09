@@ -37,7 +37,6 @@ import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 import { logButtonEvent, logLoadingTime } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
-import React from "react";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -100,7 +99,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
-  const { id } = React.use(params);
+  const { id } = params;
 
   const auth = getAuth();
   const router = useRouter();
@@ -542,8 +541,6 @@ export default function Page({ params }) {
 
   // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
-    const startTime = performance.now();
-
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
 
@@ -667,14 +664,6 @@ export default function Page({ params }) {
         Sentry.captureException("INITIALIZATION ERROR:", error);
       } finally {
         setIsLoading(false);
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            const endTime = performance.now();
-            const loadTime = endTime - startTime;
-            console.log(`Page render time: ${loadTime}ms`);
-            logLoadingTime("/letters/[id]", loadTime);
-          }, 0);
-        });
       }
     });
 

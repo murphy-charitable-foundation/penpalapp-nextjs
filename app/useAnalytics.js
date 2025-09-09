@@ -44,8 +44,10 @@ import {
   logError,
   logDeadClick,
   logInternetDisconnection,
+  logLoadingTime,
 } from "./utils/analytics";
 import * as Sentry from "@sentry/nextjs";
+import { useReportWebVitals } from "next/web-vitals";
 
 // Throttle function to limit the rate at which a function can fire
 const throttle = (func, limit) => {
@@ -65,6 +67,11 @@ const throttle = (func, limit) => {
    * @returns {void}
    */
 const usePageAnalytics = (pagePath) => {
+  useReportWebVitals((metric) => {
+    if (metric.name === "LCP") {
+      logLoadingTime(pagePath, metric.value);
+    }
+  });
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Log dead clicks

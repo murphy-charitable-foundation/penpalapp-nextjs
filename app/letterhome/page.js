@@ -107,7 +107,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const startTime = performance.now();
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -133,14 +132,6 @@ export default function Home() {
           console.error(err);
         } finally {
           setIsLoading(false);
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const endTime = performance.now();
-              const loadTime = endTime - startTime;
-              console.log(`Page render time: ${loadTime}ms`);
-              logLoadingTime("/letterhome", loadTime);
-            }, 0);
-          });
         }
       }
     });

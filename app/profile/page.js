@@ -76,8 +76,6 @@ export default function EditProfile() {
   usePageAnalytics("/profile");
 
   useEffect(() => {
-    const startTime = performance.now();
-
     const fetchUserData = async () => {
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
@@ -101,14 +99,6 @@ export default function EditProfile() {
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const endTime = performance.now();
-              const loadTime = endTime - startTime;
-              console.log(`Page render time: ${loadTime}ms`);
-              logLoadingTime("/profile", loadTime);
-            }, 0);
-          });
         } else {
           console.log("No such document!");
         }

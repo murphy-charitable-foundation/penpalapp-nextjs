@@ -31,18 +31,6 @@ export default function ChangePassword() {
 
   usePageAnalytics("/change-password");
 
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/change-password", loadTime);
-      }, 0);
-    });
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 

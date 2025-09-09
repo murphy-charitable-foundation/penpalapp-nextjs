@@ -30,17 +30,6 @@ export default function Login() {
   const router = useRouter();
   
   usePageAnalytics(`/login`);
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/login", loadTime);
-      }, 0);
-    });
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

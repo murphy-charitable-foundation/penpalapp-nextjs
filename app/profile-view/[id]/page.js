@@ -31,7 +31,7 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../../components/general/PageHeader";
 
 export default function Page({ params }) {
-  const { id } = React.use(params);
+  const { id } = params;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -56,8 +56,6 @@ export default function Page({ params }) {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const startTime = performance.now();
-
       if (auth.currentUser) {
         const uid = id;
         const docRef = doc(db, "users", uid);
@@ -80,15 +78,6 @@ export default function Page({ params }) {
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
-
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const endTime = performance.now();
-              const loadTime = endTime - startTime;
-              console.log(`Page render time: ${loadTime}ms`);
-              logLoadingTime("/profile-view/[id]", loadTime);
-            });
-          });
         } else {
           console.log("No such document!");
         }

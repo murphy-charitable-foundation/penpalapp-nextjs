@@ -37,17 +37,7 @@ export default function Contact() {
     },
   ];
   usePageAnalytics("/contact");
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/contact", loadTime);
-      }, 0);
-    });
-  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center justify-center">
       <div className="bg-blue-700 shadow rounded-lg p-6 w-full max-w-md">

@@ -28,17 +28,6 @@ export default function Donate() {
    */
 
   usePageAnalytics("/donate");
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/donate", loadTime);
-      }, 0);
-    });
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">

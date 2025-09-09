@@ -14,17 +14,6 @@ import { useEffect } from "react";
 
 export default function About() {
   usePageAnalytics("/about");
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/about", loadTime);
-      }, 0);
-    });
-  }, []);
   return (
     <PageBackground className="flex flex-col items-center justify-center p-4 pb-20">
       <PageContainer maxWidth="xxl">

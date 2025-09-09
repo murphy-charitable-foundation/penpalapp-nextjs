@@ -13,17 +13,7 @@ import { logLoadingTime } from "../utils/analytics";
 
 export default function TermsCondition() {
   usePageAnalytics("/terms-conditions");
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/terms-conditions", loadTime);
-      });
-    });
-  }, []);
+
   return (
     //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
     <PageBackground>

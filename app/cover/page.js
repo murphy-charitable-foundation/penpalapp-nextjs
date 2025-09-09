@@ -11,18 +11,6 @@ import { useEffect } from "react";
 export default function Cover() {
   usePageAnalytics("/cover");
 
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/cover", loadTime);
-      }, 0);
-    });
-  }, []);
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Image

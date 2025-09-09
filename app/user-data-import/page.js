@@ -31,18 +31,6 @@ export default function UserDataImport() {
 
   usePageAnalytics("/user-data-import");
 
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/user-data-import", loadTime);
-      });
-    });
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);

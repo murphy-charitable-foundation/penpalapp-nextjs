@@ -30,7 +30,6 @@ export default function EditProfileUserImage() {
   usePageAnalytics("/edit-profile-user-image");
 
   useEffect(() => {
-    const startTime = performance.now();
     const fetchUserData = async () => {
       console.log(auth);
       if (auth.currentUser) {
@@ -43,15 +42,6 @@ export default function EditProfileUserImage() {
           // setImage(userData.photo_uri || '/murphylogo.png');
           setNewProfileImage(userData.photo_uri || "/murphylogo.png");
           setPreviewURL(userData.photo_uri || "/murphylogo.png");
-
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const endTime = performance.now();
-              const loadTime = endTime - startTime;
-              console.log(`Page render time: ${loadTime}ms`);
-              logLoadingTime("/edit-profile-user-image", loadTime);
-            }, 0);
-          });
         }
       }
     };

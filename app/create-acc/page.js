@@ -41,17 +41,7 @@ export default function CreateAccount() {
   const router = useRouter();
 
   usePageAnalytics("/create-acc");
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/create-acc", loadTime);
-      }, 0);
-    });
-  }, []);
+
   // Pre-populate email from auth.currentUser
 
   useEffect(() => {

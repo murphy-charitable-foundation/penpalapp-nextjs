@@ -14,19 +14,10 @@ export default function Welcome() {
 
   useEffect(() => {
     const value = localStorage.getItem("userFirstName");
-    const startTime = performance.now();
 
     if (value) {
       setFirstName(value);
     }
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/welcome", loadTime);
-      });
-    });
   }, []);
   return (
     <div className="min-h-screen !bg-primary">
