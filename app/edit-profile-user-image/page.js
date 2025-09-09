@@ -9,8 +9,7 @@ import { uploadFile } from "../lib/uploadFile";
 import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
-import * as Sentry from "@sentry/nextjs";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function EditProfileUserImage() {
@@ -98,7 +97,9 @@ export default function EditProfileUserImage() {
       `profile/${uid}/profile-image`,
       () => {},
       (error) => {
-        Sentry.captureException("Upload error: ", error);
+        logError(error, {
+          description: "Upload error: ",
+        });
         setIsSaving(false);
       },
       async (url) => {

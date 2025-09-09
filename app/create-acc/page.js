@@ -10,7 +10,6 @@ import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "../../components/edit-profile";
-import * as Sentry from "@sentry/nextjs";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
@@ -20,7 +19,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import Dialog from "../../components/general/Modal";
 import { onAuthStateChanged } from "firebase/auth";
 import InfoDisplay from "../../components/general/profile/InfoDisplay";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function CreateAccount() {
@@ -130,7 +129,9 @@ export default function CreateAccount() {
       // Redirect to profile page or any other page as needed
       router.push("/welcome/");
     } catch (error) {
-      Sentry.captureException("Error creating account:", error);
+      logError(error, {
+        description: "Error creating account:",
+      });
       setIsDialogOpen(true);
       setDialogTitle("Oops!");
       setDialogMessage("Error: " + error.message);

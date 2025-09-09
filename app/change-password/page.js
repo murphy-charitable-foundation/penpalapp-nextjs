@@ -17,8 +17,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
-import * as Sentry from "@sentry/nextjs";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function ChangePassword() {
@@ -40,8 +39,9 @@ export default function ChangePassword() {
       await updatePassword(user, password);
       setShowModal(true);
     } catch (error) {
-      Sentry.captureException("Error changing password: ", error);
-      console.error(error);
+      logError(error, {
+        description: "Error changing password: ",
+      });
       if (error.code === "auth/requires-recent-login") {
         setError(
           "For security, please sign in again before changing your password"

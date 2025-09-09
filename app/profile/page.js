@@ -9,7 +9,6 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { FaChevronDown } from "react-icons/fa"; // Font Awesome
 import { updateDoc } from "firebase/firestore";
-import * as Sentry from "@sentry/nextjs";
 import {
   User,
   MapPin,
@@ -37,7 +36,7 @@ import Dialog from "../../components/general/Modal";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function EditProfile() {
   // State initializations
@@ -151,7 +150,9 @@ export default function EditProfile() {
         setIsDialogOpen(true);
         setDialogTitle("Oops!");
         setDialogMessage("Error saving profile.");
-        Sentry.captureException("Error saving profile " + error);
+        logError(error, {
+          description: "Error saving profile ",
+        });
       }
     }
   };

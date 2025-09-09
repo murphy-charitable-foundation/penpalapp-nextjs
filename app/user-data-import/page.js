@@ -10,11 +10,10 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
-import * as Sentry from "@sentry/nextjs";
 import Dialog from "../../components/general/Modal";
 import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,7 +82,9 @@ export default function UserDataImport() {
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
     } catch (error) {
-      Sentry.captureException("Error importing user data: " + error);
+      logError(error, {
+        description: "Error importing user data: ",
+      });
       setIsDialogOpen(true);
       setDialogTitle("Oops");
       setDialogMessage("Error importing user data.");

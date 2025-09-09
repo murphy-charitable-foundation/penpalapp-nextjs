@@ -9,7 +9,6 @@ import { doc, getDoc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
-import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
@@ -29,7 +28,7 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
@@ -99,8 +98,9 @@ export default function Home() {
         throw new Error("No letterboxes found.");
       }
     } catch (err) {
-      console.error("Error fetching data:", err);
-      Sentry.captureException(err);
+      logError(error, {
+        description: "Error fetching data:",
+      });
       setError("Failed to load data.");
       throw err;
     }

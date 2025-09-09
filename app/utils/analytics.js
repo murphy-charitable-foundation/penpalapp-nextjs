@@ -60,7 +60,7 @@ const logInEvent = (status, message) => {
  */
 const logError = (error, errorInfo) => {
   const errorObject =
-    err instanceof Error
+    error instanceof Error
       ? error
       : new Error(typeof error === "string" ? error : "Unknown error");
 

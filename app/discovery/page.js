@@ -15,12 +15,11 @@ import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
 import KidCard from "../../components/discovery/KidCard";
 import KidFilter from "../../components/discovery/KidFilter";
 import Link from "next/link";
-import * as Sentry from "@sentry/nextjs";
 import Header from "../../components/general/Header";
 import KidsList from "../../components/discovery/KidsList";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -171,8 +170,9 @@ export default function ChooseKid() {
         setLastKidDoc(null);
       }
     } catch (error) {
-      console.error("Error fetching kids:", error);
-      Sentry.captureException("Error fetching kids " + error);
+      logError(error, {
+        description: "Error fetching kids:",
+      });
     } finally {
       setLoading(false);
       setInitialLoad(false);
