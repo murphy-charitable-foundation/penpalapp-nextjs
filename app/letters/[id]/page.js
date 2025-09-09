@@ -198,6 +198,7 @@ export default function Page({ params }) {
           const updateData = {
             ...baseDraftData,
             created_at: existingDraft.created_at || currentTime, // Preserve original created_at
+            updated_at: currentTime, // save updated_at
           };
 
           await updateDoc(draftDocRef, updateData);
@@ -362,6 +363,8 @@ export default function Page({ params }) {
         const updateData = {
           ...messageData,
           created_at: draft.created_at || currentTime, // Preserve original created_at
+          updated_at: currentTime, // updated_at send time
+
         };
 
         await updateDoc(messageRef, updateData);
@@ -640,13 +643,13 @@ export default function Page({ params }) {
 
           const sortedMessages = messages.sort((a, b) => {
             const aTime =
-              a.created_at instanceof Date
-                ? a.created_at
-                : a.created_at.toDate();
+              a.updated_at instanceof Date
+                ? a.updated_at
+                : a.updated_at.toDate();
             const bTime =
-              b.created_at instanceof Date
-                ? b.created_at
-                : b.created_at.toDate();
+              b.updated_at instanceof Date
+                ? b.updated_at
+                : b.updated_at.toDate();
             return aTime.getTime() - bTime.getTime();
           });
 
@@ -827,7 +830,7 @@ export default function Page({ params }) {
                         </div>
                       </div>
                       <div className="text-gray-500 text-sm">
-                        {formatTime(message.created_at)}
+                        {formatTime(message.updated_at)}
                       </div>
                     </div>
                   </div>
