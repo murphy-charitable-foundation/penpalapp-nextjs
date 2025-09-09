@@ -3,6 +3,7 @@
  */
 import { getAnalytics, logEvent } from "firebase/analytics";
 import { app } from "../firebaseConfig";
+import * as Sentry from "@sentry/nextjs";
 
 // Initialize Firebase Analytics
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
@@ -58,15 +59,20 @@ const logInEvent = (status, message) => {
  * @returns {void}
  */
 const logError = (error, errorInfo) => {
+  const errorObject =
+    err instanceof Error
+      ? error
+      : new Error(typeof error === "string" ? error : "Unknown error");
+
   if (analytics) {
-    console.log("Logging uncaught error", error, errorInfo);
     logEvent(analytics, "uncaught_error", {
-      error_name: error.name || "Unknown",
-      error_message: error.message || "No message",
-      error_stack: error.stack || "No stack trace",
+      error_name: errorObject.name || "Unknown",
+      error_message: errorObject.message || "No message",
+      error_stack: errorObject.stack || "No stack trace",
       ...errorInfo,
     });
   }
+  Sentry.captureException(errorObject);
 };
 
 /**

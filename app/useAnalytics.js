@@ -46,7 +46,6 @@ import {
   logInternetDisconnection,
   logLoadingTime,
 } from "./utils/analytics";
-import * as Sentry from "@sentry/nextjs";
 import { useReportWebVitals } from "next/web-vitals";
 
 // Throttle function to limit the rate at which a function can fire
@@ -181,7 +180,7 @@ class GlobalTracker {
   /**
    * Adds global error listeners to track uncaught errors and unhandled promise
    * rejections. When an error occurs, it is logged to Firebase using logError
-   * and also sent to Sentry using Sentry.captureException.
+   * which is also sent to Sentry using Sentry.captureException.
    *
    * Listeners are registered for:
    * - window.onerror: captures uncaught JavaScript errors
@@ -194,9 +193,8 @@ class GlobalTracker {
         type: "uncaught_error",
         source: source,
         line: lineno,
-        column: colno,
+        column: colno
       });
-      Sentry.captureException(error || new Error(message)); // Send to Sentry
     };
 
     // Handle unhandled promise rejections
@@ -204,7 +202,6 @@ class GlobalTracker {
       logError(event.reason, {
         type: "unhandled_promise_rejection",
       });
-      Sentry.captureException(event.reason); // Send to Sentry
     };
   }
 
