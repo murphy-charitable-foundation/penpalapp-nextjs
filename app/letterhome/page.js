@@ -122,8 +122,8 @@ export default function Home() {
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
-          const downloaded = await getUserPfp(uid);
-          setProfileImage(downloaded || "");
+          //const downloaded = await getUserPfp(uid);
+          //setProfileImage(downloaded || "");
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
