@@ -36,6 +36,7 @@ import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
+import React from "react";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -98,7 +99,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
-  const { id } = params;
+  const { id } = React.use(params);
 
   const auth = getAuth();
   const router = useRouter();

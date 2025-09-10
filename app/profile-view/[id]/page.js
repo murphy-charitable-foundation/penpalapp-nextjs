@@ -31,7 +31,7 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../../components/general/PageHeader";
 
 export default function Page({ params }) {
-  const { id } = params;
+  const { id } = React.use(params);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");

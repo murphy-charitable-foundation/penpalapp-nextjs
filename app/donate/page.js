@@ -9,7 +9,6 @@ import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import { useEffect } from "react";
 
 export default function Donate() {
   const details = [
@@ -21,10 +20,7 @@ export default function Donate() {
 
   /**
    * Firebase Analytics Documentation Example:
-   * 1. usePageAnalytics("/donate") from useAnalytics.js logs a page view for the /donate page
-   * 2. The useEffect hook measures the time from when the component mounts (startTime) to when the page is fully rendered (endTime).
-   * 3. The requestAnimationFrame and setTimeout functions ensure that the endTime is recorded after the page has finished rendering.
-   * 4. The logLoadingTime function from analytics.js is called with the page path ("/donate") and the load time, which likely sends this data to Firebase Analytics
+   * usePageAnalytics("/donate") from useAnalytics.js logs a dead clicks and load times for the /donate page
    */
 
   usePageAnalytics("/donate");

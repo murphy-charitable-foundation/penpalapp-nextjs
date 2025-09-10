@@ -1,26 +1,9 @@
 /** Usage:
  * 
    * Firebase Analytics Documentation Example from Donate route:
-   * 1. usePageAnalytics("/donate") from useAnalytics.js logs a page view for the /donate page
-   * 2. The useEffect hook measures the time from when the component mounts (startTime) to when 
-   *    the page is fully rendered (endTime).
-   * 3. The requestAnimationFrame and setTimeout functions ensure that the endTime is recorded 
-   *    after the page has finished rendering.
-   * 4. The logLoadingTime function from analytics.js is called with the page path ("/donate") 
-   *    and the load time, which likely sends this data to Firebase Analytics
+   * usePageAnalytics("/donate") from useAnalytics.js logs dead clicks and load times for the /donate page
    
   usePageAnalytics("/donate");
-  useEffect(() => {
-    const startTime = performance.now();
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const endTime = performance.now();
-        const loadTime = endTime - startTime;
-        console.log(`Page render time: ${loadTime}ms`);
-        logLoadingTime("/donate", loadTime);
-      }, 0);
-    });
-  }, []);
 
   * logButtonEvent from analytics.js logs a button click event to Firebase Analytics when the 
     "Make a Donation" button is clicked. The event is labeled as "make donation button clicked" 
