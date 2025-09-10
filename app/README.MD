@@ -1,0 +1,163 @@
+# Analytics Tracking
+
+This module provides utilities for tracking user interactions, errors, and performance metrics in a **Next.js + Firebase Analytics** application.  
+It consists of two main files:
+
+- [`useAnalytics.js`](./useAnalytics.js) — React hooks and global trackers for page analytics, connectivity, and error logging.
+- [`analytics.js`](./utils/analytics.js) — Utility functions that send events to Firebase Analytics (and Sentry for error monitoring).
+
+---
+
+## 📊 Features
+
+- Page view tracking (with time spent on page)
+- Dead click detection (clicks on non-interactive elements)
+- Button click tracking
+- Login event tracking
+- Page load performance metrics (LCP)
+- Error monitoring (uncaught errors & unhandled promises)
+- Internet connectivity tracking (offline/online events)
+- Sentry integration for debugging
+
+---
+
+## 🔧 Installation
+
+Make sure you have the following configured:
+
+- **Firebase Analytics** initialized in your app (via `firebaseConfig.js`).
+- **Sentry** configured for error monitoring.
+
+---
+
+## 📂 File: `useAnalytics.js`
+
+### `usePageAnalytics(pagePath)`
+React hook to track analytics for a given page.
+
+**What it tracks:**
+- Page views and time spent on the page
+- Dead clicks (clicks on `<div>`, `<p>`, `<img>`, etc.)
+- Large Contentful Paint (LCP) for load time performance
+
+**Example:**
+
+```jsx
+import { usePageAnalytics } from "./useAnalytics";
+
+export default function DonatePage() {
+  usePageAnalytics("/donate");
+
+  return (
+    <div>
+      <h1>Donate</h1>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+### `GlobalTracker`
+Singleton class that handles global error and connectivity tracking.
+
+- Errors: Captures uncaught errors & unhandled promise rejections.
+- Connectivity: Logs disconnection duration and reconnection events.
+
+**Example:**
+
+```jsx
+import { globalTracker } from "./useAnalytics";
+
+// already initialized globally
+```
+
+## 📂 File: `analytics.js`
+Utility functions for sending events to Firebase Analytics.
+All functions use `logEvent` under the hood and require Firebase to be initialized.
+
+### `logPageView(pagePath, viewTime)`
+Logs a page view with time spent (in seconds).
+
+**Example:**
+
+```jsx
+logPageView("/donate", 45); // user spent 45s on /donate
+```
+
+### `logButtonEvent(buttonName, pagePath)`
+Logs when a button is clicked.
+
+**Example:**
+
+```jsx
+<Button
+  btnText="Make a Donation"
+  onClick={() =>
+    logButtonEvent("make donation button clicked", "/donate")
+  }
+/>
+```
+
+### `logInEvent(status, message)`
+Logs login status.
+
+**Example:**
+
+```jsx
+logInEvent("success", "User logged in via Google");
+```
+
+### `logError(error, errorInfo)`
+Logs an error to Firebase and Sentry.
+
+**Example:**
+
+```jsx
+try {
+  throw new Error("Something went wrong");
+} catch (err) {
+  logError(err, { context: "donate_page" });
+}
+```
+
+### `logDeadClick(x, y, elementClicked, pagePath)`
+Logs a "dead click" on non-interactive elements.
+
+**Example:**
+
+```jsx
+logDeadClick(200, 350, "DIV", "/donate");
+```
+
+### `logInternetDisconnection(duration, reconnected)`
+Logs internet disconnection or reconnection.
+
+**Example:**
+```jsx
+// User disconnected for 15 seconds
+logInternetDisconnection(15, true);
+```
+
+### `logLoadingTime(pagePath, loadingTime)`
+Logs page loading performance (LCP metric).
+
+**Example:**
+```jsx
+logLoadingTime("/donate", 1234); // 1234ms
+```
+
+## 🚀 Example Workflow
+On /donate page:
+
+1. usePageAnalytics("/donate") logs page views, load times, and dead clicks.
+
+2. A "Make a Donation" button uses logButtonEvent to track clicks.
+
+3. If the page throws an error, GlobalTracker logs it to Firebase + Sentry.
+
+4. If the user goes offline, logInternetDisconnection records duration.
+
+## 📌 Notes
+- All events are logged to Firebase Analytics.
+- Errors are also reported to Sentry for debugging.
+- usePageAnalytics should be called once per page inside the page component.
