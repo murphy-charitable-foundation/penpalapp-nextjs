@@ -23,21 +23,25 @@ export default function Donate() {
                 </Link>
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div className="p-6">
-                        <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">Donate</h2>
+                        <h2 className="text-center text-4xl text-blue-600 font-bold mb-4">Sponsor a Child</h2>
 
                         <p className="text-gray-700 text-lg leading-relaxed">
                             Your generosity makes our work possible. Whether you contribute financially or as advocate for good, you make a real difference.
                         </p>
+                        <p className="text-gray-700 text-xs leading-relaxed mt-4 italic">
+                            You may include a note to indicate your preferred category:
+                        </p>
+                        <p className="text-gray-700 text-xs leading-relaxed italic">
+                            Education, Beddings & Clothing, Medical Care, or Scholastic Materials.
+                        </p>
 
-                        <div className="mt-6 text-center">
-                            <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
+                        <div className="mt-4 text-center">
+                            <Link
+                             href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card"
+                             target="_blank"
+                            >
                                 <Button
-                                    btnText="Make a Donation"
-                                    color="bg-blue-600"
-                                    textColor="text-white"
-                                    hoverColor="hover:bg-blue-700"
-                                    rounded="rounded-md"
-                                    font="font-semibold"
+                                    btnText="Sponsor Now"
                                 />
                             </Link>
                         </div>
