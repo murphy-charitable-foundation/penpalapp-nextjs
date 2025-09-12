@@ -17,32 +17,13 @@ import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../app/firebaseConfig";
-import { collection, doc, getDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(null);
-  
-  useEffect(() => {
-    const grabUser = async () => {
-      if (!auth.currentUser) return;
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      const userSnapshot = await getDoc(userRef);
-      const userData = userSnapshot.data();
-  
-      if (userData?.user_type === "admin") {
-        setIsAdmin(true);
-      } else { 
-        setIsAdmin(false);
-      }
-    }
-  
-    grabUser();
-  }, []);
-  
+  const { userType } = useUser();
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -52,48 +33,52 @@ export default function NavBar() {
     }
   };
 
-  const navLinks = [
-    {
-      href: "/profile",
-      icon: <FaUserAlt className="h-4 w-4" />,
-      label: "Profile",
-    },
-    {
-      href: "/letterhome",
-      icon: <FaHome className="h-4 w-4" />,
-      label: "Home",
-    },
-    {
-      href: "/discovery",
-      icon: <FaCompass className="h-4 w-4" />,
-      label: "Discover",
-    },
-    { 
-      href: "/about", 
-      icon: <FaInfo className="h-4 w-4" />, 
-      label: "About" 
-    },
-    {
-      href: "/contact",
-      icon: <FaEnvelopeOpenText className="h-4 w-4" />,
-      label: "Contact",
-    },
-    // 👇 conditionally add admin link
-    ...(isAdmin
-      ? [
-          {
-            href: "/admin",
-            icon: <FaUserAlt className="h-4 w-4" />, // choose any admin icon
-            label: "Admin",
-          },
-        ]
-      : []),
-    {
-      onClick: handleLogout,
-      icon: <FaSignOutAlt className="h-4 w-4" />,
-      label: "Logout",
-    },
-  ];
+  const getAllNavLinks = () => {
+    const baseLinks = [
+      {
+        href: "/profile",
+        icon: <FaUserAlt className="h-4 w-4" />,
+        label: "Profile",
+      },
+      {
+        href: "/letterhome",
+        icon: <FaHome className="h-4 w-4" />,
+        label: "Home",
+      },
+      {
+        href: "/about",
+        icon: <FaInfo className="h-4 w-4" />,
+        label: "About"
+      },
+      {
+        href: "/contact",
+        icon: <FaEnvelopeOpenText className="h-4 w-4" />,
+        label: "Contact",
+      },
+      {
+        onClick: handleLogout,
+        icon: <FaSignOutAlt className="h-4 w-4" />,
+        label: "Logout",
+      },
+    ];
+
+    // Only add these links if userType is not 'child'
+    if (userType !== 'child') {
+      baseLinks.splice(2, 0, { // Insert after Home
+        href: "/discovery",
+        icon: <FaCompass className="h-4 w-4" />,
+        label: "Discover",
+      });
+    }
+
+    return baseLinks;
+  };
+
+  const navLinks = getAllNavLinks();
+  
+  if (userType === null) {
+    return null;
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 bg-blue-100 p-3 flex justify-around items-center text-zinc-900 border-t border-[#E6E6E6] shadow-md">
@@ -103,12 +88,14 @@ export default function NavBar() {
           <span className="text-xs">Letterhome</span>
         </button>
       </Link>
-      <Link href="/donate">
-        <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
-          <FaHandHoldingHeart className="h-4 w-4" />
-          <span className="text-xs">Donate</span>
-        </button>
-      </Link>
+      {userType !== 'child' && (
+        <Link href="/donate">
+          <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
+            <FaHandHoldingHeart className="h-4 w-4" />
+            <span className="text-xs">Donate</span>
+          </button>
+        </Link>
+      )}
       <div className="relative">
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
