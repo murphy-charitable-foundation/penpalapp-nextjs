@@ -6,11 +6,14 @@ import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+
+import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
 import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
+  getUserPfp,
   fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
@@ -42,6 +45,7 @@ export default function Home() {
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
+
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
@@ -114,7 +118,8 @@ export default function Home() {
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
-          setProfileImage(userData?.photo_uri || "");
+          const downloaded = await getUserPfp(uid);
+          setProfileImage(downloaded || "");
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
@@ -144,7 +149,9 @@ export default function Home() {
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
-            setProfileImage(userData?.photo_uri || "");
+            const downloaded = await getUserPfp(uid);
+            setProfileImage(downloaded || "");
+
             // Show welcome message
             setShowWelcome(true);
 

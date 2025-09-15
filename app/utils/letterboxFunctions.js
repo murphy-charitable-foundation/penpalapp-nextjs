@@ -1,17 +1,7 @@
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  startAfter,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { auth, db } from "../firebaseConfig";
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
+import { ref as storageRef, getDownloadURL } from "@firebase/storage";
+import { storage } from "../firebaseConfig.js";
+import { auth, db } from "../firebaseConfig"
 import * as Sentry from "@sentry/nextjs";
 
 const DELAY = 1000;
@@ -21,6 +11,13 @@ const getUserDoc = async () => {
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };
+
+export const getUserPfp = async(uid) => {
+  const path = `profile/${uid}/profile-image`;
+  const photoRef = storageRef(storage, path);
+  const downloaded = await getDownloadURL(photoRef)
+  return downloaded;
+}
 
 export const fetchLetterboxes = async () => {
   const retryFetch = () => setTimeout(() => fetchLetterboxes(), DELAY);
@@ -254,13 +251,15 @@ export const fetchRecipients = async (id) => {
   const members = [];
 
   for (const user of users) {
+    const selectedUserDocRef = doc(db, "users", user.id);
+    const selUser = await getDoc(selectedUserDocRef);
     try {
-      const selectedUserDocRef = doc(db, "users", user.id);
-      const selUser = await getDoc(selectedUserDocRef);
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id });
+      const downloaded = await getUserPfp(user.id);
+      members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
     } catch (e) {
       Sentry.captureException(e);
       console.error("Error fetching user:", e);
+      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
     }
   }
   return members;

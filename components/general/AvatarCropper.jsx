@@ -2,7 +2,6 @@
 import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
 import Cropper from 'react-easy-crop'
 
-
 const AvatarCropper = forwardRef(({ type = 'gallery', onComplete }, ref) => {
   const inputRef = useRef(null)
   const [imageSrc, setImageSrc] = useState(null)
@@ -30,6 +29,8 @@ const AvatarCropper = forwardRef(({ type = 'gallery', onComplete }, ref) => {
   }, [])
 
   const cropImage = useCallback(async () => {
+    if (!croppedAreaPixels || !imageSrc) return
+
     const image = new Image()
     image.src = imageSrc
     await new Promise(resolve => (image.onload = resolve))
@@ -72,17 +73,29 @@ const AvatarCropper = forwardRef(({ type = 'gallery', onComplete }, ref) => {
               crop={crop}
               zoom={zoom}
               minZoom={0.5}
+              maxZoom={5}
               aspect={1}
               cropShape="round"
-              cropSize={{width:360, height: 360}}
+              cropSize={{ width: 360, height: 360 }}
+              objectFit="horizontal-cover"
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
             />
           </div>
           <div className="p-4 flex justify-between bg-black text-white">
-            <button onClick={() => setShowCropper(false)} className="bg-gray-600 px-4 py-2 rounded">Cancel</button>
-            <button onClick={cropImage} className="bg-blue-600 px-4 py-2 rounded">Select</button>
+            <button
+              onClick={() => setShowCropper(false)}
+              className="bg-gray-600 px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={cropImage}
+              className="bg-blue-600 px-4 py-2 rounded"
+            >
+              Select
+            </button>
           </div>
         </div>
       )}

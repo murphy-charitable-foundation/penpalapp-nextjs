@@ -1,16 +1,13 @@
-
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 
-import Image from 'next/image';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "next/link";
 import Button from "../../components/general/Button";
 
-
 export default function Welcome() {
-    const [firstName, setFirstName] = useState('');
-
+  const [firstName, setFirstName] = useState("");
     useEffect(() => {
         const value = localStorage.getItem('userFirstName');
         if (value) {
@@ -36,6 +33,7 @@ export default function Welcome() {
                     </Link>
                 </div>
             </div>
-        </div>
-    );
+
+    </div>
+  );
 }
