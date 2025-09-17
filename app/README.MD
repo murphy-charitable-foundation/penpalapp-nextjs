@@ -1,3 +1,51 @@
+# 📊 Creating Custom Reports
+## 1. Navigate to Explorations
+
+1. Sign in to [Google Analytics](https://analytics.google.com).
+2. In the left-hand menu, go to Explore → this is where you build custom reports.
+
+## 2. Choose an Exploration Type
+GA4 offers several report “templates” to start from:
+
+- **Free form** → flexible table where you choose dimensions & metrics.
+- **Funnel exploration** → see how users move through steps (e.g. checkout flow).
+- **Path exploration** → view navigation paths users take.
+- **Segment overlap** → compare how different user groups overlap.
+- **Cohort exploration** → analyze groups of users over time.
+- **User explorer** → drill into individual user journeys.
+- **User lifetime** → analyze user behavior and value over time.
+
+👉 For most “custom dashboards,” **Free Form** is the best starting point.
+
+## 3. Add Dimensions and Metrics
+
+- **Dimensions** = descriptive attributes (page path, device, country, event name).
+- **Metrics** = numeric values (views, conversions, revenue, engagement time).
+
+Steps:
+
+1. In the **Variables** panel, click the “+” to import dimensions/metrics you want.
+2. Drag them into **Rows** (for dimensions) and **Values** (for metrics).
+
+Example:
+
+- Rows → `page_path`
+- Values → `event_count`, `users`
+
+This would give you a custom table showing how many users triggered events on each page.
+
+## 4. Apply Filters or Segments
+
+- Use **Filters** to restrict the data (e.g., only `page_path` = `/donate`).
+- Add **Segments** to compare groups (e.g., mobile vs desktop users).
+
+## 5. Save and Share
+
+- Your custom report is saved under **Explorations**.
+- You can **share** it with others in the GA4 property (they’ll see it under their Explore tab).
+
+---
+
 # Analytics Tracking
 
 This module provides utilities for tracking user interactions, errors, and performance metrics in a **Next.js + Firebase Analytics** application.  
@@ -196,13 +244,13 @@ logLoadingTime("/donate", 1234); // 1234ms
 ## 🚀 Example Workflow
 On /donate page:
 
-1. usePageAnalytics("/donate") logs page views, load times, and dead clicks.
+1. `usePageAnalytics("/donate")` logs page views, load times, and dead clicks.
 
-2. A "Make a Donation" button uses logButtonEvent to track clicks.
+2. A "Make a Donation" button uses `logButtonEvent` to track clicks.
 
-3. If the page throws an error, GlobalTracker logs it to Firebase + Sentry.
+3. If the page throws an error, `GlobalTracker` logs it to Firebase + Sentry.
 
-4. If the user goes offline, logInternetDisconnection records duration.
+4. If the user goes offline, `logInternetDisconnection` records duration.
 
 ## 📌 Notes
 - All events are logged to Firebase Analytics.
