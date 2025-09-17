@@ -21,12 +21,59 @@ It consists of two main files:
 
 ---
 
-## 🔧 Installation
+## 🔧 Adding More Analytics
 
-Make sure you have the following configured:
+Our project uses **Firebase Analytics** to track events. Most logging should be done through the **wrapper functions** defined in `analytics.js`. This ensures events are logged consistently and makes it easier to update logging logic in one place.
 
-- **Firebase Analytics** initialized in your app (via `firebaseConfig.js`).
-- **Sentry** configured for error monitoring.
+### 1. Using Existing Logging Functions
+Whenever possible, call the appropriate wrapper function instead of calling Firebase directly.  
+Example:
+
+```jsx
+import { logInEvent } from "@/utils/analytics";
+
+logInEvent("success", "User logged in via Google");
+```
+
+**This approach:**
+- **Keeps event names consistent**
+- **Ensures required parameters are always included**
+- **Makes analytics easier to maintain over time**
+
+### 2. Logging a New Event (Directly)
+If a wrapper function does not exist for your use case, you can log directly with Firebase:
+
+```jsx
+import { logEvent } from "firebase/analytics";
+import { analytics } from "@/firebaseConfig";
+
+logEvent(analytics, "event_name", {
+  param1: "value1",
+  param2: "value2"
+});
+```
+
+### 3. Adding a New Wrapper Function (Recommended)
+If you find yourself reusing the same event multiple times, add a new wrapper in `analytics.js`:
+
+```jsx
+// analytics.js
+import { logEvent } from "firebase/analytics";
+import { analytics } from "@/firebaseConfig";
+
+export function logDonationSubmitted(amount, method) {
+  logEvent(analytics, "donation_submitted", {
+    amount,
+    method,
+  });
+}
+```
+
+Then call it throughout the codebase:
+
+```jsx
+logDonationSubmitted(50, "credit_card");
+```
 
 ---
 
