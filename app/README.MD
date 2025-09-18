@@ -44,6 +44,9 @@ This would give you a custom table showing how many users triggered events on ea
 - Your custom report is saved under **Explorations**.
 - You can **share** it with others in the GA4 property (they’ll see it under their Explore tab).
 
+## 📌 Note on Latency
+The data available for the custom reports in the Explore tab of the left hand menu is the same as the data available in the Reports section of the Reports tab. This detailed data is aggregated and takes **2-6 hours** to populate. There are also near realtime options available for viewing the data logged by the app in the Reports tab: **Realtime overview** and **Realtime pages**. There are no options for creating custom dashboards for these in GA4, and the data will be less detailed than in the reports. This data is available with **a couple minutes**.
+
 ---
 
 # Analytics Tracking
