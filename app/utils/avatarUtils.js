@@ -61,10 +61,7 @@ export const saveAvatar = async ({
   );
 };
 
-export const confirmDeleteAvatar = async ({ confirm, setAvatar, setShowMenu }) => {
-  const ok = await confirm('Are you sure you want to delete the current profile picture?');
-  if (ok) {
-    setAvatar(null);
-    setShowMenu(false);
-  }
+export const confirmDeleteAvatar = async ({ setConfirmOpen, setConfirmInfo }) => {
+  setConfirmInfo('Are you sure you want to delete the current profile picture?');
+  setConfirmOpen(true);
 };

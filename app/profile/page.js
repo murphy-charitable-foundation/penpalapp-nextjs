@@ -37,7 +37,6 @@ import Dialog from "../../components/general/Modal";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
-import { useConfirm } from '@/components/ConfirmProvider';
 import { saveAvatar, base64ToBlob, confirmDeleteAvatar } from '@/app/utils/avatarUtils';
 import AvatarCropper from '@/components/general/AvatarCropper';
 import AvatarMenu from '@/components/avatar/AvatarMenu';
@@ -47,7 +46,6 @@ import { uploadFile } from "../lib/uploadFile";
 export default function EditProfile() {
 
   const [showMenu, setShowMenu] = useState(false);
-  const { confirm } = useConfirm();
   const [avatar, setAvatar] = useState(null);
   const [mode, setMode] = useState(null); // 'camera' | 'gallery'
   const avatarRef = useRef();
@@ -87,6 +85,9 @@ export default function EditProfile() {
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
   const [storageUrl, setStorageUrl] = useState(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmInfo, setConfirmInfo] = useState('');
 
   const router = useRouter();
 
@@ -276,10 +277,19 @@ export default function EditProfile() {
 
   const onImageDelete = () => {
     confirmDeleteAvatar({
-      confirm,
-      setAvatar,
-      setShowMenu,
+      setConfirmOpen,
+      setConfirmInfo,
     });
+  };
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
+    setAvatar(null);
+    setShowMenu(false);
+  };
+
+  const handleCancel = () => {
+    setConfirmOpen(false);
   };
 
   const handleGetAvatar = (type) => {
@@ -302,6 +312,31 @@ export default function EditProfile() {
           title={dialogTitle}
           content={dialogMessage}
         ></Dialog>
+
+        <Modal
+          isOpen={confirmOpen}
+          onClose={handleCancel}       
+          title="Confirm"
+          width="default"
+          closeOnOverlay={false}      
+          content={
+            <div>
+              <p className="mb-4">{confirmInfo}</p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  btnText="Cancel"
+                  color="gray"
+                  onClick={handleCancel}
+                />
+                <Button
+                  btnText="Confirm"
+                  color="red"
+                  onClick={handleConfirm}
+                />
+              </div>
+            </div>
+          }
+        />
         <PageContainer maxWidth="lg" padding="p-6 pt-20">
           <PageHeader title="Profile" image={false} heading={false} />
           <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">

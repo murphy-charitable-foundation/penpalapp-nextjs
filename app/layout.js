@@ -1,6 +1,5 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Providers } from '@/components/Providers';
 import NavigationStateManager from '../components/loading/NavigationStateManager'
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
@@ -19,7 +18,7 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <Suspense fallback={<LoadingSpinner />}>
           <NavigationStateManager />
-          <Providers>{children}</Providers>
+          {children}
         </Suspense>          
       </body>
     </html>

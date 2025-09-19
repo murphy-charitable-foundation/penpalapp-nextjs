@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 
 import Image from 'next/image';
-import { useConfirm } from '@/components/ConfirmProvider';
+//import { useConfirm } from '@/components/ConfirmProvider';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import CountrySelect from '@/components/boarding-profile/CountrySelect';
 import { BackButton } from "@/components/general/BackButton";
@@ -18,6 +18,8 @@ import compressImage from "@/components/general/compress-image";
 import { saveAvatar, base64ToBlob, confirmDeleteAvatar } from '@/app/utils/avatarUtils';
 import AvatarCropper from '@/components/general/AvatarCropper';
 import AvatarMenu from '@/components/avatar/AvatarMenu';
+import Modal from "@/components/general/Modal";
+import Button from "@/components/general/Button";
 
 
 export default function OnboardingProfile() {
@@ -27,7 +29,7 @@ export default function OnboardingProfile() {
 
   ///////////////////////
   const [showMenu, setShowMenu] = useState(false);
-  const { confirm } = useConfirm();
+  //const { confirm } = useConfirm();
 
   const [avatar, setAvatar] = useState(null)
   const [country, setCountry] = useState(null)
@@ -38,6 +40,11 @@ export default function OnboardingProfile() {
   const [newProfileImage, setNewProfileImage] = useState(null);
   const [previewURL, setPreviewURL] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
+
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertInfo, setAlertInfo] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmInfo, setConfirmInfo] = useState('');
 
   const [loading, setLoading] = useState(false)
   const cropperRef = useRef();
@@ -128,9 +135,8 @@ export default function OnboardingProfile() {
 
   const onImageDelete = () => {
     confirmDeleteAvatar({
-      confirm,
-      setAvatar,
-      setShowMenu,
+      setConfirmOpen,
+      setConfirmInfo,
     });
   };
 
@@ -138,7 +144,8 @@ export default function OnboardingProfile() {
 
   const handleSaveCountry = async () => {
     if (!country) {
-      alert('Please select your country!')
+      setAlertInfo('Please select your country!');
+      setAlertOpen(true);
       return
     }
     const uid = auth.currentUser?.uid;
@@ -147,7 +154,8 @@ export default function OnboardingProfile() {
     setLoading(true);
     await updateDoc(doc(db, "users", uid), { country: country });
     setLoading(false)
-    alert('Your location has been saved!')
+    setAlertInfo('Your location has been saved!');
+    setAlertOpen(true);
     router.push("/discovery");
     //go next page
   }
@@ -156,9 +164,53 @@ export default function OnboardingProfile() {
     router.push("/discovery");
   }
 
+  const handleConfirm = () => {
+    setConfirmOpen(false);
+    setAvatar(null);
+    setShowMenu(false);
+  };
+
+  const handleCancel = () => {
+    setConfirmOpen(false);
+  };
+
   if (loading) return <LoadingSpinner />;
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
+      <Modal
+        isOpen={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title="Alert"
+        content={
+          <div>
+            <p>{alertInfo}</p>
+          </div>
+        }
+      />
+      <Modal
+        isOpen={confirmOpen}
+        onClose={handleCancel}       
+        title="Confirm"
+        width="default"
+        closeOnOverlay={false}      
+        content={
+          <div>
+            <p className="mb-4">{confirmInfo}</p>
+            <div className="flex justify-center gap-4">
+              <Button
+                btnText="Cancel"
+                color="gray"
+                onClick={handleCancel}
+              />
+              <Button
+                btnText="Confirm"
+                color="red"
+                onClick={handleConfirm}
+              />
+            </div>
+          </div>
+        }
+      />
       {<div className="p-6 h-full flex flex-col flex-1">
         <div className="flex justify-between items-center">
           <BackButton />
