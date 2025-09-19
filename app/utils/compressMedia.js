@@ -17,7 +17,7 @@ async function getFFmpeg() {
     await ffmpeg.load();
     console.log("FFmpeg core loaded！");
 
-    // ✅ API 变更: .exec() 的参数是数组
+
     await ffmpeg.exec(['-version']);
     console.log("FFmpeg is ready to use");
 
@@ -26,7 +26,7 @@ async function getFFmpeg() {
 
   } catch (error) {
     console.error("Loading FFmpeg core error:", error);
-    // 销毁实例，以便下次可以重试
+  
     ffmpegInstance = null; 
     return null;
   }
@@ -83,9 +83,9 @@ export async function compressMedia(file, onProgress = null, customOptions = {})
       '-c:v', 'libx264',
       '-b:a', options.audioBitrate,
       '-c:a', 'aac',
-      '-movflags', '+faststart', // 优化视频，使其能更快开始播放
-      '-preset', 'fast', // 平衡速度和质量
-      '-y', // 覆盖输出文件
+      '-movflags', '+faststart',// Optimize the video so it can start playing more quickly
+      '-preset', 'fast', // Balance encoding speed and output quality
+      '-y', // Overwrite the output file
       outputName
     ];
   } else if (file.type.startsWith('audio')) {
