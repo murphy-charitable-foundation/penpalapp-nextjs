@@ -724,8 +724,7 @@ export default function Page({ params }) {
             <button
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
-              title="Close conversation"
-            >
+              title="Close conversation">
               X
             </button>
           )}
@@ -738,8 +737,7 @@ export default function Page({ params }) {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}
-            >
+              }`}>
               <Image
                 src="/send-message-icon.png"
                 alt="Send message"
@@ -773,12 +771,10 @@ export default function Page({ params }) {
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                >
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}
-                  >
+                    onClick={() => selectMessage(messageId)}>
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
@@ -811,18 +807,10 @@ export default function Page({ params }) {
                           {isSelected ? "" : truncateMessage(message.content)}
                         </div>
                       </div>
-                      <div className="text-gray-500 text-sm">
-                        {formatTime(message.created_at)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16">
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
+                      <div className="flex flex-col items-end">
+                        <div className="text-gray-500 text-sm">
+                          {formatTime(message.created_at)}
+                        </div>
                         {!isSenderUser && (
                           <button
                             onClick={(e) => {
@@ -835,7 +823,7 @@ export default function Page({ params }) {
                               setReportContent(message.content);
                               setShowReportPopup(true);
                             }}
-                            className="mt-2 w-6 h-6 bg-black hover:bg-gray-800 transition-colors flex items-center justify-center transform rotate-0"
+                            className="mt-1 w-6 h-6 bg-gray-400 hover:bg-gray-700 transition-colors flex items-center justify-center transform rotate-0"
                             style={{
                               clipPath:
                                 "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
@@ -845,8 +833,17 @@ export default function Page({ params }) {
                               !
                             </span>
                           </button>
-
                         )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -877,8 +874,7 @@ export default function Page({ params }) {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}
-              >
+                onClick={handleReplyClick}>
                 {hasDraftContent
                   ? "Continue draft..."
                   : "Reply to the letter..."}
@@ -927,7 +923,6 @@ export default function Page({ params }) {
           closeOnOverlay={false}
           showCloseButton={false}
         />
-
 
         {/* Report Popups */}
         {showReportPopup && (
