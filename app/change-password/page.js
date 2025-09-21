@@ -10,7 +10,7 @@ import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 //import { handleLogout } from '../profile/page';
 import PasswordChecklist from "react-password-checklist";
-import Modal from "../../components/general/Modal";
+import Modal from "../../components/general/Dialog";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -137,7 +137,7 @@ export default function ChangePassword() {
               </div>
             </form>
           </div>
-          <Modal
+          <Dialog
             isOpen={showModal}
             onClose={() => {
               setShowModal(false);

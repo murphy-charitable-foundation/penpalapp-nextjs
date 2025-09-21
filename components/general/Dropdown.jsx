@@ -1,5 +1,5 @@
 "use client";
-import Modal from './Modal';
+import Modal from './Dialog';
 import List from './List';
 import { useState } from 'react';
 
@@ -49,7 +49,7 @@ export default function Dropdown({
             </svg>
         </button>
         {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-        <Modal
+        <Dialog
         isOpen={isModalOpen} 
         onClose={() => {
             setIsModalOpen(false);}}
