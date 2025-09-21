@@ -22,7 +22,6 @@ import {
 } from "../../../app/utils/letterboxFunctions";
 import { formatTime, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
-import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
@@ -32,6 +31,7 @@ import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import Button from "../../../components/general/Button";
+import { FaTimes, FaPaperPlane, FaExclamationCircle } from "react-icons/fa";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
@@ -711,234 +711,281 @@ export default function Page({ params }) {
     return canSend;
   };
 
-  return (
-    <div className="bg-gray-100 min-h-screen py-6">
-      <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-        {/* ENHANCED: Header with improved loading indicator */}
-        <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-          {isXButtonDisabled || isUpdatingFirebase ? (
-            <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <button
-              onClick={handleCloseMessage}
-              className="text-gray-700 cursor-pointer hover:text-gray-900"
-              title="Close conversation"
-            >
-              X
-            </button>
-          )}
+// add (or ensure) these imports at the top of the file
+// import { FaTimes, FaPaperPlane, FaExclamationCircle } from "react-icons/fa";
 
-          {isEditing && (
-            <button
-              onClick={handleSendMessage}
-              disabled={!canSendMessage()}
-              className={`p-1 ${
-                !canSendMessage()
-                  ? "cursor-not-allowed opacity-50"
-                  : "hover:bg-blue-200 rounded"
-              }`}
-            >
-              <Image
-                src="/send-message-icon.png"
-                alt="Send message"
-                width={30}
-                height={30}
-                className="object-contain"
-                id="send-letter"
-              />
-            </button>
-          )}
-        </div>
+// WhatsApp-style day label: "Tue, Sep 9"
+const formatDayLabel = (value) => {
+  const toDate = (v) => {
+    if (!v) return null;
+    if (v instanceof Date) return v;
+    if (typeof v === "number") return new Date(v);
+    if (typeof v === "string") {
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    if (v?.toDate) return v.toDate();              // Firestore Timestamp
+    if (typeof v?.seconds === "number") return new Date(v.seconds * 1000);
+    return null;
+  };
+  const d = toDate(value);
+  if (!d) return "";
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",  // Tue
+    month: "short",    // Sep
+    day: "numeric",    // 9
+  });
+};
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
-          {allMessages.map((message, index) => {
-            const messageId = message.id;
-            const isSelected = selectedMessageId === messageId;
-            const isSenderUser = message.sent_by?.id === user?.uid;
-            const location = getSenderLocation(message);
 
-            const showDateSeparator =
-              index === 0 ||
-              isDifferentDay(
-                allMessages[index - 1]?.created_at,
-                message.created_at
-              );
+return (
+  <div className="bg-gray-100 min-h-screen py-6">
+    <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
 
-            return (
-              <div key={messageId}>
-                {/* Message */}
-                <div
-                  className={`border-b border-gray-200 ${
-                    isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                >
-                  <div
-                    className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}
-                  >
-                    <div className="flex items-center">
-                      <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
-                        <ProfileImage
-                          photo_uri={
-                            isSenderUser
-                              ? profileImage // CHANGED: Use profileImage instead of user?.photoURL
-                              : recipients[0]?.photo_uri
-                          }
-                          first_name={
-                            isSenderUser ? "Me" : recipients[0]?.first_name
-                          }
-                          width={48}
-                          height={48}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <span className="font-bold text-black">
-                            {isSenderUser
-                              ? "Me"
-                              : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                          </span>
-                          {location && (
-                            <span className="text-black ml-2 text-sm">
-                              {location}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-gray-800">
-                          {isSelected ? "" : truncateMessage(message.content)}
-                        </div>
-                      </div>
-                      <div className="text-gray-500 text-sm">
-                        {formatTime(message.created_at)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16">
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        {!isSenderUser && (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log(
-                                "🚨 REPORT MESSAGE CLICKED:",
-                                message.id
-                              );
-                              setReportSender(message.sent_by.id);
-                              setReportContent(message.content);
-                              setShowReportPopup(true);
-                            }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                          >
-                            <FaExclamationCircle className="mr-1" size={10} />
-                            Report
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Message Input / View Mode Reply Box */}
-        <div className="bg-white">
-          <div className="flex items-center justify-between px-4 py-2">
-            <div className="flex items-center">
-              <Image
-                src="/arrow-left.png"
-                alt="Back"
-                width={20}
-                height={20}
-                className="mr-2"
-              />
-              <span className="text-gray-700">To {recipientName}</span>
-            </div>
+      {/* Header (Murphy Blue) */}
+      <div className="bg-primary text-white px-4 py-3 flex items-center justify-between border-b border-primary/20">
+        {isXButtonDisabled || isUpdatingFirebase ? (
+          <div className="w-6 h-6 flex items-center justify-center">
+            <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
           </div>
-
-          {!isEditing ? (
-            // View Mode Input Box
-            <div className="p-4">
-              <div
-                className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}
-              >
-                {hasDraftContent
-                  ? "Continue draft..."
-                  : "Reply to the letter..."}
-              </div>
-            </div>
-          ) : (
-            // Edit Mode Input Box
-            <div className="p-4 relative" style={{ height: "40vh" }}>
-              <textarea
-                ref={textAreaRef}
-                id="message-input"
-                className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-                placeholder="Write your message..."
-                value={messageContent}
-                onChange={handleMessageChange}
-                style={{
-                  overflowWrap: "break-word",
-                  wordWrap: "break-word",
-                  height: "calc(100% - 24px)",
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Close Dialog */}
-        {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                Close this message?
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Your message will be saved as a draft.
-              </p>
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
-                >
-                  Stay on page
-                </Button>
-                <Button
-                  onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
+        ) : (
+          <button
+            onClick={handleCloseMessage}
+            title="Close conversation"
+            aria-label="Close"
+            className="inline-flex items-center gap-1 text-sm font-medium rounded-full px-3 py-1
+                       bg-primary text-white hover:bg-primary/90 ring-1 ring-white/30 transition-colors"
+          >
+            <FaTimes className="h-4 w-4" />
+            Close
+          </button>
         )}
 
-        {/* Report Popups */}
-        {showReportPopup && (
-          <ReportPopup
-            setShowPopup={setShowReportPopup}
-            setShowConfirmReportPopup={setShowConfirmReportPopup}
-            sender={reportSender}
-            content={reportContent}
-          />
-        )}
-        {showConfirmReportPopup && (
-          <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+        {isEditing && (
+          <button
+            onClick={handleSendMessage}
+            disabled={!canSendMessage()}
+            aria-label="Send message"
+            className={`inline-flex items-center gap-1 text-sm font-medium rounded-full px-3 py-1 transition-colors ${
+              !canSendMessage()
+                ? "bg-primary/60 text-white cursor-not-allowed ring-1 ring-white/20"
+                : "bg-primary text-white hover:bg-primary/90 ring-1 ring-white/30"
+            }`}
+          >
+            <FaPaperPlane className="h-4 w-4" />
+            Send
+          </button>
         )}
       </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto bg-gray-100">
+        {allMessages.map((message, index) => {
+          const messageId = message.id;
+          const isSelected = selectedMessageId === messageId;
+          const isSenderUser = message.sent_by?.id === user?.uid;
+          const location = getSenderLocation(message);
+
+          const showDateSeparator =
+            index === 0 ||
+            isDifferentDay(allMessages[index - 1]?.created_at, message.created_at);
+
+          return (
+            <div key={messageId}>
+              {/* Date separator (WhatsApp-like) */}
+              {showDateSeparator && (
+                <div className="sticky top-0 z-10 py-2 bg-gray-100/80 backdrop-blur">
+                  <span className="mx-auto block w-fit rounded-full bg-gray-200 text-gray-700 text-xs px-3 py-1">
+                    {formatDayLabel(message.created_at)}
+                  </span>
+                </div>
+              )}
+
+              {/* Message row */}
+              <div
+                className={`border-b border-gray-300 ${
+                  isSelected ? "bg-white" : "bg-gray-100"
+                } ${index % 2 === 0 ? "bg-white" : "bg-gray-100"}`}
+              >
+                <div
+                  className="px-4 py-3"
+                  onClick={() => selectMessage(messageId)}
+                >
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
+                      <ProfileImage
+                        photo_uri={
+                          isSenderUser ? profileImage : recipients[0]?.photo_uri
+                        }
+                        first_name={isSenderUser ? "Me" : recipients[0]?.first_name}
+                        width={48}
+                        height={48}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-black truncate max-w-[55%]">
+                          {isSenderUser
+                            ? "Me"
+                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                        </span>
+
+                        {location && (
+                          <span className="text-black text-sm">{location}</span>
+                        )}
+
+                        {/* right-side date removed */}
+                      </div>
+
+                      {!isSelected && (
+                        <div className="text-gray-800 truncate mt-0.5">
+                          {truncateMessage(message.content)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded message */}
+                {isSelected && (
+                  <div className="px-4 pb-3">
+                    <div className="ml-16">
+                      <p className="text-gray-800 whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+
+                      {!isSenderUser && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReportSender(message.sent_by.id);
+                            setReportContent(message.content);
+                            setShowReportPopup(true);
+                          }}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-full px-2.5 py-1 mt-2 transition-colors"
+                          aria-label="Report message"
+                          title="Report"
+                        >
+                          <FaExclamationCircle className="h-3 w-3" />
+                          Report
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Composer */}
+      <div className="bg-white">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center">
+            <Image
+              src="/arrow-left.png"
+              alt="Back"
+              width={20}
+              height={20}
+              className="mr-2"
+            />
+            <span className="text-gray-800 font-medium">To {recipientName}</span>
+          </div>
+        </div>
+
+        {!isEditing ? (
+          // View Mode Input Box
+          <div className="p-4">
+            <div
+              className="w-full p-3 border border-gray-300 rounded-xl text-gray-600 bg-gray-50 hover:bg-gray-100 cursor-text transition-colors"
+              onClick={handleReplyClick}
+            >
+              {hasDraftContent ? "Continue draft..." : "Reply to the letter..."}
+            </div>
+          </div>
+        ) : (
+          // Edit Mode Input Box
+          <div className="p-4 relative" style={{ height: "40vh" }}>
+            <textarea
+              ref={textAreaRef}
+              id="message-input"
+              className="w-full h-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary resize-none text-gray-900 bg-white"
+              placeholder="Write your message..."
+              value={messageContent}
+              onChange={handleMessageChange}
+              style={{
+                overflowWrap: "break-word",
+                wordWrap: "break-word",
+                height: "calc(100% - 24px)",
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Close Dialog */}
+      {showCloseDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-2xl shadow-lg w-[345px] mx-auto">
+            <h2 className="text-lg font-semibold mb-1 text-gray-900 leading-tight">
+              Close this message?
+            </h2>
+            <p className="text-gray-600 mb-6 text-sm">
+              Your message will be saved as a draft.
+            </p>
+
+            <div className="flex gap-3">
+              {/* Stay on page — GREEN */}
+              <button
+                onClick={handleContinueEditing}
+                className="flex-1 inline-flex items-center justify-center
+                           rounded-2xl bg-murphyGreen text-white
+                           text-sm font-medium py-2.5 px-3
+                           shadow-sm hover:bg-murphyGreen-dark
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-murphyGreen/40
+                           transition-colors"
+                aria-label="Stay on this page"
+              >
+                Stay on page
+              </button>
+
+              {/* Exit — GRAY */}
+              <button
+                onClick={handleConfirmClose}
+                className="flex-1 inline-flex items-center justify-center
+                           rounded-2xl bg-gray-200 text-murphyGreen
+                           text-sm font-medium py-2.5 px-3
+                           hover:bg-gray-300
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-murphyGreen/25
+                           transition-colors"
+                aria-label="Exit"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Popups */}
+      {showReportPopup && (
+        <ReportPopup
+          setShowPopup={setShowReportPopup}
+          setShowConfirmReportPopup={setShowConfirmReportPopup}
+          sender={reportSender}
+          content={reportContent}
+        />
+      )}
+      {showConfirmReportPopup && (
+        <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+      )}
     </div>
-  );
+  </div>
+);
+
+
+
 }
