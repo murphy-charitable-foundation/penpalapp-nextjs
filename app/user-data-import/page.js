@@ -11,7 +11,7 @@ import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
 import * as Sentry from "@sentry/nextjs";
-import Dialog from "../../components/general/Modal";
+import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 
 export default function UserDataImport() {
