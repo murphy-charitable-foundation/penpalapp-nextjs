@@ -1,5 +1,5 @@
 "use client";
-import Modal from './Dialog';
+import Dialog from './Dialog';
 import List from './List';
 import { useState } from 'react';
 
