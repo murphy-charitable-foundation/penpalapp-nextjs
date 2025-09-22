@@ -35,8 +35,8 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
-import { startInactivityWatcher } from "@/app/utils/inactivitywatcher";
-import { useRouter } from "next/router";
+import { startInactivityWatcher } from "../../utils/inactivitywatcher";
+
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
