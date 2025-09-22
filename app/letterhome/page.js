@@ -26,6 +26,7 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { startInactivityWatcher } from "../utils/inactivitywatcher";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -38,6 +39,14 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+
+  // Track inactivity for "myData" and remove it after 30 minutes
+  if (localStorage.getItem("child")){
+    let stopWatcher = startInactivityWatcher("child", 30, router);
+  } 
+  
+
+
 
   const getUserData = async () => {
     const storedDoc = JSON.parse(localStorage.getItem("child"));

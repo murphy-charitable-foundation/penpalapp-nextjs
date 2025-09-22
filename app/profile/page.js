@@ -36,6 +36,7 @@ import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
 import { PageHeader } from '../../components/general/PageHeader';
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { startInactivityWatcher } from "../utils/inactivitywatcher";
 
 export default function EditProfile() {
   // State initializations
@@ -71,6 +72,10 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+
+  if (localStorage.getItem("child")){
+    let stopWatcher = startInactivityWatcher("child", 30);
+  }
 
   useEffect(() => {
     const fetchUserData = async () => {

@@ -47,7 +47,7 @@ export default function ChildrenGallery() {
                     console.warn("Volunteer document not found");
                     setVolunteerName("Volunteer");
                 }
-
+                
                 const childrenQuery = query(
                     collection(db, "users"),
                     where("user_type", "==", "child"),
@@ -58,8 +58,9 @@ export default function ChildrenGallery() {
                     id: doc.id,
                     ...doc.data(),
                 }));
-
+                console.log("after children query");
                 const letterboxes = await fetchLetterboxes();
+                
                 console.log("Letterboxes:", letterboxes);
 
                 // Create a map of letterboxId to recipients

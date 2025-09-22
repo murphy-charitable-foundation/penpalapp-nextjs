@@ -21,16 +21,26 @@ import { auth } from "../../app/firebaseConfig";
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
+  const storedDoc = JSON.parse(localStorage.getItem("child"));
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      localStorage.deleteItem('child');
+      localStorage.removeItem('child');
       router.push("/login");
     } catch (error) {
       console.error("Error signing out: ", error);
     }
   };
+
+  const handleChildSwitch = async () => {
+    try { 
+      await localStorage.removeItem('child');
+      router.push("/children-gallery")
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const navLinks = [
     {
@@ -58,6 +68,17 @@ export default function NavBar() {
       icon: <FaEnvelopeOpenText className="h-4 w-4" />,
       label: "Contact",
     },
+    // Only include this if the user is a child
+    ...(storedDoc 
+      ? [
+          {
+            onClick: handleChildSwitch,
+            icon: <FaUserAlt className="h-4 w-4" />,
+            label: "Switch Child",
+          },
+        ]
+      : []),
+    
     {
       onClick: handleLogout,
       icon: <FaSignOutAlt className="h-4 w-4" />,

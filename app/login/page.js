@@ -61,6 +61,7 @@ export default function Login() {
     try {
       await setPersistence(auth, browserSessionPersistence);
       await signInWithEmailAndPassword(auth, email, password);
+      await localStorage.removeItem('child');
       await redirectBasedOnUserType(auth.currentUser.uid);
     } catch (error) {
         console.error("Authentication error:", error.message);
