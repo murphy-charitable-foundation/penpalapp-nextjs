@@ -87,13 +87,15 @@ const logError = (error, errorInfo) => {
  * @param {string} pagePath The path of the page where the click occurred.
  * @returns {void}
  */
-const logDeadClick = (x, y, elementClicked, pagePath) => {
+const logDeadClick = (elementClicked, pagePath, screenshotUrl, elementId, ariaLabel) => {
   if (analytics) {
     logEvent(analytics, "dead_click", {
-      coordinates: `${x},${y}`,
       clicked_element: elementClicked || "unknown",
       page_path: pagePath,
       timestamp: new Date().toISOString(),
+      screenshot_url: screenshotUrl || null,
+      element_id: elementId || null,
+      aria_label: ariaLabel || null
     });
   }
 };

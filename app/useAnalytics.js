@@ -30,6 +30,31 @@ import {
   logLoadingTime,
 } from "./utils/analytics";
 import { useReportWebVitals } from "next/web-vitals";
+import { ref, getDownloadURL, uploadString } from "@firebase/storage";
+import { storage } from "./firebaseConfig";
+
+async function uploadScreenshot(base64Image, fileName) {
+  const storageRef = ref(storage, `deadclicks/${fileName}.png`);
+  await uploadString(storageRef, base64Image, "data_url");
+  return await getDownloadURL(storageRef);
+}
+
+const captureClickArea= async function(x, y) {
+  if (typeof window !== "undefined") {
+    const module = await import("html2canvas");
+    const html2canvas = module.default;
+    const radius = 100;
+    const crop = await html2canvas(document.body, {
+      x: x - radius,
+      y: y - radius,
+      width: radius * 2,
+      height: radius * 2,
+    });
+
+    return crop.toDataURL("image/png");
+  }
+  return null;
+}
 
 // Throttle function to limit the rate at which a function can fire
 const throttle = (func, limit) => {
@@ -69,14 +94,20 @@ const usePageAnalytics = (pagePath) => {
         "IMG",
       ];
 
-      const throttledDeadClickHandler = throttle((e) => {
+      const throttledDeadClickHandler = throttle(async (e) => {
         if (nonInteractiveElements.includes(e.target.tagName)) {
-          console.log("dead click");
+          const x = e.clientX;
+          const y = e.clientY;
+
+          const screenshot = await captureClickArea(x, y);
+          const fileName = `click_${Date.now()}`;
+          const screenshotUrl = await uploadScreenshot(screenshot, fileName);
           logDeadClick(
-            e.clientX,
-            e.clientY,
             e.target.tagName,
-            window.location.pathname
+            window.location.pathname,
+            screenshotUrl,
+            e.target.id,
+            e.target.getAttribute("aria-label")
           );
         }
       }, 500);
