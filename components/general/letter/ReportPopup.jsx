@@ -5,7 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../app/firebaseConfig";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import * as Sentry from "@sentry/nextjs";
-import Modal from "../Modal";
+import Dialog from "../Modal";
 
 const ReportPopup = ({
   setShowPopup,
@@ -45,7 +45,7 @@ const ReportPopup = ({
   }
 
   return (
-    <Modal
+    <Dialog
       isOpen={true}
       onClose={() => setShowPopup(false)}
       variant="confirmation"

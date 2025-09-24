@@ -29,7 +29,7 @@ const buttonVariants = {
   },
 };
 
-export default function Modal({
+export default function Dialog({
   isOpen,
   onClose,
   title,

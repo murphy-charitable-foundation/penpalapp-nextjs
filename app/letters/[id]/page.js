@@ -35,7 +35,7 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
-import Modal from "../../../components/general/Modal";
+import Dialog from "../../../components/general/Modal";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -900,7 +900,7 @@ export default function Page({ params }) {
           )}
         </div>
 
-        <Modal
+        <Dialog
           isOpen={showCloseDialog}
           onClose={() => setShowCloseDialog(false)}
           variant="closeDialog"
