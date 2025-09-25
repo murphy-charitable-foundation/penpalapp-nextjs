@@ -41,8 +41,7 @@ async function uploadScreenshot(base64Image, fileName) {
 
 const captureClickArea= async function(x, y) {
   if (typeof window !== "undefined") {
-    const module = await import("html2canvas");
-    const html2canvas = module.default;
+    const html2canvas =  (await import("html2canvas")).default;
     const radius = 100;
     const crop = await html2canvas(document.body, {
       x: x - radius,
