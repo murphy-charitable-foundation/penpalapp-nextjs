@@ -94,8 +94,8 @@ const logDeadClick = (elementClicked, pagePath, screenshotUrl, elementId, ariaLa
       page_path: pagePath,
       timestamp: new Date().toISOString(),
       screenshot_url: screenshotUrl || null,
-      element_id: elementId || null,
-      aria_label: ariaLabel || null
+      element_id: elementId || "unknown",
+      aria_label: ariaLabel || "unknown"
     });
   }
 };
