@@ -18,7 +18,7 @@ import compressImage from "@/components/general/compress-image";
 import { saveAvatar, base64ToBlob, confirmDeleteAvatar } from '@/app/utils/avatarUtils';
 import AvatarCropper from '@/components/general/AvatarCropper';
 import AvatarMenu from '@/components/avatar/AvatarMenu';
-import Modal from "@/components/general/Modal";
+import Modal from "@/components/general/Dialog";
 import Button from "@/components/general/Button";
 
 

@@ -7,33 +7,17 @@ import Link from "next/link";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { FaChevronDown } from "react-icons/fa"; // Font Awesome
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
-import {
-  User,
-  MapPin,
-  Home,
-  FileText,
-  Calendar,
-  GraduationCap,
-  Users,
-  Heart,
-  Briefcase,
-  Square,
-  Palette,
-} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import Modal from "../../components/general/Modal";
 import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
-import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
-import Dialog from "../../components/general/Modal";
+import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
@@ -302,54 +286,84 @@ export default function EditProfile() {
   if (loading) return <LoadingSpinner />;
   return (
     <div className="bg-gray-50 min-h-screen">
-      {<div>
-        <Dialog
-          isOpen={isDialogOpen}
-          onClose={() => {
-            setIsDialogOpen(false);
-            if (isSaved) router.push("/letterhome");
-          }}
-          title={dialogTitle}
-          content={dialogMessage}
-        ></Dialog>
 
-        <Modal
-          isOpen={confirmOpen}
-          onClose={handleCancel}       
-          title="Confirm"
-          width="default"
-          closeOnOverlay={false}      
-          content={
-            <div>
-              <p className="mb-4">{confirmInfo}</p>
-              <div className="flex justify-center gap-4">
-                <Button
-                  btnText="Cancel"
-                  color="gray"
-                  onClick={handleCancel}
-                />
-                <Button
-                  btnText="Confirm"
-                  color="red"
-                  onClick={handleConfirm}
-                />
-              </div>
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          if (isSaved) router.push("/letterhome");
+        }}
+        title={dialogTitle}
+        content={dialogMessage}
+      ></Dialog>
+      <PageContainer maxWidth="lg" padding="p-6 pt-20">
+        <PageHeader title="Profile" image={false} heading={false} />
+        <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
+          {/* Bio Modal */}
+          <Dialog
+            isOpen={isBioModalOpen}
+            onClose={() => setIsBioModalOpen(false)}
+            title="Bio/Challenges"
+            content={bioModalContent}
+            width="large"
+          />
+          {/* Profile Image */}
+          {/* <div className="my-6">
+            <div className="relative w-40 h-40 mx-auto">
+              <Image
+                src={photoUri ? photoUri : "/murphylogo.png"}
+                layout="fill"
+                className="rounded-full"
+                alt="Profile picture"
+              />
             </div>
-          }
-        />
-        <PageContainer maxWidth="lg" padding="p-6 pt-20">
-          <PageHeader title="Profile" image={false} heading={false} />
-          <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
-            {/* Bio Modal */}
-            <Modal
-              isOpen={isBioModalOpen}
-              onClose={() => setIsBioModalOpen(false)}
-              title="Bio/Challenges"
-              content={bioModalContent}
-              width="large"
-            />
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => router.push("/edit-profile-user-image")}
+                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+              >
+                Edit Photo
+              </button>
+            </div>
+          </div> */}
+          <Dialog
+            isOpen={confirmOpen}
+            onClose={handleCancel}
+            title="Confirm"
+            width="default"
+            closeOnOverlay={false}
+            content={
+              <div>
+                <p className="mb-4">{confirmInfo}</p>
+                <div className="flex justify-center gap-4">
+                  <Button
+                    btnText="Cancel"
+                    color="gray"
+                    onClick={handleCancel}
+                  />
+                  <Button
+                    btnText="Confirm"
+                    color="red"
+                    onClick={handleConfirm}
+                  />
+                </div>
+              </div>
+            }
+          />
+          <PageContainer maxWidth="lg" padding="p-6 pt-20">
+            {/* <PageHeader title="Profile" image={false} heading={false} /> */}
+            <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
+              {/* Bio Modal */}
+              <Dialog
+                isOpen={isBioModalOpen}
+                onClose={() => setIsBioModalOpen(false)}
+                title="Bio/Challenges"
+                content={bioModalContent}
+                width="large"
+              />
 
-          </div>
+            </div>
             {
               <div className="flex justify-center">
                 <div className="w-48 h-48 rounded-full bg-[#4E802A] flex items-center justify-center relative"
@@ -608,29 +622,30 @@ export default function EditProfile() {
                 </div>
               </div>
 
-            <div className="flex justify-center">
-              <Link
-                href="/letterhome"
-                className="transition-transform hover:scale-105 focus:outline-none"
-                onClick={(e) => {
-                  e.preventDefault();
-                  saveProfileData();
-                }}
-              >
-                <Button
-                  btnType="button"
-                  btnText={isSaving ? <LoadingSpinner /> : "Save"}
-                  color="green"
-                  hoverColor="hover:bg-[#48801c]"
-                  textColor="text-gray-200"
-                  disabled={isSaving}
-                  rounded="rounded-full"
-                />
-              </Link>
+              <div className="flex justify-center">
+                <Link
+                  href="/letterhome"
+                  className="transition-transform hover:scale-105 focus:outline-none"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    saveProfileData();
+                  }}
+                >
+                  <Button
+                    btnType="button"
+                    btnText={isSaving ? <LoadingSpinner /> : "Save"}
+                    color="green"
+                    hoverColor="hover:bg-[#48801c]"
+                    textColor="text-gray-200"
+                    disabled={isSaving}
+                    rounded="rounded-full"
+                  />
+                </Link>
+              </div>
             </div>
-          </div>
-        </PageContainer>
-      </div>}
+          </PageContainer>
+        </div>
+      </PageContainer>
       <AvatarMenu
         show={showMenu}
         onClose={() => setShowMenu(false)}

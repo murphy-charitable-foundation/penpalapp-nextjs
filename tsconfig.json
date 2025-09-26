@@ -32,7 +32,6 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
-    "components/general/Popover.jsx",
     "components/general/PageContainer.jsx",
     "components/general/BackButton.jsx"
   ],
