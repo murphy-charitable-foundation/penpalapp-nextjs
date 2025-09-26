@@ -36,6 +36,7 @@ import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
 import { PageHeader } from '../../components/general/PageHeader';
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import BottomNavBar from '../../components/bottom-nav-bar';
 
 export default function EditProfile() {
   // State initializations
@@ -542,6 +543,7 @@ export default function EditProfile() {
           </div>
         </div>
       </PageContainer>
+      <BottomNavBar />
     </div>
   );
 }

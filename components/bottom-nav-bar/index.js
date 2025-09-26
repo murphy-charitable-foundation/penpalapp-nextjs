@@ -41,11 +41,6 @@ export default function NavBar() {
         label: "Profile",
       },
       {
-        href: "/letterhome",
-        icon: <FaHome className="h-4 w-4" />,
-        label: "Home",
-      },
-      {
         href: "/about",
         icon: <FaInfo className="h-4 w-4" />,
         label: "About"
@@ -92,7 +87,7 @@ export default function NavBar() {
         <Link href="/donate">
           <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
             <FaHandHoldingHeart className="h-4 w-4" />
-            <span className="text-xs">Donate</span>
+            <span className="text-xs">Sponsor</span>
           </button>
         </Link>
       )}
