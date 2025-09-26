@@ -536,6 +536,7 @@ export default function EditProfile() {
           </div>
         </div>
       </PageContainer>
+      <BottomNavBar />
     </div>
   );
 }
