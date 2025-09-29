@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           cache: npm
 
       - name: Install dependencies
@@ -28,18 +28,5 @@ jobs:
             npm install
           fi
 
-      - name: Validate BUILD_RESULT
-        env:
-          BUILD_RESULT: ${{ secrets.BUILD_RESULT }}
-        run: |
-          if [ -z "${BUILD_RESULT}" ]; then
-            echo "BUILD_RESULT is empty."
-            exit 1
-          else
-            echo "BUILD_RESULT is set."
-          fi
-
-      - name: Run build
-        env:
-          BUILD_RESULT: ${{ secrets.BUILD_RESULT }}
+      - name: Build
         run: npm run build
