@@ -174,7 +174,7 @@ jobs:
           echo "url=$(jq -r '.url // empty' vercel-deployment.json)" >> $GITHUB_OUTPUT
           echo "state=$(jq -r '.readyState // empty' vercel-deployment.json)" >> $GITHUB_OUTPUT
 
-      # Job summary — полезно в Checks → job.
+      # Job summary
       - name: Job summary (tail 200)
         run: |
           ICON="✅"; [ "${{ steps.info.outputs.state }}" = "ERROR" ] && ICON="❌"
