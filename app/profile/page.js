@@ -12,7 +12,6 @@ import * as Sentry from "@sentry/nextjs";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import List from "../../components/general/List";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
@@ -58,7 +57,7 @@ export default function EditProfile() {
   const router = useRouter();
 
   if (localStorage.getItem("child")){
-    let stopWatcher = startInactivityWatcher("child", 30);
+    let stopWatcher = startInactivityWatcher("child", 30, router);
   }
 
   useEffect(() => {

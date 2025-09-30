@@ -8,6 +8,7 @@ import Button from "../components/general/Button";
 import {PageBackground}from "../components/general/PageBackground";
 import {PageContainer} from "../components/general/PageContainer";
 import {PageHeader} from "../components/general/PageHeader";
+import { BackButton } from "../components/general/BackButton";
 
 export default function Home() {
   return (

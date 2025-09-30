@@ -65,7 +65,7 @@ export default function Login() {
       await redirectBasedOnUserType(auth.currentUser.uid);
     } catch (error) {
         console.error("Authentication error:", error.message);
-        const message = errorMessages[error.code] || errorMessages.default;
+        const message = "There was an error"///errorMessages[error.code] || errorMessages.default;
         setError(message);
         if (error.code === "auth/too-many-requests") {
             setShowModal(true);

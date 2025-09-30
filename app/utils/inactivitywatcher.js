@@ -1,4 +1,6 @@
+"use client";
 // inactivityWatcher.js
+
 
 export function startInactivityWatcher(timeoutMinutes = 30, router) {
     var INACTIVITY_LIMIT = timeoutMinutes * 60 * 1000; // convert minutes to ms
