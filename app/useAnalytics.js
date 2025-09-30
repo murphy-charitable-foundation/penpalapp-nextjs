@@ -39,18 +39,29 @@ async function uploadScreenshot(base64Image, fileName) {
   return await getDownloadURL(storageRef);
 }
 
-const captureClickArea= async function(x, y) {
+const captureClickArea = async function(normalizedX, normalizedY, radius = 100) {
   if (typeof window !== "undefined") {
-    const html2canvas =  (await import("html2canvas")).default;
-    const radius = 100;
-    const crop = await html2canvas(document.body, {
-      x: x - radius,
-      y: y - radius,
-      width: radius * 2,
-      height: radius * 2,
-    });
+    const html2canvas = (await import("html2canvas")).default;
+    // Render the full document body
+    const canvas = await html2canvas(document.body);
+    const renderedWidth = canvas.width;
+    const renderedHeight = canvas.height;
 
-    return crop.toDataURL("image/png");
+    // Convert normalized coordinates to actual pixel positions in the rendered canvas
+    const centerX = Math.round(normalizedX * renderedWidth);
+    const centerY = Math.round(normalizedY * renderedHeight);
+
+    // Crop a region around the click
+    const croppedCanvas = document.createElement("canvas");
+    croppedCanvas.width = radius * 2;
+    croppedCanvas.height = radius * 2;
+    const croppedCtx = croppedCanvas.getContext("2d");
+    croppedCtx.drawImage(
+      canvas,
+      centerX - radius, centerY - radius, radius * 2, radius * 2, // source area
+      0, 0, radius * 2, radius * 2                                // destination
+    );
+    return croppedCanvas.toDataURL("image/png");
   }
   return null;
 }
@@ -95,16 +106,20 @@ const usePageAnalytics = (pagePath) => {
 
       const throttledDeadClickHandler = throttle(async (e) => {
         if (nonInteractiveElements.includes(e.target.tagName)) {
-          const x = e.clientX;
-          const y = e.clientY;
+          // Normalize coordinates to viewport and incorporate scroll
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const normalizedX = (e.clientX + window.scrollX) / viewportWidth;
+          const normalizedY = (e.clientY + window.scrollY) / viewportHeight;
 
-          const screenshot = await captureClickArea(x, y);
-          const fileName = `click_${Date.now()}`;
+          const screenshot = await captureClickArea(normalizedX, normalizedY);
+          // Use a UUID for the filename
+          const fileName = `${crypto.randomUUID()}`;
           const screenshotUrl = await uploadScreenshot(screenshot, fileName);
           logDeadClick(
             e.target.tagName,
             window.location.pathname,
-            screenshotUrl,
+            fileName,
             e.target.id,
             e.target.getAttribute("aria-label")
           );
