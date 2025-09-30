@@ -126,6 +126,30 @@ Then call it throughout the codebase:
 logDonationSubmitted(50, "credit_card");
 ```
 
+### ✨ Register them as custom dimensions/metrics in GA4.
+
+#### 1. Go to your Analytics → Admin (⚙️ in the left-hand menu) → Data Display → definitions.
+
+#### 2. Click Create custom dimension.
+
+**Dimension name:** something descriptive (Dead Click Element)
+
+**Scope:** Event
+
+**Event parameter:** exactly match the parameter name you used in your logEvent call.
+
+**Example:** if your code says:
+```jsx
+logEvent(analytics, "dead_click", {
+  clicked_element: e.target.tagName,
+  x_coord: e.clientX,
+  y_coord: e.clientY
+});
+```
+
+then you must add `clicked_element`, `x_coord`, and `y_coord` as custom dimensions.
+
+#### 3. Wait ⏳ — custom dimensions take 24–48 hours to start appearing in standard GA4 reports. However, you can check them sooner in Realtime view (they should show up under “Event parameters” when you click into an event).
 ---
 
 ## 📂 File: `useAnalytics.js`
