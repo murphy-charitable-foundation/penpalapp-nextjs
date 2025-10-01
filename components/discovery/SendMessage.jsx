@@ -22,7 +22,6 @@ export default function SendMessage({ kid }) {
         if (auth.currentUser) {
           const uid = auth.currentUser.uid;
           const docRef = doc(db, "users", uid);
-          // Unnecessary getDoc
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
@@ -62,7 +61,6 @@ export default function SendMessage({ kid }) {
             collection(db, "letterbox"),
             where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
           );
-          // Unnecessary getDoc
           let querySnapshot = await getDocs(letterboxQuery);
           
           if (querySnapshot.empty) {

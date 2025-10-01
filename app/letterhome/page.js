@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
@@ -143,9 +143,7 @@ export default function Home() {
           const uid = auth.currentUser.uid;
           setUserId(uid);
 
-          const docRef = doc(db, "users", uid);
-          // Unnecessary getDoc
-          const docSnap = await getDoc(docRef);
+          const docSnap = useUserData();
 
           if (docSnap.exists()) {
             const userData = docSnap.data();

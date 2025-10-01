@@ -14,7 +14,6 @@ const apiRequest = async (letterbox, emailId, reason) => {
         });
         let userData = [];
         const sender = await getDoc(doc(db, "users", ids[0]));
-        // Unnecessary getDoc (will potentially change letter structure to include sender/recipient)
         userData.push(sender.data());
         const sender2 = await getDoc(doc(db, "users", ids[1]))
         userData.push(sender2.data());

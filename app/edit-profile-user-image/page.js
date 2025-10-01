@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { auth, db } from "../firebaseConfig";
 import EditProfileImage from "../../components/edit-profile-image";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";

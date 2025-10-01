@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useRef, useEffect } from "react";
 import SelectProfileImage from "./select-profile-image-wrapper";
 import SelectProfileLocation from "./select-location";
@@ -7,16 +6,6 @@ import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { auth, db, storage } from "../app/firebaseConfig";
 import Button from "./general/Button";
 import Image from "next/image";
-=======
-import { useState, useRef, useEffect } from 'react';
-import SelectProfileImage from './select-profile-image-wrapper';
-import SelectProfileLocation from './select-location';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytesResumable } from '@firebase/storage';
-import { auth, db, storage } from '../app/firebaseConfig';
-import Button from './general/Button';
-import { useUserData } from '../context/UserDataContext';
->>>>>>> WIP removing unecessary DB calls
 
 const EditProfileImage = ({ router }) => {
   const [image, setImage] = useState(null);
