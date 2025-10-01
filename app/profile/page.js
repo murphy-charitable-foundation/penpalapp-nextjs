@@ -11,12 +11,6 @@ import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-<<<<<<< HEAD
-import List from "../../components/general/List";
-import { BackButton } from "../../components/general/BackButton";
-=======
-import Modal from "../../components/general/Modal";
->>>>>>> Removing unused imports and locating unnecessary database requests
 import { PageContainer } from "../../components/general/PageContainer";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
