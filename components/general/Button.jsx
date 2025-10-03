@@ -9,10 +9,10 @@ export default function Button({
   onClick
 }) {
   const colors = {
-    blue: 'bg-blue-700 hover:bg-blue-800 text-white',
-    green: 'bg-dark-green hover:bg-green-800 text-white', 
+    blue: 'bg-secondary hover:bg-secondary-light text-white',
+    green: 'bg-primary hover:bg-primary-light text-white', 
     red: 'bg-red-500 hover:bg-red-600 text-white',
-    gray: 'bg-gray-300 hover:bg-dark-green text-white',
+    gray: 'bg-gray-300 hover:bg-primary text-white',
     transparent: 'bg-transparent hover: bg-gray-400 text-black',
     white:'bg-white hover:bg-gray-100 text-black'
   };

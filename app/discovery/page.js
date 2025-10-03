@@ -20,6 +20,8 @@ import Header from "../../components/general/Header";
 import KidsList from "../../components/discovery/KidsList";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
+import { PageBackground } from "../../components/general/PageBackground";
+import BottomNavBar from '../../components/bottom-nav-bar';
 const PAGE_SIZE = 10; // Number of kids per page
 
 export default function ChooseKid() {
@@ -205,7 +207,8 @@ export default function ChooseKid() {
   };
   
   return (
-    <PageContainer maxWidth="lg">
+    <PageBackground>
+      <PageContainer maxWidth="lg">
       <BackButton />
       <div className="min-h-screen p-4 bg-white">
         <div className="bg-white">
@@ -234,5 +237,7 @@ export default function ChooseKid() {
         </div>
       </div>
     </PageContainer>
+    <BottomNavBar />
+    </PageBackground>
   );
 }

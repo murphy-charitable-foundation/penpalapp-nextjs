@@ -18,7 +18,7 @@ export default function Welcome() {
         }
     }, []);
     return (
-        <div className="min-h-screen !bg-primary">
+        <div className="min-h-screen !bg-secondary">
             <div className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
                 <div className="relative w-full h-[50vh] bg-[url('/welcome.png')] bg-cover bg-center">
                 </div>
