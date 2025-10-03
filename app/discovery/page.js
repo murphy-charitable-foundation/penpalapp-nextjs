@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { db, auth } from "../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -10,20 +15,21 @@ import {
   limit,
   where,
 } from "firebase/firestore";
+
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
-import KidCard from "../../components/discovery/KidCard";
-import KidFilter from "../../components/discovery/KidFilter";
-import Link from "next/link";
-import Header from "../../components/general/Header";
-import KidsList from "../../components/discovery/KidsList";
+
+import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
-import { logButtonEvent, logError } from "../utils/analytics";
-import { usePageAnalytics } from "../useAnalytics";
-import { onAuthStateChanged } from "firebase/auth";
+import BottomNavBar from "../../components/bottom-nav-bar";
 
-const PAGE_SIZE = 10; // Number of kids per page
+import Header from "../../components/general/Header";
+import KidsList from "../../components/discovery/KidsList";
+import KidFilter from "../../components/discovery/KidFilter";
+
+import { usePageAnalytics } from "../useAnalytics";
+import { logError, logButtonEvent } from "../utils/analytics";
+
 
 export default function ChooseKid() {
   const [activeFilter, setActiveFilter] = useState(false);
@@ -32,10 +38,14 @@ export default function ChooseKid() {
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [userId, setUserId] = useState("");
+  const router = useRouter();
 
   const [age, setAge] = useState(0);
   const [gender, setGender] = useState("");
   const [hobbies, setHobbies] = useState([]);
+  const PAGE_SIZE = 10;
+
+
   usePageAnalytics("/discovery");
 
   useEffect(() => {
@@ -50,7 +60,6 @@ export default function ChooseKid() {
           setUserId(uid);
           await fetchKids(uid);
         } catch (err) {
-          setError("Error fetching user data");
           console.error(err);
         } finally {
           setLoading(false);
@@ -239,7 +248,8 @@ export default function ChooseKid() {
   };
 
   return (
-    <PageContainer maxWidth="lg">
+    <PageBackground>
+      <PageContainer maxWidth="lg">
       <BackButton />
       <div className="min-h-screen p-4 bg-white">
         <div className="bg-white">
@@ -268,5 +278,7 @@ export default function ChooseKid() {
         </div>
       </div>
     </PageContainer>
+    <BottomNavBar />
+    </PageBackground>
   );
 }
