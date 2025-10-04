@@ -1,4 +1,3 @@
-import '___break_build___';
 import { Inter } from 'next/font/google'
 import './globals.css'
 import NavigationStateManager from '../components/loading/NavigationStateManager'
