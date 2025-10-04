@@ -220,7 +220,7 @@ export default function Home() {
                     id={userId}
                   />
                   <main className="p-6 bg-white">
-                    <section className="mt-8">
+                    <section className="">
                       {conversations.length > 0 ? (
                         <ConversationList conversations={conversations} />
                       ) : (

@@ -14,15 +14,34 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
-import { useState, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
+import LoadingSpinner from "../loading/LoadingSpinner";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [ isPending, startTransition ] = useTransition();
+  const [showSpinner, setShowSpinner] = useState(false);
   const router = useRouter();
   const { userType } = useUser();
+
+  useEffect(() => {
+    if (isPending) {
+      // Only show spinner if loading takes longer than 200ms
+      const timer = setTimeout(() => setShowSpinner(true), 200);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSpinner(false);
+    }
+  }, [isPending]);
+
+  const handleNavigation = (href) => {
+    startTransition(() => {
+      router.push(href);
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -76,55 +95,65 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 bg-blue-100 p-3 flex justify-around items-center text-zinc-900 border-t border-[#E6E6E6] shadow-md">
-      <Link href="/letterhome">
-        <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
-          <FaInbox className="h-4 w-4" />
-          <span className="text-xs">Letterhome</span>
-        </button>
-      </Link>
-      {userType !== 'child' && (
-        <Link href="/donate">
-          <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
-            <FaHandHoldingHeart className="h-4 w-4" />
-            <span className="text-xs">Sponsor</span>
+    <>
+      {showSpinner && <LoadingSpinner />}
+      <nav className="fixed inset-x-0 bottom-0 bg-blue-100 p-3 flex justify-around items-center text-zinc-900 border-t border-[#E6E6E6] shadow-md">
+        
+          <button 
+            onClick={() => handleNavigation('/letterhome')}
+            className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
+            <FaInbox className="h-4 w-4" />
+            <span className="text-xs">Letterhome</span>
           </button>
-        </Link>
-      )}
-      <div className="relative">
-        <button 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2"
-        >
-          <FaBars className="h-4 w-4" />
-          <span className="text-xs">Menu</span>
-        </button>
-        {isMenuOpen && (
-          <div className="absolute bottom-full right-0 mb-2 w-48 bg-blue-200 rounded-lg shadow-lg p-2">
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) =>
-                link.onClick ? (
-                  <button
-                    key={link.label}
-                    onClick={link.onClick}
-                    className="flex items-center gap-2 p-2 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg w-full"
-                  >
-                    {link.icon}
-                    <span className="text-xs">{link.label}</span>
-                  </button>
-                ) : (
-                  <Link key={link.href} href={link.href}>
-                    <button className="flex items-center gap-2 p-2 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg w-full">
+        
+        {userType !== 'child' && (
+          
+            <button 
+              onClick={() => handleNavigation('/donate')}
+              className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
+              <FaHandHoldingHeart className="h-4 w-4" />
+              <span className="text-xs">Sponsor</span>
+            </button>
+          
+        )}
+        <div className="relative">
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2"
+          >
+            <FaBars className="h-4 w-4" />
+            <span className="text-xs">Menu</span>
+          </button>
+          {isMenuOpen && (
+            <div className="absolute bottom-full right-0 mb-2 w-48 bg-blue-200 rounded-lg shadow-lg p-2">
+              <div className="flex flex-col gap-2">
+                {navLinks.map((link) =>
+                  link.onClick ? (
+                    <button
+                      key={link.label}
+                      onClick={link.onClick}
+                      className="flex items-center gap-2 p-2 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg w-full"
+                    >
                       {link.icon}
                       <span className="text-xs">{link.label}</span>
                     </button>
-                  </Link>
-                )
-              )}
+                  ) : (
+                    
+                      <button 
+                        key={link.href}
+                        onClick={ ()=> handleNavigation(link.href)}
+                        className="flex items-center gap-2 p-2 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg w-full">
+                        {link.icon}
+                        <span className="text-xs">{link.label}</span>
+                      </button>
+                    
+                  )
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    </nav>
+          )}
+        </div>
+      </nav>
+    </>
   );
 }

@@ -7,25 +7,15 @@ export default function LetterHomeSkeleton() {
           {/* Header Skeleton */}
           <div className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-gray-300 rounded-full" />
+              <div className="w-6 h-6 bg-gray-300 rounded-full" />
               <div className="ml-3">
-                <div className="h-4 w-24 bg-gray-300 rounded mb-2" />
-                <div className="h-3 w-16 bg-gray-300 rounded" />
+                <div className="h-3 w-48 bg-gray-300 rounded" />
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="h-7 w-7 bg-gray-300 rounded" />
-              <div className="h-7 w-7 bg-gray-300 rounded" />
-              <div className="h-7 w-7 bg-gray-300 rounded" />
             </div>
           </div>
           {/* Main Skeleton */}
           <main className="p-6">
-            <section className="mt-8">
-              <div className="flex justify-between items-center mb-4">
-                <div className="h-6 w-32 bg-gray-300 rounded" />
-                <div className="h-8 w-20 bg-gray-300 rounded" />
-              </div>
+            <section className="">
               <div>
                 {[...Array(5)].map((_, i) => (
                   <div
