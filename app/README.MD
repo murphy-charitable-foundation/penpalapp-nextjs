@@ -55,7 +55,7 @@ This module provides utilities for tracking user interactions, errors, and perfo
 It consists of two main files:
 
 - [`useAnalytics.js`](./useAnalytics.js) — React hooks and global trackers for page analytics, connectivity, and error logging.
-- [`analytics.js`](./utils/analytics.js) — Utility functions that send events to Firebase Analytics (and Sentry for error monitoring).
+- [`analytics.js`](./utils/analytics.js) — Utility functions that send events to Firebase Analytics (and Sentry for error monitoring — to be removed).
 
 ---
 
