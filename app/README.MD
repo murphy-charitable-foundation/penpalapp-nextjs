@@ -59,7 +59,7 @@ It consists of two main files:
 
 ---
 
-## 📊 Features
+## 📊 Analytics Events
 
 - Page view tracking (with time spent on page)
 - Dead click detection (clicks on non-interactive elements)
