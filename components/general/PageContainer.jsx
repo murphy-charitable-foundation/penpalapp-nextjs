@@ -20,7 +20,7 @@ export function PageContainer({
   color,
 }) {
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen ${bgColor}`}>
+    // <div className={`flex flex-col items-center justify-center min-h-screen ${bgColor}`}>
       <div 
         className={`
           w-full 
@@ -36,6 +36,6 @@ export function PageContainer({
       >
         {children}
       </div>
-    </div>
+    // </div>
   );
 } 

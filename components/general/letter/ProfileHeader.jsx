@@ -12,7 +12,6 @@ export default function ProfileHeader({ userName, country, profileImage, id }) {
               <ProfileImage photo_uri={profileImage} first_name={userName} />
               <div className="ml-3">
               <div className="font-semibold text-lg">{userName}</div>
-              <div className="text-sm text-gray-600">{country}</div>
             </div>
             </div>
           }
