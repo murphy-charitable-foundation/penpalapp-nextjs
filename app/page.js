@@ -1,7 +1,6 @@
 "use client";
 // page.js
 
-
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
@@ -12,9 +11,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
       <div className="w-full max-w-md space-y-8">
-        <div
-          className="text-left p-4 bg-white h-[80%]"
-        >
+        <div className="text-left p-4 bg-white h-[80%]">
           <Link href="/cover">
             <BackButton
               btnType="button"
@@ -34,16 +31,10 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-10 jsu mb-36 items-center">
             <Link href="/login">
-              <Button
-                color={"green"}
-                btnText={"Log in"}
-              />
+              <Button color={"green"} btnText={"Log in"} />
             </Link>
             <Link href="https://calendly.com/murphycharity/60min">
-              <Button
-                color={"blue"}
-                btnText={"Become a Pen Pal Volunteer"}
-              />
+              <Button color={"blue"} btnText={"Become a Pen Pal Volunteer"} />
             </Link>
           </div>
         </div>

@@ -11,7 +11,7 @@ import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
 import * as Sentry from "@sentry/nextjs";
-import Dialog from "../../components/general/Modal";
+import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 
 export default function UserDataImport() {
@@ -57,11 +57,11 @@ export default function UserDataImport() {
         newErrors.last_name = "Name is required";
       }
 
-    if (!userData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-      newErrors.email = "Invalid email format";
-    }
+      if (!userData.email.trim()) {
+        newErrors.email = "Email is required";
+      } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
+        newErrors.email = "Invalid email format";
+      }
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
