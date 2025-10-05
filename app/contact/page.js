@@ -8,10 +8,16 @@ import logo from "/public/murphylogo.png";
 import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
+<<<<<<< HEAD
 import Button from "../../components/general/Button";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 import { useEffect } from "react";
+=======
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
+>>>>>>> 08e89be (page bg, container, and header)
 
 export default function Contact() {
   const socialLinks = [
@@ -38,6 +44,7 @@ export default function Contact() {
   ];
   usePageAnalytics("/contact");
 
+<<<<<<< HEAD
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center justify-center">
       <div className="bg-blue-700 shadow rounded-lg p-6 w-full max-w-md">
@@ -61,6 +68,15 @@ export default function Contact() {
                 <div className="flex items-center">
                   {link.icon}
                   <span className="ml-3 capitalize">{link.name}</span>
+=======
+    return (
+        <PageBackground>
+            <PageContainer maxWidth="lg">
+            
+                <PageHeader title="Contact Us" />
+                <div>
+                    <div className="w-40 h-40 mx-auto rounded-full bg-cover bg-center bg-no-repeat" style={{backgroundImage: `url("/contact-asset-1.jpg")`}}></div>
+>>>>>>> 08e89be (page bg, container, and header)
                 </div>
               }
               onClick={() => window.open(link.url, "_blank")}

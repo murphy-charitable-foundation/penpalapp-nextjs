@@ -203,14 +203,26 @@ export default function Home() {
   // }, []);
 
   return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
+    
+      
         <>
           {isLoading ? (
             <LetterHomeSkeleton />
           ) : (
             <>
-              <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
+            <PageBackground className="py-0">
+            <div className="
+          w-full 
+          max-w-lg
+          undefined
+          
+           
+          bg-white 
+          rounded-lg 
+          shadow-md
+          
+        ">
+              {/* <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]"> */}
                 <BackButton />
                 <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
                   <ProfileHeader
@@ -234,7 +246,7 @@ export default function Home() {
 
                   <NavBar />
                 </div>
-              </div>
+              {/* </div> */}
               {userType === "admin" && (
                 <Button
                   btnText="Check For Inactive Chats"
@@ -250,10 +262,11 @@ export default function Home() {
                   }}
                 />
               )}
+              </div>
+              </PageBackground>
             </>
           )}
-        </>
-        {/* Add animation keyframes */}
+          {/* Add animation keyframes */}
         <style jsx global>{`
           @keyframes slideIn {
             from {
@@ -269,7 +282,8 @@ export default function Home() {
             animation: slideIn 0.3s ease-out forwards;
           }
         `}</style>
-      </PageContainer>
-    </PageBackground>
+        </>
+        
+      
   );
 }

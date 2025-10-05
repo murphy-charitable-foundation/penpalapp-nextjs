@@ -139,7 +139,7 @@ export default function CreateAccount() {
   };
 
   return (
-    <PageBackground className="flex flex-col items-center justify-center px-4">
+    <PageBackground>
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => {
@@ -149,11 +149,8 @@ export default function CreateAccount() {
         content={dialogMessage}
       ></Dialog>
       <PageContainer>
-        <div className="flex items-center justify-between mb-4">
-          <BackButton />
-          <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">
-            Create account
-          </h2>
+        <div>
+          <PageHeader title="Create account" />
         </div>
         <div className="flex justify-center mb-6">
           <Image

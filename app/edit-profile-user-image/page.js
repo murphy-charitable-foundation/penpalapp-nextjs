@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 import Button from "../../components/general/Button";
+import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { logButtonEvent, logError } from "../utils/analytics";
@@ -119,36 +120,29 @@ export default function EditProfileUserImage() {
       {isSaving ? (
         <LoadingSpinner></LoadingSpinner>
       ) : (
-        <div className="bg-gray-50 min-h-screen">
-          <div className="max-w-lg mx-auto p-6">
-            <div className="flex flex-col justify-between items-center">
-              <div className="block">
-                <BackButton />
-
-                <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
-                  Edit image
-                </h1>
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-6 mt-6">
-              <EditProfileImage
-                image={image}
-                newProfileImage={newProfileImage}
-                previewURL={previewURL}
-                handleDrop={handleDrop}
-                handleCrop={handleCrop}
-                cropperRef={cropperRef}
-              />
-              <i>Click to edit</i>
-              <Button
-                btnType="button"
-                btnText="Save New Profile Picture"
-                color="green"
-                onClick={saveImage}
-              />
-            </div>
-          </div>
-        </div>
+        <PageBackground>
+          <PageContainer maxWidth="lg">
+            <PageHeader title="Edit image" />
+                <div className="flex flex-col items-center gap-6 mt-6">
+                  <EditProfileImage
+                    image={image}
+                    newProfileImage={newProfileImage}
+                    previewURL={previewURL}
+                    handleDrop={handleDrop}
+                    handleCrop={handleCrop}
+                    cropperRef={cropperRef}
+                  />
+                  <i>Click to edit</i>
+                  <Button
+                    btnType="button"
+                    btnText="Save New Profile Picture"
+                    color="green"
+                    onClick={saveImage}
+                  />
+                </div>
+          </PageContainer>
+          <BottomNavBar />
+        </PageBackground>
       )}
     </div>
   );

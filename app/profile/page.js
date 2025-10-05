@@ -240,7 +240,8 @@ export default function EditProfile() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <PageBackground>
+    {/* <div className="bg-gray-50 min-h-screen"> */}
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => {
@@ -250,8 +251,8 @@ export default function EditProfile() {
         title={dialogTitle}
         content={dialogMessage}
       ></Dialog>
-      <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <PageHeader title="Profile" image={false} heading={false} />
+      <PageContainer maxWidth="lg">
+        <PageHeader title="Profile" image={false} />
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
           {/* Bio Modal */}
           <Dialog
@@ -537,6 +538,7 @@ export default function EditProfile() {
         </div>
       </PageContainer>
       <BottomNavBar />
-    </div>
+    {/* </div> */}
+    </PageBackground>
   );
 }
