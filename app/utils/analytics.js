@@ -78,13 +78,13 @@ const logError = (error, errorInfo) => {
 /**
  * Logs a dead click event to Firebase Analytics.
  *
- * A dead click is a click that didn't result in any action, such as clicking
- * a non-interactive element or clicking outside any interactive element.
+ * This function is used to track clicks that don't result in any action, such as clicking a non-interactive element or clicking outside any interactive element.
  *
- * @param {number} x The x-coordinate of the click.
- * @param {number} y The y-coordinate of the click.
- * @param {string} elementClicked The tag name of the element that was clicked.
+ * @param {string} elementClicked The tag name of the element that was clicked. If not provided, the value will be set to "unknown".
  * @param {string} pagePath The path of the page where the click occurred.
+ * @param {string} screenshotUrl The URL of the screenshot of the page where the click occurred. If not provided, the value will be set to null.
+ * @param {string} elementId The ID of the element that was clicked. If not provided, the value will be set to "unknown".
+ * @param {string} ariaLabel The ARIA label of the element that was clicked. If not provided, the value will be set to "unknown".
  * @returns {void}
  */
 const logDeadClick = (elementClicked, pagePath, screenshotUrl, elementId, ariaLabel) => {
