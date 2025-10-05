@@ -242,7 +242,7 @@ try {
 }
 ```
 
-### `logDeadClick(x, y, elementClicked, pagePath)`
+### `logDeadClick(elementClicked, pagePath, screenshotUrl, elementId, ariaLabel)`
 Logs a "dead click" on non-interactive elements.
 
 **Example:**
