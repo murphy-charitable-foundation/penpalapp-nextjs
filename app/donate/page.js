@@ -1,21 +1,19 @@
-"use client"
+"use client";
 
 // pages/donate.js
-import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 import BottomNavBar from '../../components/bottom-nav-bar';
 import Button from '../../components/general/Button';
 import { BackButton } from '../../components/general/BackButton';
 import { PageBackground } from '../../components/general/PageBackground';
 import { PageContainer } from '../../components/general/PageContainer';
 export default function Donate() {
-    const details = [
-        { label: "Account Name", value: "Murphy Charitable Foundation" },
-        { label: "Account Number", value: "01113657970966" },
-        { label: "Bank Name", value: "Dfcu Bank Uganda" },
-        { label: "Swift Code", value: "DFCUUGKA" },
-    ];
+  const details = [
+    { label: "Account Name", value: "Murphy Charitable Foundation" },
+    { label: "Account Number", value: "01113657970966" },
+    { label: "Bank Name", value: "Dfcu Bank Uganda" },
+    { label: "Swift Code", value: "DFCUUGKA" },
+  ];
 
     return (
         <PageBackground className="w-full flex flex-col items-center justify-center p-4 pb-20">

@@ -20,14 +20,17 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "target": "ES2017"
   },
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "components/general/Popover.jsx", "components/general/PageContainer.jsx", "components/general/BackButton.jsx"  ],
+    "**/*.tsx",
+    "components/general/PageContainer.jsx",
+    "components/general/BackButton.jsx"
+  ],
   "exclude": [
     "node_modules"
   ]

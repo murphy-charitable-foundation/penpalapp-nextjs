@@ -1,54 +1,52 @@
-"use client"
+"use client";
 
 // pages/contact.js
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
-import logo from '/public/murphylogo.png';
-import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe, FaPhoneAlt, FaFacebookF, FaWhatsapp } from 'react-icons/fa';
-import BottomNavBar from '../../components/bottom-nav-bar';
-import { BackButton } from '../../components/general/BackButton';
-import Button from '../../components/general/Button';
-import { PageBackground } from '../../components/general/PageBackground';
-import { PageContainer } from '../../components/general/PageContainer';
+import Image from "next/image";
+import Link from "next/link";
+import logo from "/public/murphylogo.png";
+import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe, FaPhoneAlt, FaFacebookF, FaWhatsapp } from "react-icons/fa";
+import BottomNavBar from "../../components/bottom-nav-bar";
+import { BackButton } from "../../components/general/BackButton";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
 
 export default function Contact() {
     const socialLinks = [
         {
-            name: 'WhatsApp/phone',
-            url:  'tel:+256771983900',
+            name: "WhatsApp/phone",
+            url:  "tel:+256771983900",
             icon: <FaWhatsapp className="h-6 w-6" />,
         },
         {
-            name: 'Email',
-            url:  'mailto:murphycharity.info@gmail.com',
+            name: "Email",
+            url:  "mailto:murphycharity.info@gmail.com",
             icon: <FaEnvelope className="h-6 w-6" />,
         },
         {
-            name: 'Linkedin',
-            url:  'https://www.linkedin.com/company/murphy-charitable-foundation-uganda',
+            name: "Linkedin",
+            url:  "https://www.linkedin.com/company/murphy-charitable-foundation-uganda",
             icon:  <FaLinkedinIn className="h-6 w-6" />, 
         },
         {
-            name: 'Facebook',
-            url:  'https://www.facebook.com/murphycharityuganda/',
+            name: "Facebook",
+            url:  "https://www.facebook.com/murphycharityuganda/",
             icon:  <FaFacebookF className="h-6 w-6" />, 
         },
         {
-            name: 'Instagram',
-            url : 'https://www.instagram.com/murphycharity_/',
+            name: "Instagram",
+            url : "https://www.instagram.com/murphycharity_/",
             icon: <FaInstagram className="h-6 w-6" />,  
         },
         {
-            name: 'Website',
-            url:  'https://murphycharity.org',
+            name: "Website",
+            url:  "https://murphycharity.org",
             icon: <FaGlobe className="h-6 w-6" />,
         }
     ];
 
     return (
         <PageBackground className="w-full flex flex-col items-center justify-center p-4 pb-20">
-            <PageContainer maxWidth="xxl" className='min-[512px]:min-w-[512px]'>
+            <PageContainer maxWidth="xxl" className="min-[512px]:min-w-[512px]">
                 <BackButton />
             
                 <h1 className="font-medium text-center text-black">Contact us</h1>

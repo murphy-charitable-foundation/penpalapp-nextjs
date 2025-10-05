@@ -724,7 +724,8 @@ export default function Page({ params }) {
             <button
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
-              title="Close conversation">
+              title="Close conversation"
+            >
               X
             </button>
           )}
@@ -737,7 +738,8 @@ export default function Page({ params }) {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}>
+              }`}
+            >
               <Image
                 src="/send-message-icon.png"
                 alt="Send message"
@@ -771,10 +773,12 @@ export default function Page({ params }) {
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                >
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}>
+                    onClick={() => selectMessage(messageId)}
+                  >
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
@@ -831,7 +835,8 @@ export default function Page({ params }) {
                               setReportContent(message.content);
                               setShowReportPopup(true);
                             }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                          >
                             <FaExclamationCircle className="mr-1" size={10} />
                             Report
                           </Button>
@@ -866,7 +871,8 @@ export default function Page({ params }) {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}>
+                onClick={handleReplyClick}
+              >
                 {hasDraftContent
                   ? "Continue draft..."
                   : "Reply to the letter..."}
@@ -905,12 +911,14 @@ export default function Page({ params }) {
               <div className="flex space-x-3">
                 <Button
                   onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors">
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
+                >
                   Stay on page
                 </Button>
                 <Button
                   onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors">
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
+                >
                   Close
                 </Button>
               </div>

@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
 // pages/about.js
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
-import BottomNavBar from '../../components/bottom-nav-bar';
-import { BackButton } from '../../components/general/BackButton';
-import { PageBackground } from '../../components/general/PageBackground';
-import { PageContainer } from '../../components/general/PageContainer';
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import BottomNavBar from "../../components/bottom-nav-bar";
+import { BackButton } from "../../components/general/BackButton";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
 export default function About() {
     return (
         <PageBackground className="flex flex-col items-center justify-center p-4 pb-20">
@@ -58,9 +58,3 @@ export default function About() {
         </PageBackground>
     );
 }
-
-
-
-
-
-
