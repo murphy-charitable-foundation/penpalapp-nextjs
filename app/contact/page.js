@@ -9,6 +9,7 @@ import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
 
 export default function Contact() {
     const socialLinks = [
@@ -45,11 +46,10 @@ export default function Contact() {
     ];
 
     return (
-        <PageBackground className="w-full flex flex-col items-center justify-center p-4 pb-20">
-            <PageContainer maxWidth="xxl" className="min-[512px]:min-w-[512px]">
-                <BackButton />
+        <PageBackground>
+            <PageContainer maxWidth="lg">
             
-                <h1 className="font-medium text-center text-black">Contact us</h1>
+                <PageHeader title="Contact Us" />
                 <div>
                     <div className="w-40 h-40 mx-auto rounded-full bg-cover bg-center bg-no-repeat" style={{backgroundImage: `url("/contact-asset-1.jpg")`}}></div>
                 </div>

@@ -8,19 +8,29 @@ import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
 export default function About() {
     return (
-        <PageBackground className="flex flex-col items-center justify-center p-4 pb-20">
+        <PageBackground>
             <PageContainer maxWidth="xxl">
-                <BackButton />
+                
                 <div className="!mt-0">
-                    <h1 className="flex-grow text-center font-medium text-gray-800">About Us</h1>
+                  <PageHeader title="About Us" />
                 </div>
                 <div className="bg-secondary text-white p-6 rounded-lg">
                     <blockquote className="font-medium italic text-center">
                         Together, we can create a brighter future for the children of Uganda.
                     </blockquote>
                 </div>
+                
+                <Image 
+                  src="/about/about-asset-1.jpg"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                  style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                  alt="Picture of kids"
+                />
                 <div className="px-6">
                     <p className="leading-relaxed mb-4">
                     At Murphy Charitable Foundation Uganda, we are committed to alleviating poverty and improving health and education in the communities we serve.

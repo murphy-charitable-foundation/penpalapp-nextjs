@@ -7,6 +7,7 @@ import Button from '../../components/general/Button';
 import { BackButton } from '../../components/general/BackButton';
 import { PageBackground } from '../../components/general/PageBackground';
 import { PageContainer } from '../../components/general/PageContainer';
+import { PageHeader } from '../../components/general/PageHeader';
 export default function Donate() {
   const details = [
     { label: "Account Name", value: "Murphy Charitable Foundation" },
@@ -18,9 +19,8 @@ export default function Donate() {
     return (
         <PageBackground className="w-full flex flex-col items-center justify-center p-4 pb-20">
             <PageContainer maxWidth="xxl">
-                <BackButton />
                 
-                <h1 className="text-center text-black font-medium">Sponsor a Child</h1>
+                <PageHeader title="Sponsor a child" />
                 <div>
                     <p className="mb-2">
                         Your generosity makes our work possible. Whether you contribute financially or as advocate for good, you make a real difference.
