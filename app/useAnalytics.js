@@ -61,6 +61,18 @@ const captureClickArea = async function(normalizedX, normalizedY, radius = 300) 
       centerX - radius, centerY - radius, radius * 2, radius * 2, // source area
       0, 0, radius * 2, radius * 2                                // destination
     );
+
+    // Draw a circle around the click point
+    const circleRadius = Math.min(radius / 5, 20);  // e.g. circle radius = 1/5 of crop radius, but max 20px
+    
+    croppedCtx.beginPath();
+    croppedCtx.arc(radius, radius, circleRadius, 0, 2 * Math.PI, false);
+    croppedCtx.fillStyle = "rgba(255, 255, 0, 0.8)";  // semi-opaque yellow
+    croppedCtx.fill();
+    croppedCtx.lineWidth = 2;
+    croppedCtx.strokeStyle = "black";
+    croppedCtx.stroke();
+
     return croppedCanvas.toDataURL("image/png");
   }
   return null;

@@ -99,7 +99,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
-  const { id } = React.use(params);
+  const { id } = params;
 
   const auth = getAuth();
   const router = useRouter();
