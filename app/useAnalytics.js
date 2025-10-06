@@ -39,7 +39,7 @@ async function uploadScreenshot(base64Image, fileName) {
   return await getDownloadURL(storageRef);
 }
 
-const captureClickArea = async function(normalizedX, normalizedY, radius = 100) {
+const captureClickArea = async function(normalizedX, normalizedY, radius = 300) {
   if (typeof window !== "undefined") {
     const html2canvas = (await import("html2canvas")).default;
     // Render the full document body
