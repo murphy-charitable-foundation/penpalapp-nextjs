@@ -10,7 +10,7 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
-import Dialog from "../../components/general/Modal";
+import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
