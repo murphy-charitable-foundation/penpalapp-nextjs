@@ -11,7 +11,7 @@ import Image from "next/image";
 import { sendPasswordResetEmail } from "firebase/auth";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import Modal from "../../components/general/Dialog";
+import Modal from "../../components/general/Modal";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";

@@ -9,9 +9,22 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { FaChevronDown } from "react-icons/fa"; // Font Awesome
 import { updateDoc } from "firebase/firestore";
+import {
+  User,
+  MapPin,
+  Home,
+  FileText,
+  Calendar,
+  GraduationCap,
+  Users,
+  Heart,
+  Briefcase,
+  Square,
+  Palette,
+} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import Modal from "../../components/general/Dialog";
+import Modal from "../../components/general/Modal";
 import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -19,7 +32,7 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import Popover from "../../components/general/Popover";
 import ProfileSection from "../../components/general/profile/ProfileSection";
-import Dialog from "../../components/general/Dialog";
+import Dialog from "../../components/general/Modal";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";

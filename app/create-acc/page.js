@@ -16,7 +16,7 @@ import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import Dialog from "../../components/general/Dialog";
+import Dialog from "../../components/general/Modal";
 import { onAuthStateChanged } from "firebase/auth";
 import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { logButtonEvent, logError } from "../utils/analytics";
