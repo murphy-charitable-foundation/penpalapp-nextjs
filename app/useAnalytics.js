@@ -69,9 +69,6 @@ const captureClickArea = async function(normalizedX, normalizedY, radius = 300) 
     croppedCtx.arc(radius, radius, circleRadius, 0, 2 * Math.PI, false);
     croppedCtx.fillStyle = "rgba(255, 255, 0, 0.8)";  // semi-opaque yellow
     croppedCtx.fill();
-    croppedCtx.lineWidth = 2;
-    croppedCtx.strokeStyle = "black";
-    croppedCtx.stroke();
 
     return croppedCanvas.toDataURL("image/png");
   }
