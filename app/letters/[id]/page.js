@@ -811,7 +811,7 @@ export default function Page({ params }) {
                         <div className="text-gray-500 text-sm">
                           {formatTime(message.created_at)}
                         </div>
-                        {!isSenderUser && (
+                        {isSelected && !isSenderUser && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
