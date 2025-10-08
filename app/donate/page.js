@@ -7,6 +7,9 @@ import { useState } from "react";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import Button from "../../components/general/Button";
 import { BackButton } from "../../components/general/BackButton";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
+
 export default function Donate() {
   const details = [
     { label: "Account Name", value: "Murphy Charitable Foundation" },
@@ -14,6 +17,13 @@ export default function Donate() {
     { label: "Bank Name", value: "Dfcu Bank Uganda" },
     { label: "Swift Code", value: "DFCUUGKA" },
   ];
+
+  /**
+   * Firebase Analytics Documentation Example:
+   * usePageAnalytics("/donate") from useAnalytics.js logs a dead clicks and load times for the /donate page
+   */
+
+  usePageAnalytics("/donate");
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -34,6 +44,9 @@ export default function Donate() {
 
             <div className="mt-6 text-center">
               <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
+            {/* logButtonEvent from analytics.js logs a button click event to Firebase 
+                Analytics when the "Make a Donation" button is clicked. The event is labeled 
+                as "make donation button clicked" and is associated with the "/donate" page. */ }
                 <Button
                   btnText="Make a Donation"
                   color="bg-blue-600"
@@ -41,6 +54,9 @@ export default function Donate() {
                   hoverColor="hover:bg-blue-700"
                   rounded="rounded-md"
                   font="font-semibold"
+                  onClick={() =>
+                    logButtonEvent("make donation button clicked", "/donate")
+                  }
                 />
               </Link>
             </div>

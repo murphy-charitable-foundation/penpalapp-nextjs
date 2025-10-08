@@ -2,7 +2,7 @@
 
 // pages/change-password.js
 import { db, auth } from "../firebaseConfig";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import logo from "/public/murphylogo.png";
 import Image from "next/image";
@@ -10,20 +10,25 @@ import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 //import { handleLogout } from '../profile/page';
 import PasswordChecklist from "react-password-checklist";
-import Modal from "../../components/general/Modal";
+import Dialog from "../../components/general/Dialog";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function ChangePassword() {
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [isValidPassword, setisValidPassword] = useState(false);
   const router = useRouter();
+
+  usePageAnalytics("/change-password");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +39,9 @@ export default function ChangePassword() {
       await updatePassword(user, password);
       setShowModal(true);
     } catch (error) {
+      logError(error, {
+        description: "Error changing password: ",
+      });
       if (error.code === "auth/requires-recent-login") {
         setError(
           "For security, please sign in again before changing your password"
@@ -44,10 +52,8 @@ export default function ChangePassword() {
       } else if (error.code === "auth/user-disabled") {
         setError("This account has been disabled. Please contact support.");
       } else {
-        Sentry.captureException(error);
         setError("An unexpected error occurred. Please try again later.");
       }
-      console.error(error);
     }
   };
 
@@ -121,6 +127,9 @@ export default function ChangePassword() {
                     lowercase: "Must contain at least 1 lowercase letter.",
                     match: "Passwords do not match.",
                   }}
+                  onChange={(isValid, failedRules) => {
+                    setisValidPassword(isValid);
+                  }}
                 />
               </div>
 
@@ -132,12 +141,19 @@ export default function ChangePassword() {
                     color="gray"
                     textColor="gray"
                     size="large"
+                    disabled={!isValidPassword}
+                    onClick={() =>
+                      logButtonEvent(
+                        "Change password button clicked",
+                        "/change-password"
+                      )
+                    }
                   />
                 </div>
               </div>
             </form>
           </div>
-          <Modal
+          <Dialog
             isOpen={showModal}
             onClose={() => {
               setShowModal(false);
