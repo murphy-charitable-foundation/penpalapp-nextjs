@@ -8,7 +8,12 @@ import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
+import { useEffect } from "react";
+
 export default function About() {
+  usePageAnalytics("/about");
   return (
     <PageBackground className="flex flex-col items-center justify-center p-4 pb-20">
       <PageContainer maxWidth="xxl">

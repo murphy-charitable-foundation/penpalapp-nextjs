@@ -5,12 +5,16 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "../../components/general/Button";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 
 export default function Welcome() {
   const [firstName, setFirstName] = useState("");
+  usePageAnalytics("/welcome");
 
   useEffect(() => {
     const value = localStorage.getItem("userFirstName");
+
     if (value) {
       setFirstName(value);
     }
@@ -28,7 +32,13 @@ export default function Welcome() {
         </div>
         <div className="text-center w-full pt-10 pb-20">
           <Link href="/edit-profile-user-image">
-            <Button btnText="Continue" color="white" />
+            <Button
+              btnText="Continue"
+              color="white"
+              onClick={() => {
+                logButtonEvent("/welcome", "Continue button clicked!");
+              }}
+            />
           </Link>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../app/firebaseConfig";
@@ -13,6 +13,8 @@ import TextArea from "../../components/general/TextArea";
 import * as Sentry from "@sentry/nextjs";
 import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,9 +29,12 @@ export default function UserDataImport() {
 
   const router = useRouter();
 
+  usePageAnalytics("/user-data-import");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    logButtonEvent("/user-data-import", "Import User Data button clicked!");
 
     try {
       const newErrors = {};
@@ -78,7 +83,9 @@ export default function UserDataImport() {
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
     } catch (error) {
-      Sentry.captureException("Error importing user data: " + error);
+      logError(error, {
+        description: "Error importing user data: ",
+      });
       setIsDialogOpen(true);
       setDialogTitle("Oops");
       setDialogMessage("Error importing user data.");
