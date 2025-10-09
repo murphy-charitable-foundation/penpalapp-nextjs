@@ -5,7 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../app/firebaseConfig";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import * as Sentry from "@sentry/nextjs";
-import Dialog from "../Modal";
+import Dialog from "../Dialog";
 import { PageContainer } from "../PageContainer";
 
 const ReportPopup = ({

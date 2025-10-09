@@ -1,5 +1,5 @@
 import { FaExclamationCircle } from "react-icons/fa";
-import Dialog from "../Modal";
+import Dialog from "../Dialog";
 
 const ConfirmReportPopup = ({ setShowPopup }) => {
   return (
