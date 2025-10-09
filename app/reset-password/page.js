@@ -15,19 +15,43 @@ import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [errors, setErrors] = useState({});
+
   const router = useRouter();
+  usePageAnalytics("/reset-password");
 
   function resetPassword() {
-    sendPasswordResetEmail(auth, email)
-      .then(() => {
-        setShowModal(true);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    const newErrors = {};
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Invalid email format";
+    }
+    try {
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        throw new Error("Form validation error(s)");
+      }
+      sendPasswordResetEmail(auth, email)
+        .then(() => {
+          setShowModal(true);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    } catch (error) {
+      Sentry.captureException("Error resetting password:", error);
+    }
+
+    logButtonEvent("Reset Password clicked!", "/reset-password");
   }
 
   function closeModal() {
@@ -62,6 +86,7 @@ export default function ResetPassword() {
               id="email"
               required
               label="Registered Email"
+              error={errors.email ? errors.email : ""}
             />
           </div>
 
