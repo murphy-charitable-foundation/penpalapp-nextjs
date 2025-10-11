@@ -71,87 +71,103 @@ export default function Login() {
     setError("");
   };
 
-  return (
-    <PageContainer maxWidth="md" padding="p-8">
-      {loading && <LoadingSpinner />}
-      <PageHeader title="Login" />
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              handleInputChange();
-            }}
-            placeholder="Ex. user@gmail.com"
-            id="email"
-            name="email"
-            label="Email"
-            error={error && error.toLowerCase().includes("email") ? error : ""}
-          />
-        </div>
+const NAV_H = 0; 
 
-        <div>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              handleInputChange();
-            }}
-            placeholder="******"
-            id="password"
-            name="password"
-            label="Password"
-            error={
-              error && error.toLowerCase().includes("password") ? error : ""
-            }
-          />
-        </div>
+return (
+  <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+    <div className="flex-1 overflow-hidden">
+      <div
+        className="mx-auto w-full max-w-[29rem] rounded-lg shadow-lg overflow-hidden"
+        style={{ height: `calc(100dvh - ${NAV_H}px)` }} 
+      >
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          bg="bg-white"
+          scroll={false}
+          viewportOffset={NAV_H}
+          className="p-0 h-full min-h-0 overflow-hidden"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <div className="h-full min-h-0 overflow-y-auto px-6 py-4">
+            {loading && <LoadingSpinner />}
 
-        <div className="text-sm text-center">
-          <Link
-            href="/reset-password"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Forgot your password?
-          </Link>
-        </div>
+            <PageHeader title="Login" />
 
-        <div className="flex justify-center space-x-4"></div>
+            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    handleInputChange();
+                  }}
+                  placeholder="Ex. user@gmail.com"
+                  id="email"
+                  name="email"
+                  label="Email"
+                  error={error && error.toLowerCase().includes("email") ? error : ""}
+                />
+              </div>
 
-        <div className="flex items-center justify-center">
-          <Input
-            id="remember-me"
-            name="remember-me"
-            type="checkbox"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label
-            htmlFor="remember-me"
-            className="ml-2 block text-sm text-gray-900"
-          >
-            Remember me
-          </label>
-        </div>
+              <div>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    handleInputChange();
+                  }}
+                  placeholder="******"
+                  id="password"
+                  name="password"
+                  label="Password"
+                  error={error && error.toLowerCase().includes("password") ? error : ""}
+                />
+              </div>
 
-        {error &&
-          !error.toLowerCase().includes("email") &&
-          !error.toLowerCase().includes("password") && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
+              <div className="text-sm text-center">
+                <Link href="/reset-password" className="font-medium text-blue-600 hover:text-blue-500">
+                  Forgot your password?
+                </Link>
+              </div>
 
-        <div className="flex justify-center">
-          <Button
-            btnType="submit"
-            btnText="Log in"
-            color="green"
-            textColor="text-white"
-            disabled={loading}
-          />
-        </div>
-      </form>
-    </PageContainer>
-  );
+              <div className="flex items-center justify-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+
+              {error &&
+                !error.toLowerCase().includes("email") &&
+                !error.toLowerCase().includes("password") && (
+                  <div className="text-red-500 text-sm text-center">{error}</div>
+                )}
+
+              <div className="flex justify-center">
+                <Button
+                  btnType="submit"
+                  btnText="Log in"
+                  color="green"
+                  textColor="text-white"
+                  disabled={loading}
+                />
+              </div>
+            </form>
+          </div>
+        </PageContainer>
+      </div>
+    </div>
+  </div>
+);
+
+
+
 }

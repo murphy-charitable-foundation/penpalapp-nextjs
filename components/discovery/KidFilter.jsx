@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig";
 import HobbySelect from "../general/HobbySelect";
 import Input from "../general/Input";
 import Button from "../general/Button";
 import Dropdown from "../general/Dropdown";
+
+const BRAND = {
+  primary: "#034792",   // page primary
+  ring: "#03479266",    // ~40% opacity
+  soft: "#E6EDF4",      // header light blue
+};
 
 export default function KidFilter({
   setHobbies,
@@ -27,14 +31,10 @@ export default function KidFilter({
     setGenderFilter(gender || "");
   }, [age, gender, hobbies]);
 
-
-
   const applyFilter = (e) => {
     e.preventDefault();
     filter(ageFilter, hobbyFilter, genderFilter);
   };
-
-
 
   const clearFilter = () => {
     setHobbies(null);
@@ -48,38 +48,46 @@ export default function KidFilter({
   const genderOptions = ["Male", "Female", "Non-binary", "Other"];
 
   return (
-    <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
-      <form className="flex flex-col gap-6">
+    <div className="bg-white w-full">
+      <form className="flex flex-col gap-5 px-2">
+        {/* Hobby */}
         <div>
-          <label
-            htmlFor="village"
-            className="text-sm font-medium text-gray-700 block mb-2"
-          >
+          <label className="text-sm font-medium text-gray-700 block mb-2">
             Hobby
           </label>
-          
-          <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} wantBorder={false}/>
-        </div>
-        <div>
-          <label
-            htmlFor="gender"
-            className="text-sm font-medium text-gray-700 block mb-2"
+          <div
+            className="rounded-xl border p-2"
+            style={{ borderColor: BRAND.soft }}
           >
+            <HobbySelect
+              setHobbies={setHobbiesFilter}
+              hobbies={hobbyFilter}
+              wantBorder={false}
+            />
+          </div>
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-2">
             Gender
           </label>
-          
-          <Dropdown
-          options={genderOptions}
-          valueChange={setGenderFilter}
-          currentValue={genderFilter}
-          text="Gender"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="age"
-            className="text-md font-medium text-gray-700 block mb-2 px-2"
+          <div
+            className="rounded-xl border px-2 py-2"
+            style={{ borderColor: BRAND.soft }}
           >
+            <Dropdown
+              options={genderOptions}
+              valueChange={setGenderFilter}
+              currentValue={genderFilter}
+              text="Gender"
+            />
+          </div>
+        </div>
+
+        {/* Age */}
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-2 px-1">
             Age
           </label>
           <Input
@@ -87,30 +95,39 @@ export default function KidFilter({
             id="age"
             value={ageFilter}
             onChange={(e) => setAgeFilter(e.target.value)}
-            placeholder="Input your age"
+            placeholder="e.g., 12"
             size="w-full"
             padding="p-2"
-            borderColor="border-black"
+            borderColor="border-gray-300"
             textColor="text-black"
           />
         </div>
-        <div className="flex justify-center mt-24">
-          <div className="flex flex-col gap-2">
+
+        {/* Actions – colors match page theme */}
+        <div className="flex justify-center mt-2">
+          <div className="flex flex-col gap-2 w-full">
+            {/* Apply */}
             <Button
               onClick={applyFilter}
               btnText="Apply Filters"
-              color="blue"
+              color="bg-[#034792]"
               textColor="text-white"
-              font="font-bold"
-              rounded="rounded-3xl"
-              size="w-full"
+              font="font-semibold"
+              rounded="rounded-full"
+              size="w-full px-4 py-2 text-sm"
+              className="hover:opacity-95 active:opacity-90"
             />
+            {/* Clear (outlined) */}
             <Button
               onClick={clearFilter}
               btnText="Clear Filters"
-              textColor="text-black"
-              font="text-lg"
-              size="w-full"
+              color="bg-white"
+              textColor="text-[#034792]"
+              rounded="rounded-full"
+              size="w-full px-4 py-2 text-sm"
+              className="ring-1"
+              // inline style for consistent ring color across builds
+              style={{ boxShadow: `0 0 0 1px ${BRAND.ring} inset` }}
             />
           </div>
         </div>
@@ -118,4 +135,3 @@ export default function KidFilter({
     </div>
   );
 }
-

@@ -1,257 +1,151 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  collection,
-  getDocs,
-  doc,
-  query,
-  startAfter,
-  limit,
-  where,
-} from "firebase/firestore";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
-import KidCard from "../../components/discovery/KidCard";
-import KidFilter from "../../components/discovery/KidFilter";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import * as Sentry from "@sentry/nextjs";
-import Header from "../../components/general/Header";
-import KidsList from "../../components/discovery/KidsList";
+
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
-import { PageBackground } from "../../components/general/PageBackground";
-import BottomNavBar from '../../components/bottom-nav-bar';
-const PAGE_SIZE = 10; // Number of kids per page
+import BottomNavBar from "../../components/bottom-nav-bar";
+import Header from "../../components/general/Header";
+import KidFilter from "../../components/discovery/KidFilter";
+import KidsList from "../../components/discovery/KidsList";
 
-export default function ChooseKid() {
+// ---- layout constants (match your other pages) ----
+const NAV_H = 88;
+const TOP_GAP_PX = 2;
+const FUDGE_PX = 14;
+
+const PAGE_SIZE = 10;
+
+// -------- 10 mock kids --------
+const MOCK_KIDS = [
+  { id: "k1",  first_name: "Joan",   last_name: "A.", gender: "Female", hobby: ["Football", "Basketball"], date_of_birth: "2012-05-14", photoURL: "/usericon.png", bio: "Loves reading and drawing." },
+  { id: "k2",  first_name: "Sam",    last_name: "K.", gender: "Male",   hobby: ["Drawing", "Reading"],     date_of_birth: "2011-11-02", photoURL: "/usericon.png", bio: "Enjoys science and music." },
+  { id: "k3",  first_name: "Amina",  last_name: "B.", gender: "Female", hobby: ["Music", "Football"],       date_of_birth: "2014-01-29", photoURL: "/usericon.png", bio: "Curious and kind." },
+  { id: "k4",  first_name: "Brian",  last_name: "T.", gender: "Male",   hobby: ["Chess", "Coding"],         date_of_birth: "2010-07-10", photoURL: "/usericon.png", bio: "Future engineer." },
+  { id: "k5",  first_name: "Grace",  last_name: "N.", gender: "Female", hobby: ["Reading", "Painting"],     date_of_birth: "2013-03-03", photoURL: "/usericon.png", bio: "Creative and patient." },
+  { id: "k6",  first_name: "David",  last_name: "M.", gender: "Male",   hobby: ["Basketball", "Running"],   date_of_birth: "2012-09-18", photoURL: "/usericon.png", bio: "Team player." },
+  { id: "k7",  first_name: "Lydia",  last_name: "C.", gender: "Female", hobby: ["Drawing", "Dance"],        date_of_birth: "2015-12-22", photoURL: "/usericon.png", bio: "Loves to dance." },
+  { id: "k8",  first_name: "Peter",  last_name: "R.", gender: "Male",   hobby: ["Football", "Music"],       date_of_birth: "2011-06-07", photoURL: "/usericon.png", bio: "Big football fan." },
+  { id: "k9",  first_name: "Nora",   last_name: "S.", gender: "Female", hobby: ["Reading", "Coding"],       date_of_birth: "2010-10-15", photoURL: "/usericon.png", bio: "Enjoys puzzles." },
+  { id: "k10", first_name: "Thomas", last_name: "J.", gender: "Male",   hobby: ["Running", "Chess"],        date_of_birth: "2013-04-25", photoURL: "/usericon.png", bio: "Fast runner." },
+];
+
+// age helper
+function calculateAge(dobLike) {
+  if (!dobLike) return 0;
+  const d = new Date(dobLike);
+  if (Number.isNaN(d.getTime())) return 0;
+  const now = new Date();
+  let y = now.getFullYear() - d.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < d.getMonth() ||
+    (now.getMonth() === d.getMonth() && now.getDate() < d.getDate());
+  if (beforeBirthday) y -= 1;
+  return y;
+}
+
+export default function DiscoveryPage() {
   const [activeFilter, setActiveFilter] = useState(false);
-  const [kids, setKids] = useState([]);
-  const [lastKidDoc, setLastKidDoc] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
-
   const [age, setAge] = useState(0);
   const [gender, setGender] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
-  useEffect(() => {
-    fetchKids();
+  const [kids, setKids] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const filtered = useMemo(() => {
+    let list = [...MOCK_KIDS];
+    if (age && Number(age) > 0) {
+      list = list.filter((k) => calculateAge(k.date_of_birth) === Number(age));
+    }
+    if (gender) {
+      list = list.filter(
+        (k) => (k.gender || "").toLowerCase() === gender.toLowerCase()
+      );
+    }
+    if (hobbies && hobbies.length) {
+      list = list.filter(
+        (k) => Array.isArray(k.hobby) && k.hobby.some((h) => hobbies.includes(h))
+      );
+    }
+    return list;
   }, [age, gender, hobbies]);
 
   useEffect(() => {
-    console.log("Age:", age);
-  }, [age]);
-
-  const fetchKids = async () => {
     setLoading(true);
-
-    try {
-      const uid = auth.currentUser.uid;
-      if (!uid) {
-        throw new Error("Login error. User may not be logged in properly.");
-      }
-      const userRef = doc(db, "users", uid);
-      const kidsCollectionRef = collection(db, "users");
-      let q = query(kidsCollectionRef);
-
-      // Apply filters
-      if (age > 0) {
-        const currentDate = new Date();
-        const minBirthDate = new Date(
-          currentDate.getFullYear() - age - 1,
-          currentDate.getMonth(),
-          currentDate.getDate()
-        );
-        const maxBirthDate = new Date(
-          currentDate.getFullYear() - age,
-          currentDate.getMonth(),
-          currentDate.getDate()
-        );
-
-        q = query(q, where("date_of_birth", ">=", minBirthDate));
-        q = query(q, where("date_of_birth", "<=", maxBirthDate));
-      }
-
-      if (gender && gender.length > 0) {
-        q = query(q, where("gender", "==", gender));
-      }
-
-      if (hobbies && hobbies.length > 0) {
-        q = query(q, where("hobby", "array-contains-any", hobbies));
-      }
-
-      q = query(q, where("user_type", "==", "child"));
-      q = query(q, where("connected_penpals_count", "<", 3));
-
-      if (lastKidDoc && !initialLoad) {
-        q = query(q, startAfter(lastKidDoc));
-      }
-      q = query(q, limit(PAGE_SIZE));
-      const snapshot = await getDocs(q);
-
-      const filteredSnapshot = snapshot.docs.filter((doc) => {
-        const data = doc.data();
-        return !data.connected_penpals?.some(
-          (penpalRef) => penpalRef.path === userRef.path
-        );
-      });
-
-      const kidsList = await Promise.all(
-        filteredSnapshot.map(async (doc) => {
-          //Still needed as photo_uri is not currently directly stored under profile
-          const data = doc.data();
-          try {
-            if (data.photo_uri) {
-              const storage = getStorage();
-              const photoRef = ref(storage, data.photo_uri);
-              const photoURL = await getDownloadURL(photoRef);
-              return {
-                id: doc.id,
-                ...data,
-                photoURL,
-              };
-            } else {
-              return {
-                id: doc.id,
-                ...data,
-                photoURL: "/usericon.png", // Default image if no photo_uri
-              };
-            }
-          } catch (error) {
-            if (error.code === "storage/object-not-found") {
-              return {
-                id: doc.id,
-                ...data,
-                photoURL: "/usericon.png", // Default image if photo not found
-              };
-            } else {
-              console.error("Error fetching photo URL:", error);
-              return {
-                id: doc.id,
-                ...data,
-                photoURL: "/usericon.png", // Default image if other errors
-              };
-            }
-          }
-        })
-      );
-
-      setKids((prevKids) => {
-        if (initialLoad) {
-          return kidsList;
-        } else {
-          return [...prevKids, ...kidsList];
-        }
-      });
-
-      if (snapshot.docs.length > 0) {
-        setLastKidDoc(snapshot.docs[snapshot.docs.length - 1]);
-      } else {
-        setLastKidDoc(null);
-      }
-    } catch (error) {
-      console.error("Error fetching kids:", error);
-      Sentry.captureException("Error fetching kids " + error);
-    } finally {
+    const end = 10 * page;
+    const slice = filtered.slice(0, end);
+    const t = setTimeout(() => {
+      setKids(slice);
       setLoading(false);
-      setInitialLoad(false);
-    }
+    }, 120);
+    return () => clearTimeout(t);
+  }, [filtered, page]);
+
+  const loadMoreKids = () => {
+    if (!loading && kids.length < filtered.length) setPage((p) => p + 1);
   };
 
-  function calculateAge(birthdayTimestamp) {
-    if (!birthdayTimestamp) return 0; // Handle null/undefined case
+  const lastKidDoc = kids.length < filtered.length ? { mockIndex: kids.length - 1 } : null;
 
-    let birthdayDate;
-    try {
-      // Handle different timestamp formats
-      if (birthdayTimestamp instanceof Date) {
-        birthdayDate = birthdayTimestamp;
-      } else if (typeof birthdayTimestamp.toDate === "function") {
-        // Firebase Timestamp
-        birthdayDate = birthdayTimestamp.toDate();
-      } else if (birthdayTimestamp._seconds) {
-        // Firestore Timestamp
-        birthdayDate = new Date(birthdayTimestamp._seconds * 1000);
-      } else {
-        // Try to parse as date string
-        birthdayDate = new Date(birthdayTimestamp);
-      }
-
-      if (isNaN(birthdayDate.getTime())) {
-        console.error("Invalid date:", birthdayTimestamp);
-        return 0;
-      }
-
-      const currentDate = new Date();
-      const diffInYears =
-        currentDate.getFullYear() - birthdayDate.getFullYear();
-
-      if (
-        currentDate.getMonth() < birthdayDate.getMonth() ||
-        (currentDate.getMonth() === birthdayDate.getMonth() &&
-          currentDate.getDate() < birthdayDate.getDate())
-      ) {
-        return diffInYears - 1;
-      }
-
-      return diffInYears;
-    } catch (error) {
-      console.error("Error calculating age:", error);
-      return 0;
-    }
-  }
-
-  const filter = async (age, hobby, gender) => {
-    setKids([]);
-    setLastKidDoc(null);
-    setInitialLoad(true);
-    setAge(age);
-    setHobbies(hobby);
-    setGender(gender);
+  const applyFilter = (ageVal, hobbyArr, genderVal) => {
+    setAge(Number(ageVal) || 0);
+    setHobbies(hobbyArr || []);
+    setGender(genderVal || "");
+    setPage(1);
     setActiveFilter(false);
   };
 
-  const loadMoreKids = () => {
-    if (loading) return;
-    fetchKids();
-  };
+ return (
+    <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {/* Back button OUTSIDE the card */}
+      <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
+        <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
+      </div>
 
-  return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-      <BackButton />
-      <div className="min-h-screen p-4 bg-white">
-        <div className="bg-white">
-          <Header
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-          />
-          {activeFilter ? (
-            <div className="h-auto">
-              <KidFilter
-                setAge={setAge}
-                setGender={setGender}
-                setHobbies={setHobbies}
-                hobbies={hobbies}
-                age={age}
-                gender={gender}
-                filter={filter}
-              />
+      <div className="flex-1 overflow-hidden" style={{ paddingTop: `${TOP_GAP_PX}px` }}>
+        <div
+          className="mx-auto w-full max-w-[29rem] rounded-lg shadow-lg overflow-hidden"
+          style={{ height: `calc(100dvh - ${NAV_H}px - ${TOP_GAP_PX}px + ${FUDGE_PX}px)` }}
+        >
+          <PageContainer width="compactXS" padding="none" bg="bg-white" scroll={false}
+            viewportOffset={NAV_H} className="p-0 h-full min-h-0 overflow-hidden"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <div className="h-full min-h-0 overflow-y-auto">
+              {/* Header FIRST, no outer padding */}
+              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+
+              {/* content area keeps its own padding */}
+              <div className="px-4 pt-3 pb-24">
+                {activeFilter ? (
+                  <KidFilter
+                    setAge={setAge}
+                    setGender={setGender}
+                    setHobbies={setHobbies}
+                    hobbies={hobbies}
+                    age={age}
+                    gender={gender}
+                    filter={applyFilter}
+                  />
+                ) : (
+                  <KidsList
+                    kids={kids}
+                    calculateAge={calculateAge}
+                    lastKidDoc={lastKidDoc}
+                    loadMoreKids={loadMoreKids}
+                    loading={loading}
+                  />
+                )}
+              </div>
             </div>
-          ) : (
-            <KidsList
-              kids={kids}
-              calculateAge={calculateAge}
-              lastKidDoc={lastKidDoc}
-              loadMoreKids={loadMoreKids}
-              loading={loading}
-            />
-          )}
+          </PageContainer>
         </div>
       </div>
-    </PageContainer>
-    <BottomNavBar />
-    </PageBackground>
+
+      <BottomNavBar />
+    </div>
   );
 }

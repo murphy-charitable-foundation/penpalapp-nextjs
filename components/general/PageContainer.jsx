@@ -1,41 +1,57 @@
-const maxWidthClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  xxl: 'max-w-2xl',
+"use client";
+
+const WIDTHS = {
+  mobile: "max-w-md",      // 28rem
+  compactXS: "max-w-[29rem]",
+  compact: "max-w-lg",     // 32rem
+  narrow: "max-w-xl",
+  default: "max-w-2xl",
+  wide: "max-w-4xl",
+  full: "max-w-none",
 };
 
-const colors = {
-    gray: 'bg-gray-300 hover: bg-gray-400 text-white',
-    transparent: 'bg-transparent hover: bg-gray-400 text-black',
-    white: 'bg-gray-100'
-  };
+const PADS = {
+  none: "p-0",
+  sm: "p-4",
+  md: "p-6",
+  lg: "p-8",
+};
 
 export function PageContainer({
   children,
-  className = '',
-  maxWidth = 'md',
-  bgColor = "bg-gray-100",
-  color,
+  width = "compact",
+  padding = "lg",
+  bg = "bg-gray-100",
+  center = true,
+  scroll = true,
+  fill = true,
+  className = "",
+  viewportOffset = 12, 
 }) {
   return (
-    // <div className={`flex flex-col items-center justify-center min-h-screen ${bgColor}`}>
-      <div 
-        className={`
-          w-full 
-          ${maxWidthClasses[maxWidth]}
-          ${colors[color]}
-          p-8
-          space-y-8 
-          bg-white 
-          rounded-lg 
-          shadow-md
-          ${className}
-        `}
+    <div className={`min-h-screen ${bg}`}>
+      <div
+        className={[
+          "mx-auto w-full",
+          WIDTHS[width] || WIDTHS.compact,
+          center ? "min-h-screen flex items-center justify-center" : "",
+        ].join(" ")}
       >
-        {children}
+        <div
+          className={[
+            "w-full bg-white rounded-2xl shadow-card",
+            PADS[padding] || PADS.lg,
+            fill ? "max-h-[calc(100vh)]" : "",
+            scroll ? "overflow-y-auto" : "overflow-hidden",
+            className,
+          ].join(" ")}
+          style={fill ? { maxHeight: `calc(100vh - ${viewportOffset}px)` } : undefined}
+        >
+          {children}
+        </div>
       </div>
-    // </div>
+    </div>
   );
-} 
+}
+
+export default PageContainer;

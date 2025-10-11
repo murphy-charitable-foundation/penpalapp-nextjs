@@ -1,70 +1,133 @@
 "use client";
 
-// pages/about.js
 import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
 import BottomNavBar from "../../components/bottom-nav-bar";
-import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
-export default function About() {
-    return (
-        <PageBackground>
-            <PageContainer maxWidth="xxl">
-                
-                <div className="!mt-0">
-                  <PageHeader title="About Us" />
-                </div>
-                <div className="bg-secondary text-white p-6 rounded-lg">
-                    <blockquote className="font-medium italic text-center">
-                        Together, we can create a brighter future for the children of Uganda.
-                    </blockquote>
-                </div>
-                
-                <Image 
-                  src="/about/about-asset-1.jpg"
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
-                  alt="Picture of kids"
-                />
-                <div className="px-6">
-                    <p className="leading-relaxed mb-4">
-                    At Murphy Charitable Foundation Uganda, we are committed to alleviating poverty and improving health and education in the communities we serve.
-                    </p>
-                    <p className="leading-relaxed mb-4">
-                    Our journey began with a profound understanding of the challenges faced by individuals living in extreme poverty.
-                    </p>
-                    <p className="leading-relaxed mb-4">
-                    Inspired by their resilience and motivated to make a difference, we dedicate ourselves to addressing the needs and rights of vulnerable populations in rural areas by tackling critical social and economic issues.
-                    </p>
-                    <p className="leading-relaxed">
-                    We focus on implementing sustainable, high-impact projects that enhance education, healthcare, empowerment, and overall community development.
-                    </p>
-                </div>
-                
-                <div className='flex wrap flex-col md:flex-row'>
-                    <div className="h-[290px] bg-cover bg-top bg-no-repeat rounded-lg md:w-1/2 md:h-auto" 
-                        style={{backgroundImage: `url("/about/about-asset-2.jpg")`}}></div>
 
-                    <div className="p-6 md:w-1/2">
-                        <h3 className='text-secondary font-bold text-md mb-2'>Our Mission</h3>
-                        <p className="leading-relaxed mb-8">
-                            To Support vulnerable populations by enhancing their access to education, healthcare, and empowerment programs that enable lasting chan
-                        </p>
-                        <h3 className='text-secondary font-bold text-md mb-2'>Our Vision</h3>
-                        <p className="leading-relaxed">
-                        To build thriving communities where every individual has equitable access to essential resources, fostering both personal growth and collective prosperity
-                        </p>
-                    </div>
+const NAV_H = 88;
+
+export default function About() {
+  return (
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {/* small top padding to show the card’s top rounding */}
+      <div className="flex-1 overflow-hidden">
+        {/* wrapper for the white card*/}
+        <div
+          className="mx-auto w-full max-w-[640px] shadow-lg"
+          style={{
+            height: `calc(103svh - ${NAV_H}px )`,
+          }}
+        >
+          {/* NEW: this layer owns the rounding & clipping so the bottom stays round */}
+          <div className="h-full rounded-2xl overflow-hidden bg-white">
+            <PageContainer
+              width="compactXS"
+              padding="none"
+              bg="bg-white"
+              center
+              scroll
+              viewportOffset={NAV_H}
+              className="p-0 h-full min-h-0 overflow-y-auto overscroll-contain"
+              style={{
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              {/* Header */}
+              <div className="px-10 pt-2">
+                <PageHeader title="About Us" image={false} />
+              </div>
+
+              {/* Blue banner */}
+              <div className="px-10">
+                <div className="bg-secondary text-white rounded-xl text-center py-4 mt-3 mb-6">
+                  <blockquote className="font-medium italic">
+                    Together, we can create a brighter future for the children of Uganda.
+                  </blockquote>
                 </div>
-                
-                <div className="h-[290px] bg-cover bg-top bg-no-repeat rounded-lg" style={{backgroundImage: `url("/about/about-asset-3.webp")`}}></div>
+              </div>
+
+              {/* Content */}
+              <div className="px-10 pb-2">
+                {/* image 1 */}
+                <div
+                  className="relative w-full rounded-xl overflow-hidden ring-1 ring-black/5 shadow-sm mb-6"
+                  style={{ aspectRatio: "4 / 3" }}
+                >
+                  <Image
+                    src="/about/about-asset-1.jpg"
+                    alt="Picture of kids"
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                </div>
+
+                <p className="leading-relaxed mb-4 text-gray-700">
+                  At Murphy Charitable Foundation Uganda, we are committed to alleviating poverty and improving health and education in the communities we serve.
+                </p>
+                <p className="leading-relaxed mb-4 text-gray-700">
+                  Our journey began with a profound understanding of the challenges faced by individuals living in extreme poverty.
+                </p>
+                <p className="leading-relaxed mb-4 text-gray-700">
+                  Inspired by their resilience and motivated to make a difference, we dedicate ourselves to addressing the needs and rights of vulnerable populations in rural areas by tackling critical social and economic issues.
+                </p>
+                <p className="leading-relaxed text-gray-700">
+                  We focus on implementing sustainable, high-impact projects that enhance education, healthcare, empowerment, and overall community development.
+                </p>
+
+                {/* two-column section */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+                  {/* image 2 */}
+                  <div className="relative rounded-xl overflow-hidden ring-1 ring-black/5 shadow-sm min-h-[240px] md:min-h-[520px] h-full">
+                    <Image
+                      src="/about/about-asset-2.jpg"
+                      alt="Community work"
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 768px) 40vw, 100vw"
+                    />
+                  </div>
+
+                  {/* text beside image */}
+                  <div className="flex flex-col justify-center">
+                    <h3 className="text-secondary font-bold text-md mb-2">Our Mission</h3>
+                    <p className="leading-relaxed mb-6 text-gray-700">
+                      To support vulnerable populations by enhancing their access to education, healthcare, and empowerment programs that enable lasting change.
+                    </p>
+                    <h3 className="text-secondary font-bold text-md mb-2">Our Vision</h3>
+                    <p className="leading-relaxed text-gray-700">
+                      To build thriving communities where every individual has equitable access to essential resources,
+                      fostering both personal growth and collective prosperity.
+                    </p>
+                  </div>
+                </div>
+
+                {/* image 3 */}
+                <div
+                  className="relative w-full rounded-xl overflow-hidden ring-1 ring-black/5 shadow-sm mt-6"
+                  style={{ aspectRatio: "4 / 3" }}
+                >
+                  <Image
+                    src="/about/about-asset-3.webp"
+                    alt="Team photo"
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                </div>
+
+                {/* spacer so the last line clears the tiny outside gap above the nav */}
+                <div aria-hidden="true" style={{ height: `calc(${NAV_H}px + 8px)` }} />
+              </div>
             </PageContainer>
-            <BottomNavBar />
-        </PageBackground>
-    );
+          </div>
+          {/* /rounded clip layer */}
+        </div>
+      </div>
+
+      <BottomNavBar />
+    </PageBackground>
+  );
 }
