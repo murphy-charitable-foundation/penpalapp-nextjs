@@ -59,7 +59,6 @@ export default function Admin() {
           router.push("/login");
           return;
         }
-        console.log("user", user);
         setUserId(user.uid);
         const userRef= doc(collection(db, "users"), user.uid);
         const userSnapshot = getDoc(userRef);
@@ -84,7 +83,6 @@ export default function Admin() {
 
     useEffect(() => {
       const letterGrab = async() => {
-        console.log("Start Date", startDate);
         setDocuments([]);
         try {
           // Fetch initial batch of letters

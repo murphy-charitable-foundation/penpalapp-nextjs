@@ -46,7 +46,7 @@ export default function AdmminFilter({
   };
 
 
-  const genderOptions = ["Draft", "sent", "Pending", "Rejected"];
+  const statusOptions = ["Draft", "sent", "Pending", "Rejected"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -80,7 +80,7 @@ export default function AdmminFilter({
           </label>
           
           <Dropdown
-          options={genderOptions}
+          options={statusOptions}
           valueChange={setStatusFilter}
           currentValue={statusFilter}
           text="Status"
