@@ -1,0 +1,111 @@
+name: CI + Deploy (prebuilt)
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
+
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG:   ${{ secrets.VERCEL_ORG_ID }}
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout repo
+      - uses: actions/checkout@v4
+
+      # Setup Node.js + cache
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      # Build project
+      - name: Build app
+        run: npm run build
+
+      # Install Vercel CLI
+      - name: Setup Vercel CLI
+        run: npm i -g vercel@latest
+
+      # Define target (preview or production)
+      - name: Define target
+        id: target
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+          else
+            echo "env=preview" >> $GITHUB_OUTPUT
+          fi
+
+      # Pull project config and environment vars
+      - name: Pull Vercel settings
+        run: |
+          vercel pull --yes \
+            --environment="${{ steps.target.outputs.env }}" \
+            --token="${{ env.VERCEL_TOKEN }}" \
+            --scope="${{ env.VERCEL_ORG }}"
+
+      # Prebuild app (creates .vercel/output)
+      - name: Prebuild Vercel output
+        run: |
+          vercel build \
+            --token="${{ env.VERCEL_TOKEN }}" \
+            --scope="${{ env.VERCEL_ORG }}"
+
+      # Deploy prebuilt build to Vercel
+      - name: Deploy prebuilt build
+        id: deploy
+        run: |
+          set -e
+          if [ "${{ steps.target.outputs.env }}" = "production" ]; then
+            URL=$(vercel deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}" --scope "${{ env.VERCEL_ORG }}")
+          else
+            URL=$(vercel deploy --prebuilt --yes --token "${{ env.VERCEL_TOKEN }}" --scope "${{ env.VERCEL_ORG }}")
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "✅ Deployed to $URL"
+
+      # Comment on PRs (preview link only)
+      - name: Comment Preview URL on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `✅ **Preview ready:** ${{ steps.deploy.outputs.url }}`
+            })
+
+      # Create GitHub Deployment card for main branch
+      - name: Create Deployment Card
+        if: ${{ github.ref_name == 'main' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: dep } = await github.rest.repos.createDeployment({
+              ...context.repo,
+              ref: context.sha,
+              environment: 'production',
+              auto_merge: false,
+              required_contexts: []
+            });
+            await github.rest.repos.createDeploymentStatus({
+              ...context.repo,
+              deployment_id: dep.id,
+              state: 'success',
+              environment: 'production'
+            });
