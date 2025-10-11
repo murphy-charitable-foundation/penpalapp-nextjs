@@ -1,11 +1,7 @@
 "use client";
 
-// pages/about.js
 import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
 import BottomNavBar from "../../components/bottom-nav-bar";
-import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { logLoadingTime } from "../utils/analytics";

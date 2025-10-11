@@ -25,7 +25,6 @@ export function PageBackground({
             flex-col 
             items-center 
             justify-center 
-            p-4 pb-20
           `}
         >
             {children}

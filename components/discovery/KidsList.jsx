@@ -1,10 +1,17 @@
+"use client";
+
 import KidCard from "./KidCard";
 import Button from "../general/Button";
+
+const BRAND = {
+  primary: "#034792",
+};
 
 export default function KidsList({ kids, calculateAge, lastKidDoc, loadMoreKids, loading }) {
   return (
     <div>
-      <div className="px-4 py-2 flex flex-row flex-wrap gap-5 justify-center relative">
+      {/* tighter grid inside the narrow card */}
+      <div className="px-2 py-2 grid grid-cols-1 gap-4 justify-items-center">
         {kids.map((kid) => (
           <KidCard
             kid={kid}
@@ -14,16 +21,17 @@ export default function KidsList({ kids, calculateAge, lastKidDoc, loadMoreKids,
           />
         ))}
       </div>
+
       {lastKidDoc && (
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-2">
           <Button
             onClick={loadMoreKids}
             btnText={loading ? "Loading..." : "Load More"}
-            color="bg-blue-500"
+            color="bg-[#034792]"            // brand blue
             textColor="text-white"
-            font="font-bold"
+            font="font-semibold"
             rounded="rounded-full"
-            size="w-full px-4 py-2 rounded-full text-center text-xs"
+            size="px-5 py-2 text-sm"
           />
         </div>
       )}

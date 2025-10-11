@@ -8,7 +8,7 @@ import logo from "../../public/murphylogo.png";
 export function PageHeader({
   title,
   titleColor = "text-secondary",
-  image = false,
+  image = true,
   heading = true,
 }) {
   return (

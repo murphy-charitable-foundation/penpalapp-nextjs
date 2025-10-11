@@ -184,60 +184,21 @@ export default function ChooseKid() {
       });
     } finally {
       setLoading(false);
-      setInitialLoad(false);
-    }
+    }, 120);
+    return () => clearTimeout(t);
+  }, [filtered, page]);
+
+  const loadMoreKids = () => {
+    if (!loading && kids.length < filtered.length) setPage((p) => p + 1);
   };
 
-  function calculateAge(birthdayTimestamp) {
-    if (!birthdayTimestamp) return 0; // Handle null/undefined case
+  const lastKidDoc = kids.length < filtered.length ? { mockIndex: kids.length - 1 } : null;
 
-    let birthdayDate;
-    try {
-      // Handle different timestamp formats
-      if (birthdayTimestamp instanceof Date) {
-        birthdayDate = birthdayTimestamp;
-      } else if (typeof birthdayTimestamp.toDate === "function") {
-        // Firebase Timestamp
-        birthdayDate = birthdayTimestamp.toDate();
-      } else if (birthdayTimestamp._seconds) {
-        // Firestore Timestamp
-        birthdayDate = new Date(birthdayTimestamp._seconds * 1000);
-      } else {
-        // Try to parse as date string
-        birthdayDate = new Date(birthdayTimestamp);
-      }
-
-      if (isNaN(birthdayDate.getTime())) {
-        console.error("Invalid date:", birthdayTimestamp);
-        return 0;
-      }
-
-      const currentDate = new Date();
-      const diffInYears =
-        currentDate.getFullYear() - birthdayDate.getFullYear();
-
-      if (
-        currentDate.getMonth() < birthdayDate.getMonth() ||
-        (currentDate.getMonth() === birthdayDate.getMonth() &&
-          currentDate.getDate() < birthdayDate.getDate())
-      ) {
-        return diffInYears - 1;
-      }
-
-      return diffInYears;
-    } catch (error) {
-      console.error("Error calculating age:", error);
-      return 0;
-    }
-  }
-
-  const filter = async (age, hobby, gender) => {
-    setKids([]);
-    setLastKidDoc(null);
-    setInitialLoad(true);
-    setAge(age);
-    setHobbies(hobby);
-    setGender(gender);
+  const applyFilter = (ageVal, hobbyArr, genderVal) => {
+    setAge(Number(ageVal) || 0);
+    setHobbies(hobbyArr || []);
+    setGender(genderVal || "");
+    setPage(1);
     setActiveFilter(false);
   };
 
