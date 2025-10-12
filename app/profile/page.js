@@ -9,6 +9,19 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
+import {
+  User,
+  MapPin,
+  Home,
+  FileText,
+  Calendar,
+  GraduationCap,
+  Users,
+  Heart,
+  Briefcase,
+  Square,
+  Palette,
+} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import List from "../../components/general/List";
@@ -20,6 +33,8 @@ import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { getUserDoc } from "../utils/letterboxFunctions";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function EditProfile() {
   // State initializations
@@ -55,6 +70,7 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  usePageAnalytics("/profile");
 
   function startInactivityWatcher(timeoutMinutes = 30) {
     if (typeof window === "undefined") return; // server-side safety
@@ -164,7 +180,9 @@ export default function EditProfile() {
         setIsDialogOpen(true);
         setDialogTitle("Oops!");
         setDialogMessage("Error saving profile.");
-        Sentry.captureException("Error saving profile " + error);
+        logError(error, {
+          description: "Error saving profile ",
+        });
       }
     }
   };
@@ -534,6 +552,7 @@ export default function EditProfile() {
                 onClick={(e) => {
                   e.preventDefault();
                   saveProfileData();
+                  logButtonEvent("save profile button clicked", "/profile");
                 }}
               >
                 <Button

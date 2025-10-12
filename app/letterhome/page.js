@@ -9,7 +9,6 @@ import { doc, getDoc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
-import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
@@ -29,6 +28,8 @@ import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -41,6 +42,20 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+
+  usePageAnalytics("/letterhome");
+
+  const getUserData = async (uid) => {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      setError("User data not found.");
+      throw new Error("No user document found.");
+    }
+  };
 
   function startInactivityWatcher(timeoutMinutes = 30) {
     if (typeof window === "undefined") return; // server-side safety
@@ -71,7 +86,6 @@ export default function Home() {
       activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
     };
   }
-
 
   const getConversations = async (uid) => {
     try {
@@ -114,8 +128,9 @@ export default function Home() {
         throw new Error("No letterboxes found.");
       }
     } catch (err) {
-      console.error("Error fetching data:", err);
-      Sentry.captureException(err);
+      logError(error, {
+        description: "Error fetching data:",
+      });
       setError("Failed to load data.");
       throw err;
     }
@@ -159,6 +174,7 @@ export default function Home() {
         }
       }
     });
+
     return () => unsubscribe();
   }, [router]);
 
@@ -204,7 +220,13 @@ export default function Home() {
                   color="bg-black"
                   textColor="text-white"
                   rounded="rounded-md"
-                  onClick={iterateLetterBoxes}
+                  onClick={() => {
+                    logButtonEvent(
+                      "check for inactive chats button clicked",
+                      "/letterhome"
+                    );
+                    iterateLetterBoxes();
+                  }}
                 />
               )}
             </>

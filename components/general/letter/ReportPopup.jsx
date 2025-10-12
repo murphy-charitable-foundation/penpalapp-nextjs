@@ -6,7 +6,6 @@ import {useEffect, useState} from "react"
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../app/firebaseConfig"; 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import * as Sentry from "@sentry/nextjs";
 import { PageContainer } from "../PageContainer";
 
 
@@ -40,7 +39,9 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
       }
      
     } catch (error) {
-      Sentry.captureException("Could not send request to SendGrid" + error);
+      logError(error, {
+        description: "Could not send request to SendGrid",
+      });
     }
   }
 

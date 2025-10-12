@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
-import * as Sentry from "@sentry/nextjs";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { logError } from "../../utils/analytics";
 
 export async function POST(request) {
   try {
@@ -83,7 +83,9 @@ export async function POST(request) {
     
 
   } catch (error) {
-    Sentry.captureException(error);
+    logError(error, {
+      description: "Failed to send email.",
+    });
 
     return NextResponse.json(
         { message: 'Failed to send email.', error: error.message },

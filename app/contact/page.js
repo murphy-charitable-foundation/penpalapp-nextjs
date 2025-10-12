@@ -9,6 +9,9 @@ import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 import Button from "../../components/general/Button";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { useEffect } from "react";
 
 export default function Contact() {
   const socialLinks = [
@@ -33,6 +36,7 @@ export default function Contact() {
       icon: <FaGlobe className="h-6 w-6" />,
     },
   ];
+  usePageAnalytics("/contact");
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center justify-center">
