@@ -10,6 +10,7 @@ permissions:
   contents: read
   deployments: write
   pull-requests: write
+  issues: write
 
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -68,19 +69,22 @@ jobs:
       # Deploy prebuilt build to Vercel
       - name: Deploy prebuilt build
         id: deploy
+        env:
+          VC_TOKEN: ${{ env.VERCEL_TOKEN }}
+          VC_TEAM:  ${{ env.VERCEL_ORG }}
+          ENV:      ${{ steps.target.outputs.env }}
         run: |
           set -e
-          if [ "${{ steps.target.outputs.env }}" = "production" ]; then
-            URL=$(vercel deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}" --scope "${{ env.VERCEL_ORG }}")
-          else
-            URL=$(vercel deploy --prebuilt --yes --token "${{ env.VERCEL_TOKEN }}" --scope "${{ env.VERCEL_ORG }}")
-          fi
+          ARGS=(deploy --prebuilt --yes --token "$VC_TOKEN" --scope "$VC_TEAM")
+          [ "$ENV" = "production" ] && ARGS+=(--prod) || true
+          OUT="$(vercel "${ARGS[@]}")"
+          # take only public *.vercel.app URL (avoid private Inspect link)
+          URL="$(printf "%s\n" "$OUT" | grep -Eo 'https?://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1 || true)"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "✅ Deployed to $URL"
+          echo "✅ Deployed to: ${URL:-(no public URL)}"
 
-      # Comment on PRs (preview link only)
       - name: Comment Preview URL on PR
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && steps.deploy.outputs.url != '' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -90,8 +94,7 @@ jobs:
               body: `✅ **Preview ready:** ${{ steps.deploy.outputs.url }}`
             })
 
-      # Create GitHub Deployment card for main branch
-      - name: Create Deployment Card
+      - name: Create Deployment Card (main only)
         if: ${{ github.ref_name == 'main' }}
         uses: actions/github-script@v7
         with:
@@ -108,4 +111,5 @@ jobs:
               deployment_id: dep.id,
               state: 'success',
               environment: 'production'
+              // no environment_url on purpose (per Rez's requirement)
             });
