@@ -45,7 +45,7 @@ export default function ChooseKid() {
     setLoading(true);
 
     try {
-      const uid = auth.currentUser.uid;
+      const uid = JSON.parse(localStorage.getItem("child"))?.id || auth.currentUser?.uid;;
       if (!uid) {
         throw new Error("Login error. User may not be logged in properly.");
       }

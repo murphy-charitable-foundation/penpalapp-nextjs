@@ -6,17 +6,20 @@ import * as Sentry from "@sentry/nextjs";
 
 const DELAY = 1000;
 
-const getUserDoc = async () => {
+export const getUserDoc = async () => {
   const storedDoc = JSON.parse(localStorage.getItem("child"));
-  let id = "";
   if (storedDoc) {
-    id = storedDoc.id
+    console.log("storedDoc id", storedDoc.id);
+    const userDocRef = doc(collection(db, "users"), storedDoc.id);
+    const userDocSnapshot = await getDoc(userDocRef);
+    return { userDocRef, userDocSnapshot };
   } else { 
-    id = auth.currentUser.uid
+    const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+    const userDocSnapshot = await getDoc(userDocRef);
+
+    return {userDocRef, userDocSnapshot};
   }
-  const userDocRef = doc(collection(db, "users"), id);
-  const userDocSnapshot = await getDoc(userDocRef);
-  return { userDocRef, userDocSnapshot };
+
 };
 
 export const getUserPfp = async(uid) => {
@@ -33,7 +36,8 @@ export const fetchLetterboxes = async () => {
     retryFetch();
     return;
   }
-  const { userDocRef, userDocSnapshot } = await getUserDoc();
+  const { userDocRef, userDocSnapshot} = await getUserDoc();
+  console.log("inside of fetchletterbox");
   if (!userDocSnapshot.exists()) return;
 
   const letterboxQuery = query(
@@ -54,7 +58,6 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     return;
   }
   const { userDocSnapshot } = await getUserDoc();
-
   if (!userDocSnapshot.exists()) return;
 
   const letterboxRef = doc(collection(db, "letterbox"), id);

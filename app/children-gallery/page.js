@@ -3,7 +3,7 @@
 import {useEffect, useState} from "react";
 import {auth, db} from "../firebaseConfig";
 import {onAuthStateChanged} from "firebase/auth";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import ProfileImage from "../../components/general/ProfileImage";
 import {fetchLetterboxes, fetchLetterCountForLetterbox, fetchRecipients} from "../utils/letterboxFunctions";
@@ -12,7 +12,7 @@ import Button from "../../components/general/Button";
 import bcrypt from "bcryptjs";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer }  from "../../components/general/PageContainer";
-import Input from  "../../components/general/Input";
+
 
 export default function ChildrenGallery() {
     const [users, setUsers] = useState([]);
@@ -58,7 +58,7 @@ export default function ChildrenGallery() {
                     id: doc.id,
                     ...doc.data(),
                 }));
-                console.log("after children query");
+                
                 const letterboxes = await fetchLetterboxes();
                 
                 console.log("Letterboxes:", letterboxes);
