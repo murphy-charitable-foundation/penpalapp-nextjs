@@ -1,18 +1,8 @@
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  startAfter,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { auth, db } from "../firebaseConfig";
-import * as Sentry from "@sentry/nextjs";
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
+import { ref as storageRef, getDownloadURL } from "@firebase/storage";
+import { storage } from "../firebaseConfig.js";
+import { auth, db } from "../firebaseConfig"
+import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
@@ -21,6 +11,13 @@ const getUserDoc = async () => {
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };
+
+export const getUserPfp = async(uid) => {
+  const path = `profile/${uid}/profile-image`;
+  const photoRef = storageRef(storage, path);
+  const downloaded = await getDownloadURL(photoRef)
+  return downloaded;
+}
 
 export const fetchLetterboxes = async () => {
   const retryFetch = () => setTimeout(() => fetchLetterboxes(), DELAY);
@@ -101,7 +98,9 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
   try {
     const lettersSnapshot = await getDocs(letterboxQuery);
     const messages = lettersSnapshot.docs
-      .map((doc) => doc.data())
+      .map((doc) => {
+        return { id: doc.id, ...doc.data() };
+      })
       .filter((letterboxData) => letterboxData.status != "draft");
 
     const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
@@ -110,8 +109,9 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
       lastVisible: lastDoc,
     };
   } catch (e) {
-    Sentry.captureException(e);
-    console.log("Error fetching letterbox: ", e);
+    logError(e, {
+      description: "Error fetching letterbox: ",
+    });
     return {
       messages: [],
       lastVisible: null,
@@ -193,7 +193,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   const userLettersQuery = query(
     lRef,
     where("sent_by", "==", userRef),
-    orderBy("created_at", "desc"),
+    where("content", "!=", ""),
+    orderBy("updated_at", "desc"),
     limit(1) // grab a few in case of fallback
   );
 
@@ -201,7 +202,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   const sentLettersQuery = query(
     lRef,
     where("status", "==", "sent"),
-    orderBy("created_at", "desc"),
+    where("content", "!=", ""),
+    orderBy("updated_at", "desc"),
     limit(1)
   );
 
@@ -227,8 +229,8 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   if (allLetters.length === 0) return null;
   else if (allLetters.length === 1) return allLetters[0];
   else if (
-    allLetters[0]?.created_at?.toDate?.() >
-    allLetters[1]?.created_at?.toDate?.()
+    allLetters[0]?.updated_at?.toDate?.() >
+    allLetters[1]?.updated_at?.toDate?.()
   )
     return allLetters[0];
   else return allLetters[1];
@@ -250,13 +252,16 @@ export const fetchRecipients = async (id) => {
   const members = [];
 
   for (const user of users) {
+    const selectedUserDocRef = doc(db, "users", user.id);
+    const selUser = await getDoc(selectedUserDocRef);
     try {
-      const selectedUserDocRef = doc(db, "users", user.id);
-      const selUser = await getDoc(selectedUserDocRef);
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id });
+      const downloaded = await getUserPfp(user.id);
+      members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
     } catch (e) {
-      Sentry.captureException(e);
-      console.error("Error fetching user:", e);
+      logError(e, {
+        description: "Error fetching user:",
+      });
+      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
     }
   }
   return members;
@@ -271,8 +276,9 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     sendingLetter = false;
     return true;
   } catch (e) {
-    Sentry.captureException(e);
-    console.log("Failed to send letter: ", e);
+    logError(e, {
+      description: "Failed to send letter: ",
+    });
     sendingLetter = false;
     return false;
   }

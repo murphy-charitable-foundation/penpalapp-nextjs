@@ -6,6 +6,9 @@ import Image from "next/image";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../../firebaseConfig";
+import { usePageAnalytics } from "../../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../../utils/analytics";
+import React from "react";
 
 import {
   User,
@@ -25,7 +28,7 @@ import { BackButton } from "../../../components/general/BackButton";
 import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
-import { PageHeader } from '../../../components/general/PageHeader';
+import { PageHeader } from "../../../components/general/PageHeader";
 
 export default function Page({ params }) {
   const { id } = params;
@@ -49,13 +52,14 @@ export default function Page({ params }) {
 
   const router = useRouter();
 
+  usePageAnalytics(`/profile-view/[id]`);
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
         const uid = id;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
@@ -111,7 +115,6 @@ export default function Page({ params }) {
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
         <PageHeader title="View Profile" image={false} heading={false} />
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
-
           {/* Profile Image */}
           <div className="my-6">
             <div className="relative w-40 h-40 mx-auto">
@@ -126,7 +129,13 @@ export default function Page({ params }) {
               <div className="mt-4 flex justify-center">
                 <button
                   type="button"
-                  onClick={() => router.push("/profile")}
+                  onClick={() => {
+                    logButtonEvent(
+                      "Edit profile button clicked!",
+                      "/profile-view/[id]"
+                    );
+                    router.push("/profile");
+                  }}
                   className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
                 >
                   Edit Profile

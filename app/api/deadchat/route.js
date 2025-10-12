@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
-import * as Sentry from "@sentry/nextjs";
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
+import { logError } from "../../utils/analytics";
 
 export async function POST(request) {
   if (auth == null) {
@@ -105,7 +105,9 @@ export async function POST(request) {
     
 
   } catch (error) {
-    Sentry.captureException(error);
+    logError(error, {
+      description: "Failed to send email.",
+    });
 
     return NextResponse.json(
         { message: 'Failed to send email.', error: error.message },

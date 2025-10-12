@@ -1,20 +1,22 @@
 "use client";
 // page.js
 
-
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import Link from "next/link";
 import Button from "../components/general/Button";
 import { BackButton } from "../components/general/BackButton";
+import { usePageAnalytics } from "./useAnalytics";
+import { logButtonEvent, logLoadingTime } from "./utils/analytics";
+import { useEffect } from "react";
 
 export default function Home() {
+  usePageAnalytics("/");
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
       <div className="w-full max-w-md space-y-8">
-        <div
-          className="text-left p-4 bg-white h-[80%]"
-        >
+        <div className="text-left p-4 bg-white h-[80%]">
           <Link href="/cover">
             <BackButton
               btnType="button"
@@ -37,12 +39,16 @@ export default function Home() {
               <Button
                 color={"green"}
                 btnText={"Log in"}
+                onClick={() => logButtonEvent("log in clicked", "/")}
               />
             </Link>
             <Link href="https://calendly.com/murphycharity/60min">
               <Button
                 color={"blue"}
                 btnText={"Become a Pen Pal Volunteer"}
+                onClick={() =>
+                  logButtonEvent("become a pen pal volunteer clicked", "/")
+                }
               />
             </Link>
           </div>
