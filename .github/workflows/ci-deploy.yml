@@ -2,15 +2,14 @@ name: CI + Deploy (prebuilt)
 
 on:
   push:
-    branches: [ '**' ]
+    branches: ['**']
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
-  deployments: write
-  pull-requests: write
   issues: write
+  deployments: write
 
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -20,65 +19,51 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
-      # Checkout repo
+      # Checkout
       - uses: actions/checkout@v4
 
-      # Setup Node.js + cache
+      # Node + npm cache
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: npm
 
-      # Install dependencies
+      # Install deps
       - name: Install dependencies
         run: npm ci || npm install
 
-      # Build project
-      - name: Build app
-        run: npm run build
-
-      # Install Vercel CLI
+      # Vercel CLI
       - name: Setup Vercel CLI
         run: npm i -g vercel@latest
 
-      # Define target (preview or production)
-      - name: Define target
-        id: target
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "env=production" >> $GITHUB_OUTPUT
-          else
-            echo "env=preview" >> $GITHUB_OUTPUT
-          fi
-
-      # Pull project config and environment vars
+      # Pull project config + envs
       - name: Pull Vercel settings
         run: |
           vercel pull --yes \
-            --environment="${{ steps.target.outputs.env }}" \
+            --environment="$([ '${{ github.ref_name }}' = 'main' ] && echo production || echo preview)" \
             --token="${{ env.VERCEL_TOKEN }}" \
             --scope="${{ env.VERCEL_ORG }}"
 
-      # Prebuild app (creates .vercel/output)
-      - name: Prebuild Vercel output
+      # Prebuild (.vercel/output)
+      - name: Vercel build (prebuilt)
         run: |
           vercel build \
             --token="${{ env.VERCEL_TOKEN }}" \
             --scope="${{ env.VERCEL_ORG }}"
 
-      # Deploy prebuilt build to Vercel
+      # Deploy prebuilt
       - name: Deploy prebuilt build
         id: deploy
         env:
           VC_TOKEN: ${{ env.VERCEL_TOKEN }}
           VC_TEAM:  ${{ env.VERCEL_ORG }}
-          ENV:      ${{ steps.target.outputs.env }}
         run: |
           set -e
-          ARGS=(deploy --prebuilt --yes --token "$VC_TOKEN" --scope "$VC_TEAM")
-          [ "$ENV" = "production" ] && ARGS+=(--prod) || true
-          OUT="$(vercel "${ARGS[@]}")"
-          # take only public *.vercel.app URL (avoid private Inspect link)
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            OUT="$(vercel deploy --prebuilt --prod --yes --token "$VC_TOKEN" --scope "$VC_TEAM")"
+          else
+            OUT="$(vercel deploy --prebuilt --yes --token "$VC_TOKEN" --scope "$VC_TEAM")"
+          fi
           URL="$(printf "%s\n" "$OUT" | grep -Eo 'https?://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1 || true)"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "✅ Deployed to: ${URL:-(no public URL)}"
@@ -111,5 +96,4 @@ jobs:
               deployment_id: dep.id,
               state: 'success',
               environment: 'production'
-              // no environment_url on purpose (per Rez's requirement)
             });
