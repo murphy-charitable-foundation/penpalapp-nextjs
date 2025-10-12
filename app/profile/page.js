@@ -31,6 +31,7 @@ import List from "../../components/general/List";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Modal";
+import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from '../../components/general/PageHeader';
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
