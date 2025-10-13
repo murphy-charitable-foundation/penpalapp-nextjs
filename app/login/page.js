@@ -15,7 +15,6 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
-import { useEffect } from "react";
 import {
   logInEvent,
   logButtonEvent,
@@ -39,6 +38,8 @@ export default function Login() {
         const userSnap = await getDoc(userRef);
         if (userSnap.exists() && userSnap.data().user_type === "local_volunteer") {
             router.push("/children-gallery");
+        } else if (userSnap.exists()) {
+            router.push("/letterhome");
         } else {
           await signOut(auth);
           setError("Please log in as a Local Volunteer.");

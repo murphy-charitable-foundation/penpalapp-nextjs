@@ -100,10 +100,10 @@ export default function Home() {
               (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
-
+            
             return {
               id: letter?.id,
-              profileImage: recipient?.photo_uri || "",
+              profileImage: await getUserPfp(recipient.id) || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
