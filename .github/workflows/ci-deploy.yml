@@ -60,6 +60,11 @@ jobs:
           else
             OUT="$(vercel deploy --prebuilt --yes --token "$VC_TOKEN" --scope "$VC_TEAM")"
           fi
+
+          echo "::group::Vercel CLI output"
+          echo "$OUT"
+          echo "::endgroup::"
+
           URL="$(printf "%s\n" "$OUT" | grep -Eo 'https?://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1 || true)"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "✅ Deployed to: ${URL:-(no public URL)}"
