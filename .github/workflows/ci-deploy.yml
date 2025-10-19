@@ -85,7 +85,7 @@ jobs:
 
       # PRs: create GH Deployment card with public preview URL
       - name: Create Deployment Card (preview PRs)
-        if: ${{ github.event_name == 'pull_request' && steps.deploy.outputs.url != '' }}
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         with:
           script: |
