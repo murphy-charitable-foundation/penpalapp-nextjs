@@ -93,7 +93,7 @@ jobs:
 
             const { data: dep } = await github.rest.repos.createDeployment({
               ...context.repo,
-              ref: context.sha,
+              ref: context.payload.pull_request.head.sha,
               environment: envName,
               auto_merge: false,
               required_contexts: []
