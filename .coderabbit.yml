@@ -1,8 +1,10 @@
-+reviews:
-+  auto_review:
-+    enabled: true              # enable automatic review for new PRs
-+  path_filters:                # skip generated or dependency files
-  - "node_modules/**"
-  - "dist/**"
-  - "build/**"
-  - "**/*.lock"
+reviews:
+  high_level_summary: true
+  auto_review:
+    enabled: true
+  request_changes_workflow: true
+  path_filters:
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!build/**"
+    - "!**/*.lock"
