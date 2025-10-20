@@ -1,10 +1,8 @@
-reviews:
-  auto_review: true            # enable automatic review for new PRs
-  summary_comment: true        # post one summary comment per PR
-  max_comments_per_file: 5     # limit comments per file
-  max_total_comments: 30       # limit total number of comments
-  ignored_files:               # skip generated or dependency files
-    - "node_modules/**"
-    - "dist/**"
-    - "build/**"
-    - "**/*.lock"
++reviews:
++  auto_review:
++    enabled: true              # enable automatic review for new PRs
++  path_filters:                # skip generated or dependency files
+  - "node_modules/**"
+  - "dist/**"
+  - "build/**"
+  - "**/*.lock"
