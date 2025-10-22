@@ -42,7 +42,7 @@ if (typeof window !== "undefined") {
   messaging = getMessaging(app);
 }
 
-export { db, auth, storage, messaging, FieldPath };
+export { app, db, auth, storage, messaging, FieldPath };
 
 /**
  * Helper function to assign a new user group.

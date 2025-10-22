@@ -15,8 +15,13 @@ const getUserDoc = async () => {
 export const getUserPfp = async(uid) => {
   const path = `profile/${uid}/profile-image`;
   const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try {
+    const downloaded = await getDownloadURL(photoRef);
+    return downloaded;
+  } catch (e) {
+    console.log("Error retrieving profile picture")
+  }
+  return null
 }
 
 export const fetchLetterboxes = async () => {
@@ -297,7 +302,6 @@ export const sendNotification = async (letterboxRef, sentBy, message) => {
       console.error("Sender not found.");
       return;
     }
-    const senderData = senderDoc.data();
     // Retrieve the letterbox document.
     const letterboxDocSnapshot = await getDoc(letterboxRef);
     if (!letterboxDocSnapshot.exists()) {
@@ -308,8 +312,9 @@ export const sendNotification = async (letterboxRef, sentBy, message) => {
     const members = letterboxData?.members || [];
 
     // Exclude the current user (the sender).
+    console.log("members: ", members[0].id)
     const recipients = members.filter(
-      (member) => member.id !== senderData.uid
+      (member) => member.id !== sentBy.id
     );
     if (recipients.length === 0) {
       console.log("No recipients available for notification.");
@@ -335,7 +340,6 @@ export const sendNotification = async (letterboxRef, sentBy, message) => {
           }));
           tokensArray.push(...tokens);
         } catch (error) {
-          Sentry.captureException(error);
           console.error("Error fetching FCM tokens for member:", memberRef, error);
         }
       })
@@ -369,7 +373,6 @@ export const sendNotification = async (letterboxRef, sentBy, message) => {
     console.log("Notifications sent successfully:", result);
     return result;
   } catch (e) {
-    Sentry.captureException(e);
     console.error("Error in sendNotification:", e);
   }
 };

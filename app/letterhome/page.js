@@ -61,6 +61,7 @@ export default function Home() {
   const getConversations = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
+      console.log("letterboxes", letterboxes);
       if (letterboxes && letterboxes.length > 0) {
         const letterboxIds = letterboxes.map((l) => l.id);
 

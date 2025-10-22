@@ -19,6 +19,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   fetchLetterbox,
   fetchRecipients,
+  sendNotification
 } from "../../../app/utils/letterboxFunctions";
 import { formatTime, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -153,6 +154,11 @@ export default function Page({ params }) {
 
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
+
+  useEffect(() => {
+    setLetterboxRef(doc(db, "letterbox", id));
+  }, []);
+
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -378,7 +384,7 @@ export default function Page({ params }) {
       }
 
       // Clear states
-      // TODO: SEND NOTIFICATION
+      sendNotification(letterboxRef, letterUserRef, "You have a new message!")
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
