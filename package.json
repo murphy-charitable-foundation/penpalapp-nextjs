@@ -22,11 +22,8 @@
     "firebase-admin": "^13.0.2",
     "framer-motion": "^12.4.1",
     "heroicons": "^2.1.1",
-<<<<<<< HEAD
     "i18n-iso-countries": "^7.14.0",
-=======
     "html2canvas": "^1.4.1",
->>>>>>> a5c0960a2dc6ee28b998ad048827e3161fc920e0
     "install": "^0.13.0",
     "lucide-react": "^0.475.0",
     "next": "^14.1.0",
