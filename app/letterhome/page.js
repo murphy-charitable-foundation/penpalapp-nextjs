@@ -11,6 +11,7 @@ import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
+import { FaUserCircle, FaCog, FaBell, FaPen, FaPaperPlane } from "react-icons/fa";
 import {
   getUserPfp,
   fetchLatestLetterFromLetterbox,

@@ -21,7 +21,7 @@ import {
   logButtonEvent,
   logLoadingTime,
 } from "../utils/analytics";
-
+import { initializeNotifications } from '../utils/notification'
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,6 +30,21 @@ export default function Login() {
   const router = useRouter();
   
   usePageAnalytics(`/login`);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    // Check if the user is already logged in and retrieve the email
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        await initializeNotifications()
+        router.push("/letterhome");
+      } else {
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe(); // Clean up the listener on component unmount
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,6 +66,7 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         router.push("/create-acc");

@@ -2,11 +2,6 @@
 import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, FieldPath } from "firebase/firestore";
-
-// import { getAnalytics } from "firebase/analytics";
-// todo Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 import {
   getFirestore,
   FieldPath,
@@ -32,11 +27,6 @@ const firebaseConfig = {
   measurementId: "G-FG3MPZ8JV6",
 };
 
-// // Initialize Firebase
-// Only initialize if no apps have been initialized
-
-// const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app);
 const VAPID_KEY =
   "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc";
 
@@ -46,9 +36,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app, "gs://penpalmagicapp.appspot.com/");
 
-export { db, auth, storage, FieldPath, app };
-
-// Initialize Firebase Authentication and export
 let messaging;
 if (typeof window !== "undefined") {
   // Initialize Messaging in the browser only
