@@ -1,6 +1,11 @@
 reviews:
+  profile: chill
   high_level_summary: true
+  collapse_walkthrough: true
+  changed_files_summary: true
   auto_review:
+    enabled: true
+  auto_approve:
     enabled: true
   request_changes_workflow: true
   path_filters:
@@ -8,3 +13,18 @@ reviews:
     - "!dist/**"
     - "!build/**"
     - "!**/*.lock"
+    - "!**/*.css"
+    - "!**/*.md"
+    - "!app/privacy-policy/**"
+    - "!app/terms-conditions/**"
+    - "!app/globals.css"
+    - "!tailwind.config.js"
+    - "!public/firebase-messaging-sw.js"
+    - "!app/profile-view/**"
+    - "!components/general/**"
+    - "!components/loading/**"
+    - "!components/tooltip/**"
+    - "!components/letter/**"
+    - "!app/utils/dateHelpers.js"
+    - "!app/utils/timestampToDate.js"
+    - "!app/utils/deadChat.js"
