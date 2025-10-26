@@ -37,14 +37,7 @@ import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
 
-// FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
-  console.log("📝 fetchDraft called:", {
-    letterboxId,
-    userRef: userRef?.id,
-    shouldCreate,
-  });
-
   try {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
@@ -58,7 +51,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       limit(1)
     );
 
-    console.log("🔍 Querying for existing draft...");
     const draftSnapshot = await getDocs(draftQuery);
 
     if (!draftSnapshot.empty) {
@@ -72,15 +64,11 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
           draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
       };
 
-      console.log("✅ Found existing draft:", draftData);
       return draftData;
     }
 
-    console.log("❌ No existing draft found");
-
     // Only create new draft if explicitly requested and no existing draft
     if (shouldCreate) {
-      console.log("🆕 Creating new draft...");
       const newDraftData = {
         sent_by: userRef,
         content: "",
@@ -94,7 +82,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       const newDraftRef = doc(lettersRef);
       await setDoc(newDraftRef, newDraftData);
 
-      console.log("✅ New draft created:", newDraftRef.id);
       return {
         id: newDraftRef.id,
         ...newDraftData,
@@ -103,7 +90,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     return null;
   } catch (error) {
-    console.error("❌ fetchDraft error:", error);
     return null;
   }
 };
@@ -164,54 +150,40 @@ export default function Page({ params }) {
   const [draftTimer, setDraftTimer] = useState(null);
 
   const scrollToBottom = (instant = false) => {
-    console.log("📜 Scrolling to bottom, instant:", instant);
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
       block: "end",
     });
   };
 
-  // ENHANCED: saveDraft function with Firebase update tracking
+  // saveDraft function with Firebase to update tracking
   const saveDraft = useCallback(
     async (content) => {
-      console.log("💾 saveDraft called:", {
-        content: content?.substring(0, 50) + "...",
-        hasUser: !!user,
-        hasLettersRef: !!lettersRef,
-        isSending,
-      });
-
       if (!user || !lettersRef || isSending) {
-        console.log("⚠️ saveDraft skipped - missing dependencies");
         return Promise.resolve();
       }
 
       // Set updating status when starting Firebase operation
       setIsUpdatingFirebase(true);
-      console.log("🔄 Firebase update started");
 
       try {
         const letterUserRef = userRef || doc(db, "users", user.uid);
         const trimmedContent = content.trim();
         const currentTime = new Date();
 
-        console.log("📝 Trimmed content length:", trimmedContent.length);
-
-        // FIXED: Always check for existing draft first
+        // Always check for existing draft first
         let existingDraft = draft;
 
         // If no draft in state, fetch from database
         if (!existingDraft?.id) {
-          console.log("🔍 No draft in state, fetching from database...");
           existingDraft = await fetchDraft(id, letterUserRef, false);
 
           if (existingDraft) {
-            console.log("✅ Found draft from database:", existingDraft.id);
             setDraft(existingDraft); // Update state with found draft
           }
         }
 
-        // FIXED: Prepare draft data with proper structure
+        // Prepare draft data with proper structure
         const baseDraftData = {
           sent_by: letterUserRef,
           content: trimmedContent, // Store actual content (can be empty)
@@ -222,22 +194,19 @@ export default function Page({ params }) {
         };
 
         if (existingDraft?.id) {
-          console.log("📝 Updating existing draft:", existingDraft.id);
           const draftDocRef = doc(lettersRef, existingDraft.id);
 
-          // FIXED: Always update existing draft, don't check if it exists
+          // Always update existing draft, don't check if it exists
           const updateData = {
             ...baseDraftData,
             created_at: existingDraft.created_at || currentTime, // Preserve original created_at
           };
 
           await updateDoc(draftDocRef, updateData);
-          console.log("✅ Draft updated successfully");
 
           // Update local state
           setDraft({ ...updateData, id: existingDraft.id });
         } else {
-          console.log("🆕 Creating new draft document");
           // Create new draft
           const newDraftData = {
             ...baseDraftData,
@@ -247,28 +216,22 @@ export default function Page({ params }) {
           const newDraftRef = doc(lettersRef);
           await setDoc(newDraftRef, newDraftData);
 
-          console.log("✅ New draft created:", newDraftRef.id);
-
           // Update local state
           setDraft({ ...newDraftData, id: newDraftRef.id });
         }
 
         // FIXED: Update UI state consistently
         const hasContent = Boolean(trimmedContent);
-        console.log("📊 Draft has content:", hasContent);
 
         setHasDraftContent(hasContent);
 
         // If content is empty, exit edit mode
         if (!hasContent && isEditing) {
-          console.log("🚪 Exiting edit mode - no content");
           setIsEditing(false);
         }
 
         return Promise.resolve();
       } catch (error) {
-        console.error("❌ saveDraft error:", error);
-
         // More specific error handling
         if (error.code === "permission-denied") {
           console.error("🔒 Permission denied error");
@@ -286,10 +249,8 @@ export default function Page({ params }) {
               const newDraftRef = doc(lettersRef);
               await setDoc(newDraftRef, newDraftData);
 
-              console.log("✅ Draft created on retry:", newDraftRef.id);
               setDraft({ ...newDraftData, id: newDraftRef.id });
             } catch (retryError) {
-              console.error("❌ Retry failed:", retryError);
               logError(retryError, {
                 description: "Retry Error:",
               });
@@ -301,46 +262,34 @@ export default function Page({ params }) {
       } finally {
         // Clear updating status when Firebase operation completes
         setIsUpdatingFirebase(false);
-        console.log("✅ Firebase update completed");
       }
     },
     [user, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
-  // ENHANCED: Message change handler with Promise-based X button management
+  // Message change handler with Promise-based X button management
   const handleMessageChange = async (e) => {
     const newContent = e.target.value;
-    console.log("✏️ handleMessageChange:", {
-      contentLength: newContent.length,
-      isEditingMessage: !!editingMessageId,
-    });
 
     setMessageContent(newContent);
     const trimmedContent = newContent.trim();
 
     // Clear any existing timer
     if (draftTimer) {
-      console.log("⏰ Clearing existing draft timer");
       clearTimeout(draftTimer);
       setDraftTimer(null);
     }
 
-    // FIXED: Update UI state based on content
+    // Update UI state based on content
     if (trimmedContent.length > 0) {
-      console.log("✅ Content exists, setting edit mode");
       setIsEditing(true);
       setHasDraftContent(true);
 
-      // Auto-save draft after 1 second of no typing (debounced)
-      // Only save draft if NOT editing an existing message
       if (!editingMessageId) {
-        console.log("⏰ Setting auto-save timer (1 second)");
         const timer = setTimeout(async () => {
-          console.log("⏰ Auto-save timer triggered");
           try {
             await saveDraft(newContent);
           } catch (error) {
-            console.error("❌ Auto-save failed:", error);
             logError(error, {
               description: "Failed to auto-save draft:",
             });
@@ -348,18 +297,15 @@ export default function Page({ params }) {
         }, 1000);
         setDraftTimer(timer);
       } else {
-        console.log("📝 Skipping auto-save - editing existing message");
       }
     } else {
-      console.log("⚠️ Content is empty");
       setHasDraftContent(false);
 
-      // FIXED: Always save empty content to existing draft, exit edit mode immediately
+      //  Always save empty content to existing draft, exit edit mode immediately
       setIsEditing(false); // Exit edit mode immediately for empty content
 
       // Only handle draft saving if NOT editing an existing message
       if (!editingMessageId) {
-        console.log("💾 Saving empty draft");
         // NEW: Disable X button and track Firebase update completion
         setIsXButtonDisabled(true);
 
@@ -367,53 +313,34 @@ export default function Page({ params }) {
           // Wait for Firebase update to complete
           await saveDraft(newContent);
 
-          // Re-enable X button after Firebase update completes
-          console.log("✅ Re-enabling X button after Firebase update");
           setIsXButtonDisabled(false);
         } catch (error) {
-          console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
           // Re-enable X button even if there was an error (fallback after 3 seconds)
           setTimeout(() => {
-            console.log("⚠️ Re-enabling X button after error (fallback)");
             setIsXButtonDisabled(false);
           }, 3000);
         }
-      } else {
-        console.log(
-          "📝 Empty content while editing message - will revert on close"
-        );
       }
     }
   };
 
-  // NEW: Function to update existing message
+  //  Function to update existing message
   const handleUpdateMessage = async () => {
-    console.log("🔄 handleUpdateMessage called:", {
-      editingMessageId,
-      contentLength: messageContent.trim().length,
-    });
-
     const trimmedContent = messageContent.trim();
 
     if (!trimmedContent) {
-      console.log("⚠️ No content to update");
       alert("Please enter a message");
       return;
     }
 
     if (isSending || !editingMessageId) {
-      console.log("⚠️ Cannot update - isSending or no editingMessageId:", {
-        isSending,
-        editingMessageId,
-      });
       return;
     }
 
     setIsSending(true);
-    console.log("🔒 Setting isSending to true");
 
     try {
       // Validate required dependencies
@@ -425,8 +352,6 @@ export default function Page({ params }) {
       const currentTime = new Date();
       const messageRef = doc(lettersRef, editingMessageId);
 
-      console.log("📝 Updating message document:", editingMessageId);
-
       // Update the existing message
       const updateData = {
         content: trimmedContent,
@@ -435,7 +360,6 @@ export default function Page({ params }) {
       };
 
       await updateDoc(messageRef, updateData);
-      console.log("✅ Message updated in Firebase");
 
       // Clear editing states
       setMessageContent("");
@@ -445,13 +369,10 @@ export default function Page({ params }) {
       setHasDraftContent(false);
       setSelectedMessageId(null);
 
-      console.log("🧹 Cleared editing states");
-
       // Update message in UI
       setAllMessages((prev) => {
         const updatedMessages = prev.map((msg) => {
           if (msg.id === editingMessageId) {
-            console.log("📝 Updating message in UI state");
             return {
               ...msg,
               content: trimmedContent,
@@ -467,8 +388,6 @@ export default function Page({ params }) {
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
-
-      console.log("✅ Message update completed successfully");
     } catch (error) {
       console.error("❌ handleUpdateMessage error:", error);
 
@@ -484,38 +403,28 @@ export default function Page({ params }) {
       }
     } finally {
       setIsSending(false);
-      console.log("🔓 Setting isSending to false");
     }
   };
 
   // Enhanced send message function - now creates pending_review status
   const handleSendMessage = async () => {
-    console.log("📤 handleSendMessage called:", {
-      isEditingMessage: !!editingMessageId,
-      contentLength: messageContent.trim().length,
-    });
-
     // If we're editing an existing message, use update function instead
     if (editingMessageId) {
-      console.log("🔄 Redirecting to handleUpdateMessage");
       return handleUpdateMessage();
     }
 
     const trimmedContent = messageContent.trim();
 
     if (!trimmedContent) {
-      console.log("⚠️ No content to send");
       alert("Please enter a message");
       return;
     }
 
     if (isSending) {
-      console.log("⚠️ Already sending a message");
       return;
     }
 
     setIsSending(true);
-    console.log("🔒 Setting isSending to true");
 
     try {
       // Validate required dependencies
@@ -538,12 +447,9 @@ export default function Page({ params }) {
         unread: true,
       };
 
-      console.log("📝 Message data prepared with status: pending_review");
-
       let messageRef;
 
       if (draft?.id) {
-        console.log("📝 Updating existing draft to pending_review:", draft.id);
         messageRef = doc(lettersRef, draft.id);
 
         // Update existing draft to sent
@@ -553,12 +459,9 @@ export default function Page({ params }) {
         };
 
         await updateDoc(messageRef, updateData);
-        console.log("✅ Draft updated to pending_review");
       } else {
-        console.log("🆕 Creating new message with pending_review status");
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
-        console.log("✅ New message created:", messageRef.id);
       }
 
       // Clear states
@@ -566,8 +469,6 @@ export default function Page({ params }) {
       setDraft(null);
       setHasDraftContent(false);
       setIsEditing(false);
-
-      console.log("🧹 Cleared message states");
 
       // Add message to UI immediately
       const messageWithId = {
@@ -578,10 +479,6 @@ export default function Page({ params }) {
 
       setAllMessages((prev) => {
         const newMessages = [...prev, messageWithId];
-        console.log(
-          "📊 Added message to UI, total messages:",
-          newMessages.length
-        );
         return newMessages;
       });
 
@@ -589,8 +486,6 @@ export default function Page({ params }) {
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
-
-      console.log("✅ Message sent successfully");
     } catch (error) {
       console.error("❌ handleSendMessage error:", error);
 
@@ -606,22 +501,13 @@ export default function Page({ params }) {
       }
     } finally {
       setIsSending(false);
-      console.log("🔓 Setting isSending to false");
     }
   };
 
-  // ENHANCED: Close message handler with Firebase status awareness
+  // Close message handler with Firebase status awareness
   const handleCloseMessage = async () => {
-    console.log("❌ handleCloseMessage called:", {
-      isXButtonDisabled,
-      isUpdatingFirebase,
-      isEditingMessage: !!editingMessageId,
-      hasContent: messageContent.trim().length > 0,
-    });
-
     // NEW: Prevent closing if X button is disabled OR Firebase is updating
     if (isXButtonDisabled || isUpdatingFirebase) {
-      console.log("⚠️ Close prevented - button disabled or Firebase updating");
       return;
     }
 
@@ -629,14 +515,10 @@ export default function Page({ params }) {
 
     // NEW: If editing an existing message, handle differently
     if (editingMessageId) {
-      console.log("🔄 Closing while editing existing message");
-
       // If content changed, show dialog
       if (trimmedMessageContent !== editingMessageOriginalContent.trim()) {
-        console.log("📝 Content changed, showing dialog");
         setShowCloseDialog(true);
       } else {
-        console.log("📝 Content unchanged, reverting");
         // Content unchanged, just revert
         setMessageContent("");
         setEditingMessageId(null);
@@ -651,11 +533,9 @@ export default function Page({ params }) {
 
     // If we're in edit mode, save current state before proceeding
     if (isEditing) {
-      console.log("💾 Saving draft before close");
       try {
         await saveDraft(messageContent);
       } catch (error) {
-        console.error("❌ Failed to save state before close:", error);
         logError(error, {
           description: "Failed to save state before close:",
         });
@@ -664,25 +544,18 @@ export default function Page({ params }) {
 
     // Only show dialog if there's content to save (requirement 2)
     if (trimmedMessageContent.length > 0) {
-      console.log("📝 Content exists, showing close dialog");
       setShowCloseDialog(true);
     } else {
-      console.log("🚪 No content, closing directly");
       router.back();
     }
   };
 
   // Enhanced confirm close handler
   const handleConfirmClose = async () => {
-    console.log("✅ handleConfirmClose called:", {
-      isEditingMessage: !!editingMessageId,
-    });
-
     setShowCloseDialog(false);
 
     // NEW: If editing message and confirming close, revert the edit
     if (editingMessageId) {
-      console.log("🔄 Reverting message edit");
       setMessageContent("");
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
@@ -696,7 +569,6 @@ export default function Page({ params }) {
 
   // Continue editing with logging
   const handleContinueEditing = () => {
-    console.log("✏️ handleContinueEditing called");
     setShowCloseDialog(false);
     setIsEditing(true);
 
@@ -707,7 +579,6 @@ export default function Page({ params }) {
 
   // Handle report button click for the user (not a specific message)
   const handleReportUserClick = () => {
-    console.log("🚨 handleReportUserClick called");
     if (recipients.length > 0) {
       setReportSender(recipients[0].id);
       setReportContent("General report about user behavior");
@@ -717,20 +588,12 @@ export default function Page({ params }) {
 
   // Load messages with comprehensive logging
   const loadMessages = async () => {
-    console.log("📥 loadMessages called:", {
-      hasUser: !!user,
-      letterboxId: id,
-      recipientsCount: recipients.length,
-    });
-
     if (!user || !id || !recipients.length) {
-      console.log("⚠️ loadMessages skipped - missing dependencies");
       return;
     }
 
     try {
       const { messages } = await fetchLetterbox(id, 20);
-      console.log("📊 Fetched messages:", messages.length);
 
       const sortedMessages = messages.sort((a, b) => {
         const aTime =
@@ -754,13 +617,11 @@ export default function Page({ params }) {
         })
       );
 
-      console.log("✅ Messages loaded and sorted");
       setAllMessages(messagesWithSenderInfo);
       setTimeout(() => {
         scrollToBottom(true);
       }, 300);
     } catch (error) {
-      console.error("❌ loadMessages error:", error);
       logError(error, {
         description: "LOAD MESSAGES ERROR:",
       });
@@ -769,18 +630,11 @@ export default function Page({ params }) {
 
   // NEW: Handle editing a pending_review message
   const handleEditMessage = async (message) => {
-    console.log("✏️ handleEditMessage called:", {
-      messageId: message.id,
-      status: message.status,
-      contentLength: message.content.length,
-    });
-
     // Can only edit if status is pending_review and message is from current user
     if (
       message.status !== "pending_review" ||
       message.sent_by?.id !== user?.uid
     ) {
-      console.log("⚠️ Cannot edit message - wrong status or not sender");
       return;
     }
 
@@ -791,8 +645,6 @@ export default function Page({ params }) {
     setIsEditing(true);
     setHasDraftContent(true);
     setSelectedMessageId(null); // Deselect the message
-
-    console.log("✅ Entered edit mode for message:", message.id);
 
     // Focus the textarea
     setTimeout(() => {
@@ -806,34 +658,28 @@ export default function Page({ params }) {
 
   // FIXED: Enhanced handleReplyClick to properly handle existing drafts
   const handleReplyClick = async () => {
-    console.log("💬 handleReplyClick called");
     setIsEditing(true);
 
     // Check if we need to fetch draft from database
     if (!draft?.id) {
-      console.log("🔍 No draft in state, fetching from database");
       try {
         const letterUserRef = userRef || doc(db, "users", user.uid);
         const existingDraft = await fetchDraft(id, letterUserRef, false);
 
         if (existingDraft) {
-          console.log("✅ Found existing draft:", existingDraft.id);
           setDraft(existingDraft);
           setMessageContent(existingDraft.content || "");
           setHasDraftContent(Boolean(existingDraft.content?.trim()));
         } else {
-          console.log("❌ No existing draft found");
           setMessageContent("");
           setHasDraftContent(false);
         }
       } catch (error) {
-        console.error("❌ Error fetching draft:", error);
         setMessageContent("");
         setHasDraftContent(false);
       }
     } else {
       // Use existing draft from state
-      console.log("✅ Using existing draft from state:", draft.id);
       setMessageContent(draft.content || "");
       setHasDraftContent(Boolean(draft.content?.trim()));
     }
@@ -853,23 +699,18 @@ export default function Page({ params }) {
 
   // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
-    console.log("🚀 Initialization useEffect triggered");
-
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log("👤 Auth state changed:", currentUser?.uid);
       setIsLoading(true);
 
       if (!currentUser) {
-        console.log("⚠️ No user, redirecting to login");
         router.push("/login");
         return;
       }
 
       setUser(currentUser);
-      console.log("👤 User set in state:", currentUser.uid);
 
       try {
         // Check letterbox exists
@@ -882,8 +723,6 @@ export default function Page({ params }) {
           return;
         }
 
-        console.log("✅ Letterbox exists");
-
         // Set user ref and fetch user data
         const userDocRef = doc(db, "users", currentUser.uid);
         setUserRef(userDocRef);
@@ -891,40 +730,31 @@ export default function Page({ params }) {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          console.log("✅ User data fetched");
           if (userData.location) {
             const location = userData.location;
             setUserLocation(location);
-            console.log("📍 User location set:", location);
           }
           // Set profile image
           setProfileImage(userData?.photo_uri || "");
-          console.log("🖼️ Profile image set");
         }
 
         // Fetch recipients
-        console.log("👥 Fetching recipients...");
         const fetchedRecipients = await fetchRecipients(id);
         setRecipients(fetchedRecipients || []);
-        console.log("✅ Recipients fetched:", fetchedRecipients?.length);
 
         if (fetchedRecipients?.length > 0) {
           const recipientName = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
           setRecipientName(recipientName);
-          console.log("👤 Recipient name set:", recipientName);
         }
 
         // Set letters ref
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
-        console.log("✅ Letters ref set");
 
         // ENHANCED: Improved draft fetching with better error handling
-        console.log("📝 Fetching draft...");
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
-          console.log("✅ Draft found and loaded:", draftData.id);
           setDraft(draftData);
           const draftContent = draftData.content || "";
           const hasContent = Boolean(draftContent.trim());
@@ -935,7 +765,6 @@ export default function Page({ params }) {
 
           // Enter edit mode only if draft has actual content
           if (hasContent) {
-            console.log("✏️ Entering edit mode with draft content");
             setIsEditing(true);
             setTimeout(() => {
               textAreaRef.current?.focus();
@@ -943,11 +772,9 @@ export default function Page({ params }) {
               textAreaRef.current?.setSelectionRange(length, length);
             }, 100);
           } else {
-            console.log("📝 Draft is empty, staying in view mode");
             setIsEditing(false);
           }
         } else {
-          console.log("❌ No draft found");
           setIsEditing(false);
           setMessageContent("");
           setDraft(null);
@@ -956,9 +783,7 @@ export default function Page({ params }) {
 
         // Load messages if we have recipients
         if (fetchedRecipients?.length > 0) {
-          console.log("📥 Loading messages...");
           const { messages } = await fetchLetterbox(id, 20);
-          console.log("📊 Fetched messages count:", messages.length);
 
           const sortedMessages = messages.sort((a, b) => {
             const aTime =
@@ -984,14 +809,12 @@ export default function Page({ params }) {
                 // Mark as read
                 if (message?.unread) {
                   await updateDoc(doc(lRef, message.id), { unread: false });
-                  console.log("✅ Marked message as read:", message.id);
                 }
               }
               return message;
             })
           );
           setAllMessages(messagesWithSenderInfo);
-          console.log("✅ All messages loaded and set");
         }
       } catch (error) {
         console.error("❌ INITIALIZATION ERROR:", error);
@@ -1000,12 +823,10 @@ export default function Page({ params }) {
         });
       } finally {
         setIsLoading(false);
-        console.log("✅ Initialization complete");
       }
     });
 
     return () => {
-      console.log("🧹 Cleaning up auth subscription");
       unsubscribe();
     };
   }, [id, router]);
@@ -1014,7 +835,6 @@ export default function Page({ params }) {
   useEffect(() => {
     return () => {
       if (draftTimer) {
-        console.log("🧹 Cleaning up draft timer");
         clearTimeout(draftTimer);
       }
     };
@@ -1026,15 +846,10 @@ export default function Page({ params }) {
   }, [allMessages, isEditing]);
 
   if (isLoading) {
-    console.log("⏳ Rendering loading skeleton");
     return <LettersSkeleton />;
   }
 
   const selectMessage = (messageId) => {
-    console.log("🖱️ selectMessage called:", {
-      messageId,
-      currentlySelected: selectedMessageId,
-    });
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
     // Don't exit edit mode when selecting a message if we're editing
   };
@@ -1062,11 +877,7 @@ export default function Page({ params }) {
   const canEditMessage = (message) => {
     const isEditable =
       message.status === "pending_review" && message.sent_by?.id === user?.uid;
-    console.log("🔍 canEditMessage:", {
-      messageId: message.id,
-      status: message.status,
-      isEditable,
-    });
+
     return isEditable;
   };
 
@@ -1118,7 +929,6 @@ export default function Page({ params }) {
             </div>
             <button
               onClick={() => {
-                console.log("❌ Cancel edit clicked");
                 setMessageContent(editingMessageOriginalContent);
                 setEditingMessageId(null);
                 setEditingMessageOriginalContent("");
@@ -1204,10 +1014,7 @@ export default function Page({ params }) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              console.log(
-                                "✏️ Edit button clicked for message:",
-                                message.id
-                              );
+
                               handleEditMessage(message);
                               logButtonEvent(
                                 "Edit message clicked!",
@@ -1246,10 +1053,7 @@ export default function Page({ params }) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log(
-                                  "🚨 REPORT MESSAGE CLICKED:",
-                                  message.id
-                                );
+
                                 setReportSender(message.sent_by.id);
                                 setReportContent(message.content);
                                 setShowReportPopup(true);
