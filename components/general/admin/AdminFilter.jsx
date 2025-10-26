@@ -46,7 +46,7 @@ export default function AdmminFilter({
   };
 
 
-  const statusOptions = ["Draft", "sent", "Pending", "Rejected"];
+  const statusOptions = ["draft", "sent", "Pending", "Rejected"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
