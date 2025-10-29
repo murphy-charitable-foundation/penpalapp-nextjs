@@ -1,8 +1,10 @@
-// pages/cover.js
-"use client"
+"use client";
+
+import {useEffect} from "react";
 import Image from "next/image";
-import logo from "/public/murphylogo.png";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
+import logo from "/public/murphylogo.png";
 import bgImage from "/public/cover.png";
 import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
@@ -20,16 +22,17 @@ export default function Cover() {
         objectFit="cover"
       />
 
-      <div className="mb-6 mt-9 items-center flex justify-center">
-        <div className="relative w-40 h-40 md:w-48 md:h-48">
-          <Image
-            src={logo}
-            alt="Murphy Charitable Foundation Uganda"
-            layout="fill"
-            objectFit="contain"
-          />
-        </div>
-      </div>
-    </div>
-  );
+                <div className="mb-6 mt-9 flex justify-center items-center z-10">
+                    <div className="relative w-40 h-40 md:w-48 md:h-48 animate-fade-in">
+                        <Image
+                            src={logo}
+                            alt="Murphy Charitable Foundation Uganda"
+                            fill
+                            className="object-contain"
+                        />
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
 }
