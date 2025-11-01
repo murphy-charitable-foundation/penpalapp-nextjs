@@ -11,6 +11,7 @@ import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
+import { FaUserCircle, FaCog, FaBell, FaPen, FaPaperPlane } from "react-icons/fa";
 import {
   getUserPfp,
   fetchLatestLetterFromLetterbox,
@@ -60,6 +61,7 @@ export default function Home() {
   const getConversations = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
+      console.log("letterboxes", letterboxes);
       if (letterboxes && letterboxes.length > 0) {
         const letterboxIds = letterboxes.map((l) => l.id);
 

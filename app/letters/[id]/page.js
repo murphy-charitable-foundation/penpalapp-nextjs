@@ -19,6 +19,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   fetchLetterbox,
   fetchRecipients,
+  sendNotification
 } from "../../../app/utils/letterboxFunctions";
 import { formatTime, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -140,6 +141,12 @@ export default function Page({ params }) {
   const [isUpdatingFirebase, setIsUpdatingFirebase] = useState(false);
 
   // Report states
+  const [letterboxRef, setLetterboxRef] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [lastVisible, setLastVisible] = useState(null); // To store the last visible letter for pagination
+  const [loadingMore, setLoadingMore] = useState(false); // To track if loading more is in progress
+  const [hasMoreMessages, setHasMoreMessages] = useState(true); // Track if there are more messages to load
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [reportContent, setReportContent] = useState(null);
@@ -147,6 +154,11 @@ export default function Page({ params }) {
 
   // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
+
+  useEffect(() => {
+    setLetterboxRef(doc(db, "letterbox", id));
+  }, []);
+
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -372,7 +384,7 @@ export default function Page({ params }) {
       }
 
       // Clear states
-
+      sendNotification(letterboxRef, letterUserRef, "You have a new message!")
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
