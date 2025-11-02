@@ -20,10 +20,15 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-gray-100">
+      {showSpinner && <LoadingSpinner />}
+
       <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
-        <Link href="/cover" aria-label="Go back">
+        {/* <Link href="/cover" aria-label="Go back">
           <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
-        </Link>
+        </Link> */}
+        <button onClick={() => handleNavigation('/cover')} aria-label="Go back">
+          <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
+        </button>
       </div>
 
       <PageContainer

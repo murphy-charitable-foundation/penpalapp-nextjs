@@ -3,12 +3,12 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
-import { auth, db } from '../app/firebaseConfig'; // Adjust path as needed
+import { auth, db } from '../app/firebaseConfig';
 import { getUserPfp } from '../app/utils/letterboxFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();
-const PUBLIC_PATHS = ['/login', '/']; // public routes that don't require authentication
+const PUBLIC_PATHS = ['/login', '/', '/about', '/contact', '/donate']; // public routes that don't require authentication
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -31,7 +31,7 @@ export function UserProvider({ children }) {
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setUserData(userData); // Store all user data
+            setUserData(userData);
             setUserType(userData.user_type || "Unknown Type");
 
             try {
@@ -44,14 +44,17 @@ export function UserProvider({ children }) {
           } else {
             console.log('No user document found');
             setUserData(null);
-            setUserType('Unknown Type'); // Default fallback
+            setUserType('Unknown Type');
             setProfileImage('');
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
           setUserData(null);
-          setUserType('Unknown Type'); // Default fallback
+          setUserType('Unknown Type');
           setProfileImage('');
+        } finally {
+          // CRITICAL FIX: Always set loading to false after processing authenticated user
+          setLoading(false);
         }
       } else {
         setUser(null);
@@ -61,9 +64,9 @@ export function UserProvider({ children }) {
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
-        } else {
-          setLoading(false); // Only set false for public pages
         }
+        
+        setLoading(false); // Set loading false for unauthenticated users
       }
     });
 
@@ -79,9 +82,7 @@ export function UserProvider({ children }) {
   };
 
   if (loading) {
-    return (
-      <LoadingSpinner />
-    );
+    return <LoadingSpinner />;
   }
 
   return (
