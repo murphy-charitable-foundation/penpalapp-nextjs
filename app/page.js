@@ -6,14 +6,41 @@ import logo from "/public/murphylogo.png";
 import { PageContainer } from "../components/general/PageContainer";
 import { BackButton } from "../components/general/BackButton";
 import Button from "../components/general/Button";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
 export default function Home() {
+  const [isPending, startTransition] = useTransition();
+  const [showSpinner, setShowSpinner] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isPending) {
+      // Only show spinner if loading takes longer than 200ms
+      const timer = setTimeout(() => setShowSpinner(true), 200);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSpinner(false);
+    }
+  }, [isPending]);
+
+  const handleNavigation = (href) => {
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+  
   return (
     <div className="relative min-h-screen bg-gray-100">
+      {showSpinner && <LoadingSpinner />}
+
       <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
-        <Link href="/cover" aria-label="Go back">
+        {/* <Link href="/cover" aria-label="Go back">
           <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
-        </Link>
+        </Link> */}
+        <button onClick={() => handleNavigation('/cover')} aria-label="Go back">
+          <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
+        </button>
       </div>
 
       <PageContainer
@@ -43,7 +70,7 @@ export default function Home() {
           >
 
             <div className="mx-auto w-full max-w-sm space-y-5 text-center">
-              <Link href="/login" className="block">
+              {/* <Link href="/login" className="block">
                 <Button
                   color="green"
                   btnText="Log in"
@@ -52,9 +79,19 @@ export default function Home() {
                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
                              active:scale-[0.99] transition"
                 />
-              </Link>
+              </Link> */}
+              <button onClick={() => handleNavigation('/login')} className="block w-full">
+                <Button
+                  color="green"
+                  btnText="Log in"
+                  textColor="text-white"
+                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+                             active:scale-[0.99] transition"
+                />
+              </button>
 
-              <Link href="https://calendly.com/murphycharity/60min" className="block">
+              {/* <Link href="https://calendly.com/murphycharity/60min" className="block">
                 <Button
                   color="blue"
                   btnText="Become a Pen Pal Volunteer"
@@ -63,7 +100,17 @@ export default function Home() {
                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
                              active:scale-[0.99] transition"
                 />
-              </Link>
+              </Link> */}
+              <a href="https://calendly.com/murphycharity/60min" className="block" target="_blank" rel="noopener noreferrer">
+                <Button
+                  color="blue"
+                  btnText="Become a Pen Pal Volunteer"
+                  textColor="text-white"
+                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+                             active:scale-[0.99] transition"
+                />
+              </a>
             </div>
           </div>
         </div>
