@@ -1,8 +1,8 @@
 reviews:
-  profile: chill                          # Use relaxed tone, avoid harsh or overly formal comments.
   tone_instructions: "One-line problem + one-line fix. No fluff, no praise, no repetition. Be surgical."
-  reviews:
-    sequence_diagrams: false              # Disable auto-generated sequence diagrams in review.
+
+  profile: chill                          # Use relaxed tone, avoid harsh or overly formal comments.
+  sequence_diagrams: false              # Disable auto-generated sequence diagrams in review.
   path_instructions:
     - path: "**/*"
       instructions: |
