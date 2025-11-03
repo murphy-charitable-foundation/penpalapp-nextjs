@@ -34,6 +34,7 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
+import Dialog from "../../../components/general/Dialog";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
@@ -507,7 +508,6 @@ export default function Page({ params }) {
     }
   };
 
-  // FIXED: Enhanced handleReplyClick to properly handle existing drafts
   const handleReplyClick = async () => {
     setIsEditing(true);
 
@@ -682,7 +682,7 @@ export default function Page({ params }) {
     return () => {
       unsubscribe();
     };
-  }, [id, router]);
+  }, [auth, id, router]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -740,8 +740,7 @@ export default function Page({ params }) {
             <button
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
-              title="Close conversation"
-            >
+              title="Close conversation">
               X
             </button>
           )}
@@ -754,8 +753,7 @@ export default function Page({ params }) {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}
-            >
+              }`}>
               <Image
                 src="/send-message-icon.png"
                 alt="Send message"
@@ -789,12 +787,10 @@ export default function Page({ params }) {
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                >
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}
-                  >
+                    onClick={() => selectMessage(messageId)}>
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
@@ -827,20 +823,12 @@ export default function Page({ params }) {
                           {isSelected ? "" : truncateMessage(message.content)}
                         </div>
                       </div>
-                      <div className="text-gray-500 text-sm">
-                        {formatTime(message.created_at)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16">
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        {!isSenderUser && (
-                          <Button
+                      <div className="flex flex-col items-end">
+                        <div className="text-gray-500 text-sm">
+                          {formatTime(message.created_at)}
+                        </div>
+                        {isSelected && !isSenderUser && (
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               console.log(
@@ -855,12 +843,27 @@ export default function Page({ params }) {
                                 "/letters/[id]"
                               );
                             }}
-                            className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                          >
-                            <FaExclamationCircle className="mr-1" size={10} />
-                            Report
-                          </Button>
+                            className="mt-1 w-6 h-6 bg-gray-400 hover:bg-gray-700 transition-colors flex items-center justify-center transform rotate-0"
+                            style={{
+                              clipPath:
+                                "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                            }}
+                            title="Report message">
+                            <span className="text-white text-xs font-bold">
+                              !
+                            </span>
+                          </button>
                         )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -891,8 +894,7 @@ export default function Page({ params }) {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}
-              >
+                onClick={handleReplyClick}>
                 {hasDraftContent
                   ? "Continue draft..."
                   : "Reply to the letter..."}
@@ -918,33 +920,29 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* Close Dialog */}
-        {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                Close this message?
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Your message will be saved as a draft.
-              </p>
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl hover:bg-opacity-90 transition-colors"
-                >
-                  Stay on page
-                </Button>
-                <Button
-                  onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <Dialog
+          isOpen={showCloseDialog}
+          onClose={() => setShowCloseDialog(false)}
+          variant="closeDialog"
+          title="Close this message?"
+          subtitle="Your message will be saved as a draft."
+          buttons={[
+            {
+              text: "Stay on page",
+              onClick: handleContinueEditing,
+              variant: "primary",
+              className: "flex-1",
+            },
+            {
+              text: "Close",
+              onClick: handleConfirmClose,
+              variant: "secondary",
+              className: "flex-1",
+            },
+          ]}
+          closeOnOverlay={false}
+          showCloseButton={false}
+        />
 
         {/* Report Popups */}
         {showReportPopup && (
