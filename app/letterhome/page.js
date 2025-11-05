@@ -128,7 +128,6 @@ export default function Home() {
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
-          console.log(userConversations);
         } catch (err) {
           setError("Error fetching user data or conversations.");
           console.error(err);
