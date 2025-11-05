@@ -70,7 +70,7 @@ export default function Home() {
               (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
-
+            
             return {
               id: letter?.id,
               profileImage: recipient?.photo_uri || "",
@@ -89,6 +89,7 @@ export default function Home() {
               unread: letter?.unread || false,
               isRecipient: letter?.sent_by?.id !== uid,
               unread: letter?.unread || false,
+              recipientId: recipient.id || "",
             };
           })
         );
@@ -117,7 +118,7 @@ export default function Home() {
       } else {
         try {
           const uid = user.uid;
-
+          setUserId(uid);
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
@@ -127,6 +128,7 @@ export default function Home() {
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
+          console.log(userConversations);
         } catch (err) {
           setError("Error fetching user data or conversations.");
           console.error(err);
@@ -144,7 +146,6 @@ export default function Home() {
       if (auth.currentUser) {
         try {
           const uid = auth.currentUser.uid;
-          setUserId(uid);
 
           const docRef = doc(db, "users", uid);
           const docSnap = await getDoc(docRef);
