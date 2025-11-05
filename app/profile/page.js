@@ -43,6 +43,7 @@ export default function EditProfile() {
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
   const [country, setCountry] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [village, setVillage] = useState("");
   const [bio, setBio] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
@@ -51,6 +52,8 @@ export default function EditProfile() {
   const [dreamJob, setDreamJob] = useState("");
   const [gender, setGender] = useState("");
   const [hobby, setHobby] = useState("");
+  const [profession, setProfession] = useState("");
+  const [favoriteAnimal, setFavoriteAnimal] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
@@ -86,6 +89,7 @@ export default function EditProfile() {
           setEmail(userData.email || "");
           setBirthday(userData.birthday || "");
           setCountry(userData.country || "");
+          setPronouns(userData.pronouns || "");
           setVillage(userData.village || "");
           setBio(userData.bio || "");
           setEducationLevel(userData.education_level || "");
@@ -94,6 +98,8 @@ export default function EditProfile() {
           setDreamJob(userData.dream_job || "");
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
+          setFavoriteAnimal(userData.favorite_animal || "");
+          setProfession(userData.profession || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
         } else {
@@ -113,18 +119,21 @@ export default function EditProfile() {
       const userProfile = {
         first_name: firstName,
         last_name: lastName,
-        email,
-        birthday,
-        country,
-        village,
-        bio,
+        email: email,
+        birthday: birthday,
+        country: country,
+        village: village,
+        bio: bio,
         education_level: educationLevel,
         is_orphan: isOrphan.toLowerCase() === "yes" ? true : false,
         guardian: guardian,
         dream_job: dreamJob,
-        hobby,
+        hobby: hobby,
         favorite_color: favoriteColor,
-        gender,
+        gender: gender,
+        profession: profession,
+        favorite_animal: favoriteAnimal,
+        pronouns: pronouns,
       };
 
       // Custom validation
@@ -263,25 +272,28 @@ export default function EditProfile() {
             width="large"
           />
           {/* Profile Image */}
-          <div className="my-6">
-            <div className="relative w-40 h-40 mx-auto">
-              <Image
-                src={photoUri ? photoUri : "/murphylogo.png"}
-                layout="fill"
-                className="rounded-full"
-                alt="Profile picture"
-              />
+          {/* Do not show photo if user_type is admin or moderator */}
+          {userType !== "admin" && userType !== "moderator" && (
+            <div className="my-6">
+              <div className="relative w-40 h-40 mx-auto">
+                <Image
+                  src={photoUri ? photoUri : "/murphylogo.png"}
+                  layout="fill"
+                  className="rounded-full"
+                  alt="Profile picture"
+                />
+              </div>
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => router.push("/edit-profile-user-image")}
+                  className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                >
+                  Edit Photo
+                </button>
+              </div>
             </div>
-            <div className="mt-4 flex justify-center">
-              <button
-                type="button"
-                onClick={() => router.push("/edit-profile-user-image")}
-                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
-              >
-                Edit Photo
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Form Fields */}
           <div className="space-y-6 mb-[120px]">
@@ -326,6 +338,38 @@ export default function EditProfile() {
                 <div className="flex-1">
                   <Input
                     type="text"
+                    id="email"
+                    name="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    label="Email"
+                    placeholder="Ex: Email"
+                    borderColor="border-gray-300"
+                    focusBorderColor="focus:border-green-800"
+                    bgColor="bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    id="pronouns"
+                    name="pronouns"
+                    value={pronouns}
+                    onChange={(e) => setPronouns(e.target.value)}
+                    label="Pronouns"
+                    placeholder="Ex: Pronouns"
+                    borderColor="border-gray-300"
+                    focusBorderColor="focus:border-green-800"
+                    bgColor="bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="text"
                     id="country"
                     name="country"
                     value={country}
@@ -338,24 +382,6 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
-              {userType !== "international_buddy" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      id="village"
-                      name="village"
-                      value={village}
-                      onChange={(e) => setVillage(e.target.value)}
-                      label="Village"
-                      placeholder="Ex: Village"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
-                    />
-                  </div>
-                </div>
-              )}
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">Bio/Challenges faced</p>
@@ -388,130 +414,198 @@ export default function EditProfile() {
                   </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="date"
-                    id="birthday"
-                    name="birthday"
-                    value={birthday}
-                    onChange={(e) => setBirthday(e.target.value)}
-                    label="Birthday"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-            </ProfileSection>
-
-            {/* Education & Family Section */}
-            <ProfileSection
-              title={`Education ${
-                userType !== "international_buddy" ? "& Family" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Education level</p>
-                  <Dropdown
-                    options={educationOptions}
-                    valueChange={(option) => {
-                      setEducationLevel(option);
-                    }}
-                    currentValue={educationLevel}
-                    text="Education Level"
-                  />
-                </div>
-              </div>
-              {userType !== "international_buddy" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">Guardian</p>
-                    <Dropdown
-                      options={guardianOptions}
-                      valueChange={(option) => {
-                        setGuardian(option);
-                      }}
-                      currentValue={guardian}
-                      text="Guardian"
-                    />
+              {(userType == "international_buddy") && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="profession"
+                        name="profession"
+                        value={profession}
+                        onChange={(e) => setProfession(e.target.value)}
+                        label="Profession"
+                        placeholder="Ex: Profession"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-              {userType !== "international_buddy" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">Is orphan</p>
-
-                    <Dropdown
-                      options={orphanOptions}
-                      valueChange={(option) => {
-                        setIsOrphan(option);
-                      }}
-                      currentValue={isOrphan}
-                      text="Orphan Status"
-                    />
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="favoriteAnimal"
+                        name="favoriteAnimal"
+                        value={favoriteAnimal}
+                        onChange={(e) => setFavoriteAnimal(e.target.value)}
+                        label="Favorite Animal"
+                        placeholder="Ex: Favorite Animal"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
                   </div>
-                </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="hobby"
+                        name="hobby"
+                        value={hobby}
+                        onChange={(e) => setHobby(e.target.value)}
+                        label="Hobby"
+                        placeholder="Dancing"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                </>)}
+              {(userType == "child" || userType == "local_volunteer") && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="village"
+                        name="village"
+                        value={village}
+                        onChange={(e) => setVillage(e.target.value)}
+                        label="Village"
+                        placeholder="Ex: Village"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="date"
+                        id="birthday"
+                        name="birthday"
+                        value={birthday}
+                        onChange={(e) => setBirthday(e.target.value)}
+                        label="Birthday"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">Is orphan</p>
+
+                      <Dropdown
+                        options={orphanOptions}
+                        valueChange={(option) => {
+                          setIsOrphan(option);
+                        }}
+                        currentValue={isOrphan}
+                        text="Orphan Status"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">Guardian</p>
+                      <Dropdown
+                        options={guardianOptions}
+                        valueChange={(option) => {
+                          setGuardian(option);
+                        }}
+                        currentValue={guardian}
+                        text="Guardian"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">Education level</p>
+                      <Dropdown
+                        options={educationOptions}
+                        valueChange={(option) => {
+                          setEducationLevel(option);
+                        }}
+                        currentValue={educationLevel}
+                        text="Education Level"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="dreamjob"
+                        name="dreamjob"
+                        value={dreamJob}
+                        onChange={(e) => setDreamJob(e.target.value)}
+                        label="Dream job"
+                        placeholder="Airplane pilot"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="hobby"
+                        name="hobby"
+                        value={hobby}
+                        onChange={(e) => setHobby(e.target.value)}
+                        label="Hobby"
+                        placeholder="Dancing"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="favoriteAnimal"
+                        name="favoriteAnimal"
+                        value={favoriteAnimal}
+                        onChange={(e) => setFavoriteAnimal(e.target.value)}
+                        label="Favorite Animal"
+                        placeholder="Ex: Favorite Animal"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="favoriteColor"
+                        name="favoriteColor"
+                        value={favoriteColor}
+                        onChange={(e) => setFavoriteColor(e.target.value)}
+                        label="Favorite Color"
+                        placeholder="Ex: Blue"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </ProfileSection>
-
-            {/* Interest Section */}
-            <ProfileSection title="Interest">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="dreamjob"
-                    name="dreamjob"
-                    value={dreamJob}
-                    onChange={(e) => setDreamJob(e.target.value)}
-                    label="Dream job"
-                    placeholder="Airplane pilot"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="hobby"
-                    name="hobby"
-                    value={hobby}
-                    onChange={(e) => setHobby(e.target.value)}
-                    label="Hobby"
-                    placeholder="Dancing"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-            </ProfileSection>
-
-            {/* Favorite Color */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <Input
-                  type="text"
-                  id="favoriteColor"
-                  name="favoriteColor"
-                  value={favoriteColor}
-                  onChange={(e) => setFavoriteColor(e.target.value)}
-                  label="Favorite Color"
-                  placeholder="Ex: Blue"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
-                />
-              </div>
-            </div>
 
             <div className="flex justify-center">
               <Link
