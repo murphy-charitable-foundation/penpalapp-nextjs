@@ -5,10 +5,18 @@ import BottomNavBar from "../../components/bottom-nav-bar";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
+import { useUser } from "../../contexts/UserContext";
 
 const NAV_H = 88;
 
 export default function About() {
+  const { user } = useUser();
+
+  const navbarHeight = user ? NAV_H : 0;
+  const whiteCardWrapperHeight = {
+    height: user ? `calc(103svh - ${navbarHeight}px )` : 'auto',
+  }
+
   return (
     <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
       {/* small top padding to show the card’s top rounding */}
@@ -16,9 +24,7 @@ export default function About() {
         {/* wrapper for the white card*/}
         <div
           className="mx-auto w-full max-w-[640px] shadow-lg"
-          style={{
-            height: `calc(103svh - ${NAV_H}px )`,
-          }}
+          style={whiteCardWrapperHeight}
         >
           {/* NEW: this layer owns the rounding & clipping so the bottom stays round */}
           <div className="h-full rounded-2xl overflow-hidden bg-white">
@@ -28,7 +34,7 @@ export default function About() {
               bg="bg-white"
               center
               scroll
-              viewportOffset={NAV_H}
+              viewportOffset={navbarHeight}
               className="p-0 h-full min-h-0 overflow-y-auto overscroll-contain"
               style={{
                 WebkitOverflowScrolling: "touch",
@@ -119,7 +125,7 @@ export default function About() {
                 </div>
 
                 {/* spacer so the last line clears the tiny outside gap above the nav */}
-                <div aria-hidden="true" style={{ height: `calc(${NAV_H}px + 8px)` }} />
+                <div aria-hidden="true" style={{ height: `calc(${navbarHeight}px + 8px)` }} />
               </div>
             </PageContainer>
           </div>

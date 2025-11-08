@@ -7,6 +7,7 @@ import { BackButton } from '../../components/general/BackButton';
 import { PageBackground } from '../../components/general/PageBackground';
 import { PageContainer } from '../../components/general/PageContainer';
 import { PageHeader } from '../../components/general/PageHeader';
+import { useUser } from '../../contexts/UserContext';
 export default function Donate() {
   const details = [
     { label: "Account Name", value: "Murphy Charitable Foundation" },
@@ -19,6 +20,12 @@ const NAV_H = 88;         // your real BottomNav height
 const TOP_GAP_PX = 0;     // smaller top gap (px) → taller card
 const FUDGE_PX = 24;      // extra height to ensure bottom is visible
 
+const { user } = useUser();
+const navbarHeight = user ? NAV_H : 0;
+const whiteCardWrapperHeight = {
+  height: user ? `calc(100dvh - ${NAV_H}px - ${TOP_GAP_PX}px + ${FUDGE_PX}px)` : 'auto',
+}
+
   return (
     <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
       {/* smaller top gap for a taller card */}
@@ -26,14 +33,14 @@ const FUDGE_PX = 24;      // extra height to ensure bottom is visible
         <div
           className="mx-auto w-full max-w-[29rem] rounded-lg shadow-lg overflow-hidden"
           // make it taller: subtract less + add a small positive fudge
-          style={{ height: `calc(100dvh - ${NAV_H}px - ${TOP_GAP_PX}px + ${FUDGE_PX}px)` }}
+          style={whiteCardWrapperHeight}
         >
           <PageContainer
             width="compactXS"
             padding="none"
             bg="bg-white"
             scroll
-            viewportOffset={NAV_H}
+            viewportOffset={navbarHeight}
             className="p-0 h-full min-h-0 overflow-hidden"
             style={{ WebkitOverflowScrolling: "touch" }}
           >

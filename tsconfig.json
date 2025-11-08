@@ -30,7 +30,7 @@
     "**/*.tsx",
     "components/general/PageContainer.jsx",
     "components/general/BackButton.jsx"
-  ],
+, "contexts/NavigationContext.js"  ],
   "exclude": [
     "node_modules"
   ]
