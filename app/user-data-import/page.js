@@ -80,7 +80,7 @@ export default function UserDataImport() {
       await setDoc(doc(db, "users", userId), userData);
 
       // Reset form
-      e.target.closest('form').reset();
+      e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
