@@ -54,6 +54,8 @@ export default function UserDataImport() {
         hobby: formData.get("hobby"),
         favorite_color: formData.get("favoriteColor"),
         gender: gender,
+        user_type: "child",
+        connected_penpals_count: 0,
       };
 
       // Custom validation
@@ -78,7 +80,7 @@ export default function UserDataImport() {
       await setDoc(doc(db, "users", userId), userData);
 
       // Reset form
-      e.currentTarget.reset();
+      e.target.closest('form').reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
