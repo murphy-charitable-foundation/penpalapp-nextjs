@@ -77,6 +77,8 @@ export const formatDateSeparator = (timestamp) => {
  * @returns {string} - Formatted time string
  */
 export const formatTime = (timestamp) => {
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
   if (!timestamp) return "";
 
   let date;
@@ -106,14 +108,40 @@ export const formatTime = (timestamp) => {
     dayBeforeYesterday.getMonth(),
     dayBeforeYesterday.getDate()
   );
-
-  // If message is older than day before yesterday, show MM/DD/YYYY
+  const todayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  )
+  const yesterdayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+  yesterdayStart.setDate(todayStart.getDate() -1)
+  let presentDate = new Date();
+  presentDate.setHours(0, 0, 0, 0);
+  let day = presentDate.getDay()
+  let diff = presentDate.getDate() - day + (day == 0 ? -6 : 1); //Calculating last monday date
+  let lastMonday = new Date(presentDate.setDate(diff));
+  let currTime = new Date(date).getTime();
+  let mondayTime = new Date(lastMonday).getTime();
+  
+  // If message is older than day before yesterday and in the same week, show day string (Ex: Monday),
+  // else show MM-DD-YYYY
   if (messageDate < dayBeforeYesterdayStart) {
-    return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
+    if (currTime >= mondayTime) {
+      return days[date.getDay()]
+    } else {
+      return date.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      }).replace(/\//g, '-'); //replacing / with -
+    }
+  } 
+  else if ( messageDate.getTime() == yesterdayStart.getTime()){ //If message is from previous day show Yesterday
+    return "Yesterday";
   }
 
   // Otherwise show time as before
