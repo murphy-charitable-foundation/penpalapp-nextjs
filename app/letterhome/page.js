@@ -16,8 +16,8 @@ import {
   fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
+  getUserDoc,
 } from "../utils/letterboxFunctions";
-
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
@@ -57,6 +57,36 @@ export default function Home() {
     }
   };
 
+  function startInactivityWatcher(timeoutMinutes = 30) {
+    if (typeof window === "undefined") return; // server-side safety
+
+    const INACTIVITY_LIMIT = timeoutMinutes * 60 * 1000;
+    let timer;
+
+    function clearStoredData() {
+      localStorage.removeItem("child");
+      router.push("/children-gallery");
+      console.log("Removed 'child' from localStorage due to inactivity");
+    }
+
+    function resetTimer() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(clearStoredData, INACTIVITY_LIMIT);
+    }
+
+    const activityEvents = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
+
+    // Start timer immediately
+    resetTimer();
+
+    // Return a cleanup function if needed
+    return function stopWatcher() {
+      clearTimeout(timer);
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }
+
   const getConversations = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
@@ -70,10 +100,10 @@ export default function Home() {
               (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
-
+            
             return {
               id: letter?.id,
-              profileImage: recipient?.photo_uri || "",
+              profileImage: await getUserPfp(recipient.id) || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
@@ -106,19 +136,28 @@ export default function Home() {
     }
   };
 
+ 
+
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        console.log("no user");
         // TODO: redirect if everything is loaded and still no user
         setError("No user logged in.");
         router.push("/login");
         return;
       } else {
         try {
+          // Track inactivity for "myData" and remove it after 30 minutes
+          if (localStorage.getItem("child")) {
+            startInactivityWatcher();
+          }
           const uid = user.uid;
-
-          const userData = await getUserData(uid);
+        
+          const {userDocRef, userDocSnapshot} = await getUserDoc();
+          const userData = userDocSnapshot.data();
+         
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
@@ -139,69 +178,9 @@ export default function Home() {
     return () => unsubscribe();
   }, [router]);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        try {
-          const uid = auth.currentUser.uid;
-          setUserId(uid);
 
-          const docRef = doc(db, "users", uid);
-          const docSnap = await getDoc(docRef);
 
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setUserName(userData.first_name || "Unknown User");
-            setCountry(userData.country || "Unknown Country");
-            setUserType(userData.user_type || "Unknown Type");
-            const downloaded = await getUserPfp(uid);
-            setProfileImage(downloaded || "");
-
-            // Show welcome message
-            setShowWelcome(true);
-
-            // Hide welcome message after 5 seconds
-            setTimeout(() => {
-              setShowWelcome(false);
-            }, 5000);
-          } else {
-            console.log("No such document!");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setError("Failed to load user data");
-        }
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //   setIsLoading(true);
-  //     try {
-  //       const uid = user.uid;
-
-  //       const userData = await getUserData(uid);
-  //       setUserName(userData.first_name || "Unknown User");
-  //       setCountry(userData.country || "Unknown Country");
-  //       setUserType(userData.user_type || "Unknown Type");
-  //       setProfileImage(userData?.photo_uri || "");
-
-  //       const userConversations = await getConversations(uid);
-  //       setConversations(userConversations);
-  //     } catch (err) {
-  //       setError("Error fetching user data or conversations.");
-  //       console.error(err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  // };
-
-  //   fetchUserData();
-  // }, []);
-
+   
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">

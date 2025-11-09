@@ -25,7 +25,6 @@ import {
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import List from "../../components/general/List";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
@@ -33,6 +32,7 @@ import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { getUserDoc } from "../utils/letterboxFunctions";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 
@@ -72,15 +72,47 @@ export default function EditProfile() {
   const router = useRouter();
   usePageAnalytics("/profile");
 
+  function startInactivityWatcher(timeoutMinutes = 30) {
+    if (typeof window === "undefined") return; // server-side safety
+
+    const INACTIVITY_LIMIT = timeoutMinutes * 60 * 1000;
+    let timer;
+
+    function clearStoredData() {
+      localStorage.removeItem("child");
+      router.push("/children-gallery");
+      console.log("Removed 'child' from localStorage due to inactivity");
+    }
+
+    function resetTimer() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(clearStoredData, INACTIVITY_LIMIT);
+    }
+
+    const activityEvents = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
+
+    // Start timer immediately
+    resetTimer();
+
+    // Return a cleanup function if needed
+    return function stopWatcher() {
+      clearTimeout(timer);
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }
+
+  if (localStorage.getItem("child")) {
+    startInactivityWatcher();
+  }
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
+        const {userDocRef, userDocSnapshot} = await getUserDoc();
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
+        if (userDocSnapshot.exists()) {
+          const userData = userDocSnapshot.data();
           setFirstName(userData.first_name || "");
           setLastName(userData.last_name || "");
           setEmail(userData.email || "");
@@ -107,7 +139,7 @@ export default function EditProfile() {
   // Save profile data to Firestore
   const saveProfileData = async () => {
     if (auth.currentUser) {
-      const uid = auth.currentUser.uid;
+      const uid = JSON.parse(localStorage.getItem("child"))?.id || auth.currentUser?.uid;
       const userProfileRef = doc(db, "users", uid);
 
       const userProfile = {

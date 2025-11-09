@@ -6,10 +6,20 @@ import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
-const getUserDoc = async () => {
-  const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
-  const userDocSnapshot = await getDoc(userDocRef);
-  return { userDocRef, userDocSnapshot };
+export const getUserDoc = async () => {
+  const storedDoc = JSON.parse(localStorage.getItem("child"));
+  if (storedDoc) {
+    console.log("storedDoc id", storedDoc.id);
+    const userDocRef = doc(collection(db, "users"), storedDoc.id);
+    const userDocSnapshot = await getDoc(userDocRef);
+    return { userDocRef, userDocSnapshot };
+  } else { 
+    const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+    const userDocSnapshot = await getDoc(userDocRef);
+
+    return {userDocRef, userDocSnapshot};
+  }
+
 };
 
 export const getUserPfp = async(uid) => {
@@ -26,7 +36,8 @@ export const fetchLetterboxes = async () => {
     retryFetch();
     return;
   }
-  const { userDocRef, userDocSnapshot } = await getUserDoc();
+  const { userDocRef, userDocSnapshot} = await getUserDoc();
+  console.log("inside of fetchletterbox");
   if (!userDocSnapshot.exists()) return;
 
   const letterboxQuery = query(
@@ -47,7 +58,6 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     return;
   }
   const { userDocSnapshot } = await getUserDoc();
-
   if (!userDocSnapshot.exists()) return;
 
   const letterboxRef = doc(collection(db, "letterbox"), id);
