@@ -59,7 +59,7 @@ async function getConversationTokens(conversationId, senderUid) {
 
       tokenSnap.forEach((t) => {
         const tokenData = t.data();
-        if (!tokenData.fcmTOken) return;
+        if (!tokenData.fcmToken) return;
         tokens.push({
           token: tokenData.fcmToken,
           name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
