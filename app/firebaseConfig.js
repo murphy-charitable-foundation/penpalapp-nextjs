@@ -90,9 +90,9 @@ export const handleNotificationSetup = async () => {
 
     const data = await res.json();
     if (res.ok) {
-      console.log("Notification setup complete:", data);
+      console.log("Notification setup complete:");
     } else {
-      console.error("Server error setting up notifications:", data);
+      console.error("Server error setting up notifications:");
     }
   } catch (err) {
     console.error("Error during notification setup:", err);
