@@ -22,6 +22,8 @@ import {
   Briefcase,
   Square,
   Palette,
+  Info,
+  Mail,
 } from "lucide-react";
 import Button from "../../../components/general/Button";
 import { BackButton } from "../../../components/general/BackButton";
@@ -29,6 +31,8 @@ import { PageContainer } from "../../../components/general/PageContainer";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../../components/general/PageHeader";
+
+/* ❗ If you add new fields to the user profile, update this file as well as the edit profile page */
 
 export default function Page({ params }) {
   const { id } = params;
@@ -46,9 +50,13 @@ export default function Page({ params }) {
   //const [gender, setGender] = useState("");
   const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
+  const [favoriteAnimal, setFavoriteAnimal] = useState("");
+  const [profession, setProfession] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState("international_buddy");
+  const [lastOnline, setLastOnline] = useState("");
 
   const router = useRouter();
 
@@ -76,8 +84,12 @@ export default function Page({ params }) {
           setDreamJob(userData.dream_job || "");
           setHobby(userData.hobby || "");
           setFavoriteColor(userData.favorite_color || "");
+          setFavoriteAnimal(userData.favorite_animal || "");
+          setProfession(userData.profession || "");
+          setPronouns(userData.pronouns || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
+          setLastOnline(userData.last_online || "");
         } else {
           console.log("No such document!");
         }
@@ -117,14 +129,15 @@ export default function Page({ params }) {
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
           {/* Profile Image */}
           <div className="my-6">
-            <div className="relative w-40 h-40 mx-auto">
-              <Image
-                src={photoUri ? photoUri : "/murphylogo.png"}
-                layout="fill"
-                className="rounded-full"
-                alt="Profile picture"
-              />
-            </div>
+              <div className="relative w-40 h-40 mx-auto">
+                <Image
+                  src={photoUri ? photoUri : "/murphylogo.png"}
+                  layout="fill"
+                  className="rounded-full"
+                  alt="Profile picture"
+                />
+              </div>
+            
             {auth.currentUser?.uid === id && (
               <div className="mt-4 flex justify-center">
                 <button
@@ -168,51 +181,59 @@ export default function Page({ params }) {
           <div className="space-y-8 mb-[120px]">
             {/* Personal Information Section */}
             <ProfileSection title="Personal Information">
-              {userType !== "international_buddy" && (
-                <InfoDisplay title="Village" info={village}>
-                  <Home className="w-5 h-5 text-black stroke-[2.5]" />
-                </InfoDisplay>
+              <InfoDisplay title="Email" info={email}>
+                <Mail className="w-5 h-5 text-black stroke-[2.5]" />
+              </InfoDisplay>
+              <InfoDisplay title="Pronouns" info={pronouns}>
+                <Users className="w-5 h-5 text-black stroke-[2.5]" />
+              </InfoDisplay>
+              {userType == "international_buddy" && (
+                <>
+                  <InfoDisplay title="Profession" info={profession}>
+                    <Briefcase className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Favorite Animal" info={favoriteAnimal}>
+                    <Heart className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Hobby" info={hobby}>
+                    <Square className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Last Online" info={lastOnline}>
+                    <Info className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                </>
               )}
-              <InfoDisplay title="Birthday" info={birthday}>
-                <Calendar className="w-5 h-5 text-black stroke-[2.5]" />
-              </InfoDisplay>
-            </ProfileSection>
-
-            {/* Education & Family Section */}
-            <ProfileSection
-              title={`Education ${
-                userType !== "international_buddy" ? "& Family" : ""
-              }`}
-            >
-              <InfoDisplay title="Education level" info={educationLevel}>
-                <GraduationCap className="w-5 h-5 text-black stroke-[2.5]" />
-              </InfoDisplay>
-              {userType !== "international_buddy" && (
-                <InfoDisplay title="Guardian" info={guardian}>
-                  <Users className="w-5 h-5 text-black stroke-[2.5]" />
-                </InfoDisplay>
+              {(userType == "child" || userType == "local_volunteer") && (
+                <>
+                  <InfoDisplay title="Birthday" info={birthday}>
+                    <Calendar className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Village" info={village}>
+                    <Home className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Is orphan" info={isOrphan}>
+                    <Heart className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Guardian" info={guardian}>
+                    <Users className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Education level" info={educationLevel}>
+                    <GraduationCap className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Dream Job" info={dreamJob}>
+                    <Briefcase className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Hobby" info={hobby}>
+                    <Square className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Favorite Animal" info={favoriteAnimal}>
+                    <Heart className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                  <InfoDisplay title="Favorite Color" info={favoriteColor}>
+                    <Palette className="w-5 h-5 text-black stroke-[2.5]" />
+                  </InfoDisplay>
+                </>
               )}
-              {userType !== "international_buddy" && (
-                <InfoDisplay title="Is orphan" info={isOrphan}>
-                  <Heart className="w-5 h-5 text-black stroke-[2.5]" />
-                </InfoDisplay>
-              )}
-            </ProfileSection>
-
-            {/* Interest Section */}
-            <ProfileSection title="Interest">
-              <InfoDisplay title="Dream Job" info={dreamJob}>
-                <Briefcase className="w-5 h-5 text-black stroke-[2.5]" />
-              </InfoDisplay>
-
-              <InfoDisplay title="Hobby" info={hobby}>
-                <Square className="w-5 h-5 text-black stroke-[2.5]" />
-              </InfoDisplay>
-
-              {/* Favorite Color */}
-              <InfoDisplay title="Favorite Color" info={favoriteColor}>
-                <Palette className="w-5 h-5 text-black stroke-[2.5]" />
-              </InfoDisplay>
             </ProfileSection>
           </div>
         </div>
