@@ -32,6 +32,8 @@ import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../../components/general/PageHeader";
 
+/* ❗ If you add new fields to the user profile, update this file as well as the edit profile page */
+
 export default function Page({ params }) {
   const { id } = params;
   const [firstName, setFirstName] = useState("");
@@ -127,7 +129,6 @@ export default function Page({ params }) {
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
           {/* Profile Image */}
           <div className="my-6">
-            {userType !== "admin" && userType !== "moderator" && ( 
               <div className="relative w-40 h-40 mx-auto">
                 <Image
                   src={photoUri ? photoUri : "/murphylogo.png"}
@@ -136,7 +137,7 @@ export default function Page({ params }) {
                   alt="Profile picture"
                 />
               </div>
-            )}
+            
             {auth.currentUser?.uid === id && (
               <div className="mt-4 flex justify-center">
                 <button

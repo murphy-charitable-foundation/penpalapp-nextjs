@@ -36,6 +36,8 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 
+/* ❗ If you add fields to the user profile, please also update the profile view */
+
 export default function EditProfile() {
   // State initializations
   const [firstName, setFirstName] = useState("");
@@ -272,8 +274,6 @@ export default function EditProfile() {
             width="large"
           />
           {/* Profile Image */}
-          {/* Do not show photo if user_type is admin or moderator */}
-          {userType !== "admin" && userType !== "moderator" && (
             <div className="my-6">
               <div className="relative w-40 h-40 mx-auto">
                 <Image
@@ -293,7 +293,7 @@ export default function EditProfile() {
                 </button>
               </div>
             </div>
-          )}
+          
 
           {/* Form Fields */}
           <div className="space-y-6 mb-[120px]">
