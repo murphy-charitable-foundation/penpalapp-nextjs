@@ -374,7 +374,7 @@ export default function Page({ params }) {
       }
       
       // Clear states
-      sendNotification(globalLetterboxReference, letterUserRef, "You have a new message!")
+      sendNotification(globalLetterboxReference, "You have a new message!")
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);

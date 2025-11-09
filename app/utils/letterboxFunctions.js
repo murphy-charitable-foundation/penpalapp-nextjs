@@ -289,80 +289,36 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
   }
 };
 
-export const sendNotification = async (letterboxRef, sentBy, message) => {
+export const sendNotification = async (letterboxRef, message) => {
   // Verify that the user is authenticated.
-  if (!auth.currentUser?.uid) {
+  if (!auth.currentUser) {
     console.error("User not authenticated.");
     return;
   }
+
   try {
-    // Retrieve sender.
-    const senderDoc = await getDoc(sentBy);
-    if (!senderDoc.exists()) {
-      console.error("Sender not found.");
-      return;
-    }
-    // Retrieve the letterbox document.
-    const letterboxDocSnapshot = await getDoc(letterboxRef);
-    if (!letterboxDocSnapshot.exists()) {
-      console.error("Letterbox not found.");
-      return;
-    }
-    const letterboxData = letterboxDocSnapshot.data();
-    const members = letterboxData?.members || [];
+    // Retrieve Firebase Auth ID token for authorization.
+    const idToken = await auth.currentUser.getIdToken();
 
-    // Exclude the current user (the sender).
-    console.log("members: ", members[0].id)
-    const recipients = members.filter(
-      (member) => member.id !== sentBy.id
-    );
-    if (recipients.length === 0) {
-      console.log("No recipients available for notification.");
-      return;
-    }
+    // Retrieve the conversation (letterbox) ID.
+    const conversationId = letterboxRef.id;
 
-    // For each recipient, retrieve FCM tokens by matching their userGroup.
-    let tokensArray = [];
-    await Promise.all(
-      recipients.map(async (memberRef) => {
-        try {
-          const memberDoc = await getDoc(memberRef)
-          const member = memberDoc.data()
-          const tokenQuery = query(
-            collection(db, "fcmTokens"),
-            where("userGroup", "==", member.userGroup)
-          );
-          const tokenSnapshot = await getDocs(tokenQuery);
-          const tokens = tokenSnapshot.docs.map((doc) => ({
-            token: doc.data().fcmToken,
-            name: member.first_name + " " + member.last_name,
-            message: message || "You have a notification."
-          }));
-          tokensArray.push(...tokens);
-        } catch (error) {
-          console.error("Error fetching FCM tokens for member:", memberRef, error);
-        }
-      })
-    );
-
-    if (tokensArray.length === 0) {
-      console.log("No FCM tokens found for recipients.");
-      return;
-    }
-
-    // Prepare the payload for the backend notification endpoint.
+    // Build payload.
     const payload = {
-      tokens: tokensArray
+      conversationId: conversationId,
+      message: message || "You have a notification.",
     };
 
-    // Use fetch to call the notifications API endpoint.
+    // Send to notify API with auth header.
     const response = await fetch("/api/notify", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
+
     const result = await response.json();
 
     if (!response.ok) {
@@ -376,3 +332,4 @@ export const sendNotification = async (letterboxRef, sentBy, message) => {
     console.error("Error in sendNotification:", e);
   }
 };
+

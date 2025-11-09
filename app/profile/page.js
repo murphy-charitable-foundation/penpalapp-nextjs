@@ -515,17 +515,6 @@ export default function EditProfile() {
                 />
               </div>
             </div>
-            
-            { notification &&
-              <div className="flex justify-center">
-                <Button
-                  color="red"
-                  btnText="Disable Notifications"
-                  onClick={(e) => {setNotification(null)}}
-                  enabled
-                />
-              </div>
-            }
 
             <div className="flex justify-center">
               <Link
