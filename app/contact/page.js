@@ -18,13 +18,22 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import logo from "/public/murphylogo.png";
+import { useUser } from "../../contexts/UserContext";
 
 // small top gap to match other pages
 const TOP_GAP = 1;
 
 export default function Contact() {
+  const { user } = useUser();
+
   const [navH, setNavH] = useState(88);
   const navWrapRef = useRef(null);
+  const navbarHeight = user ? navH : 0;
+  const whiteCardWrapperHeight = {
+    height: user ? `calc(102svh - var(--navH) - ${TOP_GAP}px + 2px)` : 'auto', // tiny external gap
+    marginBottom: "0px",
+    boxShadow: "0 8px 12px -6px rgba(0,0,0,0.08)",
+  }
 
   useLayoutEffect(() => {
     const el = navWrapRef.current;
@@ -59,11 +68,7 @@ export default function Contact() {
         {/* height stops ~2px above the BottomNav so the rounded corner shows */}
         <div
           className="mx-auto w-full max-w-none sm:max-w-[29rem] overflow-hidden rounded-2xl min-h-0"
-          style={{
-            height: `calc(102svh - var(--navH) - ${TOP_GAP}px + 2px)`, // tiny external gap
-            marginBottom: "0px",
-            boxShadow: "0 8px 12px -6px rgba(0,0,0,0.08)",
-          }}
+          style={whiteCardWrapperHeight}
         >
           {/* make the white card scroll, not the whole page */}
           <PageContainer
@@ -71,7 +76,7 @@ export default function Contact() {
             padding="none"
             bg="bg-white"
             scroll={true}                 
-            viewportOffset={navH}
+            viewportOffset={navbarHeight}
             className="p-0 h-full min-h-0 overflow-y-auto"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
@@ -139,7 +144,7 @@ export default function Contact() {
               {/* spacer ensures you can scroll the footer fully ABOVE the tiny gap */}
               <div
                 aria-hidden="true"
-                style={{ height: `calc(var(--navH) + 8px)` }}
+                style={{ height: user ? `calc(var(--navH) + 8px)` : 0, }}
               />
             </div>
           </PageContainer>
