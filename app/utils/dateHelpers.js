@@ -134,7 +134,7 @@ export const formatTime = (timestamp) => {
       return days[date.getDay()]
     } else {
       return date.toLocaleDateString(undefined, {
-        month: "2-digit",
+        month: "short",
         day: "2-digit",
         year: "numeric",
       })

@@ -55,7 +55,7 @@ export const formatDate = (timestamp) => {
 
     return date.toLocaleDateString(undefined, {
       year: "numeric",
-      month: "numeric",
+      month: "short",
       day: "numeric",
     })
   };
