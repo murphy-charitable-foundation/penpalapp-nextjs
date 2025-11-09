@@ -133,11 +133,11 @@ export const formatTime = (timestamp) => {
     if (currTime >= mondayTime) {
       return days[date.getDay()]
     } else {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString(undefined, {
         month: "2-digit",
         day: "2-digit",
         year: "numeric",
-      }).replace(/\//g, '-'); //replacing / with -
+      })
     }
   } 
   else if ( messageDate.getTime() == yesterdayStart.getTime()){ //If message is from previous day show Yesterday
