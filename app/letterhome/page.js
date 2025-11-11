@@ -1,10 +1,10 @@
 "use client";
-
-import { useState, useEffect } from "react";
-
-import { doc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
-import { logError, logButtonEvent } from "../utils/analytics";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { db, auth } from "../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 import { useUser } from "../../contexts/UserContext";
 
@@ -23,7 +23,6 @@ import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 
@@ -105,20 +104,74 @@ export default function Home() {
 
   const loadConversations = async () => {
     setIsLoading(true);
-    try {
-      const data = await getConversations(user.uid);
-      setConversations(data);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load conversations.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // TODO: redirect if everything is loaded and still no user
+        setError("No user logged in.");
+        router.push("/login");
+        return;
+      } else {
+        try {
+          const uid = user.uid;
+          setUserId(uid)
 
-  loadConversations();
-}, [user]);
+          const userData = await getUserData(uid);
+          setUserName(userData.first_name || "Unknown User");
+          setCountry(userData.country || "Unknown Country");
+          setUserType(userData.user_type || "Unknown Type");
+          const downloaded = await getUserPfp(uid);
+          setProfileImage(downloaded || "");
 
+          const userConversations = await getConversations(uid);
+          setConversations(userConversations);
+        } catch (err) {
+          setError("Error fetching user data or conversations.");
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (auth.currentUser) {
+        try {
+          const uid = auth.currentUser.uid;
+          setUserId(uid);
+
+          const docRef = doc(db, "users", uid);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            setUserName(userData.first_name || "Unknown User");
+            setCountry(userData.country || "Unknown Country");
+            setUserType(userData.user_type || "Unknown Type");
+            const downloaded = await getUserPfp(uid);
+            setProfileImage(downloaded || "");
+
+            // Show welcome message
+            setShowWelcome(true);
+
+            // Hide welcome message after 5 seconds
+            setTimeout(() => {
+              setShowWelcome(false);
+            }, 5000);
+          } else {
+            console.log("No such document!");
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setError("Failed to load user data");
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // useEffect(() => {
   //   const fetchUserData = async () => {
@@ -144,72 +197,95 @@ export default function Home() {
 
   //   fetchUserData();
   // }, []);
-   if (isLoading) {
-    return <LetterHomeSkeleton />;
-  }
+
+const TOP_GAP = 6;
+const GAP_BELOW = 2;
+const CARD_MAX_W = 640;
 
 
-  return (
-    <PageBackground>
-      <PageContainer width="compact">
-          <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
-            <BackButton />
-            <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-              <ProfileHeader
-                userName={userData?.first_name || "Unknown User"}
-                country={userData?.country || "Unknown Country"}
-                profileImage={profileImage}
-                id={user?.uid || ""}
-              />
-              <main className="p-6 bg-white">
-                <section className="mt-8">
-                  {conversations.length > 0 ? (
-                    <ConversationList conversations={conversations} />
-                  ) : (
-                    <EmptyState
-                      title="New friends are coming!"
-                      description="Many friends are coming hang tight!"
-                    />
-                  )}
+const [navH, setNavH] = useState(88);
+const navWrapRef = useRef(null);
+
+useLayoutEffect(() => {
+  const el = navWrapRef.current;
+  if (!el) return;
+  const update = () => setNavH(el.offsetHeight || 88);
+  update();
+  const ro = new ResizeObserver(update);
+  ro.observe(el);
+  window.addEventListener("resize", update);
+  window.addEventListener("orientationchange", update);
+  return () => {
+    window.removeEventListener("resize", update);
+    window.removeEventListener("orientationchange", update);
+    ro.disconnect();
+  };
+}, []);
+
+
+
+return (
+  <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+    <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+      <div
+        className="relative mx-auto w-full rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0"
+        style={{
+          maxWidth: `${CARD_MAX_W}px`,
+          height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+        }}
+      >
+        <PageContainer
+          padding="none"
+          bg="bg-white"
+          scroll={false}                 
+          viewportOffset={0}
+          className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none rounded-2xl"
+          style={{ maxWidth: "unset", width: "100%" }}
+        >
+          <ProfileHeader
+            userName={userName}
+            country={country}
+            profileImage={profileImage}
+            id={userId}
+            className="px-6 m-0 rounded-t-2xl"
+          />
+
+          {/* SINGLE SCROLLER */}
+          <div
+            className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+            style={{
+              
+              paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
+            }}
+          >
+            <main className="px-0">
+              {isLoading ? (
+                <div className="px-6 py-6">
+                  <LetterHomeSkeleton />
+                </div>
+              ) : conversations.length > 0 ? (
+                <section className="mt-0 pb-10">
+                  <ConversationList conversations={conversations} maxHeight="none" />
                 </section>
-              </main>
-
-              <NavBar />
-            </div>
+              ) : (
+                <section className="mt-6 px-6">
+                  <EmptyState
+                    title="New friends are coming!"
+                    description="Many friends are coming — hang tight!"
+                  />
+                </section>
+              )}
+            </main>
           </div>
-          {userType === "admin" && (
-            <Button
-              btnText="Check For Inactive Chats"
-              color="black"
-              onClick={() => {
-                logButtonEvent(
-                  "check for inactive chats button clicked",
-                  "/letterhome"
-                );
-                iterateLetterBoxes();
-              }}
-            />
-          )}
-        
-        {/* Add animation keyframes */}
-        <style jsx global>{`
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateX(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          .animate-slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-          }
-        `}</style>
-      </PageContainer>
-    </PageBackground>
-  );
+        </PageContainer>
+      </div>
+    </div>
+
+    <div ref={navWrapRef}>
+      <NavBar />
+    </div>
+  </PageBackground>
+);
+
 
 }
-

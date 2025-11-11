@@ -150,7 +150,7 @@ export default function CreateAccount() {
       ></Dialog>
       <PageContainer>
         <div>
-          <PageHeader title="Create account" />
+          <PageHeader title="Create account"/>
         </div>
         <div className="flex justify-center mb-6">
           <Image
