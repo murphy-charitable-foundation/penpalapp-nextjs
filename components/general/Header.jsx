@@ -1,60 +1,53 @@
 "use client";
 
+import React from "react";
 import Button from "./Button";
 
-const LIGHT_BLUE = "#E6EDF4";
-const DIVIDER = "#D9E5F0";
-const BRAND_BLUE = "#034792";
+const DIVIDER = "#E5E7EB";     
+const ICON = "#111827";       
 
 export default function Header({ activeFilter, setActiveFilter }) {
   return (
-    <div className="sticky top-0 z-10">
-      {/* Top: title bar (light blue, flush to top) */}
-      <div
-        className="w-full flex items-center justify-center"
-      >
-        <h1 className="text-center font-semibold text-black py-3 text-lg sm:text-xl">
-          Choose a kid to write to
-        </h1>
-      </div>
-
-      {/* Bottom: Filters bar */}
-      <div
-        className="w-full flex items-center justify-end px-4 py-2"
-        style={{ backgroundColor: LIGHT_BLUE, borderTop: `1px solid ${DIVIDER}` }}
-      >
-        <Button
-          color="bg-transparent"
-          size="small"
-          onClick={() => setActiveFilter(!activeFilter)}
-          aria-label="Toggle filters"
+    <div className="sticky top-0 z-10 bg-white">
+      
+      <div className="relative h-12 flex items-center justify-center border-b" style={{ borderColor: DIVIDER }}>
+       
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          aria-label="Back"
+          className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 active:scale-95"
         >
-          <span className="flex items-center">
-            {/* ⚡ Flash icon */}
-            <svg
-              className="w-4 h-4 mr-2"
-              viewBox="0 0 24 24"
-              fill="black"
-              aria-hidden="true"
-            >
-              <path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z" />
-            </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke={ICON} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
 
-            <span>Filters</span>
+        <h1 className="text-[30px] sm:text-base font-bold text-[#034792]">
+          Discover
+        </h1>
 
-            {/* caret */}
-            {!activeFilter ? (
-              <svg className="w-5 h-5 ml-2 fill-current" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 ml-2 fill-current" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
-              </svg>
-            )}
-          </span>
-        </Button>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8" />
       </div>
+
+      
+      <button
+        type="button"
+        onClick={() => setActiveFilter(!activeFilter)}
+        aria-label="Toggle filters"
+        className="w-full h-12 px-4 flex items-center justify-between border-b bg-[#E6EDF4]"
+        style={{ borderColor: DIVIDER, WebkitTapHighlightColor: 'transparent' }}
+      >
+        <span className="text-[15px] text-gray-700">Find and choose your next pen pal</span>
+        <svg className="w-5 h-5 text-[#034792]" viewBox="0 0 20 20" fill="currentColor">
+          {activeFilter ? (
+           <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
+           ) : (
+           <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
+          )}
+        </svg>
+      </button>
+
     </div>
   );
 }

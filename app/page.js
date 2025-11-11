@@ -10,23 +10,16 @@ import Button from "../components/general/Button";
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-gray-100">
-      <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
-        <Link href="/cover" aria-label="Go back">
-          <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
-        </Link>
-      </div>
-
       <PageContainer
         width="compactXS"
         padding="lg"
         bg="bg-gray-100"
         viewportOffset={0}
-        scroll={false}                 
+        scroll={false}
         className="rounded-3xl shadow-2xl ring-1 ring-gray-200 min-h-[100dvh] overflow-hidden"
       >
-        
-        <div className="relative min-h-[80vh]">
-         
+        <div className="relative min-h-[90vh]">
+          {/* Logo */}
           <div className="absolute inset-x-0 top-6 sm:top-8 md:top-10 flex justify-center">
             <Image
               src={logo}
@@ -38,19 +31,25 @@ export default function Home() {
             />
           </div>
 
-          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6"
-    // style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 6px)" }}
-          >
+          {/* Added text  */}
+          <div className="absolute inset-x-0 top-[220px] sm:top-[240px] md:top-[260px] px-6 py-6 text-center">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Welcome to Pen Pal App
+            </h1>
+            <p className="mt-2 mb-8 text-gray-800 text-sm md:text-base font-semibold">
+              Write, connect, and inspire children in Uganda
+            </p>
+          </div>
 
+          {/* Buttons */}
+          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
             <div className="mx-auto w-full max-w-sm space-y-5 text-center">
               <Link href="/login" className="block">
                 <Button
                   color="green"
                   btnText="Log in"
                   textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                             active:scale-[0.99] transition"
+                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.99] transition"
                 />
               </Link>
 
@@ -59,9 +58,7 @@ export default function Home() {
                   color="blue"
                   btnText="Become a Pen Pal Volunteer"
                   textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                             active:scale-[0.99] transition"
+                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.99] transition"
                 />
               </Link>
             </div>

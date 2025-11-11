@@ -19,7 +19,7 @@ const PADS = {
 
 export function PageContainer({
   children,
-  width = "compact",
+  width = "compactXS",
   padding = "lg",
   bg = "bg-gray-100",
   center = true,
