@@ -40,11 +40,12 @@ export default function NavBar() {
   // }, [isPending]);
 
   const handleNavigation = (href) => {
-    setIsNavigating(true);
+    //setIsNavigating(true);
     setIsMenuOpen(false);
-    startTransition(() => {
-      router.push(href);
-    });
+    // startTransition(() => {
+    //   router.push(href);
+    // });
+    router.push(href);
   };
 
   const handleLogout = async () => {

@@ -23,6 +23,7 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
+        setLoading(true);
         
         // Fetch user type from Firestore
         try {
@@ -64,9 +65,10 @@ export function UserProvider({ children }) {
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
+        } else {
+          setLoading(false); // Set loading false for unauthenticated users
         }
         
-        setLoading(false); // Set loading false for unauthenticated users
       }
     });
 
@@ -81,7 +83,7 @@ export function UserProvider({ children }) {
     loading
   };
 
-  if (loading) {
+  if (loading && !PUBLIC_PATHS.includes(pathname)) {
     return <LoadingSpinner />;
   }
 
