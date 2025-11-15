@@ -2,18 +2,33 @@ import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
-if (!admin.apps.length) {
+// --- REQUIRED ENV VARS ---
+const requiredEnvVars = [
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_PRIVATE_KEY",
+  "FIREBASE_CLIENT_EMAIL"
+];
+
+const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+
+// If anything is missing, set a flag but DON'T throw globally
+const envError = missingVars.length > 0
+  ? `Missing Firebase env vars: ${missingVars.join(", ")}`
+  : null;
+
+// Initialize only if no env errors
+if (!envError && !admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     }),
     databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
   });
 }
 
-const db = getFirestore();
+const db = !envError ? getFirestore() : null;
 
 /**
  * Verifies that the sender is part of the given conversation.
@@ -50,10 +65,12 @@ async function getConversationTokens(conversationId, senderUid) {
       const userRef = db.collection("users").doc(memberRef.id);
       const userSnap = await userRef.get();
       if (!userSnap.exists) continue;
+
       const user = userSnap.data();
 
       if (!user.userGroup) continue;
-      // Query all FCM tokens belonging to this user's group or uid
+
+      // Query all FCM tokens belonging to this user's group
       const tokenQuery = db.collection("fcmTokens").where("userGroup", "==", user.userGroup);
       const tokenSnap = await tokenQuery.get();
 
@@ -75,6 +92,17 @@ async function getConversationTokens(conversationId, senderUid) {
 
 export async function POST(req) {
   try {
+    // 🔥 EARLY EXIT: ENV VAR MISSING
+    if (envError) {
+      console.error("Environment Configuration Error:", envError);
+      return new Response(
+        JSON.stringify({
+          error: "Internal Server Error. Firebase environment variables are not configured.",
+        }),
+        { status: 500 }
+      );
+    }
+
     // --- AUTHENTICATE SENDER ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -86,6 +114,7 @@ export async function POST(req) {
 
     const idToken = authHeader.split("Bearer ")[1];
     let decodedToken;
+
     try {
       decodedToken = await getAuth().verifyIdToken(idToken);
     } catch (authError) {
@@ -123,7 +152,7 @@ export async function POST(req) {
     if (tokens.length === 0) {
       return new Response(
         JSON.stringify({ message: "No FCM tokens found for recipients." }),
-        { status: 204 }
+        { status: 500 }
       );
     }
 
@@ -145,7 +174,6 @@ export async function POST(req) {
         results.push({
           success: false,
           error: `Failed to send notification to ${name}.`,
-          token,
           name,
         });
       }
@@ -156,7 +184,7 @@ export async function POST(req) {
         message: "Notification processing complete.",
         results,
       }),
-      { status: 207 } // Multi-Status
+      { status: 207 }
     );
   } catch (error) {
     console.error("Error processing request:", error);
