@@ -6,13 +6,14 @@ import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
-const getUserDoc = async () => {
+export const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };
 
 export const getUserPfp = async(uid) => {
+<<<<<<< HEAD
   const path = `profile/${uid}/profile-image`;
   try {
     const photoRef = storageRef(storage, path);
@@ -30,6 +31,16 @@ export const getUserPfp = async(uid) => {
     return null;
   }
   
+=======
+  try {
+    const path = `profile/${uid}/profile-image`;
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch(e) {
+    return null;
+  }
+>>>>>>> Adding UserData context to prevent repeated unecessary database calls
 }
 
 export const fetchLetterboxes = async () => {

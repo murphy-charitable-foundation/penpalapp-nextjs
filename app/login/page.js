@@ -21,6 +21,9 @@ import {
   logButtonEvent,
   logLoadingTime,
 } from "../utils/analytics";
+import { getUserDoc } from "../utils/letterboxFunctions";
+import { useUserData } from "../../context/UserDataContext";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -28,6 +31,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setUserData } = useUserData();
+
   
   usePageAnalytics(`/login`);
 
@@ -46,11 +51,10 @@ export default function Login() {
         email,
         password
       );
-      const uid = userCredential.user.uid;
-      const userRef = doc(db, "users", uid);
-      const userSnap = await getDoc(userRef);
+      const { userDocRef, userDocSnapshot } = await getUserDoc();
 
-      if (userSnap.exists()) {
+      if (userDocSnapshot.exists()) {
+        setUserData(userDocSnapshot.data());
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
