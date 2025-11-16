@@ -44,12 +44,11 @@ export default function Home() {
         padding="lg"
         bg="bg-gray-100"
         viewportOffset={0}
-        scroll={false}                 
+        scroll={false}
         className="rounded-3xl shadow-2xl ring-1 ring-gray-200 min-h-[100dvh] overflow-hidden"
       >
-        
-        <div className="relative min-h-[80vh]">
-         
+        <div className="relative min-h-[90vh]">
+          {/* Logo */}
           <div className="absolute inset-x-0 top-6 sm:top-8 md:top-10 flex justify-center">
             <Image
               src={logo}
@@ -61,10 +60,19 @@ export default function Home() {
             />
           </div>
 
-          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
+          {/* Added text  */}
+          <div className="absolute inset-x-0 top-[220px] sm:top-[240px] md:top-[260px] px-6 py-6 text-center">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Welcome to Pen Pal App
+            </h1>
+            <p className="mt-2 mb-8 text-gray-800 text-sm md:text-base font-semibold">
+              Write, connect, and inspire children in Uganda
+            </p>
+          </div>
 
+          {/* Buttons */}
+          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
             <div className="mx-auto w-full max-w-sm space-y-5 text-center">
-            
               <Button
                 color="green"
                 btnText="Log in"

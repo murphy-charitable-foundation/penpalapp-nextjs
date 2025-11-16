@@ -4,13 +4,13 @@ import React from "react";
 import Image from "next/image";
 import SendMessage from "./SendMessage";
 
-// brand palette (keep in sync across components)
+// brand palette
 const BRAND = {
-  primary: "#034792",       // brand blue
-  primarySoft: "#E6F0FF",   // very light blue wash
-  chipBg: "#EEF4FF",        // chip background
-  text: "#262626",          // headings
-  subtext: "#515151",       // body copy
+  primary: "#034792",       
+  primarySoft: "#E6F0FF",   
+  chipBg: "#EEF4FF",        
+  text: "#262626",          
+  subtext: "#515151",       
 };
 
 export default function KidCard({ kid, calculateAge }) {

@@ -6,45 +6,64 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import { useUser } from "../../contexts/UserContext";
+import { useLayoutEffect, useRef, useState } from "react";
 
-const NAV_H = 88;
+const TOP_GAP = 8;
+const GAP_BELOW = 2;
 
 export default function About() {
+
   const { user } = useUser();
 
-  const navbarHeight = user ? NAV_H : 0;
+  // Real Bottom Navbar (dynamic)
+  const [navH, setNavH] = useState(88);
+  const navWrapRef = useRef(null);
+
+  const navbarHeight = user ? navH : 0;
   const whiteCardWrapperHeight = {
-    height: user ? `calc(103svh - ${navbarHeight}px )` : 'auto',
+    height: user ? `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))` : 'auto',
   }
 
+  useLayoutEffect(() => {
+    const el = navWrapRef.current;
+    if (!el) return;
+    const update = () => setNavH(el.offsetHeight || 88);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
-    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-      {/* small top padding to show the card’s top rounding */}
-      <div className="flex-1 overflow-hidden">
-        {/* wrapper for the white card*/}
+    <PageBackground className="bg-gray-100 min-h-[100dvh] overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
         <div
-          className="mx-auto w-full max-w-[640px] shadow-lg"
+          className="relative mx-auto w-full max-w-[640px] min-h-0 rounded-2xl overflow-hidden shadow-lg"
           style={whiteCardWrapperHeight}
         >
-          {/* NEW: this layer owns the rounding & clipping so the bottom stays round */}
-          <div className="h-full rounded-2xl overflow-hidden bg-white">
-            <PageContainer
-              width="compactXS"
-              padding="none"
-              bg="bg-white"
-              center
-              scroll
-              viewportOffset={navbarHeight}
-              className="p-0 h-full min-h-0 overflow-y-auto overscroll-contain"
-              style={{
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              {/* Header */}
-              <div className="px-10 pt-2">
-                <PageHeader title="About Us" image={false} />
-              </div>
+          <PageContainer
+            width="compactXS"
+            padding="none"
+            bg="bg-white"
+            scroll={false}                 
+            viewportOffset={navbarHeight}
+            className="p-0 h-full min-h-0 flex flex-col"
+          >
+            {/* Header */}
+            <div className="px-10 pt-2">
+              <PageHeader title="About Us" image={false} />
+            </div>
 
+            <div
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+              style={{ WebkitOverflowScrolling: "touch", overflowAnchor: "none" }}
+            >
               {/* Blue banner */}
               <div className="px-10">
                 <div className="bg-secondary text-white rounded-xl text-center py-4 mt-3 mb-6">
@@ -71,16 +90,21 @@ export default function About() {
                 </div>
 
                 <p className="leading-relaxed mb-4 text-gray-700">
-                  At Murphy Charitable Foundation Uganda, we are committed to alleviating poverty and improving health and education in the communities we serve.
+                  At Murphy Charitable Foundation Uganda, we are committed to alleviating
+                  poverty and improving health and education in the communities we serve.
                 </p>
                 <p className="leading-relaxed mb-4 text-gray-700">
-                  Our journey began with a profound understanding of the challenges faced by individuals living in extreme poverty.
+                  Our journey began with a profound understanding of the challenges faced
+                  by individuals living in extreme poverty.
                 </p>
                 <p className="leading-relaxed mb-4 text-gray-700">
-                  Inspired by their resilience and motivated to make a difference, we dedicate ourselves to addressing the needs and rights of vulnerable populations in rural areas by tackling critical social and economic issues.
+                  Inspired by their resilience and motivated to make a difference, we dedicate
+                  ourselves to addressing the needs and rights of vulnerable populations in rural
+                  areas by tackling critical social and economic issues.
                 </p>
                 <p className="leading-relaxed text-gray-700">
-                  We focus on implementing sustainable, high-impact projects that enhance education, healthcare, empowerment, and overall community development.
+                  We focus on implementing sustainable, high-impact projects that enhance education,
+                  healthcare, empowerment, and overall community development.
                 </p>
 
                 {/* two-column section */}
@@ -100,12 +124,13 @@ export default function About() {
                   <div className="flex flex-col justify-center">
                     <h3 className="text-secondary font-bold text-md mb-2">Our Mission</h3>
                     <p className="leading-relaxed mb-6 text-gray-700">
-                      To support vulnerable populations by enhancing their access to education, healthcare, and empowerment programs that enable lasting change.
+                      To support vulnerable populations by enhancing their access to education,
+                      healthcare, and empowerment programs that enable lasting change.
                     </p>
                     <h3 className="text-secondary font-bold text-md mb-2">Our Vision</h3>
                     <p className="leading-relaxed text-gray-700">
-                      To build thriving communities where every individual has equitable access to essential resources,
-                      fostering both personal growth and collective prosperity.
+                      To build thriving communities where every individual has equitable access to
+                      essential resources, fostering both personal growth and collective prosperity.
                     </p>
                   </div>
                 </div>
@@ -125,15 +150,19 @@ export default function About() {
                 </div>
 
                 {/* spacer so the last line clears the tiny outside gap above the nav */}
+                
                 <div aria-hidden="true" style={{ height: `calc(${navbarHeight}px + 8px)` }} />
+
               </div>
-            </PageContainer>
-          </div>
-          {/* /rounded clip layer */}
+            </div>
+          </PageContainer>
         </div>
       </div>
 
-      <BottomNavBar />
+      {/* Bottom Nav */}
+      <div ref={navWrapRef}>
+        <BottomNavBar />
+      </div>
     </PageBackground>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -20,7 +22,6 @@ import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { useUser } from "../../contexts/UserContext";
@@ -78,6 +79,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+
     if (!user) return; // Wait for user from context
 
     const fetchConversations = async () => {
@@ -95,72 +97,91 @@ export default function Home() {
 
     fetchConversations();
   }, [user]); // refetch if user changes
-  
+
+  const TOP_GAP = 6;
+  const GAP_BELOW = 2;
+  const CARD_MAX_W = 640;
+
+  const [navH, setNavH] = useState(88);
+  const navWrapRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const el = navWrapRef.current;
+    if (!el) return;
+    const update = () => setNavH(el.offsetHeight || 88);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      ro.disconnect();
+    };
+  }, []);
+
   if (isLoading) {
     return <LetterHomeSkeleton />;
   }
   
   return (
-    <PageBackground>
-      <PageContainer width="compact">
-          <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
-            <BackButton />
-            <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-              <ProfileHeader
-                userName={userData?.first_name || "Unknown User"}
-                country={userData?.country || "Unknown Country"}
-                profileImage={profileImage}
-                id={user?.uid || ""}
-              />
-              <main className="p-6 bg-white">
-                <section className="mt-8">
-                  {conversations.length > 0 ? (
-                    <ConversationList conversations={conversations} />
-                  ) : (
-                    <EmptyState
-                      title="New friends are coming!"
-                      description="Many friends are coming hang tight!"
-                    />
-                  )}
-                </section>
-              </main>
+    <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+      
+      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+        <div
+          className="relative mx-auto w-full rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0"
+          style={{
+            maxWidth: `${CARD_MAX_W}px`,
+            height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          }}
+        >
 
-              <NavBar />
-            </div>
-          </div>
-          {userType === "admin" && (
-            <Button
-              btnText="Check For Inactive Chats"
-              color="black"
-              onClick={() => {
-                logButtonEvent(
-                  "check for inactive chats button clicked",
-                  "/letterhome"
-                );
-                iterateLetterBoxes();
-              }}
+          <PageContainer
+            padding="none"
+            bg="bg-white"
+            scroll={false}                 
+            viewportOffset={0}
+            className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none rounded-2xl"
+            style={{ maxWidth: "unset", width: "100%" }}
+          > 
+            <ProfileHeader
+              userName={userData?.first_name || "Unknown User"}
+              country={userData?.country || "Unknown Country"}
+              profileImage={profileImage}
+              id={user?.uid || ""}
+              className="px-6 m-0 rounded-t-2xl"
             />
-          )}
-        
-        {/* Add animation keyframes */}
-        <style jsx global>{`
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateX(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          .animate-slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-          }
-        `}</style>
-      </PageContainer>
+              {/* SINGLE SCROLLER */}
+              <div
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+              style={{
+                paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
+              }}
+            >
+                <main className="px-0">
+                    {conversations.length > 0 ? (
+                      <section className="mt-0 pb-10">
+                        <ConversationList conversations={conversations} maxHeight="none" />
+                      </section>
+                    ) : (
+                      <section className="mt-6 px-6">
+                        <EmptyState
+                          title="New friends are coming!"
+                          description="Many friends are coming hang tight!"
+                        />
+                      </section>
+                    )}
+                </main>
+              </div>
+          </PageContainer>
+        </div>
+      </div>
+
+      <div ref={navWrapRef}>
+        <NavBar />
+      </div>
     </PageBackground>
   );
 
 }
-

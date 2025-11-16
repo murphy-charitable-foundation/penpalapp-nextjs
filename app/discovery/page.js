@@ -1,151 +1,174 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
-
-import { PageContainer } from "../../components/general/PageContainer";
-import { BackButton } from "../../components/general/BackButton";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import BottomNavBar from "../../components/bottom-nav-bar";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
 import Header from "../../components/general/Header";
-import KidFilter from "../../components/discovery/KidFilter";
+import FilterPanel from "../../components/discovery/FilterPanel";
+import EmptyState from "../../components/discovery/EmptyState";
 import KidsList from "../../components/discovery/KidsList";
 
-// ---- layout constants (match your other pages) ----
-const NAV_H = 88;
-const TOP_GAP_PX = 2;
-const FUDGE_PX = 14;
-
+const TOP_GAP = 0;
+const GAP_BELOW = 2;
+const CARD_MAX_W = 640;
 const PAGE_SIZE = 10;
 
-// -------- 10 mock kids --------
+// --- mock data (swap with Firestore feed) ---
 const MOCK_KIDS = [
-  { id: "k1",  first_name: "Joan",   last_name: "A.", gender: "Female", hobby: ["Football", "Basketball"], date_of_birth: "2012-05-14", photoURL: "/usericon.png", bio: "Loves reading and drawing." },
-  { id: "k2",  first_name: "Sam",    last_name: "K.", gender: "Male",   hobby: ["Drawing", "Reading"],     date_of_birth: "2011-11-02", photoURL: "/usericon.png", bio: "Enjoys science and music." },
-  { id: "k3",  first_name: "Amina",  last_name: "B.", gender: "Female", hobby: ["Music", "Football"],       date_of_birth: "2014-01-29", photoURL: "/usericon.png", bio: "Curious and kind." },
-  { id: "k4",  first_name: "Brian",  last_name: "T.", gender: "Male",   hobby: ["Chess", "Coding"],         date_of_birth: "2010-07-10", photoURL: "/usericon.png", bio: "Future engineer." },
-  { id: "k5",  first_name: "Grace",  last_name: "N.", gender: "Female", hobby: ["Reading", "Painting"],     date_of_birth: "2013-03-03", photoURL: "/usericon.png", bio: "Creative and patient." },
-  { id: "k6",  first_name: "David",  last_name: "M.", gender: "Male",   hobby: ["Basketball", "Running"],   date_of_birth: "2012-09-18", photoURL: "/usericon.png", bio: "Team player." },
-  { id: "k7",  first_name: "Lydia",  last_name: "C.", gender: "Female", hobby: ["Drawing", "Dance"],        date_of_birth: "2015-12-22", photoURL: "/usericon.png", bio: "Loves to dance." },
-  { id: "k8",  first_name: "Peter",  last_name: "R.", gender: "Male",   hobby: ["Football", "Music"],       date_of_birth: "2011-06-07", photoURL: "/usericon.png", bio: "Big football fan." },
-  { id: "k9",  first_name: "Nora",   last_name: "S.", gender: "Female", hobby: ["Reading", "Coding"],       date_of_birth: "2010-10-15", photoURL: "/usericon.png", bio: "Enjoys puzzles." },
-  { id: "k10", first_name: "Thomas", last_name: "J.", gender: "Male",   hobby: ["Running", "Chess"],        date_of_birth: "2013-04-25", photoURL: "/usericon.png", bio: "Fast runner." },
+  { id: "k1", first_name: "Joan", last_name: "A.", gender: "Female", hobby: ["Reading","Drawing"], date_of_birth: "2012-05-14", photoURL: "/usericon.png", bio: "Learn, play and write kind, consistent, adventurous letters. Quis..." },
+  { id: "k2", first_name: "Amir", last_name: "K.", gender: "Male", hobby: ["Football","Music"], date_of_birth: "2011-08-02", photoURL: "/usericon.png", bio: "Curious about music and science." },
+  { id: "k3", first_name: "Sara", last_name: "N.", gender: "Female", hobby: ["Chess","Coding"], date_of_birth: "2013-02-20", photoURL: "/usericon.png", bio: "Enjoys reading and puzzles." },
 ];
 
-// age helper
-function calculateAge(dobLike) {
-  if (!dobLike) return 0;
-  const d = new Date(dobLike);
-  if (Number.isNaN(d.getTime())) return 0;
+function calculateAge(dob) {
+  if (!dob) return "";
+  const d = new Date(dob);
   const now = new Date();
-  let y = now.getFullYear() - d.getFullYear();
-  const beforeBirthday =
-    now.getMonth() < d.getMonth() ||
-    (now.getMonth() === d.getMonth() && now.getDate() < d.getDate());
-  if (beforeBirthday) y -= 1;
-  return y;
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return String(age);
 }
 
-export default function DiscoveryPage() {
-  const [activeFilter, setActiveFilter] = useState(false);
-  const [age, setAge] = useState(0);
-  const [gender, setGender] = useState("");
-  const [hobbies, setHobbies] = useState([]);
+export default function Discovery() {
+  // bottom nav height measurement
+  const [navH, setNavH] = useState(88);
+  const navWrapRef = useRef(null);
 
-  const [kids, setKids] = useState([]);
-  const [page, setPage] = useState(1);
+  useLayoutEffect(() => {
+    const el = navWrapRef.current;
+    if (!el) return;
+    const update = () => setNavH(el.offsetHeight || 88);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, []);
+
+  // filter state
+  const [activeFilter, setActiveFilter] = useState(false);
+  const [filters, setFilters] = useState({ age: undefined, gender: "", hobbies: [] });
+
+  // data + pagination
+  const [allKids] = useState(MOCK_KIDS);
+  const [visibleKids, setVisibleKids] = useState([]);
+  const [cursor, setCursor] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const filtered = useMemo(() => {
-    let list = [...MOCK_KIDS];
-    if (age && Number(age) > 0) {
-      list = list.filter((k) => calculateAge(k.date_of_birth) === Number(age));
-    }
-    if (gender) {
-      list = list.filter(
-        (k) => (k.gender || "").toLowerCase() === gender.toLowerCase()
-      );
-    }
-    if (hobbies && hobbies.length) {
-      list = list.filter(
-        (k) => Array.isArray(k.hobby) && k.hobby.some((h) => hobbies.includes(h))
-      );
-    }
-    return list;
-  }, [age, gender, hobbies]);
+  const filteredKids = useMemo(() => {
+    return allKids.filter((k) => {
+      if (filters.gender && k.gender !== filters.gender) return false;
+      if (typeof filters.age === "number" && filters.age > 0) {
+        const kidAge = Number(calculateAge(k.date_of_birth));
+        if (kidAge !== filters.age) return false;
+      }
+      if (filters.hobbies && filters.hobbies.length > 0) {
+        const hv = new Set((k.hobby || []).map(String));
+        const allIn = filters.hobbies.every((h) => hv.has(String(h)));
+        if (!allIn) return false;
+      }
+      return true;
+    });
+  }, [allKids, filters]);
 
   useEffect(() => {
-    setLoading(true);
-    const end = 10 * page;
-    const slice = filtered.slice(0, end);
-    const t = setTimeout(() => {
-      setKids(slice);
-      setLoading(false);
-    }, 120);
-    return () => clearTimeout(t);
-  }, [filtered, page]);
+    setCursor(0);
+    setVisibleKids(filteredKids.slice(0, PAGE_SIZE));
+  }, [filteredKids]);
 
   const loadMoreKids = () => {
-    if (!loading && kids.length < filtered.length) setPage((p) => p + 1);
+    if (loading) return;
+    setLoading(true);
+    setTimeout(() => {
+      const next = filteredKids.slice(cursor + PAGE_SIZE, cursor + 2 * PAGE_SIZE);
+      setVisibleKids((prev) => [...prev, ...next]);
+      setCursor((c) => c + PAGE_SIZE);
+      setLoading(false);
+    }, 250);
   };
 
-  const lastKidDoc = kids.length < filtered.length ? { mockIndex: kids.length - 1 } : null;
+  const hasMore = cursor + PAGE_SIZE < filteredKids.length;
 
-  const applyFilter = (ageVal, hobbyArr, genderVal) => {
-    setAge(Number(ageVal) || 0);
-    setHobbies(hobbyArr || []);
-    setGender(genderVal || "");
-    setPage(1);
+  const onClearFilters = () => {
+    setFilters({ age: undefined, gender: "", hobbies: [] });
+  };
+
+  const applyFilters = (f) => {
+    setFilters({
+      age: f.age && f.age > 0 ? f.age : undefined,
+      gender: f.gender || "",
+      hobbies: Array.isArray(f.hobbies) ? f.hobbies : [],
+    });
     setActiveFilter(false);
   };
 
- return (
-    <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-      {/* Back button OUTSIDE the card */}
-      <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
-        <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
-      </div>
-
-      <div className="flex-1 overflow-hidden" style={{ paddingTop: `${TOP_GAP_PX}px` }}>
+  return (
+    <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
         <div
-          className="mx-auto w-full max-w-[29rem] rounded-lg shadow-lg overflow-hidden"
-          style={{ height: `calc(100dvh - ${NAV_H}px - ${TOP_GAP_PX}px + ${FUDGE_PX}px)` }}
+          className="relative mx-auto w-full rounded-2xl overflow-hidden shadow-lg"
+          style={{
+            maxWidth: CARD_MAX_W,
+            height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          }}
         >
-          <PageContainer width="compactXS" padding="none" bg="bg-white" scroll={false}
-            viewportOffset={NAV_H} className="p-0 h-full min-h-0 overflow-hidden"
-            style={{ WebkitOverflowScrolling: "touch" }}
+          <PageContainer
+            width="compactXS"
+            padding="none"
+            bg="bg-white"
+            scroll={false}
+            viewportOffset={navH}
+            className="p-0 h-full min-h-0 flex flex-col"
           >
-            <div className="h-full min-h-0 overflow-y-auto">
-              {/* Header FIRST, no outer padding */}
+            <div
+              className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain"
+              style={{ WebkitOverflowScrolling: "touch", overflowAnchor: "none" }}
+            >
+              {/* Sticky top: title + filters row */}
               <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
 
-              {/* content area keeps its own padding */}
-              <div className="px-4 pt-3 pb-24">
-                {activeFilter ? (
-                  <KidFilter
-                    setAge={setAge}
-                    setGender={setGender}
-                    setHobbies={setHobbies}
-                    hobbies={hobbies}
-                    age={age}
-                    gender={gender}
-                    filter={applyFilter}
-                  />
+              {/* list / empty */}
+              <div className="px-4 pb-4 sm:px-10">
+                {visibleKids.length === 0 ? (
+                  <EmptyState onClear={onClearFilters} />
                 ) : (
                   <KidsList
-                    kids={kids}
+                    kids={visibleKids}
                     calculateAge={calculateAge}
-                    lastKidDoc={lastKidDoc}
+                    lastKidDoc={hasMore}
                     loadMoreKids={loadMoreKids}
                     loading={loading}
                   />
                 )}
+
+                {/* bottom spacer so content never hides under nav */}
+                <div aria-hidden="true" style={{ height: `calc(${navH}px + 8px)` }} />
               </div>
+
+              {/* slide-down filter panel */}
+              <FilterPanel
+                 open={activeFilter}
+                 initial={{ age: filters.age ?? 0, gender: filters.gender ?? "", hobbies: filters.hobbies ?? [] }}
+                 onApply={applyFilters}
+                 onClear={onClearFilters}
+                 onClose={() => setActiveFilter(false)}
+             />
+
             </div>
           </PageContainer>
         </div>
       </div>
 
-      <BottomNavBar />
-    </div>
+      <div ref={navWrapRef}>
+        <BottomNavBar />
+      </div>
+    </PageBackground>
   );
 }

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
 import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import * as Sentry from "@sentry/nextjs";
 import Button from "../general/Button";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
@@ -108,7 +107,9 @@ export default function SendMessage({ kid }) {
           } else {
             router.push("/letters/" + querySnapshot.docs[0].id);
             console.log("Letterbox already exists");
-            Sentry.captureException("Penpal filter error -- Letterbox already exists.", "debug");
+            logError("Penpal filter error -- Letterbox already exists.", {
+              description: "debug",
+            });
           }
         } else {
           console.log("Kid has exceeded penpal limit");
@@ -129,7 +130,6 @@ export default function SendMessage({ kid }) {
     <div>
       <Button
         btnText="Send a message"
-        color="bg-[#034792]"
         textColor="text-white"
         font="font-bold"
         rounded="rounded-3xl"
