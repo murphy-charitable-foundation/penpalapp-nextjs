@@ -46,7 +46,7 @@ const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content}
 
   return (
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-        <PageContainer maxWidth="sm" padding="p-4" bgColor="bg-transparent" className="!min-h-0 ">
+        <PageContainer width="compactXS" padding="sm" bg="bg-transparent" className="!min-h-0 ">
           <div className="bg-white space-y-4 shadow-md w-full rounded-md p-4 flex flex-col items-center">
             <h1 className="font-semibold text-sm text-red-500">
               Are you sure that you want to report this letter?

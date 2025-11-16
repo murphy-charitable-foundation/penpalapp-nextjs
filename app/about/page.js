@@ -5,15 +5,24 @@ import BottomNavBar from "../../components/bottom-nav-bar";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
+import { useUser } from "../../contexts/UserContext";
 import { useLayoutEffect, useRef, useState } from "react";
 
 const TOP_GAP = 8;
 const GAP_BELOW = 2;
 
 export default function About() {
+
+  const { user } = useUser();
+
   // Real Bottom Navbar (dynamic)
   const [navH, setNavH] = useState(88);
   const navWrapRef = useRef(null);
+
+  const navbarHeight = user ? navH : 0;
+  const whiteCardWrapperHeight = {
+    height: user ? `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))` : 'auto',
+  }
 
   useLayoutEffect(() => {
     const el = navWrapRef.current;
@@ -36,16 +45,14 @@ export default function About() {
       <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
         <div
           className="relative mx-auto w-full max-w-[640px] min-h-0 rounded-2xl overflow-hidden shadow-lg"
-          style={{
-            height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
-          }}
+          style={whiteCardWrapperHeight}
         >
           <PageContainer
             width="compactXS"
             padding="none"
             bg="bg-white"
             scroll={false}                 
-            viewportOffset={navH}
+            viewportOffset={navbarHeight}
             className="p-0 h-full min-h-0 flex flex-col"
           >
             {/* Header */}
@@ -142,7 +149,10 @@ export default function About() {
                   />
                 </div>
 
-                <div aria-hidden="true" style={{ height: `calc(${navH}px + 8px)` }} />
+                {/* spacer so the last line clears the tiny outside gap above the nav */}
+                
+                <div aria-hidden="true" style={{ height: `calc(${navbarHeight}px + 8px)` }} />
+
               </div>
             </div>
           </PageContainer>
