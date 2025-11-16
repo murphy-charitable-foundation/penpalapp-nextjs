@@ -12,7 +12,7 @@ export default function TermsCondition() {
   return (
     //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
     <PageBackground>
-      <PageContainer maxWidth="lg">
+      <PageContainer>
         <PageHeader title="Terms and Conditions" />
 
         <div className="flex flex-col gap-10 mt-16">

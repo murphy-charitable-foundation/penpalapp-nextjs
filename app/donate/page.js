@@ -62,13 +62,11 @@ const whiteCardWrapperHeight = {
               </div>
 
               <div className="mt-4 text-center">
-                <Link
+                <Button 
+                  btnText="Sponsor Now" 
                   href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button btnText="Sponsor Now" />
-                </Link>
+                  external={true}
+                />
               </div>
 
               <section className="mt-6">
