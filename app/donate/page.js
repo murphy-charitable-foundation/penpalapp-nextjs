@@ -65,6 +65,7 @@ const whiteCardWrapperHeight = {
                 <Link
                   href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <Button btnText="Sponsor Now" />
                 </Link>

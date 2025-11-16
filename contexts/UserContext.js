@@ -8,7 +8,7 @@ import { getUserPfp } from '../app/utils/letterboxFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();
-const PUBLIC_PATHS = ['/login', '/', '/about', '/contact', '/donate']; // public routes that don't require authentication
+const PUBLIC_PATHS = ['/login', '/', '/about', '/contact', '/donate', '/welcome']; // public routes that don't require authentication
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);

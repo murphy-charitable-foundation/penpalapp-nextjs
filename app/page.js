@@ -8,6 +8,7 @@ import { BackButton } from "../components/general/BackButton";
 import Button from "../components/general/Button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import LoadingSpinner from "@/components/loading/LoadingSpinner";
 
 export default function Home() {
   const [isPending, startTransition] = useTransition();
@@ -35,12 +36,7 @@ export default function Home() {
       {showSpinner && <LoadingSpinner />}
 
       <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
-        {/* <Link href="/cover" aria-label="Go back">
-          <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
-        </Link> */}
-        <button onClick={() => handleNavigation('/cover')} aria-label="Go back">
-          <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
-        </button>
+        <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
       </div>
 
       <PageContainer
@@ -65,52 +61,21 @@ export default function Home() {
             />
           </div>
 
-          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6"
-    // style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 6px)" }}
-          >
+          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
 
             <div className="mx-auto w-full max-w-sm space-y-5 text-center">
-              {/* <Link href="/login" className="block">
-                <Button
-                  color="green"
-                  btnText="Log in"
-                  textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                             active:scale-[0.99] transition"
-                />
-              </Link> */}
-              <button onClick={() => handleNavigation('/login')} className="block w-full">
-                <Button
-                  color="green"
-                  btnText="Log in"
-                  textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                             active:scale-[0.99] transition"
-                />
-              </button>
-
-              {/* <Link href="https://calendly.com/murphycharity/60min" className="block">
-                <Button
-                  color="blue"
-                  btnText="Become a Pen Pal Volunteer"
-                  textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                             active:scale-[0.99] transition"
-                />
-              </Link> */}
-              <a href="https://calendly.com/murphycharity/60min" className="block" target="_blank" rel="noopener noreferrer">
-                <Button
-                  color="blue"
-                  btnText="Become a Pen Pal Volunteer"
-                  textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                             active:scale-[0.99] transition"
-                />
-              </a>
+            
+              <Button
+                color="green"
+                btnText="Log in"
+                onClick={() => handleNavigation('/login')}
+              />
+              <Button
+                color="blue"
+                btnText="Become a Pen Pal Volunteer"
+                href="https://calendly.com/murphycharity/60min"
+                external={true}
+              />
             </div>
           </div>
         </div>
