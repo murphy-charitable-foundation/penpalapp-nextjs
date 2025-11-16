@@ -8,7 +8,15 @@ import { getUserPfp } from '../app/utils/letterboxFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();
-const PUBLIC_PATHS = ['/login', '/', '/about', '/contact', '/donate', '/welcome']; // public routes that don't require authentication
+const PUBLIC_PATHS = [
+  '/login', 
+  '/', 
+  '/about', 
+  '/contact', 
+  '/donate', 
+  '/welcome',
+  '/create-acc',
+]; // public routes that don't require authentication
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -23,7 +31,6 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
-        setLoading(true);
         
         // Fetch user type from Firestore
         try {
@@ -65,10 +72,8 @@ export function UserProvider({ children }) {
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
-        } else {
-          setLoading(false); // Set loading false for unauthenticated users
         }
-        
+        setLoading(false);
       }
     });
 

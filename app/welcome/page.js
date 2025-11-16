@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -10,12 +10,22 @@ import Button from "../../components/general/Button";
 import { PageBackground } from "../../components/general/PageBackground";
 import PageContainer from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
+import { useUser } from "@/contexts/UserContext";
 
-const NAV_H = 88;
+const TOP_GAP = 8;
+const GAP_BELOW = 2;
 
 export default function Welcome() {
+  const { user } = useUser();
+  const [navH, setNavH] = useState(88);
   const [firstName, setFirstName] = useState("");
   usePageAnalytics("/welcome");
+
+  const navWrapRef = useRef(null);
+  const navbarHeight = user ? navH : 0;
+  const whiteCardWrapperHeight = {
+    height: user ? `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))` : 'auto',
+  }
 
   useEffect(() => {
     const value = localStorage.getItem("userFirstName");
@@ -24,14 +34,29 @@ export default function Welcome() {
       setFirstName(value);
     }
   }, []);
+
+  useLayoutEffect(() => {
+    const el = navWrapRef.current;
+    if (!el) return;
+    const update = () => setNavH(el.offsetHeight || 88);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      ro.disconnect();
+    };
+  }, []);
+  
   return (
     <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
       <div className="flex-1 overflow-hidden">
         <div
             className="mx-auto w-full max-w-[640px] shadow-lg"
-            style={{
-              height: `calc(103svh - ${NAV_H}px )`,
-            }}
+            style={whiteCardWrapperHeight}
           >
             <div className="h-full rounded-2xl overflow-hidden bg-white">
               <PageContainer
@@ -40,7 +65,7 @@ export default function Welcome() {
                 bg="bg-white"
                 center
                 scroll
-                viewportOffset={NAV_H}
+                viewportOffset={navbarHeight}
                 className="p-0 h-full min-h-0 overflow-y-auto overscroll-contain"
                 style={{
                   WebkitOverflowScrolling: "touch",
@@ -68,32 +93,26 @@ export default function Welcome() {
                 </div>
 
                 <div className="text-center w-full pt-10 pb-20">
-                  <Link href="/edit-profile-user-image">
-                    <Button btnText="Continue" color="blue" />
-                  </Link>
+                  <Button 
+                    btnText="Continue" 
+                    color="blue"
+                    onClick={ () => (
+                      startTransition(() => {
+                        router.push('/edit-profile-user-image');
+                      })
+                    )}
+                  />
                 </div>
+                
               </PageContainer>
             </div>
         </div>
       </div>
-      <BottomNavBar />
+      {/* Bottom Nav */}
+      <div ref={navWrapRef}>
+        <BottomNavBar />
+      </div>
     </PageBackground>
-    // <div className="min-h-screen !bg-secondary">
-    //   <div className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
-    //     <div className="relative w-full h-[50vh] bg-[url('/welcome.png')] bg-cover bg-center"></div>
-    //     <h3 className="pt-16 text-center w-full font-[700] text-2xl">
-    //       Welcome, {firstName}
-    //     </h3>
-    //     <div className="text-center w-full pt-5 flex-1">
-    //       We are so happy to be here, thanks for your support. Now you are part
-    //       of the family.
-    //     </div>
-    //     <div className="text-center w-full pt-10 pb-20">
-    //       <Link href="/edit-profile-user-image">
-    //         <Button btnText="Continue" color="white" />
-    //       </Link>
-    //     </div>
-    //   </div>
-    // </div>
+
   );
 }

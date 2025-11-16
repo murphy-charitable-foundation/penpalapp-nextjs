@@ -112,7 +112,7 @@ export default function Page({ params }) {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <PageContainer maxWidth="lg" padding="p-6 pt-20">
+      <PageContainer padding="md">
         <PageHeader title="View Profile" image={false} heading={false} />
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
           {/* Profile Image */}

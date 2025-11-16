@@ -121,7 +121,7 @@ export default function EditProfileUserImage() {
         <LoadingSpinner></LoadingSpinner>
       ) : (
         <PageBackground>
-          <PageContainer maxWidth="lg">
+          <PageContainer>
             <PageHeader title="Edit image" />
                 <div className="flex flex-col items-center gap-6 mt-6">
                   <EditProfileImage
