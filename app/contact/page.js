@@ -171,14 +171,12 @@ export default function Contact() {
                 className="absolute left-3 z-10"
                 style={{ top: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
               >
-                <Link href="/cover" aria-label="Go back">
-                  <BackButton
-                    btnType="button"
-                    color="transparent"
-                    textColor="text-gray-700"
-                    size="xs"
-                  />
-                </Link>
+                <BackButton
+                  btnType="button"
+                  color="transparent"
+                  textColor="text-gray-700"
+                  size="xs"
+                />
               </div>
 
               {/* Header */}

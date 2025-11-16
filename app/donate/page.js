@@ -42,6 +42,7 @@ export default function Donate() {
               financially or as advocate for good, you make a real difference.
             </p>
 
+<<<<<<< HEAD
             <div className="mt-6 text-center">
               <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
             {/* logButtonEvent from analytics.js logs a button click event to Firebase 
@@ -59,6 +60,41 @@ export default function Donate() {
                   }
                 />
               </Link>
+=======
+              <div className="mt-4 text-center">
+                <Link
+                  href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button btnText="Sponsor Now" />
+                </Link>
+              </div>
+
+              <section className="mt-6">
+                <div className="bg-secondary rounded-lg shadow-lg p-6">
+                  <h2 className="text-center text-2xl md:text-3xl text-white font-bold mb-6">
+                    Payment Details
+                  </h2>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {details.map((detail, idx) => (
+                      <div key={idx} className="bg-white rounded-lg p-4 shadow">
+                        <h3 className="text-sm font-bold text-secondary">{detail.label}</h3>
+                        <p className="text-gray-800 mt-1">{detail.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-white/90 text-xs mt-4 text-center">
+                    Please include your email in the transfer note so we can send a receipt.
+                  </p>
+                </div>
+              </section>
+
+              {/* tiny spacer so the last card never kisses the rounded edge */}
+              <div className="h-2" />
+>>>>>>> c76284f (code rabbit comments)
             </div>
           </div>
         </div>

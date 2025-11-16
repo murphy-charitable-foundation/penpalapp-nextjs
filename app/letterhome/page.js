@@ -151,7 +151,7 @@ export default function Home() {
 
   return (
     <PageBackground>
-      <PageContainer maxWidth="lg">
+      <PageContainer width="compact">
           <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
             <BackButton />
             <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
@@ -180,9 +180,7 @@ export default function Home() {
           {userType === "admin" && (
             <Button
               btnText="Check For Inactive Chats"
-              color="bg-black"
-              textColor="text-white"
-              rounded="rounded-md"
+              color="black"
               onClick={() => {
                 logButtonEvent(
                   "check for inactive chats button clicked",

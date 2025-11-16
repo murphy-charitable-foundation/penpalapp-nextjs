@@ -110,11 +110,10 @@ export default function KidFilter({
             <Button
               onClick={applyFilter}
               btnText="Apply Filters"
-              color="bg-[#034792]"
+              color="blue"
               textColor="text-white"
               font="font-semibold"
               rounded="rounded-full"
-              size="w-full px-4 py-2 text-sm"
               className="hover:opacity-95 active:opacity-90"
             />
             {/* Clear (outlined) */}
@@ -124,7 +123,6 @@ export default function KidFilter({
               color="bg-white"
               textColor="text-[#034792]"
               rounded="rounded-full"
-              size="w-full px-4 py-2 text-sm"
               className="ring-1"
               // inline style for consistent ring color across builds
               style={{ boxShadow: `0 0 0 1px ${BRAND.ring} inset` }}
