@@ -3,7 +3,6 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatDate } from "@/app/utils/timestampToDate";
 
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 const MessagePreview = ({
   profileImage,
