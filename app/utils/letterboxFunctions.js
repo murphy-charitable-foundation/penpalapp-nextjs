@@ -2,7 +2,7 @@ import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startA
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig"
-import * as Sentry from "@sentry/nextjs";
+import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
@@ -109,8 +109,9 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
       lastVisible: lastDoc,
     };
   } catch (e) {
-    Sentry.captureException(e);
-    console.log("Error fetching letterbox: ", e);
+    logError(e, {
+      description: "Error fetching letterbox: ",
+    });
     return {
       messages: [],
       lastVisible: null,
@@ -257,8 +258,9 @@ export const fetchRecipients = async (id) => {
       const downloaded = await getUserPfp(user.id);
       members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
     } catch (e) {
-      Sentry.captureException(e);
-      console.error("Error fetching user:", e);
+      logError(e, {
+        description: "Error fetching user:",
+      });
       members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
     }
   }
@@ -274,8 +276,9 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     sendingLetter = false;
     return true;
   } catch (e) {
-    Sentry.captureException(e);
-    console.log("Failed to send letter: ", e);
+    logError(e, {
+      description: "Failed to send letter: ",
+    });
     sendingLetter = false;
     return false;
   }

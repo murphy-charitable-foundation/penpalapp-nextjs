@@ -9,6 +9,19 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
+import {
+  User,
+  MapPin,
+  Home,
+  FileText,
+  Calendar,
+  GraduationCap,
+  Users,
+  Heart,
+  Briefcase,
+  Square,
+  Palette,
+} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import List from "../../components/general/List";
@@ -21,6 +34,8 @@ import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import BottomNavBar from '../../components/bottom-nav-bar';
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function EditProfile() {
   // State initializations
@@ -56,6 +71,7 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  usePageAnalytics("/profile");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -63,7 +79,6 @@ export default function EditProfile() {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
@@ -134,7 +149,9 @@ export default function EditProfile() {
         setIsDialogOpen(true);
         setDialogTitle("Oops!");
         setDialogMessage("Error saving profile.");
-        Sentry.captureException("Error saving profile " + error);
+        logError(error, {
+          description: "Error saving profile ",
+        });
       }
     }
   };

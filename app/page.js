@@ -6,8 +6,13 @@ import logo from "/public/murphylogo.png";
 import { PageContainer } from "../components/general/PageContainer";
 import { BackButton } from "../components/general/BackButton";
 import Button from "../components/general/Button";
+import { usePageAnalytics } from "./useAnalytics";
+import { logButtonEvent, logLoadingTime } from "./utils/analytics";
+import { useEffect } from "react";
 
 export default function Home() {
+  usePageAnalytics("/");
+
   return (
     <div className="relative min-h-screen bg-gray-100">
       <PageContainer

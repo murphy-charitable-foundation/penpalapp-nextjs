@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import * as Sentry from "@sentry/node"; 
+import { logError } from "./utils/analytics";
 
 // Trying to different approaches to get Firebase credentials
 let serviceAccount;
@@ -18,7 +18,9 @@ else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   try {
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   } catch (error) {
-    Sentry.captureException("Error parsing FIREBASE_SERVICE_ACCOUNT_JSON:", error);
+    logError(error, {
+      description: "Error parsing FIREBASE_SERVICE_ACCOUNT_JSON:",
+    });
   }
 }
 // Last resort for local development
@@ -29,7 +31,9 @@ else {
       serviceAccount = require("../penpalmagicapp-firebase-adminsdk.json");
     }
   } catch (error) {
-    Sentry.captureException("Failed to load Firebase credentials:", error);
+    logError(error, {
+      description: "Failed to load Firebase credentials:",
+    });
     serviceAccount = { projectId: "penpalmagicapp" }; // Will fail gracefully later
   }
 }
@@ -48,7 +52,9 @@ if (!admin.apps.length) {
       credential: admin.credential.cert(serviceAccount),
     });
   } catch (error) {
-    Sentry.captureException("Firebase admin initialization error:", error);
+    logError(error, {
+      description: "Firebase admin initialization error:",
+    });
   }
 }
 

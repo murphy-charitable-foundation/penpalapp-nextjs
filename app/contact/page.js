@@ -18,9 +18,10 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import logo from "/public/murphylogo.png";
-
-// small top gap to match other pages
-const TOP_GAP = 1;
+import Button from "../../components/general/Button";
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { useEffect } from "react";
 
 export default function Contact() {
   const [navH, setNavH] = useState(88);
@@ -40,6 +41,9 @@ export default function Contact() {
     };
   }, []);
 
+  // small top gap to match other pages
+  const TOP_GAP = 1;
+
   const socialLinks = [
     { name: "WhatsApp/phone", url: "tel:+256771983900", icon: <FaWhatsapp className="h-6 w-6" /> },
     { name: "Email", url: "mailto:murphycharity.info@gmail.com", icon: <FaEnvelope className="h-6 w-6" /> },
@@ -48,6 +52,7 @@ export default function Contact() {
     { name: "Instagram", url: "https://www.instagram.com/murphycharity_/", icon: <FaInstagram className="h-6 w-6" /> },
     { name: "Website", url: "https://murphycharity.org", icon: <FaGlobe className="h-6 w-6" /> },
   ];
+  usePageAnalytics("/contact");
 
   return (
     <div

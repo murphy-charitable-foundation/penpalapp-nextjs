@@ -8,6 +8,25 @@ import Header from "../../components/general/Header";
 import FilterPanel from "../../components/discovery/FilterPanel";
 import EmptyState from "../../components/discovery/EmptyState";
 import KidsList from "../../components/discovery/KidsList";
+import {
+  collection,
+  getDocs,
+  doc,
+  query,
+  startAfter,
+  limit,
+  where,
+} from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
+import KidCard from "../../components/discovery/KidCard";
+import KidFilter from "../../components/discovery/KidFilter";
+import Link from "next/link";
+import { BackButton } from "../../components/general/BackButton";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
+import { onAuthStateChanged } from "firebase/auth";
+
 
 const TOP_GAP = 0;
 const GAP_BELOW = 2;

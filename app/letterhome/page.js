@@ -8,7 +8,6 @@ import { doc, getDoc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
-import * as Sentry from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
@@ -27,6 +26,8 @@ import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -39,6 +40,8 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
+
+  usePageAnalytics("/letterhome");
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -93,8 +96,9 @@ export default function Home() {
         throw new Error("No letterboxes found.");
       }
     } catch (err) {
-      console.error("Error fetching data:", err);
-      Sentry.captureException(err);
+      logError(error, {
+        description: "Error fetching data:",
+      });
       setError("Failed to load data.");
       throw err;
     }
@@ -130,6 +134,7 @@ export default function Home() {
         }
       }
     });
+
     return () => unsubscribe();
   }, [router]);
 
@@ -235,7 +240,7 @@ return (
         <PageContainer
           padding="none"
           bg="bg-white"
-          scroll={false}                 
+          scroll={false}
           viewportOffset={0}
           className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none rounded-2xl"
           style={{ maxWidth: "unset", width: "100%" }}
@@ -252,7 +257,6 @@ return (
           <div
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{
-              
               paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
             }}
           >
@@ -263,7 +267,10 @@ return (
                 </div>
               ) : conversations.length > 0 ? (
                 <section className="mt-0 pb-10">
-                  <ConversationList conversations={conversations} maxHeight="none" />
+                  <ConversationList
+                    conversations={conversations}
+                    maxHeight="none"
+                  />
                 </section>
               ) : (
                 <section className="mt-6 px-6">
@@ -284,6 +291,7 @@ return (
     </div>
   </PageBackground>
 );
+
 
 
 }

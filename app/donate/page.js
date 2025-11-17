@@ -1,12 +1,18 @@
 "use client";
-
+// pages/donate.js
 import Link from 'next/link';
 import BottomNavBar from '../../components/bottom-nav-bar';
 import Button from '../../components/general/Button';
-import { BackButton } from '../../components/general/BackButton';
 import { PageBackground } from '../../components/general/PageBackground';
 import { PageContainer } from '../../components/general/PageContainer';
 import { PageHeader } from '../../components/general/PageHeader';
+
+import Image from "next/image";
+import { useState } from "react";
+import { BackButton } from "../../components/general/BackButton";
+import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
+
 export default function Donate() {
   const details = [
     { label: "Account Name", value: "Murphy Charitable Foundation" },
@@ -18,6 +24,12 @@ export default function Donate() {
 const NAV_H = 88;         // your real BottomNav height
 const TOP_GAP_PX = 0;     // smaller top gap (px) → taller card
 const FUDGE_PX = 24;      // extra height to ensure bottom is visible
+  /**
+   * Firebase Analytics Documentation Example:
+   * usePageAnalytics("/donate") from useAnalytics.js logs a dead clicks and load times for the /donate page
+   */
+
+  usePageAnalytics("/donate");
 
   return (
     <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
