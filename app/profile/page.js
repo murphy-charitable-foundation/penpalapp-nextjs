@@ -61,6 +61,7 @@ export default function EditProfile() {
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [userType, setUserType] = useState("international_buddy");
+  const [notification, setNotification] = useState(null);
 
   // Modal state
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
@@ -96,6 +97,7 @@ export default function EditProfile() {
           setFavoriteColor(userData.favorite_color || "");
           setPhotoUri(userData.photo_uri || "");
           setUserType(userData.user_type || "");
+          setNotification(userData.userGroup || null);
         } else {
           console.log("No such document!");
         }
@@ -125,6 +127,7 @@ export default function EditProfile() {
         hobby,
         favorite_color: favoriteColor,
         gender,
+        userGroup: notification
       };
 
       // Custom validation
