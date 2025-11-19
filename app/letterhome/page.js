@@ -1,7 +1,6 @@
 "use client";
-
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
@@ -25,7 +24,6 @@ import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logButtonEvent, logError } from "../utils/analytics";
@@ -117,6 +115,7 @@ export default function Home() {
       } else {
         try {
           const uid = user.uid;
+          setUserId(uid)
 
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
@@ -202,74 +201,96 @@ export default function Home() {
   //   fetchUserData();
   // }, []);
 
-  return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        <>
-          {isLoading ? (
-            <LetterHomeSkeleton />
-          ) : (
-            <>
-              <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
-                <BackButton />
-                <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-                  <ProfileHeader
-                    userName={userName}
-                    country={country}
-                    profileImage={profileImage}
-                    id={userId}
-                  />
-                  <main className="p-6 bg-white">
-                    <section className="mt-8">
-                      {conversations.length > 0 ? (
-                        <ConversationList conversations={conversations} />
-                      ) : (
-                        <EmptyState
-                          title="New friends are coming!"
-                          description="Many friends are coming hang tight!"
-                        />
-                      )}
-                    </section>
-                  </main>
+const TOP_GAP = 6;
+const GAP_BELOW = 2;
 
-                  <NavBar />
+
+
+const [navH, setNavH] = useState(88);
+const navWrapRef = useRef(null);
+
+useLayoutEffect(() => {
+  const el = navWrapRef.current;
+  if (!el) return;
+  const update = () => setNavH(el.offsetHeight || 88);
+  update();
+  const ro = new ResizeObserver(update);
+  ro.observe(el);
+  window.addEventListener("resize", update);
+  window.addEventListener("orientationchange", update);
+  return () => {
+    window.removeEventListener("resize", update);
+    window.removeEventListener("orientationchange", update);
+    ro.disconnect();
+  };
+}, []);
+
+
+
+return (
+  <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+    <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+      <div
+        className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
+        style={{
+          height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+        }}
+      >
+        <PageContainer
+          width="compactXS"          
+          padding="none"
+          bg="bg-white"
+          scroll={false}
+          viewportOffset={0}
+          className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
+        >
+          <ProfileHeader
+            userName={userName}
+            country={country}
+            profileImage={profileImage}
+            id={userId}
+            className="px-6 m-0 rounded-t-2xl"
+          />
+
+          <div
+            className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+            style={{
+              paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
+            }}
+          >
+            <main className="px-0">
+              {isLoading ? (
+                <div className="px-4 md:px-6 py-4">
+                  <LetterHomeSkeleton />
                 </div>
-              </div>
-              {userType === "admin" && (
-                <Button
-                  btnText="Check For Inactive Chats"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={() => {
-                    logButtonEvent(
-                      "check for inactive chats button clicked",
-                      "/letterhome"
-                    );
-                    iterateLetterBoxes();
-                  }}
-                />
+              ) : conversations.length > 0 ? (
+                <section className="mt-0 pb-10">
+                  <ConversationList
+                    conversations={conversations}
+                    maxHeight="none"
+                  />
+                </section>
+              ) : (
+                <section className="mt-6 px-6">
+                  <EmptyState
+                    title="New friends are coming!"
+                    description="Many friends are coming — hang tight!"
+                  />
+                </section>
               )}
-            </>
-          )}
-        </>
-        {/* Add animation keyframes */}
-        <style jsx global>{`
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateX(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          .animate-slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-          }
-        `}</style>
-      </PageContainer>
-    </PageBackground>
-  );
+            </main>
+          </div>
+        </PageContainer>
+      </div>
+    </div>
+
+    <div ref={navWrapRef}>
+      <NavBar />
+    </div>
+  </PageBackground>
+);
+
+
+
+
 }
