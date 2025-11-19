@@ -209,6 +209,8 @@ export default function Home() {
   // }, []);
 const TOP_GAP = 6;
 const GAP_BELOW = 2;
+const CARD_MAX_W = 464
+
 
 const [navH, setNavH] = useState(88);
 const navWrapRef = useRef(null);
@@ -238,19 +240,22 @@ return (
       {/* ===== FIXED CARD (no flicker) ===== */}
       <div
         className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
+        className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
         style={{
-          // ❗ height دیگر وابسته به navH نیست → ثابت می‌ماند
-          height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          // اگر می‌خواهی از ثابت استفاده کنی:
+          // maxWidth: `${CARD_MAX_W}px`,
+          height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
         }}
       >
 
         <PageContainer
-          width="compactXS"
+          width="compactXS"          // مثل login
           padding="none"
           bg="bg-white"
           scroll={false}
           viewportOffset={0}
-          className=" flex-1 min-h-0 flex flex-col overflow-hidden"
+          className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
+          // ❌ دیگه maxWidth: "unset" و !max-w-none نمی‌خواهیم
         >
           <ProfileHeader
             userName={userName}
@@ -260,7 +265,6 @@ return (
             className="px-2 m-0 rounded-t-2xl"
           />
 
-          {/* ===== SINGLE SCROLLER ===== */}
           <div
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{
@@ -270,7 +274,7 @@ return (
           >
             <main>
               {isLoading ? (
-                <div className="px-4 md:px-4 py-2">
+                <div className="px-4 md:px-6 py-4">
                   <LetterHomeSkeleton />
                 </div>
               ) : conversations.length > 0 ? (
@@ -300,7 +304,6 @@ return (
     </div>
   </PageBackground>
 );
-
 
 
 
