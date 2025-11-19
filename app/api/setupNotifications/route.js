@@ -2,7 +2,17 @@
 import admin from "firebase-admin";
 
 // ---------- ADMIN INITIALIZATION ----------
-if (!admin.apps.length) {
+const requiredEnvVars = [
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_PRIVATE_KEY",
+  "FIREBASE_CLIENT_EMAIL"
+];
+const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+const envError = missingVars.length > 0
+  ? `Missing Firebase env vars: ${missingVars.join(", ")}`
+  : null;
+
+if (!envError && !admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
@@ -13,11 +23,17 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = !envError ? admin.firestore() : null;
 
 // ---------- ROUTE HANDLER ----------
 export async function POST(req) {
   try {
+    if (envError) {
+      console.error("Environment Configuration Error:", envError);
+      return new Response(JSON.stringify({
+        error: "Internal Server Error. Firebase environment variables are not configured.",
+      }), { status: 500 });
+    }
     const { idToken, fcmToken } = await req.json();
 
     if (!idToken || !fcmToken) {
@@ -62,7 +78,7 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error("Error in setupNotifications:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: "Failed to setup notifications." }), {
       status: 500,
     });
   }

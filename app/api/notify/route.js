@@ -120,27 +120,26 @@ export async function POST(req) {
     }
 
     // --- SEND ---
-    const results = [];
-    for (const { token, name } of tokens) {
-      try {
-        const response = await admin.messaging().send({
-          token,
-          notification: {
-            title: "New Letterbox Message",
-            body: message || "You have a new message.",
-          },
-        });
-        results.push({ success: true, token, name, response });
-      } catch (err) {
-        console.error(`Failed to send to ${name}:`, err);
-        results.push({
-          success: false,
-          token,
-          name,
-          error: "Failed to send notification.",
-        });
-      }
-    }
+    const sendPromises = tokens.map(({ token, name }) =>
+      admin.messaging().send({
+        token,
+        notification: {
+          title: "New Letterbox Message",
+          body: message || "You have a new message.",
+        },
+      })
+        .then(response => ({ success: true, name, response }))
+        .catch(sendError => {
+          console.error(`Failed to send to ${name}:`, sendError);
+          return {
+            success: false,
+            error: `Failed to send notification to ${name}.`,
+            token,
+            name,
+          };
+        })
+    );
+    const results = await Promise.allSettled(sendPromises);
 
     return new Response(JSON.stringify({
       message: "Notification processing complete.",
