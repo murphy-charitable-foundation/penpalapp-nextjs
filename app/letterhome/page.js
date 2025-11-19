@@ -203,7 +203,7 @@ export default function Home() {
 
 const TOP_GAP = 6;
 const GAP_BELOW = 2;
-const CARD_MAX_W = 640;
+const CARD_MAX_W = 464
 
 
 const [navH, setNavH] = useState(88);
@@ -231,19 +231,21 @@ return (
   <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
     <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
       <div
-        className="relative mx-auto w-full rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0"
+        className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
         style={{
-          maxWidth: `${CARD_MAX_W}px`,
+          // اگر می‌خواهی از ثابت استفاده کنی:
+          // maxWidth: `${CARD_MAX_W}px`,
           height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
         }}
       >
         <PageContainer
+          width="compactXS"          // مثل login
           padding="none"
           bg="bg-white"
           scroll={false}
           viewportOffset={0}
-          className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none rounded-2xl"
-          style={{ maxWidth: "unset", width: "100%" }}
+          className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
+          // ❌ دیگه maxWidth: "unset" و !max-w-none نمی‌خواهیم
         >
           <ProfileHeader
             userName={userName}
@@ -253,7 +255,6 @@ return (
             className="px-6 m-0 rounded-t-2xl"
           />
 
-          {/* SINGLE SCROLLER */}
           <div
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{
@@ -262,7 +263,7 @@ return (
           >
             <main className="px-0">
               {isLoading ? (
-                <div className="px-6 py-6">
+                <div className="px-4 md:px-6 py-4">
                   <LetterHomeSkeleton />
                 </div>
               ) : conversations.length > 0 ? (
@@ -291,6 +292,7 @@ return (
     </div>
   </PageBackground>
 );
+
 
 
 
