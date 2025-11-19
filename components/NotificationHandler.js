@@ -35,7 +35,17 @@ export function NotificationHandler({ children }) {
           if (!title && !body) return;
 
           if (hasNotificationSupport && Notification.permission === "granted") {
-            new Notification(title || "New Message", { body });
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (!isMobile) {
+              // Desktop
+              new Notification(title, { body });
+            } else {
+              // Mobile required path
+              navigator.serviceWorker.getRegistration().then((reg) => {
+                if (reg) reg.showNotification(title, { body });
+              });
+            }
+
           } else {
             // Fallback: in-app notification
             alert(`${title || "Notification"}\n${body || ""}`);

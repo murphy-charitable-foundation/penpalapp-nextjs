@@ -15,47 +15,10 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// ---------- HELPERS ----------
-
-/**
- * Assign a new user group atomically using a counter document.
- */
-const assignNewUserGroup = async (fcmToken, userDocRef) => {
-  const counterDocRef = db.collection("counters").doc("userGroup");
-  const tokenDocRef = db.collection("fcmTokens").doc(fcmToken);
-
-  const newUserGroup = await db.runTransaction(async (transaction) => {
-    const counterSnap = await transaction.get(counterDocRef);
-    let nextGroup = 1;
-
-    if (counterSnap.exists) {
-      const current = counterSnap.data()?.current || 0;
-      nextGroup = current + 1;
-      transaction.update(counterDocRef, { current: nextGroup });
-    } else {
-      transaction.set(counterDocRef, { current: nextGroup });
-    }
-
-    // Save FCM token and userGroup
-    transaction.set(tokenDocRef, {
-      fcmToken,
-      userGroup: nextGroup,
-      createdAt: new Date(),
-    });
-
-    // Update user document
-    transaction.set(userDocRef, { userGroup: nextGroup }, { merge: true });
-
-    return nextGroup;
-  });
-
-  return newUserGroup;
-};
-
 // ---------- ROUTE HANDLER ----------
 export async function POST(req) {
   try {
-    const { idToken, fcmToken, forceNewGroup = false } = await req.json();
+    const { idToken, fcmToken } = await req.json();
 
     if (!idToken || !fcmToken) {
       return new Response(
@@ -69,46 +32,39 @@ export async function POST(req) {
     const uid = decoded.uid;
 
     const userDocRef = db.collection("users").doc(uid);
-    const userDocSnap = await userDocRef.get();
-
     const tokenDocRef = db.collection("fcmTokens").doc(fcmToken);
+
+    // Check if token already exists
     const tokenSnap = await tokenDocRef.get();
 
-    let userGroup;
+    const userGroup = fcmToken;
 
-    // ---------------------------
-    // Case 1: Force new group
-    // ---------------------------
-    if (forceNewGroup) {
-      userGroup = await assignNewUserGroup(fcmToken, userDocRef);
-      return Response.json({ success: true, userGroup, newGroup: true });
-    }
-
-    // ---------------------------
-    // Case 2: Device already exists
-    // ---------------------------
+    // Case 1: Device already registered
     if (tokenSnap.exists) {
-      userGroup = tokenSnap.data().userGroup;
+      // Ensure user is attached to same device-group
+      await userDocRef.set({ userGroup }, { merge: true });
 
-      // Update user to match device group if different
-      if (!userDocSnap.exists || userDocSnap.data()?.userGroup !== userGroup) {
-        await userDocRef.set({ userGroup }, { merge: true });
-      }
-
-      return Response.json({ success: true, userGroup, newGroup: false });
+      return Response.json({
+        success: true,
+      });
     }
 
-    // ---------------------------
-    // Case 3: Device is new
-    // ---------------------------
-    userGroup = await assignNewUserGroup(fcmToken, userDocRef);
-    return Response.json({ success: true, userGroup, newGroup: true });
+    // Case 2: New device registration
+    await tokenDocRef.set({
+      fcmToken,
+      userGroup,
+      createdAt: new Date(),
+    });
 
+    await userDocRef.set({ userGroup }, { merge: true });
+
+    return Response.json({
+      success: true,
+    });
   } catch (err) {
     console.error("Error in setupNotifications:", err);
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+    });
   }
 }
