@@ -60,7 +60,6 @@ async function getConversationTokens(conversationId, senderUid) {
     const user = userSnap.data();
     if (!user.userGroup) continue;
 
-    // userGroup === device FCM token now
     const tokenSnap = await db.collection("fcmTokens").doc(user.userGroup).get();
 
     if (tokenSnap.exists) {

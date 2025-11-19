@@ -52,7 +52,6 @@ export async function POST(req) {
     // Case 2: New device registration
     await tokenDocRef.set({
       fcmToken,
-      userGroup,
       createdAt: new Date(),
     });
 
