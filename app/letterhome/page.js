@@ -203,7 +203,7 @@ export default function Home() {
 
 const TOP_GAP = 6;
 const GAP_BELOW = 2;
-const CARD_MAX_W = 464
+
 
 
 const [navH, setNavH] = useState(88);
@@ -233,19 +233,16 @@ return (
       <div
         className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
         style={{
-          // اگر می‌خواهی از ثابت استفاده کنی:
-          // maxWidth: `${CARD_MAX_W}px`,
           height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
         }}
       >
         <PageContainer
-          width="compactXS"          // مثل login
+          width="compactXS"          
           padding="none"
           bg="bg-white"
           scroll={false}
           viewportOffset={0}
           className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
-          // ❌ دیگه maxWidth: "unset" و !max-w-none نمی‌خواهیم
         >
           <ProfileHeader
             userName={userName}
