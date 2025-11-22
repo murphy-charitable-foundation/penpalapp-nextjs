@@ -849,28 +849,27 @@ export default function Page({ params }) {
                   {isSelected && (
                     <div className="px-4 pb-3">
                       <div className="ml-16">
-                      {/* STATUS BANNER */}
-                      {message.status === "rejected" && (
-                        <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded-lg">
-                          <div className="flex items-center text-red-700 font-semibold">
-                            <AlertTriangle className="w-4 h-4 mr-2" />
-                            Your letter was rejected.
+                      {/* STATUS BANNER */}       
+                        {isSenderUser && message.status === "rejected" && (
+                          <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded-lg">
+                            <div className="flex items-center text-red-700 font-semibold">
+                              <AlertTriangle className="w-4 h-4 mr-2" />
+                              Your letter was rejected.
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {message.status === "approved" && (
-                        <div className="mb-3 p-3 bg-green-100 border border-green-300 rounded-lg">
-                          <span className="text-green-700 font-semibold">✓ Letter approved</span>
-                        </div>
-                      )}
+                        {isSenderUser && message.status === "approved" && (
+                          <div className="mb-3 p-3 bg-green-100 border border-green-300 rounded-lg">
+                            <span className="text-green-700 font-semibold">✓ Letter approved</span>
+                          </div>
+                        )}
 
-                      {message.status === "sent" && (
-                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <span className="text-blue-700 font-semibold">Sent — waiting for review</span>
-                        </div>
-                      )}
-
+                        {isSenderUser && message.status === "sent" && (
+                          <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <span className="text-blue-700 font-semibold">Sent — waiting for review</span>
+                          </div>
+                        )}
                         <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
