@@ -832,15 +832,21 @@ export default function Page({ params }) {
                       </div>
                       {/* INBOX STATUS ICONS */}
                       {isSenderUser && (
-                        <div className="text-xs text-gray-500 ml-2">
-                          {message.status === "sent" && <span>✓</span>}
-                          {message.status === "delivered" && <span>✓✓</span>}
-                          {message.status === "approved" && (
-                            <span className="text-green-600">✓✓✓</span>
+                        <div className="text-xs text-green-500 ml-2">
+                          {/* SENT--green check */}
+                          {message.status === "sent" && (
+                              <span className="text-green-500 text-xs font-bold">✓</span>
                           )}
-                          {message.status === "rejected" && (
-                            <AlertTriangle className="w-3 h-3 text-red-600 inline-block" />
+                          {/* PENDING REVIEW--dashed gray check */}
+                          {message.status === "pending_review" && (
+                            <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                              <span className="text-gray-400 text-xs font-bold">✓</span>
+                            </div>
                           )}
+                          {/* REJECTED--red alert */}
+                           {message.status === "rejected" && (
+                              <AlertTriangle className="text-red-500 w-4 h-4" />
+                            )}
                         </div>
                       )}
                     </div>
@@ -848,39 +854,30 @@ export default function Page({ params }) {
 
                   {isSelected && (
                     <div className="px-4 pb-3">
-                      <div className="ml-16">
-                      {/* STATUS BANNER */}       
-                        {isSenderUser && message.status === "rejected" && (
-                          <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded-lg">
-                            <div className="flex items-center text-red-700 font-semibold">
-                              <AlertTriangle className="w-4 h-4 mr-2" />
-                              Your letter was rejected.
-                            </div>
-                          </div>
-                        )}
+                      <div className="ml-16 relative">
+                      {/* STATUS BANNER */}
+                        {isSenderUser && (
+                          <>
+                            {/* REJECTED */}
+                            {message.status === "rejected" && (
+                              <AlertTriangle className="w-5 h-5 text-red-500 absolute bottom-0 right-0" />
+                            )}
 
-                        {isSenderUser && message.status === "approved" && (
-                          <div className="mb-3 p-3 bg-green-100 border border-green-300 rounded-lg">
-                            <span className="text-green-700 font-semibold">✓ Letter approved</span>
-                          </div>
-                        )}
+                            {/* SENT → GREEN CHECK */}
+                            {message.status === "sent" && (
+                            <span className="text-green-500 text-lg font-bold absolute bottom-0 right-0">✓</span>
+                          )}
+                            {/* PENDING REVIEW → GRAY DASHED CHECK */}
+                            {message.status === "pending_review" && (
+                            <span className="text-gray-500 text-sm font-bold absolute bottom-0 right-0">✓</span>
+                          )}
 
-                        {isSenderUser && message.status === "sent" && (
-                          <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <span className="text-blue-700 font-semibold">Sent — waiting for review</span>
-                          </div>
+                          </>
                         )}
-                        <p className="text-gray-800 whitespace-pre-wrap">
+                          <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
-                        {/* MESSAGE CHECKMARKS */}
-                        {isSenderUser && (
-                          <div className="text-gray-500 text-xs mt-2 ml-1">
-                            {message.status === "sent" && <span>✓ Sent</span>}
-                            {message.status === "delivered" && <span>✓✓ Delivered</span>}
-                            {message.status === "approved" && <span>✓✓✓ Approved</span>}
-                          </div>
-                        )}
+                       
                         {!isSenderUser && (
                           <Button
                             onClick={(e) => {
