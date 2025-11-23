@@ -42,7 +42,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
-    // FIXED: Query for existing drafts by this user (order by updated_at desc to get most recent)
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -67,7 +66,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       return draftData;
     }
 
-    // Only create new draft if explicitly requested and no existing draft
     if (shouldCreate) {
       const newDraftData = {
         sent_by: userRef,
@@ -90,6 +88,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     return null;
   } catch (error) {
+    console.error("❌ fetchDraft error:", error);
     return null;
   }
 };
@@ -102,51 +101,41 @@ export default function Page({ params }) {
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
 
-  // User and auth states
   const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
 
-  // Message and draft states
   const [messageContent, setMessageContent] = useState("");
   const messageInputRef = useRef(null);
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
   const pathname = usePathname();
 
-  // NEW: State for editing existing message
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
     useState("");
 
-  // Chat states
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
   const [userType, setUserType] = useState("");
 
-  // UI states
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // NEW: State for disabling X button after select all and delete
   const [isXButtonDisabled, setIsXButtonDisabled] = useState(false);
-
-  // NEW: State to track Firebase update status
   const [isUpdatingFirebase, setIsUpdatingFirebase] = useState(false);
 
-  // Report states
   const [showReportPopup, setShowReportPopup] = useState(false);
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [reportContent, setReportContent] = useState(null);
   const [reportSender, setReportSender] = useState(null);
 
-  // Auto-save draft timer
   const [draftTimer, setDraftTimer] = useState(null);
 
   const scrollToBottom = (instant = false) => {
@@ -156,14 +145,12 @@ export default function Page({ params }) {
     });
   };
 
-  // saveDraft function with Firebase to update tracking
   const saveDraft = useCallback(
     async (content) => {
       if (!user || !lettersRef || isSending) {
         return Promise.resolve();
       }
 
-      // Set updating status when starting Firebase operation
       setIsUpdatingFirebase(true);
 
       try {
@@ -171,22 +158,19 @@ export default function Page({ params }) {
         const trimmedContent = content.trim();
         const currentTime = new Date();
 
-        // Always check for existing draft first
         let existingDraft = draft;
 
-        // If no draft in state, fetch from database
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, letterUserRef, false);
 
           if (existingDraft) {
-            setDraft(existingDraft); // Update state with found draft
+            setDraft(existingDraft);
           }
         }
 
-        // Prepare draft data with proper structure
         const baseDraftData = {
           sent_by: letterUserRef,
-          content: trimmedContent, // Store actual content (can be empty)
+          content: trimmedContent,
           status: "draft",
           updated_at: currentTime,
           deleted: null,
@@ -196,18 +180,15 @@ export default function Page({ params }) {
         if (existingDraft?.id) {
           const draftDocRef = doc(lettersRef, existingDraft.id);
 
-          // Always update existing draft, don't check if it exists
           const updateData = {
             ...baseDraftData,
-            created_at: existingDraft.created_at || currentTime, // Preserve original created_at
+            created_at: existingDraft.created_at || currentTime,
           };
 
           await updateDoc(draftDocRef, updateData);
 
-          // Update local state
           setDraft({ ...updateData, id: existingDraft.id });
         } else {
-          // Create new draft
           const newDraftData = {
             ...baseDraftData,
             created_at: currentTime,
@@ -216,29 +197,25 @@ export default function Page({ params }) {
           const newDraftRef = doc(lettersRef);
           await setDoc(newDraftRef, newDraftData);
 
-          // Update local state
           setDraft({ ...newDraftData, id: newDraftRef.id });
         }
 
-        // FIXED: Update UI state consistently
         const hasContent = Boolean(trimmedContent);
 
         setHasDraftContent(hasContent);
-
-        // If content is empty, exit edit mode
         if (!hasContent && isEditing) {
           setIsEditing(false);
         }
 
         return Promise.resolve();
       } catch (error) {
-        // More specific error handling
+        console.error("❌ saveDraft error:", error);
+
         if (error.code === "permission-denied") {
           console.error("🔒 Permission denied error");
           alert("Permission denied. Please check your access rights.");
         } else if (error.code === "not-found") {
           console.error("🔍 Document not found, attempting retry...");
-          // Reset draft state and try again if we have content
           setDraft(null);
           if (trimmedContent) {
             try {
@@ -260,27 +237,23 @@ export default function Page({ params }) {
 
         return Promise.reject(error);
       } finally {
-        // Clear updating status when Firebase operation completes
         setIsUpdatingFirebase(false);
       }
     },
     [user, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
-  // Message change handler with Promise-based X button management
   const handleMessageChange = async (e) => {
     const newContent = e.target.value;
 
     setMessageContent(newContent);
     const trimmedContent = newContent.trim();
 
-    // Clear any existing timer
     if (draftTimer) {
       clearTimeout(draftTimer);
       setDraftTimer(null);
     }
 
-    // Update UI state based on content
     if (trimmedContent.length > 0) {
       setIsEditing(true);
       setHasDraftContent(true);
@@ -300,25 +273,20 @@ export default function Page({ params }) {
       }
     } else {
       setHasDraftContent(false);
+      setIsEditing(false);
 
-      //  Always save empty content to existing draft, exit edit mode immediately
-      setIsEditing(false); // Exit edit mode immediately for empty content
-
-      // Only handle draft saving if NOT editing an existing message
       if (!editingMessageId) {
-        // NEW: Disable X button and track Firebase update completion
         setIsXButtonDisabled(true);
 
         try {
-          // Wait for Firebase update to complete
           await saveDraft(newContent);
 
           setIsXButtonDisabled(false);
         } catch (error) {
+          console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
-          // Re-enable X button even if there was an error (fallback after 3 seconds)
           setTimeout(() => {
             setIsXButtonDisabled(false);
           }, 3000);
@@ -327,7 +295,7 @@ export default function Page({ params }) {
     }
   };
 
-  //  Function to update existing message
+  // FIXED: Restore draft after updating message
   const handleUpdateMessage = async () => {
     const trimmedContent = messageContent.trim();
 
@@ -343,33 +311,39 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      // Validate required dependencies
       if (!user || !lettersRef) {
-        console.error("❌ Missing required dependencies");
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
       const currentTime = new Date();
       const messageRef = doc(lettersRef, editingMessageId);
 
-      // Update the existing message
       const updateData = {
         content: trimmedContent,
         updated_at: currentTime,
-        // Keep status as pending_review
       };
 
       await updateDoc(messageRef, updateData);
 
-      // Clear editing states
-      setMessageContent("");
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const existingDraft = await fetchDraft(id, letterUserRef, false);
+
+      if (existingDraft && existingDraft.content?.trim()) {
+        setDraft(existingDraft);
+        setMessageContent(existingDraft.content);
+        setHasDraftContent(true);
+        setIsEditing(true);
+      } else {
+        setMessageContent("");
+        setDraft(null);
+        setHasDraftContent(false);
+        setIsEditing(false);
+      }
+
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
-      setIsEditing(false);
-      setHasDraftContent(false);
       setSelectedMessageId(null);
 
-      // Update message in UI
       setAllMessages((prev) => {
         const updatedMessages = prev.map((msg) => {
           if (msg.id === editingMessageId) {
@@ -384,14 +358,12 @@ export default function Page({ params }) {
         return updatedMessages;
       });
 
-      // Scroll to bottom
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
       console.error("❌ handleUpdateMessage error:", error);
 
-      // More specific error handling
       if (error.code === "permission-denied") {
         alert(
           "Permission denied. Please check your access rights to this conversation."
@@ -406,9 +378,7 @@ export default function Page({ params }) {
     }
   };
 
-  // Enhanced send message function - now creates pending_review status
   const handleSendMessage = async () => {
-    // If we're editing an existing message, use update function instead
     if (editingMessageId) {
       return handleUpdateMessage();
     }
@@ -427,20 +397,17 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      // Validate required dependencies
       if (!user || !lettersRef) {
-        console.error("❌ Missing required dependencies");
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
       const letterUserRef = userRef || doc(db, "users", user.uid);
       const currentTime = new Date();
 
-      // NEW: Changed status to "pending_review" instead of "sent"
       const messageData = {
         sent_by: letterUserRef,
         content: trimmedContent,
-        status: "pending_review", // CHANGED from "sent"
+        status: "pending_review",
         created_at: currentTime,
         updated_at: currentTime,
         deleted: null,
@@ -452,10 +419,9 @@ export default function Page({ params }) {
       if (draft?.id) {
         messageRef = doc(lettersRef, draft.id);
 
-        // Update existing draft to sent
         const updateData = {
           ...messageData,
-          created_at: draft.created_at || currentTime, // Preserve original created_at
+          created_at: draft.created_at || currentTime,
         };
 
         await updateDoc(messageRef, updateData);
@@ -464,13 +430,11 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageData);
       }
 
-      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
       setIsEditing(false);
 
-      // Add message to UI immediately
       const messageWithId = {
         ...messageData,
         id: messageRef.id,
@@ -479,17 +443,14 @@ export default function Page({ params }) {
 
       setAllMessages((prev) => {
         const newMessages = [...prev, messageWithId];
+
         return newMessages;
       });
 
-      // Scroll to bottom
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      console.error("❌ handleSendMessage error:", error);
-
-      // More specific error handling
       if (error.code === "permission-denied") {
         alert(
           "Permission denied. Please check your access rights to this conversation."
@@ -504,22 +465,17 @@ export default function Page({ params }) {
     }
   };
 
-  // Close message handler with Firebase status awareness
   const handleCloseMessage = async () => {
-    // NEW: Prevent closing if X button is disabled OR Firebase is updating
     if (isXButtonDisabled || isUpdatingFirebase) {
       return;
     }
 
     const trimmedMessageContent = messageContent.trim();
 
-    // NEW: If editing an existing message, handle differently
     if (editingMessageId) {
-      // If content changed, show dialog
       if (trimmedMessageContent !== editingMessageOriginalContent.trim()) {
         setShowCloseDialog(true);
       } else {
-        // Content unchanged, just revert
         setMessageContent("");
         setEditingMessageId(null);
         setEditingMessageOriginalContent("");
@@ -531,7 +487,6 @@ export default function Page({ params }) {
       return;
     }
 
-    // If we're in edit mode, save current state before proceeding
     if (isEditing) {
       try {
         await saveDraft(messageContent);
@@ -542,7 +497,6 @@ export default function Page({ params }) {
       }
     }
 
-    // Only show dialog if there's content to save (requirement 2)
     if (trimmedMessageContent.length > 0) {
       setShowCloseDialog(true);
     } else {
@@ -550,11 +504,9 @@ export default function Page({ params }) {
     }
   };
 
-  // Enhanced confirm close handler
   const handleConfirmClose = async () => {
     setShowCloseDialog(false);
 
-    // NEW: If editing message and confirming close, revert the edit
     if (editingMessageId) {
       setMessageContent("");
       setEditingMessageId(null);
@@ -567,7 +519,6 @@ export default function Page({ params }) {
     router.back();
   };
 
-  // Continue editing with logging
   const handleContinueEditing = () => {
     setShowCloseDialog(false);
     setIsEditing(true);
@@ -577,7 +528,6 @@ export default function Page({ params }) {
     }, 100);
   };
 
-  // Handle report button click for the user (not a specific message)
   const handleReportUserClick = () => {
     if (recipients.length > 0) {
       setReportSender(recipients[0].id);
@@ -586,16 +536,63 @@ export default function Page({ params }) {
     }
   };
 
-  // Load messages with comprehensive logging
   const loadMessages = async () => {
-    if (!user || !id || !recipients.length) {
+    if (!user || !id || !recipients.length || !lettersRef) {
       return;
     }
 
     try {
-      const { messages } = await fetchLetterbox(id, 20);
+      const sentQuery = query(
+        lettersRef,
+        where("status", "==", "sent"),
+        orderBy("created_at", "desc"),
+        limit(20)
+      );
 
-      const sortedMessages = messages.sort((a, b) => {
+      const myPendingQuery = query(
+        lettersRef,
+        where("status", "==", "pending_review"),
+        where("sent_by", "==", userRef),
+        orderBy("created_at", "desc"),
+        limit(20)
+      );
+
+      const otherUserRefs = recipients
+        .filter((r) => r.id !== user.uid)
+        .map((r) => doc(db, "users", r.id));
+
+      const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
+
+      for (const otherUserRef of otherUserRefs) {
+        const otherPendingQuery = query(
+          lettersRef,
+          where("status", "==", "pending_review"),
+          where("sent_by", "==", otherUserRef),
+          orderBy("created_at", "desc"),
+          limit(20)
+        );
+        queryPromises.push(getDocs(otherPendingQuery));
+      }
+
+      const snapshots = await Promise.all(queryPromises);
+
+      const allFetchedMessages = [];
+
+      snapshots.forEach((snapshot, index) => {
+        snapshot.docs.forEach((doc) => {
+          const messageData = {
+            id: doc.id,
+            ...doc.data(),
+            created_at:
+              doc.data().created_at?.toDate?.() || doc.data().created_at,
+            updated_at:
+              doc.data().updated_at?.toDate?.() || doc.data().updated_at,
+          };
+          allFetchedMessages.push(messageData);
+        });
+      });
+
+      const sortedMessages = allFetchedMessages.sort((a, b) => {
         const aTime =
           a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
         const bTime =
@@ -622,15 +619,15 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 300);
     } catch (error) {
+      console.error("❌ LOAD MESSAGES ERROR:", error);
       logError(error, {
         description: "LOAD MESSAGES ERROR:",
       });
     }
   };
 
-  // NEW: Handle editing a pending_review message
+  // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
-    // Can only edit if status is pending_review and message is from current user
     if (
       message.status !== "pending_review" ||
       message.sent_by?.id !== user?.uid
@@ -638,15 +635,27 @@ export default function Page({ params }) {
       return;
     }
 
-    // Set editing mode
+    if (messageContent.trim().length > 0 && !editingMessageId) {
+      try {
+        await saveDraft(messageContent);
+      } catch (error) {
+        console.error("❌ Failed to save draft before editing message:", error);
+        const confirmSwitch = window.confirm(
+          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
+        );
+        if (!confirmSwitch) {
+          return;
+        }
+      }
+    }
+
     setEditingMessageId(message.id);
     setEditingMessageOriginalContent(message.content);
     setMessageContent(message.content);
     setIsEditing(true);
     setHasDraftContent(true);
-    setSelectedMessageId(null); // Deselect the message
+    setSelectedMessageId(null);
 
-    // Focus the textarea
     setTimeout(() => {
       textAreaRef.current?.focus();
       if (textAreaRef.current) {
@@ -656,11 +665,9 @@ export default function Page({ params }) {
     }, 100);
   };
 
-  // FIXED: Enhanced handleReplyClick to properly handle existing drafts
   const handleReplyClick = async () => {
     setIsEditing(true);
 
-    // Check if we need to fetch draft from database
     if (!draft?.id) {
       try {
         const letterUserRef = userRef || doc(db, "users", user.uid);
@@ -675,19 +682,17 @@ export default function Page({ params }) {
           setHasDraftContent(false);
         }
       } catch (error) {
+        console.error("❌ Error fetching draft:", error);
         setMessageContent("");
         setHasDraftContent(false);
       }
     } else {
-      // Use existing draft from state
       setMessageContent(draft.content || "");
       setHasDraftContent(Boolean(draft.content?.trim()));
     }
 
-    // Focus the textarea after switching to edit mode
     setTimeout(() => {
       textAreaRef.current?.focus();
-      // Set cursor at the end
       if (textAreaRef.current) {
         const length = textAreaRef.current.value.length;
         textAreaRef.current.setSelectionRange(length, length);
@@ -697,7 +702,6 @@ export default function Page({ params }) {
 
   usePageAnalytics(`/letters/[id]`);
 
-  // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
@@ -713,7 +717,6 @@ export default function Page({ params }) {
       setUser(currentUser);
 
       try {
-        // Check letterbox exists
         const letterboxRef = doc(db, "letterbox", id);
         const letterboxDoc = await getDoc(letterboxRef);
 
@@ -723,7 +726,6 @@ export default function Page({ params }) {
           return;
         }
 
-        // Set user ref and fetch user data
         const userDocRef = doc(db, "users", currentUser.uid);
         setUserRef(userDocRef);
 
@@ -734,11 +736,9 @@ export default function Page({ params }) {
             const location = userData.location;
             setUserLocation(location);
           }
-          // Set profile image
           setProfileImage(userData?.photo_uri || "");
         }
 
-        // Fetch recipients
         const fetchedRecipients = await fetchRecipients(id);
         setRecipients(fetchedRecipients || []);
 
@@ -747,11 +747,8 @@ export default function Page({ params }) {
           setRecipientName(recipientName);
         }
 
-        // Set letters ref
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
-
-        // ENHANCED: Improved draft fetching with better error handling
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
@@ -759,11 +756,9 @@ export default function Page({ params }) {
           const draftContent = draftData.content || "";
           const hasContent = Boolean(draftContent.trim());
 
-          // FIXED: Always set the draft content, even if empty
           setMessageContent(draftContent);
           setHasDraftContent(hasContent);
 
-          // Enter edit mode only if draft has actual content
           if (hasContent) {
             setIsEditing(true);
             setTimeout(() => {
@@ -781,11 +776,60 @@ export default function Page({ params }) {
           setHasDraftContent(false);
         }
 
-        // Load messages if we have recipients
         if (fetchedRecipients?.length > 0) {
-          const { messages } = await fetchLetterbox(id, 20);
+          const sentQuery = query(
+            lRef,
+            where("status", "==", "sent"),
+            orderBy("created_at", "desc"),
+            limit(20)
+          );
 
-          const sortedMessages = messages.sort((a, b) => {
+          const myPendingQuery = query(
+            lRef,
+            where("status", "==", "pending_review"),
+            where("sent_by", "==", userDocRef),
+            orderBy("created_at", "desc"),
+            limit(20)
+          );
+
+          const otherUserRefs = fetchedRecipients
+            .filter((r) => r.id !== currentUser.uid)
+            .map((r) => doc(db, "users", r.id));
+
+          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
+
+          for (const otherUserRef of otherUserRefs) {
+            const otherPendingQuery = query(
+              lRef,
+              where("status", "==", "pending_review"),
+              where("sent_by", "==", otherUserRef),
+              orderBy("created_at", "desc"),
+              limit(20)
+            );
+            queryPromises.push(getDocs(otherPendingQuery));
+          }
+
+          const snapshots = await Promise.all(queryPromises);
+
+          const allFetchedMessages = [];
+
+          snapshots.forEach((snapshot, index) => {
+            snapshot.docs.forEach((docSnap) => {
+              const messageData = {
+                id: docSnap.id,
+                ...docSnap.data(),
+                created_at:
+                  docSnap.data().created_at?.toDate?.() ||
+                  docSnap.data().created_at,
+                updated_at:
+                  docSnap.data().updated_at?.toDate?.() ||
+                  docSnap.data().updated_at,
+              };
+              allFetchedMessages.push(messageData);
+            });
+          });
+
+          const sortedMessages = allFetchedMessages.sort((a, b) => {
             const aTime =
               a.created_at instanceof Date
                 ? a.created_at
@@ -806,7 +850,6 @@ export default function Page({ params }) {
                 if (recipient) {
                   message.senderLocation = recipient.location || "";
                 }
-                // Mark as read
                 if (message?.unread) {
                   await updateDoc(doc(lRef, message.id), { unread: false });
                 }
@@ -814,6 +857,7 @@ export default function Page({ params }) {
               return message;
             })
           );
+
           setAllMessages(messagesWithSenderInfo);
         }
       } catch (error) {
@@ -831,7 +875,6 @@ export default function Page({ params }) {
     };
   }, [id, router]);
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (draftTimer) {
@@ -840,7 +883,6 @@ export default function Page({ params }) {
     };
   }, [draftTimer]);
 
-  // Auto-scroll when messages change or edit mode changes
   useEffect(() => {
     scrollToBottom();
   }, [allMessages, isEditing]);
@@ -851,7 +893,6 @@ export default function Page({ params }) {
 
   const selectMessage = (messageId) => {
     setSelectedMessageId(messageId === selectedMessageId ? null : messageId);
-    // Don't exit edit mode when selecting a message if we're editing
   };
 
   const truncateMessage = (message) => {
@@ -873,7 +914,6 @@ export default function Page({ params }) {
     return canSend;
   };
 
-  // NEW: Helper to check if message can be edited
   const canEditMessage = (message) => {
     const isEditable =
       message.status === "pending_review" && message.sent_by?.id === user?.uid;
@@ -884,7 +924,6 @@ export default function Page({ params }) {
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
-        {/* ENHANCED: Header with improved loading indicator */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
           {isXButtonDisabled || isUpdatingFirebase ? (
             <div className="w-6 h-6 flex items-center justify-center">
@@ -920,7 +959,6 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* NEW: Editing indicator banner */}
         {editingMessageId && (
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between">
             <div className="flex items-center text-amber-800 text-sm">
@@ -928,12 +966,38 @@ export default function Page({ params }) {
               <span>Editing message</span>
             </div>
             <button
-              onClick={() => {
-                setMessageContent(editingMessageOriginalContent);
+              onClick={async () => {
+                const letterUserRef = userRef || doc(db, "users", user.uid);
+
+                try {
+                  const existingDraft = await fetchDraft(
+                    id,
+                    letterUserRef,
+                    false
+                  );
+
+                  if (existingDraft && existingDraft.content?.trim()) {
+                    setDraft(existingDraft);
+                    setMessageContent(existingDraft.content);
+                    setHasDraftContent(true);
+                    setIsEditing(true);
+                  } else {
+                    setMessageContent("");
+                    setDraft(null);
+                    setHasDraftContent(false);
+                    setIsEditing(false);
+                  }
+                } catch (error) {
+                  console.error("❌ Failed to restore draft:", error);
+                  setMessageContent("");
+                  setDraft(null);
+                  setHasDraftContent(false);
+                  setIsEditing(false);
+                }
+
                 setEditingMessageId(null);
                 setEditingMessageOriginalContent("");
-                setIsEditing(false);
-                setHasDraftContent(false);
+                setSelectedMessageId(null);
               }}
               className="text-amber-600 hover:text-amber-800 text-sm underline">
               Cancel
@@ -941,7 +1005,6 @@ export default function Page({ params }) {
           </div>
         )}
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
           {allMessages.map((message, index) => {
             const messageId = message.id;
@@ -959,7 +1022,6 @@ export default function Page({ params }) {
 
             return (
               <div key={messageId}>
-                {/* Message */}
                 <div
                   className={`border-b border-gray-200 ${
                     isSelected ? "bg-white" : "bg-gray-50"
@@ -994,11 +1056,10 @@ export default function Page({ params }) {
                               {location}
                             </span>
                           )}
-                          {/* NEW: Status indicator */}
                           {isSenderUser &&
                             message.status === "pending_review" && (
                               <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                Pending Review
+                                {/* Pending Review */}
                               </span>
                             )}
                         </div>
@@ -1010,7 +1071,8 @@ export default function Page({ params }) {
                         <div className="text-gray-500 text-sm">
                           {formatTime(message.created_at)}
                         </div>
-                        {isEditable && (
+
+                        {isSelected && isEditable && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1021,21 +1083,9 @@ export default function Page({ params }) {
                                 "/letters/[id]"
                               );
                             }}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            className="bg-[#4E802A] hover:bg-[#3d6622] text-white text-xs px-3 py-1 rounded-full transition-colors"
                             title="Edit message">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
+                            Edit
                           </button>
                         )}
                       </div>
@@ -1078,7 +1128,6 @@ export default function Page({ params }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Message Input / View Mode Reply Box */}
         <div className="bg-white">
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center">
@@ -1094,7 +1143,6 @@ export default function Page({ params }) {
           </div>
 
           {!isEditing ? (
-            // View Mode Input Box
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
@@ -1105,7 +1153,6 @@ export default function Page({ params }) {
               </div>
             </div>
           ) : (
-            // Edit Mode Input Box
             <div className="p-4 relative" style={{ height: "40vh" }}>
               <textarea
                 ref={textAreaRef}
@@ -1128,7 +1175,6 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* Close Dialog */}
         {showCloseDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
             <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
@@ -1156,7 +1202,6 @@ export default function Page({ params }) {
           </div>
         )}
 
-        {/* Report Popups */}
         {showReportPopup && (
           <ReportPopup
             setShowPopup={setShowReportPopup}
