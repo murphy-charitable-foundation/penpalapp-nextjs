@@ -914,13 +914,6 @@ export default function Page({ params }) {
     return canSend;
   };
 
-  const canEditMessage = (message) => {
-    const isEditable =
-      message.status === "pending_review" && message.sent_by?.id === user?.uid;
-
-    return isEditable;
-  };
-
   return (
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
@@ -1011,7 +1004,6 @@ export default function Page({ params }) {
             const isSelected = selectedMessageId === messageId;
             const isSenderUser = message.sent_by?.id === user?.uid;
             const location = getSenderLocation(message);
-            const isEditable = canEditMessage(message);
 
             const showDateSeparator =
               index === 0 ||
@@ -1056,12 +1048,6 @@ export default function Page({ params }) {
                               {location}
                             </span>
                           )}
-                          {isSenderUser &&
-                            message.status === "pending_review" && (
-                              <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                {/* Pending Review */}
-                              </span>
-                            )}
                         </div>
                         <div className="text-gray-800">
                           {isSelected ? "" : truncateMessage(message.content)}
@@ -1071,31 +1057,14 @@ export default function Page({ params }) {
                         <div className="text-gray-500 text-sm">
                           {formatTime(message.created_at)}
                         </div>
-
-                        {isSelected && isEditable && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-
-                              handleEditMessage(message);
-                              logButtonEvent(
-                                "Edit message clicked!",
-                                "/letters/[id]"
-                              );
-                            }}
-                            className="bg-[#4E802A] hover:bg-[#3d6622] text-white text-xs px-3 py-1 rounded-full transition-colors"
-                            title="Edit message">
-                            Edit
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>
 
                   {isSelected && (
                     <div className="px-4 pb-3">
-                      <div className="ml-16">
-                        <p className="text-gray-800 whitespace-pre-wrap">
+                      <div className="ml-16 relative">
+                          <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
                         <div className="flex items-center gap-3 mt-2">
@@ -1116,6 +1085,47 @@ export default function Page({ params }) {
                               <FaExclamationCircle className="mr-1" size={10} />
                               Report
                             </button>
+                          )}
+                          {/* STATUS BANNER */}
+                          {isSenderUser && (
+                            <>
+                              {/* REJECTED */}
+                              {message.status === "rejected" && (
+                                <AlertTriangle className="w-5 h-5 text-red-500 flex justify-end w-full" />
+                              )}
+                              {/* SENT → GREEN CHECK */}
+                              {message.status === "sent" && (
+                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
+                              )}
+                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
+                              {message.status === "pending_review" && (
+                                <div className="flex items-center justify-end w-full">
+                              {/* Wrapper so the check can stick to the button */}
+                              <div className="relative inline-flex">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    handleEditMessage(message);
+                                    logButtonEvent(
+                                      "Edit message clicked!",
+                                      "/letters/[id]"
+                                    );
+                                  }}
+                                  className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
+                                  title="Edit message"
+                                >
+                                  Edit
+                                </button>
+
+                                {/* Check badge in bottom-right of the button */}
+                                <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                  <span className="text-gray-400 text-xs font-bold">✓</span>
+                                </div>
+                              </div>
+                            </div>
+                            )}
+                            </>
                           )}
                         </div>
                       </div>
