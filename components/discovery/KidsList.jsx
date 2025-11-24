@@ -4,7 +4,6 @@ import React from "react";
 import KidCard from "./KidCard";
 import Button from "../general/Button";
 
-
 export default function KidsList({
   kids = [],
   calculateAge,
@@ -13,8 +12,8 @@ export default function KidsList({
   loading = false,
 }) {
   return (
-    <section>
-      <div className="grid grid-cols-1 gap-3">
+    <section className="w-full max-w-full">
+      <div className="flex flex-col gap-3 w-full max-w-full">
         {kids.map((kid) => (
           <KidCard
             key={kid?.id || `${kid?.first_name}-${kid?.last_name}`}
@@ -24,24 +23,20 @@ export default function KidsList({
         ))}
       </div>
 
-      {/* Load more */}
       {lastKidDoc && (
         <div className="mt-4 flex justify-center">
           <Button
             onClick={loadMoreKids}
             btnText={loading ? "Loading..." : "Load more"}
-            color="bg-[#034792] hover:bg-[#023b78] focus:ring-2 focus:ring-offset-1 focus:ring-[#91b5da]"
+            color="bg-[#034792]"
             textColor="text-white"
-            font="font-semibold"
             rounded="rounded-full"
             size="px-5 py-2 text-sm"
             disabled={loading}
-            className={loading ? "opacity-80 cursor-not-allowed" : ""}
           />
         </div>
       )}
 
-      
       <div aria-hidden="true" className="h-2" />
     </section>
   );

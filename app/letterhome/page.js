@@ -200,11 +200,8 @@ export default function Home() {
 
   //   fetchUserData();
   // }, []);
-
 const TOP_GAP = 6;
 const GAP_BELOW = 2;
-
-
 
 const [navH, setNavH] = useState(88);
 const navWrapRef = useRef(null);
@@ -225,46 +222,50 @@ useLayoutEffect(() => {
   };
 }, []);
 
-
-
 return (
   <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
     <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+      
+      {/* ===== FIXED CARD (no flicker) ===== */}
       <div
         className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
         style={{
-          height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          // ❗ height دیگر وابسته به navH نیست → ثابت می‌ماند
+          height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
         }}
       >
+
         <PageContainer
-          width="compactXS"          
+          width="compactXS"
           padding="none"
           bg="bg-white"
           scroll={false}
           viewportOffset={0}
-          className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
+          className=" flex-1 min-h-0 flex flex-col overflow-hidden"
         >
           <ProfileHeader
             userName={userName}
             country={country}
             profileImage={profileImage}
             id={userId}
-            className="px-6 m-0 rounded-t-2xl"
+            className="px-2 m-0 rounded-t-2xl"
           />
 
+          {/* ===== SINGLE SCROLLER ===== */}
           <div
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{
+              // navH فقط فاصله پایین را کنترل می‌کند → بدون Flicker
               paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
             }}
           >
-            <main className="px-0">
+            <main>
               {isLoading ? (
-                <div className="px-4 md:px-6 py-4">
+                <div className="px-4 md:px-4 py-2">
                   <LetterHomeSkeleton />
                 </div>
               ) : conversations.length > 0 ? (
-                <section className="mt-0 pb-10">
+                <section className="mt-0 pb-5">
                   <ConversationList
                     conversations={conversations}
                     maxHeight="none"
@@ -284,11 +285,13 @@ return (
       </div>
     </div>
 
+    {/* Navbar is measured, but NOT affecting card height */}
     <div ref={navWrapRef}>
       <NavBar />
     </div>
   </PageBackground>
 );
+
 
 
 

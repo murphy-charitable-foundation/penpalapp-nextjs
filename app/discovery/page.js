@@ -18,8 +18,7 @@ import {
   where,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
-import KidCard from "../../components/discovery/KidCard";
+import { db, auth } from "../firebaseConfig"; 
 import KidFilter from "../../components/discovery/KidFilter";
 import Link from "next/link";
 import { BackButton } from "../../components/general/BackButton";
@@ -28,9 +27,8 @@ import { usePageAnalytics } from "../useAnalytics";
 import { onAuthStateChanged } from "firebase/auth";
 
 
-const TOP_GAP = 0;
+const TOP_GAP = 6;
 const GAP_BELOW = 2;
-const CARD_MAX_W = 640;
 const PAGE_SIZE = 10;
 
 // --- mock data (swap with Firestore feed) ---
@@ -128,66 +126,70 @@ export default function Discovery() {
     setActiveFilter(false);
   };
 
-  return (
-    <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
-      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
-        <div
-          className="relative mx-auto w-full rounded-2xl overflow-hidden shadow-lg"
-          style={{
-            maxWidth: CARD_MAX_W,
-            height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
-          }}
+return (
+  <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+    <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+      <div
+        className="relative mx-auto w-full max-w-[29rem] rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0"
+        style={{
+          height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+        }}
+      >
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          bg="bg-white"
+          scroll={false}
+          viewportOffset={0}
+          className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
         >
-          <PageContainer
-            width="compactXS"
-            padding="none"
-            bg="bg-white"
-            scroll={false}
-            viewportOffset={navH}
-            className="p-0 h-full min-h-0 flex flex-col"
+          <div
+            className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
+            }}
           >
-            <div
-              className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain"
-              style={{ WebkitOverflowScrolling: "touch", overflowAnchor: "none" }}
-            >
-              {/* Sticky top: title + filters row */}
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+            <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
 
-              {/* list / empty */}
-              <div className="px-4 pb-4 sm:px-10">
-                {visibleKids.length === 0 ? (
-                  <EmptyState onClear={onClearFilters} />
-                ) : (
-                  <KidsList
-                    kids={visibleKids}
-                    calculateAge={calculateAge}
-                    lastKidDoc={hasMore}
-                    loadMoreKids={loadMoreKids}
-                    loading={loading}
-                  />
-                )}
-
-                {/* bottom spacer so content never hides under nav */}
-                <div aria-hidden="true" style={{ height: `calc(${navH}px + 8px)` }} />
-              </div>
-
-              {/* slide-down filter panel */}
-              <FilterPanel
-                 open={activeFilter}
-                 initial={{ age: filters.age ?? 0, gender: filters.gender ?? "", hobbies: filters.hobbies ?? [] }}
-                 onApply={applyFilters}
-                 onClear={onClearFilters}
-                 onClose={() => setActiveFilter(false)}
-             />
-
+            <div className="px-4 pb-4 w-full max-w-full">
+              {visibleKids.length === 0 ? (
+                <EmptyState onClear={onClearFilters} />
+              ) : (
+                <KidsList
+                  kids={visibleKids}
+                  calculateAge={calculateAge}
+                  lastKidDoc={hasMore}
+                  loadMoreKids={loadMoreKids}
+                  loading={loading}
+                />
+              )}
             </div>
-          </PageContainer>
-        </div>
-      </div>
 
-      <div ref={navWrapRef}>
-        <BottomNavBar />
+            {/* FILTER PANEL */}
+            <FilterPanel
+              open={activeFilter}
+              initial={{
+                age: filters.age ?? 0,
+                gender: filters.gender ?? "",
+                hobbies: filters.hobbies ?? [],
+              }}
+              onApply={applyFilters}
+              onClear={onClearFilters}
+              onClose={() => setActiveFilter(false)}
+            />
+
+          </div>
+        </PageContainer>
       </div>
-    </PageBackground>
-  );
+    </div>
+
+    {/* NAVBAR */}
+    <div ref={navWrapRef}>
+      <BottomNavBar />
+    </div>
+  </PageBackground>
+);
+
+
 }

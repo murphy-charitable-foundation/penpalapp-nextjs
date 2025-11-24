@@ -1,14 +1,12 @@
 "use client";
-// pages/donate.js
+import { useRef, useState, useLayoutEffect } from "react";
 import Link from 'next/link';
-import BottomNavBar from '../../components/bottom-nav-bar';
 import Button from '../../components/general/Button';
 import { PageBackground } from '../../components/general/PageBackground';
 import { PageContainer } from '../../components/general/PageContainer';
 import { PageHeader } from '../../components/general/PageHeader';
-
+import NavBar from "../../components/bottom-nav-bar";
 import Image from "next/image";
-import { useState } from "react";
 import { BackButton } from "../../components/general/BackButton";
 import { logButtonEvent, logLoadingTime } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
@@ -21,9 +19,8 @@ export default function Donate() {
     { label: "Swift Code", value: "DFCUUGKA" },
   ];
 
-const NAV_H = 88;         // your real BottomNav height
-const TOP_GAP_PX = 0;     // smaller top gap (px) → taller card
-const FUDGE_PX = 24;      // extra height to ensure bottom is visible
+  const TOP_GAP = 8;
+  const GAP_BELOW = 2;
   /**
    * Firebase Analytics Documentation Example:
    * usePageAnalytics("/donate") from useAnalytics.js logs a dead clicks and load times for the /donate page
@@ -31,38 +28,70 @@ const FUDGE_PX = 24;      // extra height to ensure bottom is visible
 
   usePageAnalytics("/donate");
 
+  const [navH, setNavH] = useState(88);
+  const navWrapRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const el = navWrapRef.current;
+    if (!el) return;
+
+    const update = () => setNavH(el.offsetHeight || 88);
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-      {/* smaller top gap for a taller card */}
-      <div className="flex-1 overflow-hidden" style={{ paddingTop: `${TOP_GAP_PX}px` }}>
+    <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
         <div
-          className="mx-auto w-full max-w-[29rem] rounded-lg shadow-lg overflow-hidden"
-          // make it taller: subtract less + add a small positive fudge
-          style={{ height: `calc(100dvh - ${NAV_H}px - ${TOP_GAP_PX}px + ${FUDGE_PX}px)` }}
+          className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0 bg-white"
+          style={{
+            height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          }}
         >
           <PageContainer
             width="compactXS"
             padding="none"
             bg="bg-white"
-            scroll
-            viewportOffset={NAV_H}
-            className="p-0 h-full min-h-0 overflow-hidden"
-            style={{ WebkitOverflowScrolling: "touch" }}
+            scroll={false} 
+            viewportOffset={0}
+            className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none"
+            style={{ maxWidth: "unset", width: "100%" }}
           >
-            {/* scroll area; add extra bottom padding so last item never feels cut off */}
-            <div className="h-full min-h-0 overflow-y-auto px-6 py-4 pb-6">
+            <div className="sticky top-0 z-20 bg-white pt-4">
               <PageHeader title="Sponsor a child" image={false} />
+            </div>
 
+            <div
+              className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4"
+              style={{
+                WebkitOverflowScrolling: "touch",
+                paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
+              }}
+            >
               <div className="space-y-2">
                 <p>
-                  Your generosity makes our work possible. Whether you contribute financially or as an
-                  advocate for good, you make a real difference.
+                  Your generosity makes our work possible. Whether you
+                  contribute financially or as an advocate for good, you
+                  make a real difference.
                 </p>
                 <p className="text-gray-700 text-xs italic">
                   You may include a note to indicate your preferred category:
                 </p>
                 <p className="text-gray-700 text-xs italic">
-                  Education, Beddings &amp; Clothing, Medical Care, or Scholastic Materials.
+                  Education, Beddings &amp; Clothing, Medical Care, or
+                  Scholastic Materials.
                 </p>
               </div>
 
@@ -75,36 +104,42 @@ const FUDGE_PX = 24;      // extra height to ensure bottom is visible
                 </Link>
               </div>
 
-              <section className="mt-6">
-                <div className="bg-secondary rounded-lg shadow-lg p-6">
+              <section className="mt-4">
+                <div className="bg-secondary rounded-lg shadow-lg p-4">
                   <h2 className="text-center text-2xl md:text-3xl text-white font-bold mb-6">
                     Payment Details
                   </h2>
 
                   <div className="grid grid-cols-1 gap-4">
                     {details.map((detail, idx) => (
-                      <div key={idx} className="bg-white rounded-lg p-4 shadow">
-                        <h3 className="text-sm font-bold text-secondary">{detail.label}</h3>
+                      <div
+                        key={idx}
+                        className="bg-white rounded-lg p-4 shadow"
+                      >
+                        <h3 className="text-sm font-bold text-secondary">
+                          {detail.label}
+                        </h3>
                         <p className="text-gray-800 mt-1">{detail.value}</p>
                       </div>
                     ))}
                   </div>
 
                   <p className="text-white/90 text-xs mt-4 text-center">
-                    Please include your email in the transfer note so we can send a receipt.
+                    Please include your email in the transfer note so we can
+                    send a receipt.
                   </p>
                 </div>
               </section>
 
-              {/* tiny spacer so the last card never kisses the rounded edge */}
               <div className="h-2" />
             </div>
           </PageContainer>
         </div>
       </div>
 
-      {/* keep nav outside the card */}
-      <BottomNavBar />
-    </div>
+      <div ref={navWrapRef}>
+        <NavBar />
+      </div>
+    </PageBackground>
   );
 }

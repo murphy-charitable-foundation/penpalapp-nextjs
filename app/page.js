@@ -2,74 +2,92 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import logo from "/public/murphylogo.png";
+import { PageBackground } from "../components/general/PageBackground";
 import { PageContainer } from "../components/general/PageContainer";
-import { BackButton } from "../components/general/BackButton";
 import Button from "../components/general/Button";
-import { usePageAnalytics } from "./useAnalytics";
-import { logButtonEvent, logLoadingTime } from "./utils/analytics";
-import { useEffect } from "react";
+import logo from "/public/murphylogo.png";
 
-export default function Home() {
-  usePageAnalytics("/");
+const TOP_GAP = 6;
+const GAP_BELOW = 2;
 
+export default function Cover() {
   return (
-    <div className="relative min-h-screen bg-gray-100">
-      <PageContainer
-        width="compactXS"
-        padding="lg"
-        bg="bg-gray-100"
-        viewportOffset={0}
-        scroll={false}
-        className="rounded-3xl shadow-2xl ring-1 ring-gray-200 min-h-[100dvh] overflow-hidden"
-      >
-        <div className="relative min-h-[90vh]">
-          {/* Logo */}
-          <div className="absolute inset-x-0 top-6 sm:top-8 md:top-10 flex justify-center">
-            <Image
-              src={logo}
-              alt="Murphy Charitable Foundation Uganda"
-              width={160}
-              height={160}
-              className="h-auto w-36 sm:w-40 md:w-44"
-              priority
-            />
-          </div>
-
-          {/* Added text  */}
-          <div className="absolute inset-x-0 top-[220px] sm:top-[240px] md:top-[260px] px-6 py-6 text-center">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
-              Welcome to Pen Pal App
-            </h1>
-            <p className="mt-2 mb-8 text-gray-800 text-sm md:text-base font-semibold">
-              Write, connect, and inspire children in Uganda
-            </p>
-          </div>
-
-          {/* Buttons */}
-          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
-            <div className="mx-auto w-full max-w-sm space-y-5 text-center">
-              <Link href="/login" className="block">
-                <Button
-                  color="green"
-                  btnText="Log in"
-                  textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.99] transition"
+    <PageBackground className="bg-gray-100 min-h-[100dvh] overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+        
+        <div
+          className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
+          style={{
+            height: `calc(100dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          }}
+        >
+          
+          <PageContainer
+            width="compactXS"
+            padding="none"
+            bg="bg-white"
+            scroll={false}
+            viewportOffset={0}
+            className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
+          >
+            
+            <div className="flex flex-col h-full min-h-0 items-center px-6 pt-10 pb-12">
+              
+              {/* LOGO */}
+              <div className="mb-10">
+                <Image
+                  src={logo}
+                  alt="Murphy Charitable Foundation Uganda"
+                  width={160}
+                  height={160}
+                  className="h-auto w-36 sm:w-40 md:w-44"
+                  priority
                 />
-              </Link>
+              </div>
 
-              <Link href="https://calendly.com/murphycharity/60min" className="block">
-                <Button
-                  color="blue"
-                  btnText="Become a Pen Pal Volunteer"
-                  textColor="text-white"
-                  className="w-full rounded-full py-3 px-6 text-base md:text-lg font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.99] transition"
-                />
-              </Link>
+              {/* TITLE + SUBTITLE */}
+              <div className="text-center mb-12">
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+                  Welcome to Pen Pal App
+                </h1>
+                <p className="mt-4 text-gray-800 text-sm md:text-base font-semibold">
+                  Write, connect, and inspire children in Uganda
+                </p>
+              </div>
+
+              {/* BUTTONS */}
+              <div className="w-full mt-auto">
+                <div className="mx-auto w-full max-w-sm space-y-5 text-center">
+                  
+                  <Link href="/login" className="block">
+                    <Button
+                      color="green"
+                      btnText="Log in"
+                      textColor="text-white"
+                      className="w-full rounded-full py-3 text-base md:text-lg font-semibold shadow-sm"
+                    />
+                  </Link>
+
+                  <Link
+                    href="https://calendly.com/murphycharity/60min"
+                    className="block"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button
+                      color="blue"
+                      btnText="Become a Pen Pal Volunteer"
+                      textColor="text-white"
+                      className="w-full rounded-full py-3 text-base md:text-lg font-semibold shadow-sm"
+                    />
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
+
+          </PageContainer>
         </div>
-      </PageContainer>
-    </div>
+      </div>
+    </PageBackground>
   );
 }

@@ -1,8 +1,4 @@
 "use client";
-
-
-
-
 export function PageBackground({
     children,
     className,

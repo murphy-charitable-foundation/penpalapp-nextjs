@@ -4,11 +4,11 @@ export default function LetterHomeSkeleton() {
       {[...Array(6)].map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 animate-pulse"
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-2 py-1 animate-pulse"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-200 rounded-full" />
+              <div className="w-5 h-10 bg-gray-200 rounded-full" />
               <div className="space-y-1">
                 <div className="h-4 w-24 bg-gray-200 rounded" />
                 <div className="h-3 w-16 bg-gray-200 rounded" />

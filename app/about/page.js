@@ -11,7 +11,6 @@ const TOP_GAP = 8;
 const GAP_BELOW = 2;
 
 export default function About() {
-  // Real Bottom Navbar (dynamic)
   const [navH, setNavH] = useState(88);
   const navWrapRef = useRef(null);
 
@@ -32,31 +31,36 @@ export default function About() {
   }, []);
 
   return (
-    <PageBackground className="bg-gray-100 min-h-[100dvh] overflow-hidden flex flex-col">
+    <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
       <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
         <div
-          className="relative mx-auto w-full max-w-[640px] min-h-0 rounded-2xl overflow-hidden shadow-lg"
+          className="relative mx-auto w-full max-w-[29rem] rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0"
           style={{
-            height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+           height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
           }}
         >
           <PageContainer
             width="compactXS"
             padding="none"
             bg="bg-white"
-            scroll={false}                 
-            viewportOffset={navH}
-            className="p-0 h-full min-h-0 flex flex-col"
+            scroll={false}
+            viewportOffset={0}
+            className="p-0 flex-1 min-h-0 flex flex-col"
           >
-            {/* Header */}
-            <div className="px-10 pt-2">
-              <PageHeader title="About Us" image={false} />
-            </div>
-
+            {/* SINGLE SCROLLER */}
             <div
               className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
-              style={{ WebkitOverflowScrolling: "touch", overflowAnchor: "none" }}
+              style={{
+                WebkitOverflowScrolling: "touch",
+                overflowAnchor: "none",
+                paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
+              }}
             >
+              {/* Header */}
+              <div className="px-10 pt-2">
+                <PageHeader title="About Us" image={false} />
+              </div>
+
               {/* Blue banner */}
               <div className="px-10">
                 <div className="bg-secondary text-white rounded-xl text-center py-4 mt-3 mb-6">
@@ -141,8 +145,6 @@ export default function About() {
                     sizes="100vw"
                   />
                 </div>
-
-                <div aria-hidden="true" style={{ height: `calc(${navH}px + 8px)` }} />
               </div>
             </div>
           </PageContainer>
