@@ -37,8 +37,6 @@ export default function Page({ params }) {
 
   const router = useRouter();
 
-  usePageAnalytics(`/profile-view/[id]`);
-
   useEffect(() => {
     const fetchUserData = async () => {
       const docRef = doc(db, "users", id);
