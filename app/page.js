@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import logo from "/public/murphylogo.png";
+import { PageBackground } from "../components/general/PageBackground";
 import { PageContainer } from "../components/general/PageContainer";
-import { BackButton } from "../components/general/BackButton";
 import Button from "../components/general/Button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -60,15 +59,15 @@ export default function Home() {
             />
           </div>
 
-          {/* Added text  */}
-          <div className="absolute inset-x-0 top-[220px] sm:top-[240px] md:top-[260px] px-6 py-6 text-center">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
-              Welcome to Pen Pal App
-            </h1>
-            <p className="mt-2 mb-8 text-gray-800 text-sm md:text-base font-semibold">
-              Write, connect, and inspire children in Uganda
-            </p>
-          </div>
+              {/* TITLE + SUBTITLE */}
+              <div className="text-center mb-12">
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+                  Welcome to Pen Pal App
+                </h1>
+                <p className="mt-4 text-gray-800 text-sm md:text-base font-semibold">
+                  Write, connect, and inspire children in Uganda
+                </p>
+              </div>
 
           {/* Buttons */}
           <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
@@ -85,9 +84,10 @@ export default function Home() {
                 external={true}
               />
             </div>
-          </div>
+
+          </PageContainer>
         </div>
-      </PageContainer>
-    </div>
+      </div>
+    </PageBackground>
   );
 }

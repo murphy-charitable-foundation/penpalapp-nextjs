@@ -26,7 +26,6 @@ import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
-import * as Sentry from "@sentry/nextjs";
 import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
 import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
@@ -35,6 +34,9 @@ import Button from "../../../components/general/Button";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
+import { logButtonEvent, logError } from "../../utils/analytics";
+import { usePageAnalytics } from "../../useAnalytics";
+import React from "react";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -245,7 +247,9 @@ export default function Page({ params }) {
 
               setDraft({ ...newDraftData, id: newDraftRef.id });
             } catch (retryError) {
-              Sentry.captureException("Retry Error:", retryError);
+              logError(retryError, {
+                description: "Retry Error:",
+              });
             }
           }
         }
@@ -282,7 +286,9 @@ export default function Page({ params }) {
         try {
           await saveDraft(newContent);
         } catch (error) {
-          Sentry.captureException("Failed to auto-save draft:", error);
+          logError(error, {
+            description: "Failed to auto-save draft:",
+          });
         }
       }, 1000);
       setDraftTimer(timer);
@@ -302,7 +308,9 @@ export default function Page({ params }) {
         // Re-enable X button after Firebase update completes
         setIsXButtonDisabled(false);
       } catch (error) {
-        Sentry.captureException("Failed to save empty draft:", error);
+        logError(error, {
+          description: "Failed to save empty draft:",
+        });
         // Re-enable X button even if there was an error (fallback after 3 seconds)
         setTimeout(() => {
           console.log("⚠️ Re-enabling X button after error (fallback)");
@@ -417,7 +425,9 @@ export default function Page({ params }) {
       try {
         await saveDraft(messageContent);
       } catch (error) {
-        Sentry.captureException("Failed to save state before close:", error);
+        logError(error, {
+          description: "Failed to save state before close:",
+        });
       }
     }
 
@@ -491,7 +501,9 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 300);
     } catch (error) {
-      Sentry.captureException("LOAD MESSAGES ERROR:", error);
+      logError(error, {
+        description: "LOAD MESSAGES ERROR:",
+      });
     }
   };
 
@@ -534,6 +546,8 @@ export default function Page({ params }) {
       }
     }, 100);
   };
+
+  usePageAnalytics(`/letters/[id]`);
 
   // FIXED: Enhanced initialization with improved draft handling
   useEffect(() => {
@@ -657,7 +671,9 @@ export default function Page({ params }) {
           setAllMessages(messagesWithSenderInfo);
         }
       } catch (error) {
-        Sentry.captureException("INITIALIZATION ERROR:", error);
+        logError(error, {
+          description: "INITIALIZATION ERROR:",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -834,6 +850,10 @@ export default function Page({ params }) {
                               setReportSender(message.sent_by.id);
                               setReportContent(message.content);
                               setShowReportPopup(true);
+                              logButtonEvent(
+                                "Report message clicked!",
+                                "/letters/[id]"
+                              );
                             }}
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center"
                           >

@@ -10,7 +10,6 @@ import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
 import { handleLogout } from "../profile/page";
 import EditProfileImage from "../../components/edit-profile";
-import * as Sentry from "@sentry/nextjs";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
@@ -21,6 +20,8 @@ import Dialog from "../../components/general/Dialog";
 import { onAuthStateChanged } from "firebase/auth";
 import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../components/general/PageHeader";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -38,6 +39,8 @@ export default function CreateAccount() {
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
+
+  usePageAnalytics("/create-acc");
 
   // Pre-populate email from auth.currentUser
 
@@ -122,10 +125,14 @@ export default function CreateAccount() {
 
       setShowCreate(false);
       localStorage.setItem("userFirstName", firstName);
+      logButtonEvent("Create Account Button Clicked!", "/create-acc");
+
       // Redirect to profile page or any other page as needed
       router.push("/welcome/");
     } catch (error) {
-      Sentry.captureException("Error creating account:", error);
+      logError(error, {
+        description: "Error creating account:",
+      });
       setIsDialogOpen(true);
       setDialogTitle("Oops!");
       setDialogMessage("Error: " + error.message);
@@ -144,7 +151,7 @@ export default function CreateAccount() {
       ></Dialog>
       <PageContainer>
         <div>
-          <PageHeader title="Create account"/>
+          <PageHeader title="Create accoun"image={false}/>
         </div>
         <div className="flex justify-center mb-6">
           <Image

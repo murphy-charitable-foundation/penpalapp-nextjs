@@ -18,6 +18,7 @@ export default function Welcome() {
   const { user } = useUser();
   const [navH, setNavH] = useState(88);
   const [firstName, setFirstName] = useState("");
+  usePageAnalytics("/welcome");
 
   const navWrapRef = useRef(null);
   const navbarHeight = user ? navH : 0;
@@ -27,6 +28,7 @@ export default function Welcome() {
 
   useEffect(() => {
     const value = localStorage.getItem("userFirstName");
+
     if (value) {
       setFirstName(value);
     }

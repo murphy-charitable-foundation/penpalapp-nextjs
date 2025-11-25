@@ -9,6 +9,19 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
+import {
+  User,
+  MapPin,
+  Home,
+  FileText,
+  Calendar,
+  GraduationCap,
+  Users,
+  Heart,
+  Briefcase,
+  Square,
+  Palette,
+} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import List from "../../components/general/List";
@@ -21,6 +34,8 @@ import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import BottomNavBar from '../../components/bottom-nav-bar';
+import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function EditProfile() {
   // State initializations
@@ -56,6 +71,7 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  usePageAnalytics("/profile");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -63,7 +79,6 @@ export default function EditProfile() {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
-        console.log(docSnap.data());
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
@@ -134,7 +149,9 @@ export default function EditProfile() {
         setIsDialogOpen(true);
         setDialogTitle("Oops!");
         setDialogMessage("Error saving profile.");
-        Sentry.captureException("Error saving profile " + error);
+        logError(error, {
+          description: "Error saving profile ",
+        });
       }
     }
   };
@@ -224,13 +241,13 @@ export default function EditProfile() {
     setIsBioModalOpen(true);
   };
 
-const NAV_H = 88;        // BottomNav height in px
-const TOP_GAP_PX = 2;    // tiny top gap like other pages
-const FUDGE_PX = 14;     // small boost so bottom is always visible
+const NAV_BAR_H = 88;     
+const TOP_GAP = 8;
+const GAP_BELOW = 2;
 
 return (
-  <div className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-    {/* Global dialogs at root so they aren't clipped by the card */}
+  <div className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
+    {/* --- Dialogا --- */}
     <Dialog
       isOpen={isDialogOpen}
       onClose={() => {
@@ -247,29 +264,36 @@ return (
       content={bioModalContent}
       width="large"
     />
-
-    {/* small top gap to match other pages */}
-    <div className="flex-1 overflow-hidden" style={{ paddingTop: `${TOP_GAP_PX}px` }}>
-      {/* SAME CARD */}
+    
+    <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
       <div
-        className="mx-auto w-full max-w-[29rem] rounded-lg shadow-lg overflow-hidden"
-        style={{ height: `calc(100dvh - ${NAV_H}px - ${TOP_GAP_PX}px + ${FUDGE_PX}px)` }}
+        className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0 bg-white"
+        style={{
+          height: `calc(103dvh - ${TOP_GAP}px - ${NAV_BAR_H}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+        }}
       >
         <PageContainer
-          width="compactXS"
+          width="compactXS"           // با بقیه صفحات هماهنگ
           padding="none"
+          scroll={false}              // اسکرول فقط روی div داخلی
           bg="bg-white"
-          scroll
-          viewportOffset={NAV_H}
-          className="p-0 h-full min-h-0 overflow-hidden"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          viewportOffset={0}
+          className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
         >
-          {/* BODY: the only scrollable area */}
-          <div className="h-full min-h-0 overflow-y-auto px-6 py-4 pb-24">
+          {/* اسکرول‌اریا داخل کارت */}
+          <div
+            className="flex-1 min-h-0 overflow-y-auto px-6 py-4 overscroll-contain"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              overflowAnchor: "none",
+              paddingBottom: `calc(${NAV_BAR_H}px + 12px + env(safe-area-inset-bottom,0px))`,
+            }}
+          >
+            {/* HEADER */}
             <PageHeader title="Profile" image={false} />
 
             <div className="max-w-none mx-auto">
-              {/* Profile Image */}
+              {/* PROFILE IMAGE */}
               <div className="my-6">
                 <div className="relative w-40 h-40 mx-auto">
                   <Image
@@ -277,255 +301,184 @@ return (
                     fill
                     className="rounded-full object-cover"
                     alt="Profile picture"
-                    sizes="160px"
                     priority
                   />
                 </div>
+
                 <div className="mt-4 flex justify-center">
                   <button
                     type="button"
                     onClick={() => router.push("/edit-profile-user-image")}
-                    className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                    className="px-4 py-2 border border-gray-400 text-green-700 rounded-full hover:bg-gray-100 transition"
                   >
                     Edit Photo
                   </button>
                 </div>
               </div>
 
-              {/* Form Fields */}
+              {/* FORM */}
               <div className="space-y-6">
-                {/* Personal Information */}
+                {/* PERSONAL INFO */}
                 <ProfileSection title="Personal Information">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Input
-                          type="text"
-                          id="firstName"
-                          name="firstName"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          label="First name"
-                          borderColor="border-gray-300"
-                          focusBorderColor="focus:border-green-800"
-                          bgColor="bg-transparent"
-                          error={errors.first_name ? errors.first_name : ""}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Input
-                          type="text"
-                          id="lastName"
-                          name="lastName"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          label="Last name"
-                          borderColor="border-gray-300"
-                          focusBorderColor="focus:border-green-800"
-                          bgColor="bg-transparent"
-                          error={errors.last_name ? errors.last_name : ""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="country"
-                        name="country"
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        label="Country"
-                        placeholder="Ex: Country"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  {userType !== "international_buddy" && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Input
-                          type="text"
-                          id="village"
-                          name="village"
-                          value={village}
-                          onChange={(e) => setVillage(e.target.value)}
-                          label="Village"
-                          placeholder="Ex: Village"
-                          borderColor="border-gray-300"
-                          focusBorderColor="focus:border-green-800"
-                          bgColor="bg-transparent"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">Bio/Challenges faced</p>
-                      <button
-                        onClick={handleOpenBioModal}
-                        className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                      >
-                        <span className="truncate">
-                          {bio ? bio : "Add your bio or challenges..."}
-                        </span>
-                        <svg
-                          className="h-5 w-5 text-gray-400 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="date"
-                        id="birthday"
-                        name="birthday"
-                        value={birthday}
-                        onChange={(e) => setBirthday(e.target.value)}
-                        label="Birthday"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                </ProfileSection>
-
-                {/* Education & Family */}
-                <ProfileSection title={`Education ${userType !== "international_buddy" ? "& Family" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">Education level</p>
-                      <Dropdown
-                        options={educationOptions}
-                        valueChange={(option) => setEducationLevel(option)}
-                        currentValue={educationLevel}
-                        text="Education Level"
-                      />
-                    </div>
-                  </div>
-
-                  {userType !== "international_buddy" && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500">Guardian</p>
-                        <Dropdown
-                          options={guardianOptions}
-                          valueChange={(option) => setGuardian(option)}
-                          currentValue={guardian}
-                          text="Guardian"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {userType !== "international_buddy" && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500">Is orphan</p>
-                        <Dropdown
-                          options={orphanOptions}
-                          valueChange={(option) => setIsOrphan(option)}
-                          currentValue={isOrphan}
-                          text="Orphan Status"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </ProfileSection>
-
-                {/* Interest */}
-                <ProfileSection title="Interest">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="dreamjob"
-                        name="dreamjob"
-                        value={dreamJob}
-                        onChange={(e) => setDreamJob(e.target.value)}
-                        label="Dream job"
-                        placeholder="Airplane pilot"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="hobby"
-                        name="hobby"
-                        value={hobby}
-                        onChange={(e) => setHobby(e.target.value)}
-                        label="Hobby"
-                        placeholder="Dancing"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                </ProfileSection>
-
-                {/* Favorite Color */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
                     <Input
                       type="text"
-                      id="favoriteColor"
-                      name="favoriteColor"
-                      value={favoriteColor}
-                      onChange={(e) => setFavoriteColor(e.target.value)}
-                      label="Favorite Color"
-                      placeholder="Ex: Blue"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
+                      id="firstName"
+                      name="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      label="First name"
+                      error={errors.first_name || ""}
+                    />
+                    <Input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      label="Last name"
+                      error={errors.last_name || ""}
                     />
                   </div>
-                </div>
 
-                {/* Save */}
-                <div className="flex justify-center">
-                  <Link
-                    href="/letterhome"
-                    className="transition-transform hover:scale-105 focus:outline-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      saveProfileData();
-                    }}
-                  >
-                    <Button
-                      btnType="button"
-                      btnText={isSaving ? <LoadingSpinner /> : "Save"}
-                      color="green"
-                      hoverColor="hover:bg-[#48801c]"
-                      textColor="text-gray-200"
-                      disabled={isSaving}
-                      rounded="rounded-full"
+                  <Input
+                    type="text"
+                    id="country"
+                    name="country"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    label="Country"
+                  />
+
+                  {userType !== "international_buddy" && (
+                    <Input
+                      type="text"
+                      id="village"
+                      name="village"
+                      value={village}
+                      onChange={(e) => setVillage(e.target.value)}
+                      label="Village"
                     />
-                  </Link>
+                  )}
+
+                  {/* Bio Button */}
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">
+                      Bio/Challenges faced
+                    </p>
+                    <button
+                      onClick={handleOpenBioModal}
+                      className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
+                    >
+                      <span className="truncate text-gray-800">
+                        {bio || "Add your bio or challenges..."}
+                      </span>
+                      <svg
+                        className="h-5 w-5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0a3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7s-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <Input
+                    type="date"
+                    id="birthday"
+                    name="birthday"
+                    value={birthday}
+                    onChange={(e) => setBirthday(e.target.value)}
+                    label="Birthday"
+                  />
+                </ProfileSection>
+
+                {/* EDUCATION & FAMILY */}
+                <ProfileSection
+                  title={`Education ${
+                    userType !== "international_buddy" ? "& Family" : ""
+                  }`}
+                >
+                  <Dropdown
+                    options={educationOptions}
+                    currentValue={educationLevel}
+                    valueChange={setEducationLevel}
+                    text="Education Level"
+                  />
+
+                  {userType !== "international_buddy" && (
+                    <>
+                      <Dropdown
+                        options={guardianOptions}
+                        currentValue={guardian}
+                        valueChange={setGuardian}
+                        text="Guardian"
+                      />
+                      <Dropdown
+                        options={orphanOptions}
+                        currentValue={isOrphan}
+                        valueChange={setIsOrphan}
+                        text="Orphan Status"
+                      />
+                    </>
+                  )}
+                </ProfileSection>
+
+                {/* INTEREST */}
+                <ProfileSection title="Interest">
+                  <Input
+                    type="text"
+                    id="dreamjob"
+                    name="dreamjob"
+                    value={dreamJob}
+                    onChange={(e) => setDreamJob(e.target.value)}
+                    label="Dream job"
+                    placeholder="Airplane pilot"
+                  />
+                  <Input
+                    type="text"
+                    id="hobby"
+                    name="hobby"
+                    value={hobby}
+                    onChange={(e) => setHobby(e.target.value)}
+                    label="Hobby"
+                    placeholder="Dancing"
+                  />
+                </ProfileSection>
+
+                {/* FAVORITE COLOR */}
+                <Input
+                  type="text"
+                  id="favoriteColor"
+                  name="favoriteColor"
+                  value={favoriteColor}
+                  onChange={(e) => setFavoriteColor(e.target.value)}
+                  label="Favorite Color"
+                />
+
+                {/* SAVE BUTTON */}
+                <div className="flex justify-center my-4">
+                  <Button
+                    btnType="button"
+                    btnText={isSaving ? <LoadingSpinner /> : "Save"}
+                    color="green"
+                    textColor="text-gray-200"
+                    disabled={isSaving}
+                    rounded="rounded-full"
+                    onClick={saveProfileData}
+                  />
                 </div>
               </div>
             </div>
@@ -534,9 +487,12 @@ return (
       </div>
     </div>
 
-    {/* Bottom nav outside the card so height calc stops above it */}
-    <BottomNavBar />
+    <div style={{ height: `${NAV_BAR_H}px` }}>
+      <BottomNavBar />
+    </div>
   </div>
 );
+
+
 
 }
