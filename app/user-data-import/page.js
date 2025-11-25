@@ -104,7 +104,7 @@ export default function UserDataImport() {
         title={dialogTitle}
         content={dialogMessage}
       ></Dialog>
-      <PageContainer>
+      <PageContainer maxWidth="lg">
         <PageHeader title="Import User Data" />
 
         <form onSubmit={handleSubmit} className="space-y-6  p-6 rounded-lg">

@@ -2,8 +2,8 @@
 
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Dialog from "../Dialog";
-import { logError } from "../../../app/utils/analytics";
+import { PageContainer } from "../PageContainer";
+
 
 const ReportPopup = ({
   setShowPopup,
@@ -33,37 +33,49 @@ const ReportPopup = ({
       logError(error, {
         description: "Could not send request to SendGrid",
       });
+      logError(error, {
+        description: "Could not send request to SendGrid",
+      });
     }
   }
 
   return (
-    <Dialog
-      isOpen={true}
-      onClose={() => setShowPopup(false)}
-      variant="confirmation"
-      title="Are you sure that you want to report this letter?"
-      content="This action will not be undone afterwards."
-      titleClassName="text-red-500"
-      buttons={[
-        {
-          text: "Cancel",
-          onClick: () => setShowPopup(false),
-          variant: "secondary",
-          className: "flex-1",
-        },
-        {
-          text: "Report",
-          onClick: () => {
-            handleButtonClick(content);
-            setShowPopup(false);
-            setShowConfirmReportPopup(true);
-          },
-          variant: "primary",
-          className: "flex-1",
-        },
-      ]}
-    />
-  );
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+        <PageContainer maxWidth="sm" padding="p-4" bgColor="bg-transparent" className="!min-h-0 ">
+          <div className="bg-white space-y-4 shadow-md w-full rounded-md p-4 flex flex-col items-center">
+            <h1 className="font-semibold text-sm text-red-500">
+              Are you sure that you want to report this letter?
+            </h1>
+            <p className="text-gray-700 text-sm">
+              This action will not be undone afterwards.
+            </p>
+            <div className="flex justify-between gap-2 w-full">
+              <Button
+                onClick={() => setShowPopup(false)}
+                btnType="button"
+                btnText="Cancel"
+                color="gray"
+                textColor="gray"
+                size="xs"
+              />
+              <Button
+                onClick={() => {
+                  handleButtonClick(content);
+                  setShowPopup(false);
+                  setShowConfirmReportPopup(true);
+                }}
+                btnType="button"
+                btnText="Report"
+                color="red"
+                textColor="black"
+                size="xs"
+              />
+            </div>
+          </div>
+        </PageContainer>
+      </div>
+    );
+  
 };
 
 export default ReportPopup;

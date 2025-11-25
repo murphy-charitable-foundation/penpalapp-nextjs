@@ -76,7 +76,7 @@ export default function ChangePassword() {
   return (
     <>
       <PageBackground>
-        <PageContainer>
+        <PageContainer maxWidth="lg">
           <BackButton />
           <div className="max-w-lg mx-auto  rounded-lg overflow-hidden">
             <PageHeader title="Create Your New Password" />

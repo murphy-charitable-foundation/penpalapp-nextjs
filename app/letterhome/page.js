@@ -6,46 +6,54 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-import { useUser } from "../../contexts/UserContext";
-
-
+import { storage } from "../firebaseConfig.js";
 import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
+  getUserPfp,
   fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
+import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
-  const { user, userData, userType, profileImage } = useUser();
+  const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState("");
+  const [country, setCountry] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  // const [showWelcome, setShowWelcome] = useState(false);
-  // const [userId, setUserId] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [userId, setUserId] = useState("");
   const router = useRouter();
 
-  // const getUserData = async (uid) => {
-  //   const docRef = doc(db, "users", uid);
-  //   const docSnap = await getDoc(docRef);
+  usePageAnalytics("/letterhome");
 
-  //   if (docSnap.exists()) {
-  //     return docSnap.data();
-  //   } else {
-  //     setError("User data not found.");
-  //     throw new Error("No user document found.");
-  //   }
-  // };
+  const getUserData = async (uid) => {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      setError("User data not found.");
+      throw new Error("No user document found.");
+    }
+  };
 
   const getConversations = async (uid) => {
   try {
@@ -68,41 +76,42 @@ export default function Home() {
         const rec = await fetchRecipients(id);
         const recipient = rec?.[0] ?? {};
 
-        return {
-          id: letter?.id,
-          profileImage: recipient?.photo_uri || "",
-          name: `${recipient.first_name ?? "Unknown"} ${
-            recipient.last_name ?? ""
-          }`,
-          country: recipient.country ?? "Unknown",
-          lastMessage: letter.content || "",
-          lastMessageDate: letter.created_at || "",
-          status: letter.status || "",
-          letterboxId: id,
-          isRecipient: letter?.sent_by?.id !== uid,
-          unread: letter?.unread || false,
-        };
-      })
-    );
-
-    return fetchedConversations;
-  } catch (err) {
-    logError(err, {
-      description: "Error fetching conversations",
-    });
-    setError("Failed to load conversations.");
-    return [];
-  }
-};
-
+            return {
+              id: letter?.id,
+              profileImage: recipient?.photo_uri || "",
+              name: `${recipient.first_name ?? "Unknown"} ${
+                recipient.last_name ?? ""
+              }`,
+              name: `${recipient.first_name ?? "Unknown"} ${
+                recipient.last_name ?? ""
+              }`,
+              country: recipient.country ?? "Unknown",
+              lastMessage: letter.content || "",
+              lastMessageDate: letter.created_at || "",
+              status: letter.status || "",
+              letterboxId: id || "",
+              isRecipient: letter?.sent_by?.id !== uid,
+              unread: letter?.unread || false,
+              isRecipient: letter?.sent_by?.id !== uid,
+              unread: letter?.unread || false,
+            };
+          })
+        );
+        return fetchedConversations;
+      } else {
+        setError("No conversations found.");
+        throw new Error("No letterboxes found.");
+      }
+    } catch (err) {
+      logError(error, {
+        description: "Error fetching data:",
+      });
+      setError("Failed to load data.");
+      throw err;
+    }
+  };
 
   useEffect(() => {
-  if (!user) {
-    router.push("/login");
-    return;
-  }
-
-  const loadConversations = async () => {
     setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -132,6 +141,7 @@ export default function Home() {
         }
       }
     });
+
     return () => unsubscribe();
   }, [router]);
 
@@ -197,12 +207,11 @@ export default function Home() {
 
   //   fetchUserData();
   // }, []);
-
 const TOP_GAP = 6;
 const GAP_BELOW = 2;
-const CARD_MAX_W = 640;
 
-
+const [navH, setNavH] = useState(88);
+const navWrapRef = useRef(null);
 const [navH, setNavH] = useState(88);
 const navWrapRef = useRef(null);
 
@@ -222,50 +231,54 @@ useLayoutEffect(() => {
   };
 }, []);
 
-
-
 return (
   <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
     <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
+      
+      {/* ===== FIXED CARD (no flicker) ===== */}
       <div
-        className="relative mx-auto w-full rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0"
+        className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
         style={{
-          maxWidth: `${CARD_MAX_W}px`,
-          height: `calc(103dvh - ${navH}px - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
+          // ❗ height دیگر وابسته به navH نیست → ثابت می‌ماند
+          height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
         }}
       >
+
         <PageContainer
+          width="compactXS"
           padding="none"
           bg="bg-white"
-          scroll={false}                 
+          scroll={false}
           viewportOffset={0}
-          className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none rounded-2xl"
-          style={{ maxWidth: "unset", width: "100%" }}
+          className=" flex-1 min-h-0 flex flex-col overflow-hidden"
         >
           <ProfileHeader
             userName={userName}
             country={country}
             profileImage={profileImage}
             id={userId}
-            className="px-6 m-0 rounded-t-2xl"
+            className="px-2 m-0 rounded-t-2xl"
           />
 
-          {/* SINGLE SCROLLER */}
+          {/* ===== SINGLE SCROLLER ===== */}
           <div
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
             style={{
-              
+              // navH فقط فاصله پایین را کنترل می‌کند → بدون Flicker
               paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
             }}
           >
-            <main className="px-0">
+            <main>
               {isLoading ? (
-                <div className="px-6 py-6">
+                <div className="px-4 md:px-4 py-2">
                   <LetterHomeSkeleton />
                 </div>
               ) : conversations.length > 0 ? (
-                <section className="mt-0 pb-10">
-                  <ConversationList conversations={conversations} maxHeight="none" />
+                <section className="mt-0 pb-5">
+                  <ConversationList
+                    conversations={conversations}
+                    maxHeight="none"
+                  />
                 </section>
               ) : (
                 <section className="mt-6 px-6">
@@ -281,11 +294,15 @@ return (
       </div>
     </div>
 
+    {/* Navbar is measured, but NOT affecting card height */}
     <div ref={navWrapRef}>
       <NavBar />
     </div>
   </PageBackground>
 );
+
+
+
 
 
 }
