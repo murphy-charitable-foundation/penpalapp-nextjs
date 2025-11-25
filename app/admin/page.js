@@ -43,7 +43,7 @@ export default function Admin() {
     const [lastDoc, setLastDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("draft"); // Default filter
+    const [selectedStatus, setSelectedStatus] = useState("Sent"); // Default filter
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
@@ -105,7 +105,8 @@ export default function Admin() {
       let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
-      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), limit(5)];
+      let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
+      const queryConstraints = [where("status", "==", selectedStatusMap[selectedStatus]), where("content", "!=", ""), limit(5)];
       
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
