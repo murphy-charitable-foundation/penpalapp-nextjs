@@ -5,45 +5,59 @@ import Link from "next/link";
 import { PageBackground } from "../components/general/PageBackground";
 import { PageContainer } from "../components/general/PageContainer";
 import Button from "../components/general/Button";
-import logo from "/public/murphylogo.png";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import LoadingSpinner from "@/components/loading/LoadingSpinner";
 
-const TOP_GAP = 6;
-const GAP_BELOW = 2;
+export default function Home() {
+  const [isPending, startTransition] = useTransition();
+  const [showSpinner, setShowSpinner] = useState(false);
+  const router = useRouter();
 
-export default function Cover() {
+  useEffect(() => {
+    if (isPending) {
+      // Only show spinner if loading takes longer than 200ms
+      const timer = setTimeout(() => setShowSpinner(true), 200);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSpinner(false);
+    }
+  }, [isPending]);
+
+  const handleNavigation = (href) => {
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+  
   return (
-    <PageBackground className="bg-gray-100 min-h-[100dvh] overflow-hidden flex flex-col">
-      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
-        
-        <div
-          className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
-          style={{
-            height: `calc(100dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
-          }}
-        >
-          
-          <PageContainer
-            width="compactXS"
-            padding="none"
-            bg="bg-white"
-            scroll={false}
-            viewportOffset={0}
-            className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden"
-          >
-            
-            <div className="flex flex-col h-full min-h-0 items-center px-6 pt-10 pb-12">
-              
-              {/* LOGO */}
-              <div className="mb-10">
-                <Image
-                  src={logo}
-                  alt="Murphy Charitable Foundation Uganda"
-                  width={160}
-                  height={160}
-                  className="h-auto w-36 sm:w-40 md:w-44"
-                  priority
-                />
-              </div>
+    <div className="relative min-h-screen bg-gray-100">
+      {showSpinner && <LoadingSpinner />}
+
+      <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
+        <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
+      </div>
+
+      <PageContainer
+        width="compactXS"
+        padding="lg"
+        bg="bg-gray-100"
+        viewportOffset={0}
+        scroll={false}
+        className="rounded-3xl shadow-2xl ring-1 ring-gray-200 min-h-[100dvh] overflow-hidden"
+      >
+        <div className="relative min-h-[90vh]">
+          {/* Logo */}
+          <div className="absolute inset-x-0 top-6 sm:top-8 md:top-10 flex justify-center">
+            <Image
+              src={logo}
+              alt="Murphy Charitable Foundation Uganda"
+              width={160}
+              height={160}
+              className="h-auto w-36 sm:w-40 md:w-44"
+              priority
+            />
+          </div>
 
               {/* TITLE + SUBTITLE */}
               <div className="text-center mb-12">
@@ -55,34 +69,20 @@ export default function Cover() {
                 </p>
               </div>
 
-              {/* BUTTONS */}
-              <div className="w-full mt-auto">
-                <div className="mx-auto w-full max-w-sm space-y-5 text-center">
-                  
-                  <Link href="/login" className="block">
-                    <Button
-                      color="green"
-                      btnText="Log in"
-                      textColor="text-white"
-                      className="w-full rounded-full py-3 text-base md:text-lg font-semibold shadow-sm"
-                    />
-                  </Link>
-
-                  <Link
-                    href="https://calendly.com/murphycharity/60min"
-                    className="block"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      color="blue"
-                      btnText="Become a Pen Pal Volunteer"
-                      textColor="text-white"
-                      className="w-full rounded-full py-3 text-base md:text-lg font-semibold shadow-sm"
-                    />
-                  </Link>
-                </div>
-              </div>
+          {/* Buttons */}
+          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
+            <div className="mx-auto w-full max-w-sm space-y-5 text-center">
+              <Button
+                color="green"
+                btnText="Log in"
+                onClick={() => handleNavigation('/login')}
+              />
+              <Button
+                color="blue"
+                btnText="Become a Pen Pal Volunteer"
+                href="https://calendly.com/murphycharity/60min"
+                external={true}
+              />
             </div>
 
           </PageContainer>

@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import LoadingSpinner from "../loading/LoadingSpinner";
+import { useNavigation } from "../../contexts/NavigationContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,29 +27,31 @@ export default function NavBar() {
   const [showSpinner, setShowSpinner] = useState(false);
   const router = useRouter();
   const { userType } = useUser();
+  const { setIsNavigating } = useNavigation();
 
-  useEffect(() => {
-    if (isPending) {
-      // Only show spinner if loading takes longer than 200ms
-      const timer = setTimeout(() => setShowSpinner(true), 200);
-      return () => clearTimeout(timer);
-    } else {
-      setShowSpinner(false);
-    }
-  }, [isPending]);
+  // useEffect(() => {
+  //   if (isPending) {
+  //     // Only show spinner if loading takes longer than 200ms
+  //     const timer = setTimeout(() => setShowSpinner(true), 200);
+  //     return () => clearTimeout(timer);
+  //   } else {
+  //     setShowSpinner(false);
+  //   }
+  // }, [isPending]);
 
   const handleNavigation = (href) => {
-    startTransition(() => {
-      router.push(href);
-    });
+    setIsMenuOpen(false);
+    router.push(href);
   };
 
   const handleLogout = async () => {
     try {
+      setIsNavigating(true);
       await signOut(auth);
       router.push("/login");
     } catch (error) {
       console.error("Error signing out: ", error);
+      setIsNavigating(false);
     }
   };
 
