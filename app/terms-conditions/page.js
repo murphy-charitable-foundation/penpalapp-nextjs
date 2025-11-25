@@ -1,5 +1,5 @@
 // pages/terms-conditions.js
-
+"use client"
 import Link from "next/link";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
@@ -7,19 +7,21 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { useEffect } from "react";
+import { usePageAnalytics } from "../useAnalytics";
+import { logLoadingTime } from "../utils/analytics";
 
 export default function TermsCondition() {
+  usePageAnalytics("/terms-conditions");
+
   return (
     //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
     <PageBackground>
-      <PageContainer>
+      <PageContainer maxWidth="lg">
         <PageHeader title="Terms and Conditions" />
 
         <div className="flex flex-col gap-10 mt-16">
-          <div
-            class="container"
-            className="flex items-center justify-between  word-break:break-all"
-          >
+          <div className="container flex items-center justify-between  word-break:break-all">
             <p className="font-medium font-inter text-black leading-[1.8rem] margin-20px">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
               eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
@@ -31,10 +33,7 @@ export default function TermsCondition() {
             </p>
           </div>
 
-          <div
-            class="container"
-            className="flex items-center justify-between  word-break:break-all"
-          >
+          <div className="container flex items-center justify-between  word-break:break-all">
             <p className="font-medium font-inter text-black leading-[1.8rem]">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
               eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut

@@ -14,6 +14,8 @@ import * as Sentry from "@sentry/nextjs";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { logButtonEvent, logError } from "../utils/analytics";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -28,6 +30,8 @@ export default function EditProfileUserImage() {
 
   const cropperRef = useRef();
   const router = useRouter();
+
+  usePageAnalytics("/edit-profile-user-image");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -98,7 +102,9 @@ export default function EditProfileUserImage() {
       `profile/${uid}/profile-image`,
       () => {},
       (error) => {
-        Sentry.captureException("Upload error: ", error);
+        logError(error, {
+          description: "Upload error: ",
+        });
         setIsSaving(false);
       },
       async (url) => {
@@ -110,6 +116,7 @@ export default function EditProfileUserImage() {
         }
       }
     );
+    logButtonEvent("Save Profile Picture clicked!", "/edit-profile-user-image");
   };
 
   return (
@@ -118,7 +125,7 @@ export default function EditProfileUserImage() {
         <LoadingSpinner></LoadingSpinner>
       ) : (
         <PageBackground>
-          <PageContainer>
+          <PageContainer maxWidth="lg">
             <PageHeader title="Edit image" />
                 <div className="flex flex-col items-center gap-6 mt-6">
                   <EditProfileImage

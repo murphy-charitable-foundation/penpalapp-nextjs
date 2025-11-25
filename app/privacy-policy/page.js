@@ -1,4 +1,7 @@
+
 // pages/privacy-policy.js
+"use client"
+
 import Link from "next/link";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
@@ -6,18 +9,22 @@ import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
+import { useEffect } from "react";
+import { usePageAnalytics } from "../useAnalytics";
+import { logLoadingTime } from "../utils/analytics";
 
 export default function TermsCondition() {
+  usePageAnalytics("/privacy-policy");
+
   return (
     //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
     <PageBackground>
-      <PageContainer>
+      <PageContainer maxWidth="lg">
         <PageHeader title="Privacy Policy" />
 
         <div className="flex flex-col gap-10 mt-16">
           <div
-            class="container"
-            className="flex items-center justify-between  word-break:break-all"
+            className="container flex items-center justify-between  word-break:break-all"
           >
             <p className="font-medium font-inter text-black leading-[1.8rem] margin-20px">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
@@ -31,8 +38,7 @@ export default function TermsCondition() {
           </div>
 
           <div
-            class="container"
-            className="flex items-center justify-between  word-break:break-all"
+            className="container flex items-center justify-between  word-break:break-all"
           >
             <p className="font-medium font-inter text-black leading-[1.8rem]">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
