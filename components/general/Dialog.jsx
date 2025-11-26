@@ -108,9 +108,11 @@ export default function Dialog({
 
     return (
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}  onClick={() => closeOnOverlay && onClose()}>
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}
+        onClick={() => closeOnOverlay && onClose()}>
         <div
-          className={`${containerBg} ${containerPadding} ${containerRounding} shadow-lg ${containerWidth} mx-auto ${contentAlignment} ${containerClassName}`}>
+          className={`${containerBg} ${containerPadding} ${containerRounding} shadow-lg ${containerWidth} mx-auto ${contentAlignment} ${containerClassName}`}
+          onClick={(e) => e.stopPropagation()}>
           <h2
             className={`${titleSize} ${titleWeight} mb-1 leading-tight ${titleColor} ${
               variant === "alert" || variant === "confirmation"
