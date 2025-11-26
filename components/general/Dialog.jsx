@@ -108,7 +108,7 @@ export default function Dialog({
 
     return (
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}>
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}  onClick={() => closeOnOverlay && onClose()}>
         <div
           className={`${containerBg} ${containerPadding} ${containerRounding} shadow-lg ${containerWidth} mx-auto ${contentAlignment} ${containerClassName}`}>
           <h2

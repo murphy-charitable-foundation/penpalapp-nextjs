@@ -7,6 +7,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import * as Sentry from "@sentry/nextjs";
 import Dialog from "../Dialog";
 import { PageContainer } from "../PageContainer";
+import { logError } from "../../../app/utils/analytics";
 
 const ReportPopup = ({
   setShowPopup,
@@ -26,9 +27,9 @@ const ReportPopup = ({
 
   async function handleButtonClick(content) {
     try {
-      const excerpt = content.substring(0, 100) + "...";
+      const excerpt = content.length > 100 ? content.substring(0, 100) + "..." : content;
       const receiver_email = auth.currentUser.email;
-      const currentUrl = `${window.location.origin}${pathParams}`;
+      const currentUrl = `${window.location.origin}${window.location.pathname};`;
       const response = await fetch("/api/report", {
         method: "POST",
         headers: {
