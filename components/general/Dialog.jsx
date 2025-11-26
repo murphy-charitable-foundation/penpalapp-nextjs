@@ -97,7 +97,6 @@ export default function Dialog({
     const titleSize = isCloseDialogStyle ? "text-xl" : "text-sm";
     const titleWeight = isCloseDialogStyle ? "font-semibold" : "font-semibold";
     const titleColor = isCloseDialogStyle ? "text-black" : titleClassName || "";
-    const buttonSpacing = isCloseDialogStyle ? "space-x-3" : "gap-2";
     const buttonLayout = isCloseDialogStyle
       ? "flex"
       : "flex justify-between w-full";

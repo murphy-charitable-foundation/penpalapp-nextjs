@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../../app/firebaseConfig";
+
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import * as Sentry from "@sentry/nextjs";
 import Dialog from "../Dialog";
-import { PageContainer } from "../PageContainer";
 import { logError } from "../../../app/utils/analytics";
 
 const ReportPopup = ({
@@ -15,15 +11,7 @@ const ReportPopup = ({
   sender,
   content,
 }) => {
-  const [pathParams, setPathParams] = useState("");
   const auth = getAuth();
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const path = window.location.pathname;
-      setPathParams(path); // Get the path parameters
-    }
-  }, []);
 
   async function handleButtonClick(content) {
     try {
