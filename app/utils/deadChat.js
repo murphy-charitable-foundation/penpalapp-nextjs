@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
-const deadchatRequest = async (letterbox, emailId, reason) => {
+const deadchatRequest = async (letterbox, userId, reason) => {
   try {
       const memberIds = letterbox.members.map((member) => {
         return member.id;
@@ -21,11 +21,11 @@ const deadchatRequest = async (letterbox, emailId, reason) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+          body: JSON.stringify({ sender: userData, id: letterbox.id, userId, reason: reason}), // Send data as JSON
         });
       } else {
         const filteredMemberIds = memberIds.filter(
-          memberId => memberId != emailId
+          memberId => memberId != userId
         );
         const sender = await getDoc(doc(db, "users", filteredMemberIds[0]));
         
@@ -34,7 +34,7 @@ const deadchatRequest = async (letterbox, emailId, reason) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+          body: JSON.stringify({ sender: sender, id: letterbox.id, userId, reason: reason}), // Send data as JSON
         });
       }
       
@@ -110,14 +110,14 @@ const deadchatRequest = async (letterbox, emailId, reason) => {
           .map((letter) => letter.created_at?.toDate?.())
           .filter((d) => !!d)
           .sort((a, b) => b - a)[0]; // Most recent
-  
+
           if (!lastSentDate) {
             // User has sent nothing in the last month
-            await deadchatRequest(letterbox, member, "user");
-            await deadchatRequest(letterbox, member, "admin");
+            await deadchatRequest(letterbox, member.id, "user");
+            await deadchatRequest(letterbox, member.id, "admin");
           } else if (lastSentDate < twoWeeksAgo) {
             // User sent something between 2 weeks ago to 1 month ago 
-            await deadchatRequest(letterbox, member, "user");
+            await deadchatRequest(letterbox, member.id, "user");
           }
       }
     }
