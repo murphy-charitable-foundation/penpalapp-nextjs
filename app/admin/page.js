@@ -42,7 +42,7 @@ export default function Admin() {
     const [lastDoc, setLastDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("draft"); // Default filter
+    const [selectedStatus, setSelectedStatus] = useState("pending_review"); // Default filter
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
