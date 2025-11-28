@@ -7,6 +7,7 @@ import Button from "../Button";
 import Dropdown from "../Dropdown";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { set } from "nprogress";
 
 export default function AdmminFilter({
   setStatus,
@@ -20,6 +21,7 @@ export default function AdmminFilter({
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
   const [endFilter, setEndFilter] = useState(end || "2025-01-01");
+  const [currentFilter, setCurrentFilter] = useState("");
 
   useEffect(() => {
     setStatusFilter(status || "");
@@ -46,7 +48,8 @@ export default function AdmminFilter({
   };
 
 
-  const statusOptions = ["draft", "sent", "Pending", "Rejected"];
+  //const statusOptions = ["sent", "Pending", "Rejected"];
+  const statusOptions = new Map([["SENT", "sent"], ["PENDING", "pending_review"], ["REJECTED", "rejected"]]);
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -80,9 +83,9 @@ export default function AdmminFilter({
           </label>
           
           <Dropdown
-          options={statusOptions}
-          valueChange={setStatusFilter}
-          currentValue={statusFilter}
+          options={statusOptions.keys().toArray()}
+          valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
+          currentValue={currentFilter}
           text="Status"
           />
         </div>

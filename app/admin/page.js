@@ -203,18 +203,8 @@ export default function Admin() {
                 
                 ) : (
                   <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-                    <ProfileHeader 
-                      userName={userName}
-                      country={country}
-                      profileImage={profileImage}
-                      id={userId}
-                    />
-            
-                    <main className="p-6">
+                    <main className="p-6 pt-0">
                       <section className="mt-8">
-                        <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
-                          Recent letters
-                        </h2>
                         {documents.length > 0 ? (
                           <ConversationList conversations={documents}/>
                         ) : (

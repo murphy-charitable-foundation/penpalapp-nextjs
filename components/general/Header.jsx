@@ -2,33 +2,36 @@
 
 import Link from "next/link";
 import Button from "./Button";
-
+import Image from "next/image";
+import logo from "/public/murphylogo.png";
 export default function Header({ activeFilter, setActiveFilter, title }) {
-  
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#356CA8] sticky top-0 z-10">
-      <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
-        <div className="flex gap-4 justify-center w-full">
-          <h1 className="text-xl sm:text-2xl font-bold text-center">
-            {title}
-          </h1>
-        </div>
+    <div className="bg-red-700 text-white p-4 flex items-center gap-4 rounded-md">
+      <Image
+        src={logo}
+        alt="Murphy Charitable Foundation Uganda"
+        width={150}
+        height={150}
+        className="h-10 w-10 rounded-full"
+      />
+      <h1 className="text-2xl font-semibold">Admin user</h1>
+      <div className="ml-auto">
+        <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
       </div>
-
-      <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
     </div>
   );
 }
 
 function FilterButton({ activeFilter, setActiveFilter }) {
   return (
-    <div className="p-4 bg-[#356CA8] sm:bg-[#034078]">
+    <div>
       <Button
         btnText="Filters"
-        color="bg-transparent"
-        size="small"
+        color="white"
+        size="xs"
         onClick={() => {
-          setActiveFilter(!activeFilter);}}
+          setActiveFilter(!activeFilter);
+        }}
       >
         <span className="flex items-center">
           <p>Filters</p>
