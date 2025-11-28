@@ -37,6 +37,7 @@ import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
 
+
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
   try {
     const letterboxRef = doc(db, "letterbox", letterboxId);
@@ -94,6 +95,8 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
+
+
   const { id } = params;
 
   const auth = getAuth();
@@ -137,6 +140,7 @@ export default function Page({ params }) {
   const [reportSender, setReportSender] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
+
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -536,65 +540,72 @@ export default function Page({ params }) {
     }
   };
 
-  const loadMessages = async () => {
-  if (!user || !lettersRef || !recipients.length) return;
+const loadMessages = async () => {
+  if (!user || !lettersRef) return;
 
   try {
-    const userIsSender = doc(db, "users", user.uid);
+    const userRefDoc = doc(db, "users", user.uid);
 
-    // FETCH SENT (approved)
-    const sentQuery = query(
+    // All messages written BY ME (any status)
+    const myMessagesQuery = query(
+      lettersRef,
+      where("sent_by", "==", userRefDoc),
+      orderBy("created_at", "asc")
+    );
+
+    // All messages with status = "sent" (approval by admin)
+    const sentMessagesQuery = query(
       lettersRef,
       where("status", "==", "sent"),
       orderBy("created_at", "asc")
     );
 
-    // FETCH MY PENDING
-    const myPendingQuery = query(
-      lettersRef,
-      where("status", "==", "pending_review"),
-      where("sent_by", "==", userIsSender),
-      orderBy("created_at", "asc")
-    );
-
-    // FETCH MY REJECTED
-    const myRejectedQuery = query(
-      lettersRef,
-      where("status", "==", "rejected"),
-      where("sent_by", "==", userIsSender),
-      orderBy("created_at", "asc")
-    );
-
-
-    const snapshots = await Promise.all([
-      getDocs(sentQuery),
-      getDocs(myPendingQuery),
-      getDocs(myRejectedQuery),
+    const [mySnap, sentSnap] = await Promise.all([
+      getDocs(myMessagesQuery),
+      getDocs(sentMessagesQuery),
     ]);
 
     const all = [];
 
-    snapshots.forEach((snap) => {
+    const pushDocs = (snap) => {
       snap.forEach((docSnap) => {
-        all.push({
+        const msg = {
           id: docSnap.id,
           ...docSnap.data(),
           created_at: docSnap.data().created_at?.toDate(),
           updated_at: docSnap.data().updated_at?.toDate(),
-        });
+        };
+
+        // Normalize Firestore DocumentReference → { id }
+        if (msg.sent_by?.path) {
+          msg.sent_by = {
+            id: msg.sent_by.path.split("/")[1],
+          };
+        }
+
+        all.push(msg);
       });
-    });
+    };
 
-    // SORT ASCENDING
-    all.sort((a, b) => a.created_at - b.created_at);
+    pushDocs(mySnap);
+    pushDocs(sentSnap);
 
-    setAllMessages(all);
+    // remove duplicates
+    const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
+
+    // sort chronologically
+    unique.sort((a, b) => a.created_at - b.created_at);
+
+    setAllMessages(unique);
 
     setTimeout(() => scrollToBottom(true), 300);
   } catch (err) {
     console.error("❌ loadMessages ERROR", err);
   }
 };
+
+
+
 
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
@@ -673,6 +684,7 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
+
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
 
@@ -685,6 +697,9 @@ export default function Page({ params }) {
       }
 
       setUser(currentUser);
+        
+
+      
 
       try {
         const letterboxRef = doc(db, "letterbox", id);
@@ -761,15 +776,21 @@ export default function Page({ params }) {
             orderBy("created_at", "desc"),
             limit(20)
           );
+          
+              const myRejectedQuery = query(
+              lRef,
+              where("status", "==", "rejected"),
+              where("sent_by", "==", userDocRef),
+              orderBy("created_at", "desc"),
+              limit(20)
+            );
 
-          const otherUserRefs = fetchedRecipients
-            .filter((r) => r.id !== currentUser.uid)
-            .map((r) => doc(db, "users", r.id));
 
-          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
-
+          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery), getDocs(myRejectedQuery)];
 
           const snapshots = await Promise.all(queryPromises);
+
+
 
           const allFetchedMessages = [];
 
@@ -785,6 +806,14 @@ export default function Page({ params }) {
                   docSnap.data().updated_at?.toDate?.() ||
                   docSnap.data().updated_at,
               };
+
+            if (messageData.sent_by?.path) {
+                messageData.sent_by = {
+                  id: messageData.sent_by.path.split("/")[1],
+                };
+              }    
+
+
               allFetchedMessages.push(messageData);
             });
           });
@@ -861,7 +890,10 @@ export default function Page({ params }) {
   };
 
   const getSenderLocation = (message) => {
-    const isSenderUser = message.sent_by?.id === user?.uid;
+    const isSenderUser =
+  message.sent_by?.id === user?.uid ||
+  message.sent_by?.path === `users/${user?.uid}`;
+
     if (isSenderUser) {
       return userLocation || "";
     } else {
