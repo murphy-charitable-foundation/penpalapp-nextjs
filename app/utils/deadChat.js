@@ -4,18 +4,16 @@ import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp, timestampToDate } from "./timestampToDate";
 
 
-const apiRequest = async (letterbox, emailId, reason) => {
+const deadchatRequest = async (letterbox, emailId, reason) => {
   try {
+      const memberIds = letterbox.members.map((member) => {
+        return member.id;
+      });
       if (reason == "admin") {
-        const ids = letterbox.members.map((member) => {
-          const segments = member._key?.path?.segments;
-          return segments?.[segments.length - 1];
-          
-        });
         let userData = [];
-        const sender = await getDoc(doc(db, "users", ids[0]));
+        const sender = await getDoc(doc(db, "users", memberIds[0]));
         userData.push(sender.data());
-        const sender2 = await getDoc(doc(db, "users", ids[1]))
+        const sender2 = await getDoc(doc(db, "users", memberIds[1]))
         userData.push(sender2.data());
         
         const response = await fetch('/api/deadchat', {
@@ -26,13 +24,10 @@ const apiRequest = async (letterbox, emailId, reason) => {
           body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
         });
       } else {
-        const ids = letterbox.members.map((member) => {
-          const segments = member._key?.path?.segments;
-          if (segments?.[segments.length - 1] != emailId) {
-            return segments?.[segments.length - 1];
-          }
-        });
-        const sender = await getDoc(doc(db, "users", ids[0]));
+        const filteredMemberIds = memberIds.filter(
+          memberId => memberId != emailId
+        );
+        const sender = await getDoc(doc(db, "users", filteredMemberIds[0]));
         
         const response = await fetch('/api/deadchat', {
           method: 'POST',
@@ -118,11 +113,11 @@ const apiRequest = async (letterbox, emailId, reason) => {
   
           if (!lastSentDate) {
             // User has sent nothing in the last month
-            await apiRequest(letterbox, member, "user");
-            await apiRequest(letterbox, member, "admin");
+            await deadchatRequest(letterbox, member, "user");
+            await deadchatRequest(letterbox, member, "admin");
           } else if (lastSentDate < twoWeeksAgo) {
             // User sent something between 2 weeks ago to 1 month ago 
-            await apiRequest(letterbox, member, "user");
+            await deadchatRequest(letterbox, member, "user");
           }
       }
     }
