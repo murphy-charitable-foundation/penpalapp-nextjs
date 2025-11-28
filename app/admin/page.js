@@ -5,7 +5,7 @@ import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import BottomNavBar from '../../components/bottom-nav-bar';
+import BottomNavBar from "../../components/bottom-nav-bar";
 
 import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter, orderBy } from "firebase/firestore";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
@@ -24,8 +24,8 @@ import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
 
 export default function Admin() {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
@@ -47,37 +47,9 @@ export default function Admin() {
     const [activeFilter, setActiveFilter] = useState(false);
     const router = useRouter();
 
-    useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        setIsLoading(true);
-  
-        if (!user) {
-          setError("No user logged in.");
-          setIsLoading(false);
-          router.push("/login");
-          return;
-        }
-        setUserId(user.uid);
-        const userRef= doc(collection(db, "users"), user.uid);
-        const userSnapshot = getDoc(userRef);
-        const userData = (await userSnapshot).data()
-        if (userData.user_type != "admin") {
-          setError("User is not admin");
-          setIsLoading(false);
-          router.push("/login");
-          return;
-        }
-        setCountry(userData.country);
-        setUserName(userData.first_name + " " + userData.last_name);
-        const path = `profile/${user.uid}/profile-image`;
-        const userPhotoRef = storageRef(storage, path);
-        const userUrl = await getDownloadURL(userPhotoRef);
-        setProfileImage(userUrl);
-        
-      });
-  
-      return () => unsubscribe();
-    }, [router]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
 
     useEffect(() => {
       const letterGrab = async() => {
@@ -94,10 +66,42 @@ export default function Admin() {
           setIsLoading(false);
         }
       }
-      letterGrab();
+      setUserId(user.uid);
+      const userRef = doc(collection(db, "users"), user.uid);
+      const userSnapshot = getDoc(userRef);
+      const userData = (await userSnapshot).data();
+      if (userData.user_type != "admin") {
+        setError("User is not admin");
+        setIsLoading(false);
+        router.push("/login");
+        return;
+      }
+      setCountry(userData.country);
+      setUserName(userData.first_name + " " + userData.last_name);
+      const path = `profile/${user.uid}/profile-image`;
+      const userPhotoRef = storageRef(storage, path);
+      const userUrl = await getDownloadURL(userPhotoRef);
+      setProfileImage(userUrl);
+    });
 
-    }, [selectedStatus, startDate, endDate])
+    return () => unsubscribe();
+  }, [router]);
 
+  useEffect(() => {
+    const letterGrab = async () => {
+      setDocuments([]);
+      try {
+        // Fetch initial batch of letters
+        await fetchLetters();
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to load data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    letterGrab();
+  }, [selectedStatus, startDate, endDate]);
 
   const fetchLetters = async (nextPage = false) => {
     try {
@@ -111,10 +115,14 @@ export default function Admin() {
         queryConstraints.push(startAfter(lastDoc));
       }
       if (startDate) {
-        queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
+        queryConstraints.push(
+          where("created_at", ">=", dateToTimestamp(startDate))
+        );
       }
       if (endDate) {
-        queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
+        queryConstraints.push(
+          where("created_at", "<=", dateToTimestamp(endDate))
+        );
       }
 
       lettersQuery = query(lettersQuery, ...queryConstraints);
@@ -136,7 +144,6 @@ export default function Admin() {
                   const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
                   pfp = downloaded;
- 
                 }
               }
             } catch (error) {
@@ -148,9 +155,9 @@ export default function Admin() {
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
-              name : userData?.first_name + " " + userData?.last_name || "",
+              name: userData?.first_name + " " + userData?.last_name || "",
               lastMessage: docData.content,
-              lastMessageDate: docData.created_at, 
+              lastMessageDate: docData.created_at,
             };
           })
         );
@@ -172,6 +179,10 @@ export default function Admin() {
     setStartDate(start);
     setEndDate(end);
     setActiveFilter(false);
+  };
+
+  if (documents == null) {
+    return <p>Loading....</p>;
   }
 
     if (documents == null) {
