@@ -37,6 +37,7 @@ import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
 
+
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
   try {
     const letterboxRef = doc(db, "letterbox", letterboxId);
@@ -94,6 +95,8 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
+
+
   const { id } = params;
 
   const auth = getAuth();
@@ -137,6 +140,7 @@ export default function Page({ params }) {
   const [reportSender, setReportSender] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
+
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -536,95 +540,72 @@ export default function Page({ params }) {
     }
   };
 
-  const loadMessages = async () => {
-    if (!user || !id || !recipients.length || !lettersRef) {
-      return;
-    }
+const loadMessages = async () => {
+  if (!user || !lettersRef) return;
 
-    try {
-      const sentQuery = query(
-        lettersRef,
-        where("status", "==", "sent"),
-        orderBy("created_at", "desc"),
-        limit(20)
-      );
+  try {
+    const userRefDoc = doc(db, "users", user.uid);
 
-      const myPendingQuery = query(
-        lettersRef,
-        where("status", "==", "pending_review"),
-        where("sent_by", "==", userRef),
-        orderBy("created_at", "desc"),
-        limit(20)
-      );
+    // All messages written BY ME (any status)
+    const myMessagesQuery = query(
+      lettersRef,
+      where("sent_by", "==", userRefDoc),
+      orderBy("created_at", "asc")
+    );
 
-      const otherUserRefs = recipients
-        .filter((r) => r.id !== user.uid)
-        .map((r) => doc(db, "users", r.id));
+    // All messages with status = "sent" (approval by admin)
+    const sentMessagesQuery = query(
+      lettersRef,
+      where("status", "==", "sent"),
+      orderBy("created_at", "asc")
+    );
 
-      const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
+    const [mySnap, sentSnap] = await Promise.all([
+      getDocs(myMessagesQuery),
+      getDocs(sentMessagesQuery),
+    ]);
 
-      for (const otherUserRef of otherUserRefs) {
-        const otherPendingQuery = query(
-          lettersRef,
-          where("status", "==", "pending_review"),
-          where("sent_by", "==", otherUserRef),
-          orderBy("created_at", "desc"),
-          limit(20)
-        );
-        queryPromises.push(getDocs(otherPendingQuery));
-      }
+    const all = [];
 
-      const snapshots = await Promise.all(queryPromises);
+    const pushDocs = (snap) => {
+      snap.forEach((docSnap) => {
+        const msg = {
+          id: docSnap.id,
+          ...docSnap.data(),
+          created_at: docSnap.data().created_at?.toDate(),
+          updated_at: docSnap.data().updated_at?.toDate(),
+        };
 
-      const allFetchedMessages = [];
-
-      snapshots.forEach((snapshot, index) => {
-        snapshot.docs.forEach((doc) => {
-          const messageData = {
-            id: doc.id,
-            ...doc.data(),
-            created_at:
-              doc.data().created_at?.toDate?.() || doc.data().created_at,
-            updated_at:
-              doc.data().updated_at?.toDate?.() || doc.data().updated_at,
+        // Normalize Firestore DocumentReference → { id }
+        if (msg.sent_by?.path) {
+          msg.sent_by = {
+            id: msg.sent_by.path.split("/")[1],
           };
-          allFetchedMessages.push(messageData);
-        });
-      });
+        }
 
-      const sortedMessages = allFetchedMessages.sort((a, b) => {
-        const aTime =
-          a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
-        const bTime =
-          b.created_at instanceof Date ? b.created_at : new Date(b.created_at);
-        return aTime.getTime() - bTime.getTime();
+        all.push(msg);
       });
+    };
 
-      const messagesWithSenderInfo = await Promise.all(
-        sortedMessages.map(async (message) => {
-          if (message.sent_by?.id !== user.uid) {
-            const recipient = recipients.find(
-              (r) => r.id === message.sent_by?.id
-            );
-            if (recipient) {
-              message.senderLocation = recipient.location || "";
-            }
-          }
-          return message;
-        })
-      );
+    pushDocs(mySnap);
+    pushDocs(sentSnap);
 
-      setAllMessages(messagesWithSenderInfo);
-      setTimeout(() => {
-        scrollToBottom(true);
-      }, 300);
-    } catch (error) {
-      console.error("❌ LOAD MESSAGES ERROR:", error);
-      logError(error, {
-        description: "LOAD MESSAGES ERROR:",
-      });
-    }
-  };
+    // remove duplicates
+    const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
+
+    // sort chronologically
+    unique.sort((a, b) => a.created_at - b.created_at);
+
+    setAllMessages(unique);
+
+    setTimeout(() => scrollToBottom(true), 300);
+  } catch (err) {
+    console.error("❌ loadMessages ERROR", err);
+  }
+};
+
+
+
 
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
@@ -703,6 +684,7 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
+
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
 
@@ -715,6 +697,9 @@ export default function Page({ params }) {
       }
 
       setUser(currentUser);
+        
+
+      
 
       try {
         const letterboxRef = doc(db, "letterbox", id);
@@ -791,25 +776,21 @@ export default function Page({ params }) {
             orderBy("created_at", "desc"),
             limit(20)
           );
-
-          const otherUserRefs = fetchedRecipients
-            .filter((r) => r.id !== currentUser.uid)
-            .map((r) => doc(db, "users", r.id));
-
-          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
-
-          for (const otherUserRef of otherUserRefs) {
-            const otherPendingQuery = query(
+          
+              const myRejectedQuery = query(
               lRef,
-              where("status", "==", "pending_review"),
-              where("sent_by", "==", otherUserRef),
+              where("status", "==", "rejected"),
+              where("sent_by", "==", userDocRef),
               orderBy("created_at", "desc"),
               limit(20)
             );
-            queryPromises.push(getDocs(otherPendingQuery));
-          }
+
+
+          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery), getDocs(myRejectedQuery)];
 
           const snapshots = await Promise.all(queryPromises);
+
+
 
           const allFetchedMessages = [];
 
@@ -825,6 +806,14 @@ export default function Page({ params }) {
                   docSnap.data().updated_at?.toDate?.() ||
                   docSnap.data().updated_at,
               };
+
+            if (messageData.sent_by?.path) {
+                messageData.sent_by = {
+                  id: messageData.sent_by.path.split("/")[1],
+                };
+              }    
+
+
               allFetchedMessages.push(messageData);
             });
           });
@@ -901,7 +890,10 @@ export default function Page({ params }) {
   };
 
   const getSenderLocation = (message) => {
-    const isSenderUser = message.sent_by?.id === user?.uid;
+    const isSenderUser =
+  message.sent_by?.id === user?.uid ||
+  message.sent_by?.path === `users/${user?.uid}`;
+
     if (isSenderUser) {
       return userLocation || "";
     } else {
@@ -1090,9 +1082,23 @@ export default function Page({ params }) {
                           {isSenderUser && (
                             <>
                               {/* REJECTED */}
-                              {message.status === "rejected" && (
-                                <AlertTriangle className="w-5 h-5 text-red-500 flex justify-end w-full" />
-                              )}
+                              {isSenderUser && message.status === "rejected" &&(
+                              <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
+                                <div className="flex items-start text-red-700 font-semibold">
+                                  <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                  <div>
+                                    <div>Your letter was rejected.</div>
+
+                                    {message.rejection_reason && (
+                                      <div className="text-sm text-red-600 mt-1">
+                                        {message.rejection_reason}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                               {/* SENT → GREEN CHECK */}
                               {message.status === "sent" && (
                               <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
