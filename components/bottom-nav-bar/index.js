@@ -14,14 +14,35 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../app/firebaseConfig";
+import { collection, doc, getDoc } from "firebase/firestore";
+import { db } from "../../app/firebaseConfig";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(null);
+  
+  useEffect(() => {
+    const grabUser = async () => {
+      if (!auth.currentUser) return;
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnapshot = await getDoc(userRef);
+      const userData = userSnapshot.data();
+  
+      if (userData?.user_type === "admin") {
+        setIsAdmin(true);
+      } else { 
+        setIsAdmin(false);
+      }
+    }
+  
+    grabUser();
+  }, []);
+  
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -57,6 +78,16 @@ export default function NavBar() {
       icon: <FaEnvelopeOpenText className="h-4 w-4" />,
       label: "Contact",
     },
+    // 👇 conditionally add admin link
+    ...(isAdmin
+      ? [
+          {
+            href: "/admin",
+            icon: <FaUserAlt className="h-4 w-4" />, // choose any admin icon
+            label: "Admin",
+          },
+        ]
+      : []),
     {
       onClick: handleLogout,
       icon: <FaSignOutAlt className="h-4 w-4" />,
