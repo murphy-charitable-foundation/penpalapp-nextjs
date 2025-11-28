@@ -131,8 +131,7 @@ export default function Admin() {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
                   userData = userSnapshot.data();
-                  const segments = userSnapshot.ref._key.path.segments; 
-                  const userId = segments[segments.length - 1];     
+                  const userId = docData.sent_by.id;
                   const path = `profile/${userId}/profile-image`;
                   const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
