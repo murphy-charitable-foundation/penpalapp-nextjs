@@ -14,11 +14,9 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const { sender, id, emailId, reason} = body; 
+    const { sender, id, userId, reason} = body; 
     //const filtered = users.filter(element => element !== sender);
-    const pathSegments = emailId._key?.path?.segments;
-    const uid = pathSegments[pathSegments.length - 1]; 
-    const userRecord = await auth.getUser(uid); // Fetch user record by UID
+    const userRecord = await auth.getUser(userId); // Fetch user record by UID
     let message;
     if (reason == "admin") {
       message = `Hello Richard, it seems that a chat in a letterbox with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`
