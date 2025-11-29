@@ -88,7 +88,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     return null;
   } catch (error) {
-    console.error("❌ fetchDraft error:", error);
+    logError(error, { description: "fetchDraft error" });
     return null;
   }
 };
@@ -269,7 +269,6 @@ export default function Page({ params }) {
           }
         }, 1000);
         setDraftTimer(timer);
-      } else {
       }
     } else {
       setHasDraftContent(false);
@@ -563,6 +562,7 @@ export default function Page({ params }) {
 
       const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
 
+      /*
       for (const otherUserRef of otherUserRefs) {
         const otherPendingQuery = query(
           lettersRef,
@@ -573,6 +573,7 @@ export default function Page({ params }) {
         );
         queryPromises.push(getDocs(otherPendingQuery));
       }
+      */
 
       const snapshots = await Promise.all(queryPromises);
 
@@ -926,7 +927,8 @@ export default function Page({ params }) {
             <button
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
-              title="Close conversation">
+              title="Close conversation"
+            >
               X
             </button>
           )}
@@ -939,7 +941,8 @@ export default function Page({ params }) {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}>
+              }`}
+            >
               <Image
                 src="/send-message-icon.png"
                 alt={editingMessageId ? "Update message" : "Send message"}
@@ -992,7 +995,8 @@ export default function Page({ params }) {
                 setEditingMessageOriginalContent("");
                 setSelectedMessageId(null);
               }}
-              className="text-amber-600 hover:text-amber-800 text-sm underline">
+              className="text-amber-600 hover:text-amber-800 text-sm underline"
+            >
               Cancel
             </button>
           </div>
@@ -1016,11 +1020,17 @@ export default function Page({ params }) {
               <div key={messageId}>
                 <div
                   className={`border-b border-gray-200 ${
-                    isSelected ? "bg-white" : "bg-gray-50"
-                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                    isSelected
+                      ? "bg-white"
+                      : index % 2 === 0
+                      ? "bg-white"
+                      : "bg-gray-50"
+                  }`}
+                >
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}>
+                    onClick={() => selectMessage(messageId)}
+                  >
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
@@ -1064,7 +1074,7 @@ export default function Page({ params }) {
                   {isSelected && (
                     <div className="px-4 pb-3">
                       <div className="ml-16 relative">
-                          <p className="text-gray-800 whitespace-pre-wrap">
+                        <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
                         <div className="flex items-center gap-3 mt-2">
@@ -1081,7 +1091,8 @@ export default function Page({ params }) {
                                   "/letters/[id]"
                                 );
                               }}
-                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                            >
                               <FaExclamationCircle className="mr-1" size={10} />
                               Report
                             </button>
@@ -1095,36 +1106,40 @@ export default function Page({ params }) {
                               )}
                               {/* SENT → GREEN CHECK */}
                               {message.status === "sent" && (
-                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
+                                <span className="text-green-500 text-lg font-bold flex justify-end w-full">
+                                  ✓
+                                </span>
                               )}
                               {/* PENDING REVIEW → GRAY DASHED CHECK */}
                               {message.status === "pending_review" && (
                                 <div className="flex items-center justify-end w-full">
-                              {/* Wrapper so the check can stick to the button */}
-                              <div className="relative inline-flex">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                                  {/* Wrapper so the check can stick to the button */}
+                                  <div className="relative inline-flex">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
 
-                                    handleEditMessage(message);
-                                    logButtonEvent(
-                                      "Edit message clicked!",
-                                      "/letters/[id]"
-                                    );
-                                  }}
-                                  className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
-                                  title="Edit message"
-                                >
-                                  Edit
-                                </button>
+                                        handleEditMessage(message);
+                                        logButtonEvent(
+                                          "Edit message clicked!",
+                                          "/letters/[id]"
+                                        );
+                                      }}
+                                      className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
+                                      title="Edit message"
+                                    >
+                                      Edit
+                                    </button>
 
-                                {/* Check badge in bottom-right of the button */}
-                                <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                  <span className="text-gray-400 text-xs font-bold">✓</span>
+                                    {/* Check badge in bottom-right of the button */}
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                      <span className="text-gray-400 text-xs font-bold">
+                                        ✓
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                            )}
+                              )}
                             </>
                           )}
                         </div>
@@ -1156,7 +1171,8 @@ export default function Page({ params }) {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}>
+                onClick={handleReplyClick}
+              >
                 {hasDraftContent
                   ? "Continue draft..."
                   : "Reply to the letter..."}
@@ -1199,12 +1215,14 @@ export default function Page({ params }) {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 !bg-[#4E802A] !text-white py-3 px-4 !rounded-2xl hover:!bg-opacity-90 transition-colors">
+                  className="flex-1 !bg-[#4E802A] !text-white py-3 px-4 !rounded-2xl hover:!bg-opacity-90 transition-colors"
+                >
                   Stay on page
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 !bg-gray-200 !text-[#4E802A] py-3 px-4 !rounded-2xl hover:!bg-gray-300 transition-colors">
+                  className="flex-1 !bg-gray-200 !text-[#4E802A] py-3 px-4 !rounded-2xl hover:!bg-gray-300 transition-colors"
+                >
                   {editingMessageId ? "Discard" : "Close"}
                 </button>
               </div>
