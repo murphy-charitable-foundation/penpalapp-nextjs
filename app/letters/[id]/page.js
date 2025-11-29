@@ -210,13 +210,13 @@ export default function Page({ params }) {
 
         return Promise.resolve();
       } catch (error) {
-        console.error("❌ saveDraft error:", error);
+        logError(error, { description: "saveDraft error" });
 
         if (error.code === "permission-denied") {
-          console.error("🔒 Permission denied error");
+          logError(error, { description: "Permission denied error in saveDraft" });
           alert("Permission denied. Please check your access rights.");
         } else if (error.code === "not-found") {
-          console.error("🔍 Document not found, attempting retry...");
+          logError(error, { description: "Document not found error in saveDraft" });
           setDraft(null);
           if (trimmedContent) {
             try {
@@ -283,7 +283,6 @@ export default function Page({ params }) {
 
           setIsXButtonDisabled(false);
         } catch (error) {
-          console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
@@ -362,7 +361,9 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      console.error("❌ handleUpdateMessage error:", error);
+      logError(error, {
+        description: "Failed to update message:",
+      });
 
       if (error.code === "permission-denied") {
         alert(
@@ -608,7 +609,6 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 300);
     } catch (error) {
-      console.error("❌ LOAD MESSAGES ERROR:", error);
       logError(error, {
         description: "LOAD MESSAGES ERROR:",
       });
@@ -628,7 +628,9 @@ export default function Page({ params }) {
       try {
         await saveDraft(messageContent);
       } catch (error) {
-        console.error("❌ Failed to save draft before editing message:", error);
+        logError(error, {
+          description: "Failed to save draft before editing message:",
+        })
         const confirmSwitch = window.confirm(
           "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
         );
@@ -671,7 +673,7 @@ export default function Page({ params }) {
           setHasDraftContent(false);
         }
       } catch (error) {
-        console.error("❌ Error fetching draft:", error);
+        logError(error, { description: "Error fetching draft" });
         setMessageContent("");
         setHasDraftContent(false);
       }
@@ -711,6 +713,10 @@ export default function Page({ params }) {
 
         if (!letterboxDoc.exists()) {
           console.error("❌ Letterbox does not exist:", id);
+          logError(new Error("Letterbox does not exist"), {
+            description: "Letterbox does not exist:",
+            letterbox: id,
+          });
           setIsLoading(false);
           return;
         }
@@ -839,7 +845,6 @@ export default function Page({ params }) {
           setAllMessages(messagesWithSenderInfo);
         }
       } catch (error) {
-        console.error("❌ INITIALIZATION ERROR:", error);
         logError(error, {
           description: "INITIALIZATION ERROR:",
         });
@@ -959,7 +964,7 @@ export default function Page({ params }) {
                     setIsEditing(false);
                   }
                 } catch (error) {
-                  console.error("❌ Failed to restore draft:", error);
+                  logError(error, { description: "Failed to restore draft after canceling edit" });
                   setMessageContent("");
                   setDraft(null);
                   setHasDraftContent(false);
