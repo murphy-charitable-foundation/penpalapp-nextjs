@@ -1043,6 +1043,24 @@ export default function Page({ params }) {
                         <div className="text-gray-500 text-sm">
                           {formatTime(message.created_at)}
                         </div>
+
+                          {!isSenderUser && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReportSender(message.sent_by.id);
+                                setReportContent(message.content);
+                                setShowReportPopup(true);
+                                logButtonEvent(
+                                  "Report message clicked!",
+                                  "/letters/[id]"
+                                );
+                              }}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                              <FaExclamationCircle className="mr-1" size={20} />
+                            </button>
+                          )}
+
                       </div>
                     </div>
                   </div>
@@ -1054,25 +1072,6 @@ export default function Page({ params }) {
                           {message.content}
                         </p>
                         <div className="flex items-center gap-3 mt-2">
-                          {!isSenderUser && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-
-                                setReportSender(message.sent_by.id);
-                                setReportContent(message.content);
-                                setShowReportPopup(true);
-                                logButtonEvent(
-                                  "Report message clicked!",
-                                  "/letters/[id]"
-                                );
-                              }}
-                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                            >
-                              <FaExclamationCircle className="mr-1" size={10} />
-                              Report
-                            </button>
-                          )}
                           {/* STATUS BANNER */}
                           {isSenderUser && (
                             <>
