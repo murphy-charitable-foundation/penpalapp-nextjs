@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { logError } from "@/app/utils/analytics";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Dialog from "../Dialog";
 import { logError } from "../../../app/utils/analytics";
+import { PageContainer } from "../../general/PageContainer";
 
 const ReportPopup = ({
   setShowPopup,

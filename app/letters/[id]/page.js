@@ -1118,16 +1118,7 @@ export default function Page({ params }) {
                           )}
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16">
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                      </div>
                     </div>
                   )}
                 </div>
