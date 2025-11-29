@@ -33,6 +33,7 @@ import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
+import Dialog from "../../../components/general/Dialog";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
@@ -850,7 +851,7 @@ export default function Page({ params }) {
     return () => {
       unsubscribe();
     };
-  }, [id, router]);
+  }, [auth, id, router]);
 
   useEffect(() => {
     return () => {
@@ -903,8 +904,7 @@ export default function Page({ params }) {
             <button
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
-              title="Close conversation"
-            >
+              title="Close conversation">
               X
             </button>
           )}
@@ -917,8 +917,7 @@ export default function Page({ params }) {
                 !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
-              }`}
-            >
+              }`}>
               <Image
                 src="/send-message-icon.png"
                 alt={editingMessageId ? "Update message" : "Send message"}
@@ -1005,8 +1004,7 @@ export default function Page({ params }) {
                 >
                   <div
                     className="px-4 py-3"
-                    onClick={() => selectMessage(messageId)}
-                  >
+                    onClick={() => selectMessage(messageId)}>
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                         <ProfileImage
@@ -1121,6 +1119,16 @@ export default function Page({ params }) {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1147,8 +1155,7 @@ export default function Page({ params }) {
             <div className="p-4">
               <div
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}
-              >
+                onClick={handleReplyClick}>
                 {hasDraftContent
                   ? "Continue draft..."
                   : "Reply to the letter..."}

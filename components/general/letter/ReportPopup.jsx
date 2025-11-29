@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { logError } from "@/app/utils/analytics";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { PageContainer } from "../PageContainer";
+import Dialog from "../Dialog";
+import { logError } from "../../../app/utils/analytics";
 
 const ReportPopup = ({
   setShowPopup,
@@ -11,20 +12,13 @@ const ReportPopup = ({
   sender,
   content,
 }) => {
-  const [pathParams, setPathParams] = useState("");
   const auth = getAuth();
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const path = window.location.pathname;
-      setPathParams(path); // Get the path parameters
-    }
-  }, []);
 
   async function handleButtonClick(content) {
     try {
-      const excerpt = content.substring(0, 100) + "...";
+      const excerpt = content.length > 100 ? content.substring(0, 100) + "..." : content;
       const receiver_email = auth.currentUser.email;
-      const currentUrl = `${window.location.origin}${pathParams}`;
+      const currentUrl = `${window.location.origin}${window.location.pathname}`;
       const response = await fetch("/api/report", {
         method: "POST",
         headers: {
