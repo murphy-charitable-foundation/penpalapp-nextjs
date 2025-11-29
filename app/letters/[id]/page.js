@@ -562,19 +562,6 @@ export default function Page({ params }) {
 
       const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
 
-      /*
-      for (const otherUserRef of otherUserRefs) {
-        const otherPendingQuery = query(
-          lettersRef,
-          where("status", "==", "pending_review"),
-          where("sent_by", "==", otherUserRef),
-          orderBy("created_at", "desc"),
-          limit(20)
-        );
-        queryPromises.push(getDocs(otherPendingQuery));
-      }
-      */
-
       const snapshots = await Promise.all(queryPromises);
 
       const allFetchedMessages = [];
@@ -798,17 +785,6 @@ export default function Page({ params }) {
             .map((r) => doc(db, "users", r.id));
 
           const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
-
-          for (const otherUserRef of otherUserRefs) {
-            const otherPendingQuery = query(
-              lRef,
-              where("status", "==", "pending_review"),
-              where("sent_by", "==", otherUserRef),
-              orderBy("created_at", "desc"),
-              limit(20)
-            );
-            queryPromises.push(getDocs(otherPendingQuery));
-          }
 
           const snapshots = await Promise.all(queryPromises);
 
@@ -1102,8 +1078,9 @@ export default function Page({ params }) {
                             <>
                               {/* REJECTED */}
                               {message.status === "rejected" && (
-                                <AlertTriangle className="w-5 h-5 text-red-500 flex justify-end w-full" />
-                              )}
+                               <div className="flex justify-end w-full">
+                                 <AlertTriangle className="w-5 h-5 text-red-500" />
+                               </div>                              )}
                               {/* SENT → GREEN CHECK */}
                               {message.status === "sent" && (
                                 <span className="text-green-500 text-lg font-bold flex justify-end w-full">
