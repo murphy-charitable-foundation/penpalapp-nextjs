@@ -53,7 +53,10 @@ export default function UserDataImport() {
         dream_job: formData.get("dreamJob"),
         hobby: formData.get("hobby"),
         favorite_color: formData.get("favoriteColor"),
-        gender: gender,
+        user_type: "child",
+        connected_penpals_count: 0,
+        pronouns: formData.get("pronouns"),
+        favorite_animal: formData.get("favoriteAnimal"),
       };
 
       // Custom validation
@@ -62,9 +65,7 @@ export default function UserDataImport() {
         newErrors.last_name = "Name is required";
       }
 
-      if (!userData.email.trim()) {
-        newErrors.email = "Email is required";
-      } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
+      if (!/\S+@\S+\.\S+/.test(userData.email) && userData.email !== "") {
         newErrors.email = "Invalid email format";
       }
 
@@ -74,11 +75,11 @@ export default function UserDataImport() {
       }
       console.log("no errors");
       // Generate a unique ID for the user
-      const userId = crypto.randomUUID();
+      const userId = crypto.randomUUID().replace(/-/g, "");
       await setDoc(doc(db, "users", userId), userData);
 
       // Reset form
-      e.currentTarget.reset();
+      e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
@@ -116,6 +117,7 @@ export default function UserDataImport() {
                 id="first-name"
                 name="firstName"
                 label="First Name"
+                placeholder="e.g., Jane"
                 error={errors.first_name ? errors.first_name : ""}
               />
             </div>
@@ -126,6 +128,7 @@ export default function UserDataImport() {
                 id="last-name"
                 name="lastName"
                 label="Last Name"
+                placeholder="e.g., Smith"
                 error={errors.last_name ? errors.last_name : ""}
               />
             </div>
@@ -136,6 +139,7 @@ export default function UserDataImport() {
                 name="email"
                 id="email"
                 label="Email"
+                placeholder="me@example.com"
                 error={errors.email ? errors.email : ""}
               />
             </div>
@@ -150,6 +154,17 @@ export default function UserDataImport() {
             </div>
 
             <div>
+              <Input 
+                type="text" 
+                name="pronouns" 
+                id="pronouns" 
+                label="Pronouns"
+                placeholder="e.g., she/her"
+              />
+            </div>
+            
+            {/* 
+            <div>
               <label className="block text-sm font-medium text-gray-500">
                 Gender
               </label>
@@ -162,13 +177,26 @@ export default function UserDataImport() {
                 text="Gender"
               />
             </div>
+            */}
 
             <div>
-              <Input type="text" name="country" id="country" label="Country" />
+              <Input 
+                type="text" 
+                name="country" 
+                id="country" 
+                label="Country" 
+                placeholder="e.g., Canada"
+              />
             </div>
 
             <div>
-              <Input type="text" id="village" name="village" label="Village" />
+              <Input 
+                type="text" 
+                id="village" 
+                name="village" 
+                label="Village"
+                placeholder="e.g., Toronto"
+              />
             </div>
 
             <div>
@@ -233,11 +261,18 @@ export default function UserDataImport() {
                 name="dreamJob"
                 id="dream-job"
                 label="Dream Job"
+                placeholder="e.g., Pilot"
               />
             </div>
 
             <div>
-              <Input type="text" id="hobby" name="hobby" label="Hobby" />
+              <Input 
+                type="text" 
+                id="hobby" 
+                name="hobby" 
+                label="Hobby"
+                placeholder="e.g., Reading"
+              />
             </div>
 
             <div>
@@ -246,6 +281,17 @@ export default function UserDataImport() {
                 name="favoriteColor"
                 id="favorite-color"
                 label="Favorite Color"
+                placeholder="e.g., Blue"
+              />
+            </div>
+
+            <div>
+              <Input
+                type="text"
+                name="favoriteAnimal"
+                id="favorite-animal"
+                label="Favorite Animal"
+                placeholder="e.g., Dog"
               />
             </div>
           </div>
@@ -256,6 +302,7 @@ export default function UserDataImport() {
               rows={3}
               maxLength={50}
               label="Bio/Challenges Faced"
+              placeholder="Write a short bio or mention any challenges you face."
             />
           </div>
 
