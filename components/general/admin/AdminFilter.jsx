@@ -7,6 +7,7 @@ import Button from "../Button";
 import Dropdown from "../Dropdown";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { set } from "nprogress";
 
 export default function AdminFilter({
   setStatus,
@@ -22,6 +23,7 @@ export default function AdminFilter({
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
   const [endFilter, setEndFilter] = useState(end || "2025-01-01");
+  const [currentFilter, setCurrentFilter] = useState("");
 
   useEffect(() => {
     setStatusFilter(status || "");
@@ -83,9 +85,9 @@ export default function AdminFilter({
           </label>
           
           <Dropdown
-          options={statusOptions}
-          valueChange={setStatusFilter}
-          currentValue={statusFilter}
+          options={statusOptions.keys().toArray()}
+          valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
+          currentValue={currentFilter}
           text="Status"
           />
         </div>
