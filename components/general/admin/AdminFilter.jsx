@@ -31,23 +31,21 @@ export default function AdminFilter({
 
 
 
-  const applyFilter = (e) => {
+  const applyFilter = async(e) => {
     e.preventDefault();
-    setLoading(true);
-    filter(statusFilter, startFilter, endFilter);
-    setLoading(false);
+    await filter(statusFilter, startFilter, endFilter);
+
   };
 
 
 
-  const clearFilter = (e) => {
+  const clearFilter = async(e) => {
     e.preventDefault()
-    setLoading(true);
     setStatusFilter("Sent");
     setStartFilter("");
     setEndFilter("");
-    filter("Sent", null, null);
-    setLoading(false);
+    await filter("Sent", null, null);
+  
   };
 
 

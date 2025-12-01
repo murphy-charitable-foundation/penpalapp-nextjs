@@ -81,6 +81,7 @@ export default function Admin() {
 
     useEffect(() => {
       const letterGrab = async() => {
+        setIsLoading(true);
         setDocuments([]);
         try {
           // Fetch initial batch of letters
