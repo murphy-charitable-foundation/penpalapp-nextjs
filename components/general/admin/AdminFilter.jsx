@@ -16,6 +16,8 @@ export default function AdmminFilter({
   setEnd,
   end,
   filter,
+  loading,
+  setLoading
 }) {
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
@@ -31,18 +33,21 @@ export default function AdmminFilter({
 
   const applyFilter = (e) => {
     e.preventDefault();
+    setLoading(true);
     filter(statusFilter, startFilter, endFilter);
+    setLoading(false);
   };
 
 
 
-  const clearFilter = () => {
-    setStatus(null);
-    setStart(null);
-    setEnd(null);
-    setStatusFilter([]);
+  const clearFilter = (e) => {
+    e.preventDefault()
+    setLoading(true);
+    setStatusFilter("Sent");
     setStartFilter("");
     setEndFilter("");
+    filter([], null, null);
+    setLoading(false);
   };
 
 
@@ -51,18 +56,18 @@ export default function AdmminFilter({
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
       <form className="flex flex-col gap-6">
-        <div>
-        <text className="text-black">Start date:</text>
+        <div className=" flex flex-row justify-between">
+          <label className="text-black mt-[auto] mb-[auto]">Start date:</label>
 
-        <DatePicker selected={startFilter}
-         placeHolder={"Select A Date"}
-         maxDate={endFilter} 
-         onChange={(date) => setStartFilter(date)} 
-         className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
-         calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
+          <DatePicker selected={startFilter}
+          placeHolder={"Select A Date"}
+          maxDate={endFilter} 
+          onChange={(date) => setStartFilter(date)} 
+          className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
+          calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
         </div>
-        <div>
-          <text className="text-black" >End date:</text>
+        <div className="flex flex-row justify-between">
+          <label className="text-black  mt-[auto] mb-[auto]" >End date:</label>
 
           <DatePicker selected={endFilter}
            placeHolder={"Select A Date"}

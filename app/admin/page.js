@@ -10,20 +10,17 @@ import BottomNavBar from '../../components/bottom-nav-bar';
 import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter } from "firebase/firestore";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
 import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
-
-
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import EmptyState from "../../components/general/letterhome/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
-import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
+import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
 
 export default function Admin() {
@@ -156,9 +153,7 @@ export default function Admin() {
             };
           })
         );
-        console.log("New Docs");
-        console.log(newDocs);
-        console.log("-----------------");
+        
         setDocuments((prev) => [...prev, ...newDocs]);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
@@ -178,7 +173,7 @@ export default function Admin() {
   }
 
     if (documents == null) {
-      return <LoadingSpinner/>
+      return <LetterHomeSkeleton/>
     }
     
     return (
@@ -201,29 +196,19 @@ export default function Admin() {
                   start={startDate} 
                   setEnd={setEndDate} 
                   end={endDate}
-                  filter={filter} />
+                  filter={filter}
+                  loading={isLoading}
+                  setLoading={setIsLoading}  />
                 
                 ) : (
                   <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-                    <ProfileHeader 
-                      userName={userName}
-                      country={country}
-                      profileImage={profileImage}
-                      id={userId}
-                    />
             
                     <main className="p-6">
                       <section className="mt-8">
-                        <h2 className="text-xl mb-4 text-gray-800 flex justify-between items-center">
-                          Recent letters
-                        </h2>
-                        {documents.length > 0 ? (
+                        {!isLoading ? (
                           <ConversationList conversations={documents}/>
                         ) : (
-                          <EmptyState 
-                            title="New friends are coming!"
-                            description="Many friends are coming hang tight!"
-                          />
+                          <LetterHomeSkeleton />
                         )}
                       </section>
                   </main>
