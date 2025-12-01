@@ -8,7 +8,7 @@ import Dropdown from "../Dropdown";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function AdmminFilter({
+export default function AdminFilter({
   setStatus,
   status,
   setStart,
@@ -46,7 +46,7 @@ export default function AdmminFilter({
     setStatusFilter("Sent");
     setStartFilter("");
     setEndFilter("");
-    filter([], null, null);
+    filter("Sent", null, null);
     setLoading(false);
   };
 
