@@ -89,6 +89,7 @@ export default function Admin() {
 
   useEffect(() => {
     const letterGrab = async () => {
+      setIsLoading(true);
       setDocuments([]);
       try {
         // Fetch initial batch of letters
@@ -161,7 +162,7 @@ export default function Admin() {
             };
           })
         );
-        
+
         setDocuments((prev) => [...prev, ...newDocs]);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
@@ -182,7 +183,7 @@ export default function Admin() {
   };
 
   if (documents == null) {
-    return <p>Loading....</p>;
+    return <LetterHomeSkeleton />;
   }
 
     if (documents == null) {
