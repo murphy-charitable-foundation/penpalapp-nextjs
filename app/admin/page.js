@@ -37,43 +37,35 @@ export default function Admin() {
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
-    const [userName, setUserName] = useState("");
-    const [userId, setUserId] = useState("");
-    const [userType, setUserType] = useState("");
-    const [country, setCountry] = useState("");
-    const [letters, setLetters] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [profileImage, setProfileImage] = useState("");
-    const [lastDoc, setLastDoc] = useState(null);
-    const [documents, setDocuments] = useState([]);
-    const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("Sent"); // Default filter
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null); // Optional category filter
-    const [showWelcome, setShowWelcome] = useState(false);
-    const [activeFilter, setActiveFilter] = useState(false);
-    const router = useRouter();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
+  const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState("");
+  const [userType, setUserType] = useState("");
+  const [country, setCountry] = useState("");
+  const [letters, setLetters] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [lastDoc, setLastDoc] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState("Sent"); // Default filter
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null); // Optional category filter
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [activeFilter, setActiveFilter] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsLoading(true);
 
-    useEffect(() => {
-      const letterGrab = async() => {
-        setIsLoading(true);
-        setDocuments([]);
-        try {
-          // Fetch initial batch of letters
-          await fetchLetters();
-        } catch (err) {
-          console.error("Error fetching data:", err);
-          setError("Failed to load data.");
-        } finally {
-          setIsLoading(false);
-        }
+      if (!user) {
+        setError("No user logged in.");
+        setIsLoading(false);
+        router.push("/login");
+        return;
       }
       setUserId(user.uid);
       const userRef = doc(collection(db, "users"), user.uid);
@@ -98,6 +90,7 @@ export default function Admin() {
 
   useEffect(() => {
     const letterGrab = async () => {
+      setIsLoading(true);
       setDocuments([]);
       try {
         // Fetch initial batch of letters
@@ -117,9 +110,17 @@ export default function Admin() {
       let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
-      let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
-      const queryConstraints = [where("status", "==", selectedStatusMap[selectedStatus]), where("content", "!=", ""), limit(5)];
-      
+      let selectedStatusMap = {
+        Sent: "sent",
+        "Pending Review": "pending",
+        Rejected: "rejected",
+      };
+      const queryConstraints = [
+        where("status", "==", selectedStatusMap[selectedStatus]),
+        where("content", "!=", ""),
+        limit(5),
+      ];
+
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
       }
@@ -170,7 +171,7 @@ export default function Admin() {
             };
           })
         );
-        
+
         setDocuments((prev) => [...prev, ...newDocs]);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
@@ -190,52 +191,18 @@ export default function Admin() {
   };
 
   if (documents == null) {
-    return <p>Loading....</p>;
+    return <LetterHomeSkeleton />;
   }
 
-    if (documents == null) {
-      return <LetterHomeSkeleton/>
-    }
-    
-    return (
-        <PageBackground>
-              <PageContainer maxWidth="lg">
-              <BackButton />
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
-            
-             
-              
-              <WelcomeToast 
-                userName={userName}
-                isVisible={showWelcome}
-                onClose={() => setShowWelcome(false)}
-              />
-              {activeFilter ? (
-                  <AdminFilter setStatus={setSelectedStatus} 
-                  status={selectedStatus} 
-                  setStart={setStartDate} 
-                  start={startDate} 
-                  setEnd={setEndDate} 
-                  end={endDate}
-                  filter={filter}
-                  loading={isLoading}
-                  setLoading={setIsLoading}  />
-                
-                ) : (
-                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-            
-                    <main className="p-6">
-                      <section className="mt-8">
-                        {!isLoading ? (
-                          <ConversationList conversations={documents}/>
-                        ) : (
-                          <LetterHomeSkeleton />
-                        )}
-                      </section>
-                  </main>
-                  </div>
-                )}
-                <BottomNavBar />
+  return (
+    <PageBackground>
+      <PageContainer maxWidth="lg">
+        <BackButton />
+        <Header
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          title={"Select message types"}
+        />
 
         <WelcomeToast
           userName={userName}
@@ -251,18 +218,17 @@ export default function Admin() {
             setEnd={setEndDate}
             end={endDate}
             filter={filter}
+            loading={isLoading}
+            setLoading={setIsLoading}
           />
         ) : (
           <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-            <main className="p-6 pt-0">
+            <main className="p-6">
               <section className="mt-8">
-                {documents.length > 0 ? (
+                {!isLoading ? (
                   <ConversationList conversations={documents} />
                 ) : (
-                  <EmptyState
-                    title="New friends are coming!"
-                    description="Many friends are coming hang tight!"
-                  />
+                  <LetterHomeSkeleton />
                 )}
               </section>
             </main>
