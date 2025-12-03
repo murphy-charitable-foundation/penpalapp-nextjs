@@ -4,26 +4,30 @@ import sendgrid from "@sendgrid/mail";
 
 import { db, auth } from "../../firebaseAdmin";
 import { logError } from "../../utils/analytics";
+import { formatListWithAnd } from "../../utils/deadChat";
 
 const SENDER_EMAIL = "penpal@murphycharity.org";
 
 const sendEmail = async (letterBoxId, members, toEmails, reason) => {
-  try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY);
-    let message;
-    if (reason == "admin") {
-      message = `Hello Richard, it seems that a chat in a letterbox with the id: ${letterBoxId}, involving the user/s:${members.map(
-        (member) => ` ${member.firstName} ${member.lastName},`
-      )} has stalled because the user/s with the email/s ${toEmails.map(
-        (email) => ` ${email},`
-      )} has stopped responding. Consider contacting them to see if the chat can be reignited.`;
-    } else {
-      message = `Hello, it seems that your chat in a letterbox with the id: ${letterBoxId}, involving the user/s:${members.map(
-        (member) => ` ${member.firstName} ${member.lastName},`
-      )}, has stalled. Consider contacting them to see if the chat can be reignited.`;
-    }
-
-    const emailHtml = `
+  let message;
+  const membersNames = members.map(
+    (member) =>
+      `${member.firstName ? member.firstName : ""}${
+        member.firstName && member.firstName ? " " : ""
+      }${member.lastName ? member.lastName : ""}`
+  );
+  if (reason == "admin") {
+    message = `Hello Richard, it seems that a chat in a letterbox with the id: ${letterBoxId}, involving the user/s: ${formatListWithAnd(
+      membersNames
+    )} has stalled because the user/s with the email/s: ${formatListWithAnd(
+      toEmails
+    )} has stopped responding. Consider contacting them to see if the chat can be reignited.`;
+  } else {
+    message = `Hello, it seems that your chat in a letterbox with the id: ${letterBoxId}, involving the user/s: ${formatListWithAnd(
+      membersNames
+    )} has stalled. Consider contacting them to see if the chat can be reignited.`;
+  }
+  const emailHtml = `
           <html>
             <head>
               <style>
@@ -77,35 +81,45 @@ const sendEmail = async (letterBoxId, members, toEmails, reason) => {
             </body>
           </html>
         `;
-    let msg;
-    if (reason == "admin") {
-      msg = {
-        // to: "penpal@murphycharity.org",
-        to: ["anjosantos92@gmail.com", "santos.nicol.angelo@gmail.com"],
-        from: SENDER_EMAIL, // Your verified sender email
-        subject: "Message Reported",
-        text: message || "No message provided.",
-        html: emailHtml,
-      };
-    } else {
-      msg = {
-        to: ["anjosantos92@gmail.com", "santos.nicol.angelo@gmail.com"],
-        // to: toEmails,
-        from: SENDER_EMAIL, // Your verified sender email
-        subject: "Message Reported",
-        text: message || "No message provided.",
-        html: emailHtml,
-      };
-    }
 
+  let msg;
+  if (reason == "admin") {
+    msg = {
+      // to: "penpal@murphycharity.org",
+      to: ["anjosantos92@gmail.com", "santos.nicol.angelo@gmail.com"],
+      from: SENDER_EMAIL, // Your verified sender email
+      subject: "Message Reported",
+      text: message || "No message provided.",
+      html: emailHtml,
+    };
+  } else {
+    msg = {
+      to: ["anjosantos92@gmail.com", "santos.nicol.angelo@gmail.com"],
+      // to: toEmails,
+      from: SENDER_EMAIL, // Your verified sender email
+      subject: "Message Reported",
+      text: message || "No message provided.",
+      html: emailHtml,
+    };
+  }
+  try {
+    sendgrid.setApiKey(process.env.SENDGRID_KEY);
     // Send the email
     await sendgrid.send(msg);
-    return { success: true };
+    return {
+      success: true,
+      msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
+    };
   } catch (error) {
     logError(error, {
       description: "Failed to send email.",
     });
-    throw error;
+    throw {
+      message: "Failed to send email.",
+      error: error.message,
+      details: error.response?.body?.errors?.map((error) => error.message),
+      msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
+    };
   }
 };
 
@@ -149,6 +163,8 @@ export async function POST(request) {
     });
     const letterBoxes = await Promise.all(letterBoxesPromises);
 
+    const emailPromises = [];
+
     for (const letterBox of letterBoxes) {
       const latestMessageTimestamp = letterBox?.latestLetter?.created_at;
       if (latestMessageTimestamp) {
@@ -161,11 +177,14 @@ export async function POST(request) {
         const membersSnapshot = await usersRef
           .where(FieldPath.documentId(), "in", letterBox.members)
           .get();
-        const allMembers = membersSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          firstName: doc.first_name,
-          lastName: doc.last_name,
-        }));
+        const allMembers = membersSnapshot.docs.map((doc) => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            firstName: docData.first_name,
+            lastName: docData.last_name,
+          };
+        });
 
         const userPromises = letterBox.members.map((uid) =>
           auth.getUser(uid).catch((err) => {
@@ -177,18 +196,45 @@ export async function POST(request) {
           .filter((record) => record !== null)
           .map((record) => record.email);
 
-        if (diffDays == 15) {
-          await sendEmail(letterBox.id, allMembers, emails, "user");
-        } else if (diffDays == 30) {
-          await sendEmail(letterBox.id, allMembers, emails, "user");
-          await sendEmail(letterBox.id, allMembers, emails, "admin");
+        if (diffDays >= 15) {
+          emailPromises.push(
+            sendEmail(letterBox.id, allMembers, emails, "user").catch(
+              (err) => err
+            )
+          );
+        }
+        if (diffDays >= 30) {
+          emailPromises.push(
+            sendEmail(letterBox.id, allMembers, emails, "admin").catch(
+              (err) => err
+            )
+          );
         }
       }
     }
 
+    const emailResults = await Promise.allSettled(emailPromises);
+    const successEmails = [];
+    const failedEmails = [];
+
+    emailResults.forEach((result) => {
+      if (result.status === "fulfilled") {
+        const value = result.value;
+        if (value && value.success) {
+          successEmails.push(value);
+        } else if (value && value.error) {
+          failedEmails.push(value);
+        }
+      } else {
+        failedEmails.push(result);
+      }
+    });
+
     return NextResponse.json(
       {
         message: "Email sent successfully!",
+        successEmails: successEmails,
+        failedEmails: failedEmails,
         letterBoxes: letterBoxes,
       },
       { status: 200 }

@@ -138,3 +138,12 @@ export const iterateLetterBoxes = async () => {
     }
   }
 };
+
+export const formatListWithAnd = (arr) => {
+  if (!arr || arr.length === 0) return "[]";
+  if (arr.length === 1) return `[${arr[0]}]`;
+  if (arr.length === 2) return `[${arr[0]} and ${arr[1]}]`;
+  const allButLast = arr.slice(0, -1).join(", ");
+  const last = arr[arr.length - 1];
+  return `[${allButLast}, & ${last}]`;
+};
