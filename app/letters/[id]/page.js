@@ -540,73 +540,6 @@ export default function Page({ params }) {
     }
   };
 
-const loadMessages = async () => {
-  if (!user || !lettersRef) return;
-
-  try {
-    const userRefDoc = doc(db, "users", user.uid);
-
-    // All messages written BY ME (any status)
-    const myMessagesQuery = query(
-      lettersRef,
-      where("sent_by", "==", userRefDoc),
-      orderBy("created_at", "asc")
-    );
-
-    // All messages with status = "sent" (approval by admin)
-    const sentMessagesQuery = query(
-      lettersRef,
-      where("status", "==", "sent"),
-      orderBy("created_at", "asc")
-    );
-
-    const [mySnap, sentSnap] = await Promise.all([
-      getDocs(myMessagesQuery),
-      getDocs(sentMessagesQuery),
-    ]);
-
-    const all = [];
-
-    const pushDocs = (snap) => {
-      snap.forEach((docSnap) => {
-        const msg = {
-          id: docSnap.id,
-          ...docSnap.data(),
-          created_at: docSnap.data().created_at?.toDate(),
-          updated_at: docSnap.data().updated_at?.toDate(),
-        };
-
-        // Normalize Firestore DocumentReference → { id }
-        if (msg.sent_by?.path) {
-          msg.sent_by = {
-            id: msg.sent_by.path.split("/")[1],
-          };
-        }
-
-        all.push(msg);
-      });
-    };
-
-    pushDocs(mySnap);
-    pushDocs(sentSnap);
-
-    // remove duplicates
-    const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
-
-    // sort chronologically
-    unique.sort((a, b) => a.created_at - b.created_at);
-
-    setAllMessages(unique);
-
-    setTimeout(() => scrollToBottom(true), 300);
-  } catch (err) {
-    console.error("❌ loadMessages ERROR", err);
-  }
-};
-
-
-
-
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
@@ -762,74 +695,57 @@ const loadMessages = async () => {
         }
 
         if (fetchedRecipients?.length > 0) {
-          const sentQuery = query(
+          const userRefDoc = doc(db, "users", currentUser.uid);
+
+          // All messages written BY ME (any status)
+          const myMessagesQuery = query(
+            lRef,
+            where("sent_by", "==", userRefDoc),
+            orderBy("created_at", "asc")
+          );
+      
+          // All messages with status = "sent" (approval by admin)
+          const sentMessagesQuery = query(
             lRef,
             where("status", "==", "sent"),
-            orderBy("created_at", "desc"),
-            limit(20)
+            orderBy("created_at", "asc")
           );
-
-          const myPendingQuery = query(
-            lRef,
-            where("status", "==", "pending_review"),
-            where("sent_by", "==", userDocRef),
-            orderBy("created_at", "desc"),
-            limit(20)
-          );
-          
-              const myRejectedQuery = query(
-              lRef,
-              where("status", "==", "rejected"),
-              where("sent_by", "==", userDocRef),
-              orderBy("created_at", "desc"),
-              limit(20)
-            );
-
-
-          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery), getDocs(myRejectedQuery)];
-
-          const snapshots = await Promise.all(queryPromises);
-
-
-
-          const allFetchedMessages = [];
-
-          snapshots.forEach((snapshot, index) => {
-            snapshot.docs.forEach((docSnap) => {
-              const messageData = {
+      
+          const [mySnap, sentSnap] = await Promise.all([
+            getDocs(myMessagesQuery),
+            getDocs(sentMessagesQuery),
+          ]);
+      
+          const all = [];
+      
+          const pushDocs = (snap) => {
+            snap.forEach((docSnap) => {
+              const msg = {
                 id: docSnap.id,
                 ...docSnap.data(),
-                created_at:
-                  docSnap.data().created_at?.toDate?.() ||
-                  docSnap.data().created_at,
-                updated_at:
-                  docSnap.data().updated_at?.toDate?.() ||
-                  docSnap.data().updated_at,
+                created_at: docSnap.data().created_at?.toDate(),
+                updated_at: docSnap.data().updated_at?.toDate(),
               };
-
-            if (messageData.sent_by?.path) {
-                messageData.sent_by = {
-                  id: messageData.sent_by.path.split("/")[1],
+      
+              // Normalize Firestore DocumentReference → { id }
+              if (msg.sent_by?.path) {
+                msg.sent_by = {
+                  id: msg.sent_by.path.split("/")[1],
                 };
-              }    
-
-
-              allFetchedMessages.push(messageData);
+              }
+      
+              all.push(msg);
             });
-          });
-
-          const sortedMessages = allFetchedMessages.sort((a, b) => {
-            const aTime =
-              a.created_at instanceof Date
-                ? a.created_at
-                : a.created_at.toDate();
-            const bTime =
-              b.created_at instanceof Date
-                ? b.created_at
-                : b.created_at.toDate();
-            return aTime.getTime() - bTime.getTime();
-          });
-
+          };
+      
+          pushDocs(mySnap);
+          pushDocs(sentSnap);
+      
+          // remove duplicates
+          const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
+      
+          // sort chronologically
+          const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
               if (message.sent_by?.id !== currentUser.uid) {
