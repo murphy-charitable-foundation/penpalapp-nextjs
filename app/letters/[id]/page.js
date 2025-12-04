@@ -33,10 +33,10 @@ import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
-import Dialog from "../../../components/general/Dialog";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
+
 
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
   try {
@@ -89,12 +89,14 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     return null;
   } catch (error) {
-    logError(error, { description: "fetchDraft error" });
+    console.error("❌ fetchDraft error:", error);
     return null;
   }
 };
 
 export default function Page({ params }) {
+
+
   const { id } = params;
 
   const auth = getAuth();
@@ -138,6 +140,7 @@ export default function Page({ params }) {
   const [reportSender, setReportSender] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
+
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -210,13 +213,13 @@ export default function Page({ params }) {
 
         return Promise.resolve();
       } catch (error) {
-        logError(error, { description: "saveDraft error" });
+        console.error("❌ saveDraft error:", error);
 
         if (error.code === "permission-denied") {
-          logError(error, { description: "Permission denied error in saveDraft" });
+          console.error("🔒 Permission denied error");
           alert("Permission denied. Please check your access rights.");
         } else if (error.code === "not-found") {
-          logError(error, { description: "Document not found error in saveDraft" });
+          console.error("🔍 Document not found, attempting retry...");
           setDraft(null);
           if (trimmedContent) {
             try {
@@ -270,6 +273,7 @@ export default function Page({ params }) {
           }
         }, 1000);
         setDraftTimer(timer);
+      } else {
       }
     } else {
       setHasDraftContent(false);
@@ -283,6 +287,7 @@ export default function Page({ params }) {
 
           setIsXButtonDisabled(false);
         } catch (error) {
+          console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
@@ -361,9 +366,7 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      logError(error, {
-        description: "Failed to update message:",
-      });
+      console.error("❌ handleUpdateMessage error:", error);
 
       if (error.code === "permission-denied") {
         alert(
@@ -537,84 +540,6 @@ export default function Page({ params }) {
     }
   };
 
-  const loadMessages = async () => {
-    if (!user || !id || !recipients.length || !lettersRef) {
-      return;
-    }
-
-    try {
-      const sentQuery = query(
-        lettersRef,
-        where("status", "==", "sent"),
-        orderBy("created_at", "desc"),
-        limit(20)
-      );
-
-      const myPendingQuery = query(
-        lettersRef,
-        where("status", "==", "pending_review"),
-        where("sent_by", "==", userRef),
-        orderBy("created_at", "desc"),
-        limit(20)
-      );
-
-      const otherUserRefs = recipients
-        .filter((r) => r.id !== user.uid)
-        .map((r) => doc(db, "users", r.id));
-
-      const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
-
-      const snapshots = await Promise.all(queryPromises);
-
-      const allFetchedMessages = [];
-
-      snapshots.forEach((snapshot, index) => {
-        snapshot.docs.forEach((doc) => {
-          const messageData = {
-            id: doc.id,
-            ...doc.data(),
-            created_at:
-              doc.data().created_at?.toDate?.() || doc.data().created_at,
-            updated_at:
-              doc.data().updated_at?.toDate?.() || doc.data().updated_at,
-          };
-          allFetchedMessages.push(messageData);
-        });
-      });
-
-      const sortedMessages = allFetchedMessages.sort((a, b) => {
-        const aTime =
-          a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
-        const bTime =
-          b.created_at instanceof Date ? b.created_at : new Date(b.created_at);
-        return aTime.getTime() - bTime.getTime();
-      });
-
-      const messagesWithSenderInfo = await Promise.all(
-        sortedMessages.map(async (message) => {
-          if (message.sent_by?.id !== user.uid) {
-            const recipient = recipients.find(
-              (r) => r.id === message.sent_by?.id
-            );
-            if (recipient) {
-              message.senderLocation = recipient.location || "";
-            }
-          }
-          return message;
-        })
-      );
-
-      setAllMessages(messagesWithSenderInfo);
-      setTimeout(() => {
-        scrollToBottom(true);
-      }, 300);
-    } catch (error) {
-      logError(error, {
-        description: "LOAD MESSAGES ERROR:",
-      });
-    }
-  };
-
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
@@ -628,9 +553,7 @@ export default function Page({ params }) {
       try {
         await saveDraft(messageContent);
       } catch (error) {
-        logError(error, {
-          description: "Failed to save draft before editing message:",
-        })
+        console.error("❌ Failed to save draft before editing message:", error);
         const confirmSwitch = window.confirm(
           "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
         );
@@ -673,7 +596,7 @@ export default function Page({ params }) {
           setHasDraftContent(false);
         }
       } catch (error) {
-        logError(error, { description: "Error fetching draft" });
+        console.error("❌ Error fetching draft:", error);
         setMessageContent("");
         setHasDraftContent(false);
       }
@@ -694,6 +617,7 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
+
     const chat_user = localStorage.getItem("chat_user");
     setUserType(chat_user);
 
@@ -706,6 +630,9 @@ export default function Page({ params }) {
       }
 
       setUser(currentUser);
+        
+
+      
 
       try {
         const letterboxRef = doc(db, "letterbox", id);
@@ -713,10 +640,6 @@ export default function Page({ params }) {
 
         if (!letterboxDoc.exists()) {
           console.error("❌ Letterbox does not exist:", id);
-          logError(new Error("Letterbox does not exist"), {
-            description: "Letterbox does not exist:",
-            letterbox: id,
-          });
           setIsLoading(false);
           return;
         }
@@ -772,59 +695,57 @@ export default function Page({ params }) {
         }
 
         if (fetchedRecipients?.length > 0) {
-          const sentQuery = query(
+          const userRefDoc = doc(db, "users", currentUser.uid);
+
+          // All messages written BY ME (any status)
+          const myMessagesQuery = query(
+            lRef,
+            where("sent_by", "==", userRefDoc),
+            orderBy("created_at", "asc")
+          );
+      
+          // All messages with status = "sent" (approval by admin)
+          const sentMessagesQuery = query(
             lRef,
             where("status", "==", "sent"),
-            orderBy("created_at", "desc"),
-            limit(20)
+            orderBy("created_at", "asc")
           );
-
-          const myPendingQuery = query(
-            lRef,
-            where("status", "==", "pending_review"),
-            where("sent_by", "==", userDocRef),
-            orderBy("created_at", "desc"),
-            limit(20)
-          );
-
-          const otherUserRefs = fetchedRecipients
-            .filter((r) => r.id !== currentUser.uid)
-            .map((r) => doc(db, "users", r.id));
-
-          const queryPromises = [getDocs(sentQuery), getDocs(myPendingQuery)];
-
-          const snapshots = await Promise.all(queryPromises);
-
-          const allFetchedMessages = [];
-
-          snapshots.forEach((snapshot, index) => {
-            snapshot.docs.forEach((docSnap) => {
-              const messageData = {
+      
+          const [mySnap, sentSnap] = await Promise.all([
+            getDocs(myMessagesQuery),
+            getDocs(sentMessagesQuery),
+          ]);
+      
+          const all = [];
+      
+          const pushDocs = (snap) => {
+            snap.forEach((docSnap) => {
+              const msg = {
                 id: docSnap.id,
                 ...docSnap.data(),
-                created_at:
-                  docSnap.data().created_at?.toDate?.() ||
-                  docSnap.data().created_at,
-                updated_at:
-                  docSnap.data().updated_at?.toDate?.() ||
-                  docSnap.data().updated_at,
+                created_at: docSnap.data().created_at?.toDate(),
+                updated_at: docSnap.data().updated_at?.toDate(),
               };
-              allFetchedMessages.push(messageData);
+      
+              // Normalize Firestore DocumentReference → { id }
+              if (msg.sent_by?.path) {
+                msg.sent_by = {
+                  id: msg.sent_by.path.split("/")[1],
+                };
+              }
+      
+              all.push(msg);
             });
-          });
-
-          const sortedMessages = allFetchedMessages.sort((a, b) => {
-            const aTime =
-              a.created_at instanceof Date
-                ? a.created_at
-                : a.created_at.toDate();
-            const bTime =
-              b.created_at instanceof Date
-                ? b.created_at
-                : b.created_at.toDate();
-            return aTime.getTime() - bTime.getTime();
-          });
-
+          };
+      
+          pushDocs(mySnap);
+          pushDocs(sentSnap);
+      
+          // remove duplicates
+          const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
+      
+          // sort chronologically
+          const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
               if (message.sent_by?.id !== currentUser.uid) {
@@ -845,6 +766,7 @@ export default function Page({ params }) {
           setAllMessages(messagesWithSenderInfo);
         }
       } catch (error) {
+        console.error("❌ INITIALIZATION ERROR:", error);
         logError(error, {
           description: "INITIALIZATION ERROR:",
         });
@@ -856,7 +778,7 @@ export default function Page({ params }) {
     return () => {
       unsubscribe();
     };
-  }, [auth, id, router]);
+  }, [id, router]);
 
   useEffect(() => {
     return () => {
@@ -884,7 +806,10 @@ export default function Page({ params }) {
   };
 
   const getSenderLocation = (message) => {
-    const isSenderUser = message.sent_by?.id === user?.uid;
+    const isSenderUser =
+  message.sent_by?.id === user?.uid ||
+  message.sent_by?.path === `users/${user?.uid}`;
+
     if (isSenderUser) {
       return userLocation || "";
     } else {
@@ -964,7 +889,7 @@ export default function Page({ params }) {
                     setIsEditing(false);
                   }
                 } catch (error) {
-                  logError(error, { description: "Failed to restore draft after canceling edit" });
+                  console.error("❌ Failed to restore draft:", error);
                   setMessageContent("");
                   setDraft(null);
                   setHasDraftContent(false);
@@ -975,8 +900,7 @@ export default function Page({ params }) {
                 setEditingMessageOriginalContent("");
                 setSelectedMessageId(null);
               }}
-              className="text-amber-600 hover:text-amber-800 text-sm underline"
-            >
+              className="text-amber-600 hover:text-amber-800 text-sm underline">
               Cancel
             </button>
           </div>
@@ -1000,13 +924,8 @@ export default function Page({ params }) {
               <div key={messageId}>
                 <div
                   className={`border-b border-gray-200 ${
-                    isSelected
-                      ? "bg-white"
-                      : index % 2 === 0
-                      ? "bg-white"
-                      : "bg-gray-50"
-                  }`}
-                >
+                    isSelected ? "bg-white" : "bg-gray-50"
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                   <div
                     className="px-4 py-3"
                     onClick={() => selectMessage(messageId)}>
@@ -1046,11 +965,22 @@ export default function Page({ params }) {
                         <div className="text-gray-500 text-sm">
                           {formatTime(message.created_at)}
                         </div>
+                      </div>
+                    </div>
+                  </div>
 
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16 relative">
+                          <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
                           {!isSenderUser && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+
                                 setReportSender(message.sent_by.id);
                                 setReportContent(message.content);
                                 setShowReportPopup(true);
@@ -1060,70 +990,67 @@ export default function Page({ params }) {
                                 );
                               }}
                               className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
-                              <FaExclamationCircle className="mr-1" size={20} />
+                              <FaExclamationCircle className="mr-1" size={10} />
+                              Report
                             </button>
                           )}
-
-                      </div>
-                    </div>
-                  </div>
-
-                  {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16 relative">
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        <div className="flex items-center gap-3 mt-2">
                           {/* STATUS BANNER */}
                           {isSenderUser && (
                             <>
                               {/* REJECTED */}
-                              {message.status === "rejected" && (
-                               <div className="flex justify-end w-full">
-                                 <AlertTriangle className="w-5 h-5 text-red-500" />
-                               </div>                              )}
+                              {isSenderUser && message.status === "rejected" &&(
+                              <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
+                                <div className="flex items-start text-red-700 font-semibold">
+                                  <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                  <div>
+                                    <div>Your letter was not sent.</div>
+
+                                    {message.rejection_reason && (
+                                      <div className="text-sm text-red-600 mt-1">
+                                        {message.rejection_reason}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                               {/* SENT → GREEN CHECK */}
                               {message.status === "sent" && (
-                                <span className="text-green-500 text-lg font-bold flex justify-end w-full">
-                                  ✓
-                                </span>
+                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
                               )}
                               {/* PENDING REVIEW → GRAY DASHED CHECK */}
                               {message.status === "pending_review" && (
                                 <div className="flex items-center justify-end w-full">
-                                  {/* Wrapper so the check can stick to the button */}
-                                  <div className="relative inline-flex">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
+                              {/* Wrapper so the check can stick to the button */}
+                              <div className="relative inline-flex">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
 
-                                        handleEditMessage(message);
-                                        logButtonEvent(
-                                          "Edit message clicked!",
-                                          "/letters/[id]"
-                                        );
-                                      }}
-                                      className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
-                                      title="Edit message"
-                                    >
-                                      Edit
-                                    </button>
+                                    handleEditMessage(message);
+                                    logButtonEvent(
+                                      "Edit message clicked!",
+                                      "/letters/[id]"
+                                    );
+                                  }}
+                                  className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
+                                  title="Edit message"
+                                >
+                                  Edit
+                                </button>
 
-                                    {/* Check badge in bottom-right of the button */}
-                                    <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                      <span className="text-gray-400 text-xs font-bold">
-                                        ✓
-                                      </span>
-                                    </div>
-                                  </div>
+                                {/* Check badge in bottom-right of the button */}
+                                <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                  <span className="text-gray-400 text-xs font-bold">✓</span>
                                 </div>
-                              )}
+                              </div>
+                            </div>
+                            )}
                             </>
                           )}
                         </div>
                       </div>
-
                     </div>
                   )}
                 </div>
@@ -1194,14 +1121,12 @@ export default function Page({ params }) {
               <div className="flex space-x-3">
                 <button
                   onClick={handleContinueEditing}
-                  className="flex-1 !bg-[#4E802A] !text-white py-3 px-4 !rounded-2xl hover:!bg-opacity-90 transition-colors"
-                >
+                  className="flex-1 !bg-[#4E802A] !text-white py-3 px-4 !rounded-2xl hover:!bg-opacity-90 transition-colors">
                   Stay on page
                 </button>
                 <button
                   onClick={handleConfirmClose}
-                  className="flex-1 !bg-gray-200 !text-[#4E802A] py-3 px-4 !rounded-2xl hover:!bg-gray-300 transition-colors"
-                >
+                  className="flex-1 !bg-gray-200 !text-[#4E802A] py-3 px-4 !rounded-2xl hover:!bg-gray-300 transition-colors">
                   {editingMessageId ? "Discard" : "Close"}
                 </button>
               </div>
