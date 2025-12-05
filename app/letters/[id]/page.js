@@ -975,7 +975,7 @@ export default function Page({ params }) {
                           <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
-                        <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
                             <button
                               onClick={(e) => {
