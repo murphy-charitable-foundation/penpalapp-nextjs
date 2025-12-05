@@ -30,6 +30,7 @@ import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
+import DeadletterButton from "../../components/deadletter-button/DeadletterButton";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
 
@@ -235,6 +236,7 @@ export default function Admin() {
           </div>
         )}
         <BottomNavBar />
+        <DeadletterButton />
 
         {userType === "admin" && (
           <Button
