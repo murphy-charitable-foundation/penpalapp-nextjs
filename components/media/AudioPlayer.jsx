@@ -71,7 +71,7 @@ const AudioPlayer = ({ src }) => {
           <Play size={14} fill="currentColor" className="ml-0.5" />
         )}
       </button>
-      <div className="flex-1 flex flex-col justify-center gap-1">
+      <div className="flex-1 flex flex-col justify-center gap-1 mt-3">
         <input
           type="range"
           min="0"
