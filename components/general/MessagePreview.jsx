@@ -1,6 +1,7 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const MessagePreview = ({
   profileImage,
@@ -63,7 +64,7 @@ const MessagePreview = ({
     return null;
   };
   return (
-    <a
+    <Link
       href={`/letters/${letterboxId}`}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
@@ -73,7 +74,8 @@ const MessagePreview = ({
           : status === "pending_review"
           ? "bg-gray-50"
           : "bg-white"
-      }`}>
+      }`}
+    >
       <div className="flex items-start">
         <Image
           src={imageSrc}
@@ -102,7 +104,8 @@ const MessagePreview = ({
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}>
+        }`}
+      >
         {lastMessage ? (
           <div className="flex">
             {getStatusIcon() && (
@@ -128,7 +131,7 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </Link>
   );
 };
 
