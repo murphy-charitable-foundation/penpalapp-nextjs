@@ -1,11 +1,11 @@
 {
-    "name": "Next.js PWA",
-    "short_name": "NextPWA",
-    "description": "A Progressive Web App built with Next.js",
+    "name": "Pen Pal Magic App",
+    "short_name": "Pen Pal",
+    "description": "To connect 2000 rural Ugandan Children to the World",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#000000",
+    "theme_color": "#65B427",
     "icons": [
       {
         "src": "/murphylogo.png",

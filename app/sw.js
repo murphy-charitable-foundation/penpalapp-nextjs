@@ -6,6 +6,10 @@ const URLS_TO_CACHE = [
   '/',               // cache the root HTML (start_url)
   '/murphylogo.png',    // example icon or other static assets
   // Add other urls: JS bundles, CSS, images, etc.
+  '/cover',
+  '/about',
+  '/contact',
+  '/login',
 ];
 
 // When the SW installs: cache the listed resources
