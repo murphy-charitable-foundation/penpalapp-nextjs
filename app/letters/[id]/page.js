@@ -273,7 +273,6 @@ export default function Page({ params }) {
           }
         }, 1000);
         setDraftTimer(timer);
-      } else {
       }
     } else {
       setHasDraftContent(false);
