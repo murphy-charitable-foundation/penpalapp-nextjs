@@ -22,56 +22,6 @@ export const isDifferentDay = (date1, date2) => {
 };
 
 /**
- * Format date for separator display
- * @param {Date|string|number|Object} timestamp - Timestamp to format
- * @returns {string} - Formatted date string (Today, Yesterday, or full date)
- */
-export const formatDateSeparator = (timestamp) => {
-  if (!timestamp) return "";
-
-  let date;
-  if (timestamp.toDate && typeof timestamp.toDate === "function") {
-    date = timestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    date = timestamp;
-  } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-    date = new Date(timestamp);
-  } else {
-    return "";
-  }
-
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  // Check if it's today
-  if (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  ) {
-    return "Today";
-  }
-
-  // Check if it's yesterday
-  if (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear()
-  ) {
-    return "Yesterday";
-  }
-
-  // Format as date
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-/**
  * Format time for message display
  * @param {Date|string|number|Object} timestamp - Timestamp to format
  * @returns {string} - Formatted time string

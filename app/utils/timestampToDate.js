@@ -5,17 +5,6 @@ export const dateToTimestamp = (date) => {
   return Timestamp.fromDate(date); // Convert back to Firestore Timestamp
 };
 
-
-
-export const timestampToDate = (timestamp) => {
-  // Check if the timestamp is a Firestore Timestamp object
-  if (timestamp && timestamp.toDate) {
-    return timestamp.toDate();
-  }
-  // If not, return an invalid date
-  return new Date(NaN);
-}
-
 //Function to convert timestamp based on this criteria
 // If the timestamp is from today, it displays the time in 12-hour format (e.g., 3:45 PM).
 // If the timestamp is from yesterday, it displays “Yesterday”.
