@@ -131,7 +131,7 @@ export default function Page({ params }) {
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [isXButtonDisabled, setIsXButtonDisabled] = useState(false);
+  const [isSendButtonDisabled, setIsSendButtonDisabled] = useState(false);
   const [isUpdatingFirebase, setIsUpdatingFirebase] = useState(false);
 
   const [showReportPopup, setShowReportPopup] = useState(false);
@@ -280,19 +280,19 @@ export default function Page({ params }) {
       setIsEditing(false);
 
       if (!editingMessageId) {
-        setIsXButtonDisabled(true);
+        setIsSendButtonDisabled(true);
 
         try {
           await saveDraft(newContent);
 
-          setIsXButtonDisabled(false);
+          setIsSendButtonDisabled(false);
         } catch (error) {
           console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
           setTimeout(() => {
-            setIsXButtonDisabled(false);
+            setIsSendButtonDisabled(false);
           }, 3000);
         }
       }
@@ -470,7 +470,7 @@ export default function Page({ params }) {
   };
 
   const handleCloseMessage = async () => {
-    if (isXButtonDisabled || isUpdatingFirebase) {
+    if (isSendButtonDisabled || isUpdatingFirebase) {
       return;
     }
 
@@ -826,37 +826,37 @@ export default function Page({ params }) {
     <div className="bg-gray-100 min-h-screen py-6">
       <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden flex flex-col h-[90vh]">
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
-          {isXButtonDisabled || isUpdatingFirebase ? (
-            <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
-          ) : (
             <button
               onClick={handleCloseMessage}
               className="text-gray-700 cursor-pointer hover:text-gray-900"
               title="Close conversation">
               X
             </button>
-          )}
 
-          {isEditing && (
-            <button
-              onClick={handleSendMessage}
-              disabled={!canSendMessage()}
-              className={`p-1 ${
-                !canSendMessage()
-                  ? "cursor-not-allowed opacity-50"
-                  : "hover:bg-blue-200 rounded"
-              }`}>
-              <Image
-                src="/send-message-icon.png"
-                alt={editingMessageId ? "Update message" : "Send message"}
-                width={30}
-                height={30}
-                className="object-contain"
-                id="send-letter"
-              />
-            </button>
+            {isSendButtonDisabled || isUpdatingFirebase ? (
+              <div className="w-6 h-6 flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+            isEditing && (
+              <button
+                onClick={handleSendMessage}
+                disabled={!canSendMessage()}
+                className={`p-1 ${
+                  !canSendMessage()
+                    ? "cursor-not-allowed opacity-50"
+                    : "hover:bg-blue-200 rounded"
+                }`}>
+                <Image
+                  src="/send-message-icon.png"
+                  alt={editingMessageId ? "Update message" : "Send message"}
+                  width={30}
+                  height={30}
+                  className="object-contain"
+                  id="send-letter"
+                />
+              </button>
+            )
           )}
         </div>
 
