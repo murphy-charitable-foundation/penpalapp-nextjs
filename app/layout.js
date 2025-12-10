@@ -4,6 +4,7 @@ import NavigationStateManager from '../components/loading/NavigationStateManager
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
 
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
