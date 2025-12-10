@@ -6,17 +6,21 @@ import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
-const getUserDoc = async () => {
+export const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };
 
 export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
-  const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try {
+    const path = `profile/${uid}/profile-image`;
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch(e) {
+    return null;
+  }
 }
 
 export const fetchLetterboxes = async () => {
