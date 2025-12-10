@@ -1,7 +1,7 @@
 import { db } from "../firebaseConfig";
 import { collection, collectionGroup, getDocs, getDoc, doc, query, orderBy, limit, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
-import { dateToTimestamp } from "./timestampToDate";
+import { dateToTimestamp } from "./dateHelpers";
 
 
 const apiRequest = async (letterbox, emailId, reason) => {

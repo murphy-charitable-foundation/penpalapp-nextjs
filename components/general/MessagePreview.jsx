@@ -1,7 +1,8 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
-import { formatDate } from "@/app/utils/timestampToDate";
+import { formatTimestamp } from "@/app/utils/dateHelpers";
+
 
 
 const MessagePreview = ({
@@ -67,7 +68,7 @@ const MessagePreview = ({
               <div className="text-sm text-gray-500">{country}</div>
             </div>
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
-              {formatDate(lastMessageDate)}
+              {formatTimestamp(lastMessageDate)}
             </div>
           </div>
         </div>
