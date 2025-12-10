@@ -51,7 +51,8 @@ export default function AdminFilter({
   };
 
 
-  const statusOptions = ["Sent", "Pending", "Rejected"];
+  const statusOptions =  new Map([["Sent", "sent"], ["Pending", "pending_review"], ["Rejected", "rejected"]]);
+;
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">

@@ -40,7 +40,7 @@ export default function Admin() {
     const [lastDoc, setLastDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("Sent"); // Default filter
+    const [selectedStatus, setSelectedStatus] = useState("sent"); // Default filter
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
@@ -104,7 +104,7 @@ export default function Admin() {
 
       // 🔹 Apply Filters Dynamically
       let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
-      const queryConstraints = [where("status", "==", selectedStatusMap[selectedStatus]), where("content", "!=", ""), limit(5)];
+      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), limit(5)];
       
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
