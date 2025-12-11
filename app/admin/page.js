@@ -32,8 +32,10 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
+import { useDeadletter } from "../../context/DeadletterContext";
 
 export default function Admin() {
+  const { isDeadletterLoading, handleDeadletterWorker } = useDeadletter();
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
@@ -56,6 +58,12 @@ export default function Admin() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isDeadletterLoading) {
+      handleDeadletterWorker();
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -151,8 +159,7 @@ export default function Admin() {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
                   userData = userSnapshot.data();
-                  const segments = userSnapshot.ref._key.path.segments;
-                  const userId = segments[segments.length - 1];
+                  const userId = docData.sent_by.id;
                   const path = `profile/${userId}/profile-image`;
                   const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
