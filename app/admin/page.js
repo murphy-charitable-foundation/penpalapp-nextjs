@@ -19,6 +19,7 @@ import {
   limit,
   startAfter,
   updateDoc,
+  Timestamp,
 } from "firebase/firestore";
 
 import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
@@ -85,7 +86,8 @@ export default function Admin() {
       doc(db, "letterbox", selectedLetter.letterboxId, "letters", selectedLetter.id),
       {
         status: "sent",
-        updated_at: new Date(),
+        updated_at: Timestamp.now(),
+        created_at: selectedLetter.created_at || Timestamp.now(),
         moderator_id: userId,
       }
     );
@@ -109,7 +111,8 @@ const handleReject = async (reason, feedback) => {
         status: "rejected",
         rejection_reason: reason,
         rejection_feedback: feedback,
-        updated_at: new Date(),
+        updated_at: Timestamp.now(),
+        created_at: selectedLetter.created_at || Timestamp.now(),
         moderator_id: userId,
       }
     );
@@ -213,6 +216,10 @@ const handleReject = async (reason, feedback) => {
             const docData = doc.data();
             let userData = null;
             let pfp = "/usericon.png"; // default fallback image
+            const createdAt =
+            docData.created_at ||
+            docData.updated_at ||
+            Timestamp.now();
 
             try {
               if (docData.sent_by) {
@@ -235,6 +242,7 @@ const handleReject = async (reason, feedback) => {
               id: doc.id,
               letterboxId: doc.ref.parent.parent.id,
               ...docData,
+              created_at: createdAt, 
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
