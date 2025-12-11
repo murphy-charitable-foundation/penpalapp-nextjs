@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from '../../components/bottom-nav-bar';
 
-import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter } from "firebase/firestore";
+import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter, orderBy } from "firebase/firestore";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
 import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
 import { PageBackground } from "../../components/general/PageBackground";
@@ -83,6 +83,7 @@ export default function Admin() {
       const letterGrab = async() => {
         setIsLoading(true);
         setDocuments([]);
+        setLastDoc(null);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -104,7 +105,7 @@ export default function Admin() {
 
       // 🔹 Apply Filters Dynamically
       let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
-      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), limit(5)];
+      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), orderBy("created_at", "desc"), limit(5)];
       
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
@@ -167,6 +168,7 @@ export default function Admin() {
   };
 
   const filter = (status, start, end ) => {
+    //setLastDoc(null);
     setSelectedStatus(status);
     setStartDate(start);
     setEndDate(end);
@@ -225,6 +227,15 @@ export default function Admin() {
                   textColor="text-white"
                   rounded="rounded-md"
                   onClick={iterateLetterBoxes}
+                />
+              )}
+              {hasMore === true && (
+                <Button
+                  btnText="Load More"
+                  color="bg-black"
+                  textColor="text-white"
+                  rounded="rounded-md"
+                  onClick={() => fetchLetters(true)}
                 />
               )}
               
