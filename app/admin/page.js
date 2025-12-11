@@ -204,7 +204,7 @@ export default function Admin() {
                   setLoading={setIsLoading}  />
                 
                 ) : (
-                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
             
                     <main className="p-6">
                       <section className="mt-8">
@@ -215,29 +215,36 @@ export default function Admin() {
                         )}
                       </section>
                   </main>
+
+                  {hasMore === true && (
+                    <div className="flex justify-center mt-4 w-full">
+                      <Button
+                        btnText="Load More"
+                        color="green"
+                        rounded="rounded-md"
+                        onClick={() => fetchLetters(true)}
+                      />
+                    </div>
+                  )}
+
                   </div>
                 )}
+
+
+
                 <BottomNavBar />
 
         
               {userType === "admin" && (
-                <Button
-                  btnText="Check For Inactive Chats"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={iterateLetterBoxes}
-                />
+                  <Button
+                    btnText="Check For Inactive Chats"
+                    color="bg-black"
+                    textColor="text-white"
+                    rounded="rounded-md"
+                    onClick={iterateLetterBoxes}
+                  />
               )}
-              {hasMore === true && (
-                <Button
-                  btnText="Load More"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={() => fetchLetters(true)}
-                />
-              )}
+              
               
               {/* Add animation keyframes */}
               <style jsx global>{`
