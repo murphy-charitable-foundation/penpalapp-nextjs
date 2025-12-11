@@ -346,59 +346,47 @@ const handleReject = async (reason, feedback) => {
                   setLoading={setIsLoading}  />
                 
                 ) : (
-                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
             
                     <main className="p-6">
-                  <section className="mt-8">
-                    {!isLoading ? (
-                      <>
-                        <ConversationList
-                          conversations={documents}
-                          onLetterClick={(letter) => {
-                            setSelectedLetter(letter);
-                            setShowReview(true);
-                          }}
-                        />
-
-                        {hasMore && (
-                          <button
-                            onClick={() => fetchLetters(true)}
-                            className="w-full mt-4 bg-blue-500 text-white py-2 rounded-md"
-                          >
-                            Load More
-                          </button>
+                      <section className="mt-8">
+                        {!isLoading ? (
+                          <ConversationList conversations={documents}/>
+                        ) : (
+                          <LetterHomeSkeleton />
                         )}
-                      </>
-                    ) : (
-                      <LetterHomeSkeleton />
-                    )}
-                  </section>
-                </main>
+                      </section>
+                  </main>
+
+                  {hasMore === true && (
+                    <div className="flex justify-center mt-4 w-full">
+                      <Button
+                        btnText="Load More"
+                        color="green"
+                        rounded="rounded-md"
+                        onClick={() => fetchLetters(true)}
+                      />
+                    </div>
+                  )}
+
                   </div>
                 )}
-                <AdminBottomBar 
-                pendingCount={pendingCount}
-                active="moderation"
-                />
 
+
+
+                <BottomNavBar />
+
+        
               {userType === "admin" && (
-                <Button
-                  btnText="Check For Inactive Chats"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={iterateLetterBoxes}
-                />
+                  <Button
+                    btnText="Check For Inactive Chats"
+                    color="bg-black"
+                    textColor="text-white"
+                    rounded="rounded-md"
+                    onClick={iterateLetterBoxes}
+                  />
               )}
-              {hasMore === true && (
-                <Button
-                  btnText="Load More"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={() => fetchLetters(true)}
-                />
-              )}
+              
               
               {/* Add animation keyframes */}
               <style jsx global>{`
