@@ -5,11 +5,30 @@ import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import BottomNavBar from '../../components/bottom-nav-bar';
+// import BottomNavBar from "../../components/bottom-nav-bar";
+import AdminBottomBar from "../../components/general/admin/AdminBottomBar";
 
-import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter } from "firebase/firestore";
-import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
-import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
+import {
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  limit,
+  startAfter,
+  updateDoc,
+} from "firebase/firestore";
+
+import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
+import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
+import RejectSuccessModal from "../../components/general/admin/RejectSuccessModal";
+import ApproveSuccessModal from "../../components/general/admin/ApproveSuccessModal";
+
+
+import { storage } from "../firebaseConfig.js";
+import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
@@ -22,6 +41,8 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
+
+
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -40,12 +61,66 @@ export default function Admin() {
     const [lastDoc, setLastDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("sent"); // Default filter
+    const [selectedStatus, setSelectedStatus] = useState("all");
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
     const [activeFilter, setActiveFilter] = useState(false);
     const router = useRouter();
+    const [selectedLetter, setSelectedLetter] = useState(null);
+    const [showReview, setShowReview] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    // const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+    const [showRejectSuccess, setShowRejectSuccess] = useState(false);
+    const pendingCount = documents.filter(doc => doc.status === "pending_review").length;
+
+
+
+ const handleApprove = async () => {
+  if (!selectedLetter) return;
+
+  try {
+    await updateDoc(
+      doc(db, "letterbox", selectedLetter.letterboxId, "letters", selectedLetter.id),
+      {
+        status: "sent",
+        updated_at: new Date(),
+        moderator_id: userId,
+      }
+    );
+
+    setShowReview(false);
+    setShowApproveSuccess(true);
+    await fetchLetters(); // Refresh the list after approval   
+  } catch (err) {
+    console.error("Approve error:", err);
+  }
+};
+
+
+const handleReject = async (reason, feedback) => {
+  if (!selectedLetter) return;
+
+  try {
+    await updateDoc(
+      doc(db, "letterbox", selectedLetter.letterboxId, "letters", selectedLetter.id),
+      {
+        status: "rejected",
+        rejection_reason: reason,
+        rejection_feedback: feedback,
+        updated_at: new Date(),
+        moderator_id: userId,
+      }
+    );
+
+    setShowRejectModal(false);
+    setShowRejectSuccess(true);
+    await fetchLetters(); // Refresh the list after rejection
+  } catch (err) {
+    console.error("Reject error:", err);
+  }
+};
 
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -79,6 +154,7 @@ export default function Admin() {
       return () => unsubscribe();
     }, [router]);
 
+
     useEffect(() => {
       const letterGrab = async() => {
         setIsLoading(true);
@@ -99,24 +175,37 @@ export default function Admin() {
 
 
   const fetchLetters = async (nextPage = false) => {
-    try {
-      let lettersQuery = collectionGroup(db, "letters");
+    
+  try {
 
-      // 🔹 Apply Filters Dynamically
-      let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
-      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), limit(5)];
-      
-      if (nextPage && lastDoc) {
-        queryConstraints.push(startAfter(lastDoc));
-      }
-      if (startDate) {
-        queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
-      }
-      if (endDate) {
-        queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
-      }
+    if (!nextPage) {
+      setDocuments([]);   // ← Clears duplicates properly
+      setLastDoc(null);
+    }
+    
+    let lettersQuery = collectionGroup(db, "letters");
 
-      lettersQuery = query(lettersQuery, ...queryConstraints);
+    let queryConstraints = [limit(5)];
+
+    if (selectedStatus && selectedStatus !== "all") {
+      queryConstraints.push(where("status", "==", selectedStatus));
+    }
+
+    if (nextPage && lastDoc) {
+      queryConstraints.push(startAfter(lastDoc));
+    }
+
+    if (startDate) {
+      queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
+    }
+
+    if (endDate) {
+      queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
+    }
+
+    lettersQuery = query(lettersQuery, ...queryConstraints);
+
+
       const querySnapshot = await getDocs(lettersQuery);
       if (!querySnapshot.empty) {
         const newDocs = await Promise.all(
@@ -144,6 +233,7 @@ export default function Admin() {
             }
             return {
               id: doc.id,
+              letterboxId: doc.ref.parent.parent.id,
               ...docData,
               profileImage: pfp,
               country: userData?.country || "",
@@ -154,8 +244,21 @@ export default function Admin() {
             };
           })
         );
+
         
-        setDocuments((prev) => [...prev, ...newDocs]);
+        setDocuments((prev) => {
+          const combined = [...prev, ...newDocs];
+
+          // Remove duplicates by letterboxId + id
+          const unique = Array.from(
+            new Map(
+              combined.map(item => [`${item.letterboxId}-${item.id}`, item])
+            ).values()
+          );
+
+          return unique;
+        });
+
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
         setHasMore(false); // No more documents to load
@@ -178,7 +281,38 @@ export default function Admin() {
     }
     
     return (
-        <PageBackground>
+       <PageBackground>
+
+
+    {showReview && (
+      <AdminLetterReview
+        letter={selectedLetter}
+        onApprove={handleApprove}
+        onReject={() => {
+          setShowReview(false);
+          setShowRejectModal(true);
+        }}
+        onClose={() => setShowReview(false)}
+      />
+    )}
+
+        {/* REJECT SCREEN */}
+        {showRejectModal && (
+          <AdminRejectModal
+            letter={selectedLetter}
+            onSubmit={handleReject}
+            onClose={() => { setShowRejectModal(false); setShowReview(true); }}
+          />
+        )}
+
+        {/* SUCCESS SCREENS */}
+        {showApproveSuccess && (
+          <ApproveSuccessModal onClose={() => setShowApproveSuccess(false)} />
+        )}
+
+        {showRejectSuccess && (
+          <RejectSuccessModal onClose={() => setShowRejectSuccess(false)} />
+        )}
               <PageContainer maxWidth="lg">
               <BackButton />
               <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
@@ -205,19 +339,38 @@ export default function Admin() {
                   <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
             
                     <main className="p-6">
-                      <section className="mt-8">
-                        {!isLoading ? (
-                          <ConversationList conversations={documents}/>
-                        ) : (
-                          <LetterHomeSkeleton />
+                  <section className="mt-8">
+                    {!isLoading ? (
+                      <>
+                        <ConversationList
+                          conversations={documents}
+                          onLetterClick={(letter) => {
+                            setSelectedLetter(letter);
+                            setShowReview(true);
+                          }}
+                        />
+
+                        {hasMore && (
+                          <button
+                            onClick={() => fetchLetters(true)}
+                            className="w-full mt-4 bg-blue-500 text-white py-2 rounded-md"
+                          >
+                            Load More
+                          </button>
                         )}
-                      </section>
-                  </main>
+                      </>
+                    ) : (
+                      <LetterHomeSkeleton />
+                    )}
+                  </section>
+                </main>
                   </div>
                 )}
-                <BottomNavBar />
+                <AdminBottomBar 
+                pendingCount={pendingCount}
+                active="moderation"
+                />
 
-        
               {userType === "admin" && (
                 <Button
                   btnText="Check For Inactive Chats"

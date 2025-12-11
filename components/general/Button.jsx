@@ -13,8 +13,10 @@ export default function Button({
     green: 'bg-dark-green hover:bg-green-800 text-white', 
     red: 'bg-red-500 hover:bg-red-600 text-white',
     gray: 'bg-gray-300 hover:bg-dark-green text-white',
-    transparent: 'bg-transparent hover: bg-gray-400 text-black',
-    white:'bg-white hover:bg-gray-100 text-black'
+    transparent: 'bg-transparent hover:bg-gray-400 text-black',
+    white:'bg-white hover:bg-gray-100 text-black',
+    black: 'bg-black hover:bg-gray-900 text-white'
+    
   };
 
 

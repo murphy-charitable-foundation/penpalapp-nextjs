@@ -9,6 +9,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { set } from "nprogress";
 
+
+
 export default function AdminFilter({
   setStatus,
   status,
@@ -35,24 +37,29 @@ export default function AdminFilter({
 
   const applyFilter = async(e) => {
     e.preventDefault();
-    await filter(statusFilter, startFilter, endFilter);
+    await filter(statusFilter || "all", startFilter, endFilter);
 
   };
 
 
 
-  const clearFilter = async(e) => {
-    e.preventDefault()
-    setStatusFilter("Sent");
-    setStartFilter("");
-    setEndFilter("");
-    await filter("Sent", null, null);
-  
-  };
+  const clearFilter = async (e) => {
+  e.preventDefault();
+  setStatusFilter("all");
+  setStartFilter("");
+  setEndFilter("");
+  await filter("all", null, null);
+};
 
 
-  const statusOptions =  new Map([["Sent", "sent"], ["Pending", "pending_review"], ["Rejected", "rejected"]]);
-;
+
+  const statusOptions = new Map([
+  ["All", "all"],
+  ["Sent", "sent"],
+  ["Pending Review", "pending_review"],
+  ["Rejected", "rejected"]
+]);
+
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -79,14 +86,14 @@ export default function AdminFilter({
         </div>
         <div>
           <label
-            htmlFor="gender"
+            htmlFor="status"
             className="text-sm font-medium text-gray-700 block mb-2"
           >
             Status
           </label>
           
           <Dropdown
-          options={statusOptions.keys().toArray()}
+          options={Array.from(statusOptions.keys())}
           valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
           currentValue={currentFilter}
           text="Status"

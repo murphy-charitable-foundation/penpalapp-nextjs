@@ -1,12 +1,16 @@
 import MessagePreview from "./MessagePreview";
 
-const ConversationList = ({ conversations }) => {
+const ConversationList = ({ conversations, onLetterClick }) => {
   return (
     <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
       {conversations.map((conversation, i) => (
-        <div key={conversation.id}>
+        <div
+          key={`${conversation.letterboxId}-${conversation.id}`}
+          onClick={() => onLetterClick && onLetterClick(conversation)}
+          className={onLetterClick ? "cursor-pointer" : ""}
+        >
           <MessagePreview
-            className={ i === 0 && 'first-letter relative'}
+            className={i === 0 && "first-letter relative"}
             profileImage={conversation.profileImage}
             name={conversation.name}
             country={conversation.country}
