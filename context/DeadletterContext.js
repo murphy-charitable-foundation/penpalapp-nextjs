@@ -14,6 +14,7 @@ export const DeadletterProvider = ({ children }) => {
       setWorker(newWorker);
       newWorker.onmessage = (e) => {
         if (e.data.success) {
+          localStorage.setItem("deadletterTimestamp", new Date().toISOString());
           console.log("OnMessage Email Request Success: ", e.data.data);
         } else {
           console.error("OnMessage Email Request Error: ", e.data.error);
@@ -32,6 +33,19 @@ export const DeadletterProvider = ({ children }) => {
   }, []);
 
   const handleDeadletterWorker = () => {
+    const deadletterTimestamp = localStorage.getItem("deadletterTimestamp");
+    if (deadletterTimestamp) {
+      const timestampDate = new Date(deadletterTimestamp);
+      const now = new Date();
+      const diffInDays = Math.floor(
+        (now - timestampDate) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diffInDays < 1) {
+        return;
+      }
+    }
+
     if (worker) {
       setIsDeadletterLoading(true);
       worker.postMessage({});
