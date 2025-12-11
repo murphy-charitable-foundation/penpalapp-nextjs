@@ -162,6 +162,7 @@ const handleReject = async (reason, feedback) => {
       const letterGrab = async() => {
         setIsLoading(true);
         setDocuments([]);
+        setLastDoc(null);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -278,6 +279,7 @@ const handleReject = async (reason, feedback) => {
   };
 
   const filter = (status, start, end ) => {
+    //setLastDoc(null);
     setSelectedStatus(status);
     setStartDate(start);
     setEndDate(end);
@@ -386,6 +388,15 @@ const handleReject = async (reason, feedback) => {
                   textColor="text-white"
                   rounded="rounded-md"
                   onClick={iterateLetterBoxes}
+                />
+              )}
+              {hasMore === true && (
+                <Button
+                  btnText="Load More"
+                  color="bg-black"
+                  textColor="text-white"
+                  rounded="rounded-md"
+                  onClick={() => fetchLetters(true)}
                 />
               )}
               
