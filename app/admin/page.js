@@ -7,7 +7,18 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from "../../components/bottom-nav-bar";
 
-import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter, orderBy } from "firebase/firestore";
+import {
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  limit,
+  startAfter,
+  orderBy,
+} from "firebase/firestore";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
 import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
 import { PageBackground } from "../../components/general/PageBackground";
@@ -21,51 +32,40 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
-import { useDeadletter } from "../../context/DeadletterContext";
 
 export default function Admin() {
-  const { isDeadletterLoading, handleDeadletterWorker } = useDeadletter();
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
-    const [userName, setUserName] = useState("");
-    const [userId, setUserId] = useState("");
-    const [userType, setUserType] = useState("");
-    const [country, setCountry] = useState("");
-    const [letters, setLetters] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [profileImage, setProfileImage] = useState("");
-    const [lastDoc, setLastDoc] = useState(null);
-    const [documents, setDocuments] = useState([]);
-    const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("sent"); // Default filter
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null); // Optional category filter
-    const [showWelcome, setShowWelcome] = useState(false);
-    const [activeFilter, setActiveFilter] = useState(false);
-    const router = useRouter();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
+  const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState("");
+  const [userType, setUserType] = useState("");
+  const [country, setCountry] = useState("");
+  const [letters, setLetters] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [lastDoc, setLastDoc] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState("sent"); // Default filter
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null); // Optional category filter
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [activeFilter, setActiveFilter] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsLoading(true);
 
-    useEffect(() => {
-      const letterGrab = async() => {
-        setIsLoading(true);
-        setDocuments([]);
-        setLastDoc(null);
-        try {
-          // Fetch initial batch of letters
-          await fetchLetters();
-        } catch (err) {
-          console.error("Error fetching data:", err);
-          setError("Failed to load data.");
-        } finally {
-          setIsLoading(false);
-        }
+      if (!user) {
+        setError("No user logged in.");
+        setIsLoading(false);
+        router.push("/login");
+        return;
       }
       setUserId(user.uid);
       const userRef = doc(collection(db, "users"), user.uid);
@@ -89,15 +89,10 @@ export default function Admin() {
   }, [router]);
 
   useEffect(() => {
-    if (!isDeadletterLoading) {
-      handleDeadletterWorker();
-    }
-  }, []);
-
-  useEffect(() => {
     const letterGrab = async () => {
       setIsLoading(true);
       setDocuments([]);
+      setLastDoc(null);
       try {
         // Fetch initial batch of letters
         await fetchLetters();
@@ -116,9 +111,18 @@ export default function Admin() {
       let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
-      let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
-      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), orderBy("created_at", "desc"), limit(5)];
-      
+      let selectedStatusMap = {
+        Sent: "sent",
+        "Pending Review": "pending",
+        Rejected: "rejected",
+      };
+      const queryConstraints = [
+        where("status", "==", selectedStatus),
+        where("content", "!=", ""),
+        orderBy("created_at", "desc"),
+        limit(5),
+      ];
+
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
       }
@@ -147,7 +151,8 @@ export default function Admin() {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
                   userData = userSnapshot.data();
-                  const userId = docData.sent_by.id;
+                  const segments = userSnapshot.ref._key.path.segments;
+                  const userId = segments[segments.length - 1];
                   const path = `profile/${userId}/profile-image`;
                   const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
@@ -181,7 +186,7 @@ export default function Admin() {
     }
   };
 
-  const filter = (status, start, end ) => {
+  const filter = (status, start, end) => {
     //setLastDoc(null);
     setSelectedStatus(status);
     setStartDate(start);
@@ -193,94 +198,77 @@ export default function Admin() {
     return <LetterHomeSkeleton />;
   }
 
-    if (documents == null) {
-      return <LetterHomeSkeleton/>
-    }
-    
-    return (
-        <PageBackground>
-              <PageContainer maxWidth="lg">
-              <BackButton />
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
-            
-             
-              
-              <WelcomeToast 
-                userName={userName}
-                isVisible={showWelcome}
-                onClose={() => setShowWelcome(false)}
-              />
-              {activeFilter ? (
-                  <AdminFilter setStatus={setSelectedStatus} 
-                  status={selectedStatus} 
-                  setStart={setStartDate} 
-                  start={startDate} 
-                  setEnd={setEndDate} 
-                  end={endDate}
-                  filter={filter}
-                  loading={isLoading}
-                  setLoading={setIsLoading}  />
-                
+  return (
+    <PageBackground>
+      <PageContainer maxWidth="lg">
+        <BackButton />
+        <Header
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          title={"Select message types"}
+        />
+
+        <WelcomeToast
+          userName={userName}
+          isVisible={showWelcome}
+          onClose={() => setShowWelcome(false)}
+        />
+        {activeFilter ? (
+          <AdminFilter
+            setStatus={setSelectedStatus}
+            status={selectedStatus}
+            setStart={setStartDate}
+            start={startDate}
+            setEnd={setEndDate}
+            end={endDate}
+            filter={filter}
+            loading={isLoading}
+            setLoading={setIsLoading}
+          />
+        ) : (
+          <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
+            <main className="p-6">
+              <section className="mt-8">
+                {!isLoading ? (
+                  <ConversationList conversations={documents} />
                 ) : (
-                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
-            
-                    <main className="p-6">
-                      <section className="mt-8">
-                        {!isLoading ? (
-                          <ConversationList conversations={documents}/>
-                        ) : (
-                          <LetterHomeSkeleton />
-                        )}
-                      </section>
-                  </main>
-
-                  {hasMore === true && (
-                    <div className="flex justify-center mt-4 w-full">
-                      <Button
-                        btnText="Load More"
-                        color="green"
-                        rounded="rounded-md"
-                        onClick={() => fetchLetters(true)}
-                      />
-                    </div>
-                  )}
-
-                  </div>
+                  <LetterHomeSkeleton />
                 )}
+              </section>
+            </main>
 
+            {hasMore === true && (
+              <div className="flex justify-center mt-4 w-full">
+                <Button
+                  btnText="Load More"
+                  color="green"
+                  rounded="rounded-md"
+                  onClick={() => fetchLetters(true)}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
+        <BottomNavBar />
 
-                <BottomNavBar />
-
-        
-              {userType === "admin" && (
-                  <Button
-                    btnText="Check For Inactive Chats"
-                    color="bg-black"
-                    textColor="text-white"
-                    rounded="rounded-md"
-                    onClick={iterateLetterBoxes}
-                  />
-              )}
-              
-              
-              {/* Add animation keyframes */}
-              <style jsx global>{`
-                @keyframes slideIn {
-                  from {
-                    opacity: 0;
-                    transform: translateX(30px);
-                  }
-                  to {
-                    opacity: 1;
-                    transform: translateX(0);
-                  }
-                }
-                .animate-slide-in {
-                  animation: slideIn 0.3s ease-out forwards;
-                }
-              `}</style>
-              </PageContainer>
-            </PageBackground>
-          );
+        {/* Add animation keyframes */}
+        <style jsx global>{`
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateX(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+          }
+        `}</style>
+      </PageContainer>
+    </PageBackground>
+  );
 }
