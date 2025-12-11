@@ -1,111 +1,159 @@
 import { NextResponse } from "next/server";
-import sendgrid from "@sendgrid/mail";
-import { auth } from "../../firebaseAdmin"; // Import Firebase Admin SDK from the centralized file
-import { logError } from "../../utils/analytics";
+import { FieldPath } from "firebase-admin/firestore";
 
-export async function POST(request) {
+import { db, auth } from "../../firebaseAdmin";
+import { sendEmail } from "../../utils/deadChat";
+
+export async function POST() {
   if (auth == null) {
     return NextResponse.json({ message: "Admin is null." }, { status: 500 });
   }
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
-    const body = await request.json();
-    //Grab Message Information
-    const { sender, id, userId, reason } = body;
-    //const filtered = users.filter(element => element !== sender);
-    const userRecord = await auth.getUser(userId); // Fetch user record by UID
-    let message;
-    if (reason == "admin") {
-      message = `Hello Richard, it seems that a chat in a letterbox with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`;
-    } else {
-      message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`;
-    }
-    // Remove null values (failed fetches)
-
-    const emailHtml = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              background-color: #f9f9f9;
-              margin: 0;
-              padding: 0;
-            }
-            .email-container {
-              max-width: 600px;
-              margin: 20px auto;
-              background-color: #ffffff;
-              padding: 20px;
-              border-radius: 8px;
-              box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            }
-            h1 {
-              color: #333;
-              font-size: 24px;
-            }
-            p {
-              color: #555;
-              font-size: 16px;
-              line-height: 1.5;
-            }
-            .message-content {
-              font-style: italic;
-              color: #666;
-              margin-top: 20px;
-            }
-            footer {
-              margin-top: 30px;
-              font-size: 12px;
-              color: #999;
-              text-align: center;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-container">
-            <h1>Chat Found Inactive</h1>
-            <p><strong>Reported Message:</strong></p>
-            <p class="message-content">${message || "No message provided."}</p>
-            <footer>
-              <p>This email was sent from your report system. If you have any questions, please contact us.</p>
-            </footer>
-          </div>
-        </body>
-      </html>
-    `;
-    let msg;
-    if (reason == "admin") {
-      msg = {
-        to: "penpal@murphycharity.org",
-        from: "penpal@murphycharity.org", // Your verified sender email
-        subject: "Message Reported",
-        text: message || "No message provided.",
-        html: emailHtml,
-      };
-    } else {
-      msg = {
-        to: userRecord.email,
-        from: "penpal@murphycharity.org", // Your verified sender email
-        subject: "Message Reported",
-        text: message || "No message provided.",
-        html: emailHtml,
-      };
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not initialized" },
+        { status: 500 }
+      );
     }
 
-    // Send the email
-    await sendgrid.send(msg);
-    return NextResponse.json(
-      { message: `Email sent successfully!` },
-      { status: 200 }
-    );
-  } catch (error) {
-    logError(error, {
-      description: "Failed to send email.",
+    const letterboxSnapshot = await db.collection("letterbox").get();
+    const letterBoxesPromises = letterboxSnapshot.docs.map(async (doc) => {
+      const docData = doc.data();
+      const latestLetterSnapshot = await doc.ref
+        .collection("letters")
+        .orderBy("created_at", "desc")
+        .limit(1)
+        .get();
+
+      let latestLetter = null;
+      if (!latestLetterSnapshot.empty) {
+        const letterDoc = latestLetterSnapshot.docs[0];
+        const letterData = letterDoc.data();
+        latestLetter = {
+          id: letterDoc.id,
+          created_at: letterData.created_at?.toDate?.(),
+          sent_by: letterData.sent_by?.id,
+        };
+      }
+
+      return {
+        id: doc.id,
+        members: docData.members.map((member) => member.id),
+        latestLetter,
+        deadletter_user_at: docData.deadletter_user_at?.toDate?.(),
+        deadletter_admin_at: docData.deadletter_admin_at?.toDate?.(),
+      };
+    });
+    const letterBoxes = await Promise.all(letterBoxesPromises);
+
+    const emailPromises = [];
+
+    for (const letterBox of letterBoxes) {
+      const latestMessageTimestamp = letterBox?.latestLetter?.created_at;
+      const latestAdminDeadletterTimestamp = letterBox?.deadletter_admin_at;
+      const latestUserDeadletterTimestamp = letterBox?.deadletter_user_at;
+      const now = new Date();
+      let adminDiffDays = 0;
+      let userDiffDays = 0;
+
+      if (latestMessageTimestamp) {
+        const latestMessageTimestampDate = new Date(latestMessageTimestamp);
+        const diffMs = now - latestMessageTimestampDate;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        adminDiffDays = diffDays;
+        userDiffDays = diffDays;
+      }
+
+      if (latestAdminDeadletterTimestamp) {
+        const latestAdminDeadletterTimestampDate = new Date(
+          latestAdminDeadletterTimestamp
+        );
+        const diffMs = now - latestAdminDeadletterTimestampDate;
+        adminDiffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      }
+      if (latestUserDeadletterTimestamp) {
+        const latestUserDeadletterTimestampDate = new Date(
+          latestUserDeadletterTimestamp
+        );
+        const diffMs = now - latestUserDeadletterTimestampDate;
+        userDiffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      }
+
+      if (userDiffDays >= 14 || adminDiffDays >= 28) {
+        const usersRef = db.collection("users");
+        const membersSnapshot = await usersRef
+          .where(FieldPath.documentId(), "in", letterBox.members)
+          .get();
+        const allMembers = membersSnapshot.docs.map((doc) => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            firstName: docData.first_name,
+            lastName: docData.last_name,
+          };
+        });
+
+        const userPromises = letterBox.members.map((uid) =>
+          auth.getUser(uid).catch((err) => {
+            return null; // Handle missing users gracefully
+          })
+        );
+        const userRecords = await Promise.all(userPromises);
+        const emails = userRecords
+          .filter((record) => record !== null)
+          .map((record) => record.email);
+
+        if (userDiffDays >= 14) {
+          emailPromises.push(
+            sendEmail(letterBox.id, allMembers, emails, "user").catch(
+              (err) => err
+            )
+          );
+        }
+
+        if (adminDiffDays >= 28) {
+          emailPromises.push(
+            sendEmail(letterBox.id, allMembers, emails, "admin").catch(
+              (err) => err
+            )
+          );
+        }
+      }
+    }
+
+    const emailResults = await Promise.allSettled(emailPromises);
+    const successEmails = [];
+    const failedEmails = [];
+
+    emailResults.forEach((result) => {
+      if (result.status === "fulfilled") {
+        const value = result.value;
+        if (value && value.success) {
+          successEmails.push(value);
+        } else if (value && value.error) {
+          failedEmails.push(value);
+        }
+      } else {
+        failedEmails.push(result);
+      }
     });
 
     return NextResponse.json(
-      { message: "Failed to send email.", error: error.message },
+      {
+        message: "Deadletter Request Success!",
+        successEmails: successEmails,
+        failedEmails: failedEmails,
+        letterBoxes: letterBoxes,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    // Handle errors
+    return NextResponse.json(
+      {
+        error: "Failed to process request",
+        message: error.message,
+      },
       { status: 500 }
     );
   }

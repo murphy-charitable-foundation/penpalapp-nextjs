@@ -1,149 +1,90 @@
-import { db } from "../firebaseConfig";
-import {
-  collection,
-  collectionGroup,
-  getDocs,
-  getDoc,
-  doc,
-  query,
-  orderBy,
-  limit,
-  where,
-} from "firebase/firestore";
-import * as Sentry from "@sentry/nextjs";
-import { dateToTimestamp, timestampToDate } from "./timestampToDate";
+import sendgrid from "@sendgrid/mail";
+import { db } from "../firebaseAdmin";
 
-const deadchatRequest = async (letterbox, userId, reason) => {
-  try {
-    const memberIds = letterbox.members.map((member) => {
-      return member.id;
-    });
-    if (reason == "admin") {
-      let userData = [];
-      const sender = await getDoc(doc(db, "users", memberIds[0]));
-      userData.push(sender.data());
-      const sender2 = await getDoc(doc(db, "users", memberIds[1]));
-      userData.push(sender2.data());
+import { logError } from "./analytics";
+import generateDeadletterEmailTemplate from "../api/deadchat/emailTemplate";
 
-      const response = await fetch("/api/deadchat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sender: userData,
-          id: letterbox.id,
-          userId,
-          reason: reason,
-        }), // Send data as JSON
-      });
-    } else {
-      const filteredMemberIds = memberIds.filter(
-        (memberId) => memberId != userId
-      );
-      const sender = await getDoc(doc(db, "users", filteredMemberIds[0]));
+const SENDER_EMAIL = "penpal@murphycharity.org";
 
-      const response = await fetch("/api/deadchat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sender: sender,
-          id: letterbox.id,
-          userId,
-          reason: reason,
-        }), // Send data as JSON
-      });
-    }
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
-  } catch (error) {
-    Sentry.captureException("Could not send request to SendGrid" + error);
-  }
-};
-
-export const iterateLetterBoxes = async () => {
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-  // Convert oneMonthAgo to Firestore Timestamp using dateToTimestamp
-  const oneMonthAgoTimestamp = dateToTimestamp(oneMonthAgo);
-
-  //Two indexes needed for this query but keeps read calls down.
-  const allLettersQuery = query(
-    collectionGroup(db, "letters"),
-    where("status", "==", "sent"),
-    where("created_at", ">=", oneMonthAgoTimestamp) // Use Firestore Timestamp here
-  );
-
-  const querySnapshot = await getDocs(allLettersQuery);
-  const letterboxes = {};
-
-  const documents = querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    refPath: doc.ref.path, // Store path explicitly
-    ...doc.data(),
-  }));
-
-  documents.forEach((doc) => {
-    const pathSegments = doc.refPath.split("/");
-    const letterboxId = pathSegments[1];
-
-    if (!letterboxes[letterboxId]) {
-      letterboxes[letterboxId] = {};
-    }
-
-    if (!letterboxes[letterboxId][doc.sent_by]) {
-      letterboxes[letterboxId][doc.sent_by] = [];
-    }
-
-    letterboxes[letterboxId][doc.sent_by].push(doc);
-  });
-
-  const letterboxSnapshot = await getDocs(collection(db, "letterbox"));
-  const letterboxDocuments = letterboxSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
-
-  const now = new Date();
-  const twoWeeksAgo = new Date(now);
-  twoWeeksAgo.setDate(now.getDate() - 14);
-
-  for (const letterbox of letterboxDocuments) {
-    const id = letterbox.id;
-    const members = letterbox.members || [];
-
-    const activityMap = letterboxes[id] || {};
-
-    for (const member of members) {
-      const lettersByMember = activityMap[member] || [];
-
-      const lastSentDate = lettersByMember
-        .map((letter) => letter.created_at?.toDate?.())
-        .filter((d) => !!d)
-        .sort((a, b) => b - a)[0]; // Most recent
-
-      if (!lastSentDate) {
-        // User has sent nothing in the last month
-        await deadchatRequest(letterbox, member.id, "user");
-        await deadchatRequest(letterbox, member.id, "admin");
-      } else if (lastSentDate < twoWeeksAgo) {
-        // User sent something between 2 weeks ago to 1 month ago
-        await deadchatRequest(letterbox, member.id, "user");
-      }
-    }
-  }
-};
-
-export const formatListWithAnd = (arr) => {
+const formatListWithAnd = (arr) => {
   if (!arr || arr.length === 0) return "[]";
   if (arr.length === 1) return `[${arr[0]}]`;
   if (arr.length === 2) return `[${arr[0]} and ${arr[1]}]`;
   const allButLast = arr.slice(0, -1).join(", ");
   const last = arr[arr.length - 1];
   return `[${allButLast}, & ${last}]`;
+};
+
+export const sendEmail = async (letterBoxId, members, toEmails, reason) => {
+  let message;
+  const membersNames = members.map(
+    (member) =>
+      `${member.firstName ? member.firstName : ""}${
+        member.firstName && member.firstName ? " " : ""
+      }${member.lastName ? member.lastName : ""}`
+  );
+  if (reason == "admin") {
+    message = `Hello Richard, it seems that a chat in a letterbox with the id: ${letterBoxId}, involving the user/s: ${formatListWithAnd(
+      membersNames
+    )} has stalled because the user/s with the email/s: ${formatListWithAnd(
+      toEmails
+    )} has stopped responding. Consider contacting them to see if the chat can be reignited.`;
+  } else {
+    message = `Hello, it seems that your chat in a letterbox with the id: ${letterBoxId}, involving the user/s: ${formatListWithAnd(
+      membersNames
+    )} has stalled. Consider contacting them to see if the chat can be reignited.`;
+  }
+
+  let msg;
+  if (reason == "admin") {
+    msg = {
+      to: "penpal@murphycharity.org",
+      from: SENDER_EMAIL, // Your verified sender email
+      subject: "Message Reported",
+      text: message || "No message provided.",
+      html: generateDeadletterEmailTemplate(message),
+    };
+  } else {
+    msg = {
+      to: toEmails,
+      from: SENDER_EMAIL, // Your verified sender email
+      subject: "Message Reported",
+      text: message || "No message provided.",
+      html: generateDeadletterEmailTemplate(message),
+    };
+  }
+  try {
+    sendgrid.setApiKey(process.env.SENDGRID_KEY);
+    // Send the email
+    await sendgrid.send(msg);
+
+    if (db) {
+      const fieldToUpdate =
+        reason === "admin" ? "deadletter_admin_at" : "deadletter_user_at";
+      await db
+        .collection("letterbox")
+        .doc(letterBoxId)
+        .set(
+          {
+            [fieldToUpdate]: new Date(),
+          },
+          { merge: true }
+        );
+    }
+
+    return {
+      success: true,
+      msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
+    };
+  } catch (error) {
+    logError(error, {
+      description: "Failed to send email.",
+    });
+    throw {
+      message: "Failed to send email.",
+      error: error.message,
+      details: error.response?.body?.errors?.map((error) => error.message),
+      msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
+    };
+  }
 };

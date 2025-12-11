@@ -14,7 +14,6 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
-import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
@@ -22,8 +21,10 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/timestampToDate";
+import { useDeadletter } from "../../context/DeadletterContext";
 
 export default function Admin() {
+  const { isDeadletterLoading, handleDeadletterWorker } = useDeadletter();
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
@@ -86,6 +87,12 @@ export default function Admin() {
 
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    if (!isDeadletterLoading) {
+      handleDeadletterWorker();
+    }
+  }, []);
 
   useEffect(() => {
     const letterGrab = async () => {

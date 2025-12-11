@@ -9,7 +9,7 @@ self.onmessage = async function () {
 };
 
 async function sendDeadletter() {
-  const response = await fetch("/api/send-deadchat", {
+  const response = await fetch("/api/deadchat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
