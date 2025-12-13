@@ -41,7 +41,7 @@ export const DeadletterProvider = ({ children }) => {
         (now - timestampDate) / (1000 * 60 * 60 * 24)
       );
 
-      if (diffInDays < 1) {
+      if (diffInDays < 28) {
         return;
       }
     }
