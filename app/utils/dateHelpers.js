@@ -126,5 +126,5 @@ export const formatTime = (timestamp) => {
 };
 
 export const dateToTimestamp = (date) => {
-    return Timestamp.fromDate(date);
+  return Timestamp.fromDate(date); // Convert back to Firestore Timestamp
 };
