@@ -4,9 +4,14 @@ import Link from "next/link";
 import Button from "./Button";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
-export default function Header({ activeFilter, setActiveFilter, title }) {
+export default function Header({ activeFilter, setActiveFilter, title, status="sent"}) {
   return (
-    <div className="bg-red-700 text-white p-4 flex items-center gap-4 rounded-md">
+    <div className={`${status=="sent" 
+      ? "bg-green-700" 
+      : status=="pending_review" 
+      ? "bg-blue-700" 
+      : "bg-red-700"} 
+    text-white p-4 flex items-center gap-4 rounded-md`}>
       <Image
         src={logo}
         alt="Murphy Charitable Foundation Uganda"
