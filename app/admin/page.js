@@ -162,6 +162,7 @@ const handleReject = async (reason, feedback) => {
       const letterGrab = async() => {
         setIsLoading(true);
         setDocuments([]);
+        setLastDoc(null);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -278,6 +279,7 @@ const handleReject = async (reason, feedback) => {
   };
 
   const filter = (status, start, end ) => {
+    //setLastDoc(null);
     setSelectedStatus(status);
     setStartDate(start);
     setEndDate(end);
@@ -344,7 +346,7 @@ const handleReject = async (reason, feedback) => {
                   setLoading={setIsLoading}  />
                 
                 ) : (
-                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
             
                     <main className="p-6">
                   <section className="mt-8">
@@ -380,14 +382,15 @@ const handleReject = async (reason, feedback) => {
                 />
 
               {userType === "admin" && (
-                <Button
-                  btnText="Check For Inactive Chats"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={iterateLetterBoxes}
-                />
+                  <Button
+                    btnText="Check For Inactive Chats"
+                    color="bg-black"
+                    textColor="text-white"
+                    rounded="rounded-md"
+                    onClick={iterateLetterBoxes}
+                  />
               )}
+              
               
               {/* Add animation keyframes */}
               <style jsx global>{`
