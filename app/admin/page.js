@@ -116,7 +116,6 @@ export default function Admin() {
       let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
-      let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
       const queryConstraints = [where("status", "==", selectedStatus), orderBy("created_at", "desc"), limit(5)];
       
       if (nextPage && lastDoc) {
