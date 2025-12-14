@@ -21,7 +21,7 @@ import AdminFilter from "../../components/general/admin/AdminFilter";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
-import { dateToTimestamp } from "../utils/timestampToDate";
+import { dateToTimestamp } from "../utils/dateHelpers";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
