@@ -35,7 +35,6 @@ const MessagePreview = ({
     }
     return null;
   };
-
   return (
     <a
       href={`/letters/${letterboxId}`}
