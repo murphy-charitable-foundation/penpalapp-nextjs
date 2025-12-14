@@ -59,20 +59,31 @@ export default function Admin() {
         }
         setUserId(user.uid);
         const userRef= doc(collection(db, "users"), user.uid);
-        const userSnapshot = getDoc(userRef);
-        const userData = (await userSnapshot).data()
-        if (userData.user_type != "admin") {
+        const userSnapshot = await getDoc(userRef);
+        if (!userSnapshot.exists()) {
+          setError("User profile not found.");
+          setIsLoading(false);
+          router.push("/login");
+          return;
+        }      
+        const userData = userSnapshot.data();
+        if (userData?.user_type != "admin") {
           setError("User is not admin");
           setIsLoading(false);
           router.push("/login");
           return;
         }
+        setUserType(userData.user_type);
         setCountry(userData.country);
         setUserName(userData.first_name + " " + userData.last_name);
         const path = `profile/${user.uid}/profile-image`;
         const userPhotoRef = storageRef(storage, path);
-        const userUrl = await getDownloadURL(userPhotoRef);
-        setProfileImage(userUrl);
+        try {
+          const userUrl = await getDownloadURL(userPhotoRef);
+          setProfileImage(userUrl);
+        } catch {
+          setProfileImage("/usericon.png");
+        }
         
       });
   
@@ -105,7 +116,7 @@ export default function Admin() {
 
       // 🔹 Apply Filters Dynamically
       let selectedStatusMap = {"Sent": "sent", "Pending Review": "pending", "Rejected": "rejected"};
-      const queryConstraints = [where("status", "==", selectedStatus), where("content", "!=", ""), orderBy("created_at", "desc"), limit(5)];
+      const queryConstraints = [where("status", "==", selectedStatus), orderBy("created_at", "desc"), limit(5)];
       
       if (nextPage && lastDoc) {
         queryConstraints.push(startAfter(lastDoc));
@@ -131,8 +142,7 @@ export default function Admin() {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
                   userData = userSnapshot.data();
-                  const segments = userSnapshot.ref._key.path.segments; 
-                  const userId = segments[segments.length - 1];     
+                  const userId = userSnapshot.id     
                   const path = `profile/${userId}/profile-image`;
                   const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
@@ -168,7 +178,6 @@ export default function Admin() {
   };
 
   const filter = (status, start, end ) => {
-    //setLastDoc(null);
     setSelectedStatus(status);
     setStartDate(start);
     setEndDate(end);
