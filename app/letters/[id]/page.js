@@ -20,7 +20,7 @@ import {
   fetchLetterbox,
   fetchRecipients,
 } from "../../../app/utils/letterboxFunctions";
-import { formatTime, isDifferentDay } from "../../../app/utils/dateHelpers";
+import { formatTimestamp, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
@@ -962,7 +962,7 @@ export default function Page({ params }) {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <div className="text-gray-500 text-sm">
-                          {formatTime(message.created_at)}
+                          {formatTimestamp(message.created_at)}
                         </div>
                       </div>
                     </div>

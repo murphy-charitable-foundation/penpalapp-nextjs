@@ -1,6 +1,9 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import { formatTimestamp } from "@/app/utils/dateHelpers";
+
+
 
 const MessagePreview = ({
   profileImage,
@@ -14,36 +17,6 @@ const MessagePreview = ({
   unread = false,
 }) => {
   const imageSrc = profileImage || "/usericon.png";
-
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "";
-    const date =
-      typeof timestamp.toDate === "function"
-        ? timestamp.toDate()
-        : new Date(timestamp.seconds * 1000);
-
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    const timeString = date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    if (date.toDateString() === today.toDateString()) {
-      return `Today ${timeString}`;
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday ${timeString}`;
-    }
-
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const getStatusIcon = () => {
     if (status === "rejected") {
@@ -95,7 +68,7 @@ const MessagePreview = ({
               <div className="text-sm text-gray-500">{country}</div>
             </div>
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
-              {formatDate(lastMessageDate)}
+              {formatTimestamp(lastMessageDate)}
             </div>
           </div>
         </div>
