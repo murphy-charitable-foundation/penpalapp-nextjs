@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle, AlertTriangle } from "lucide-react";
+import { Check, X } from "lucide-react";   // <-- SIMPLE ICONS
 import Image from "next/image";
 
 const MessagePreview = ({
@@ -8,10 +8,10 @@ const MessagePreview = ({
   country,
   lastMessage,
   lastMessageDate,
-  letterboxId,
   status,
   isRecipient,
   unread = false,
+  onClick,
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -22,22 +22,6 @@ const MessagePreview = ({
         ? timestamp.toDate()
         : new Date(timestamp.seconds * 1000);
 
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    const timeString = date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    if (date.toDateString() === today.toDateString()) {
-      return `Today ${timeString}`;
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday ${timeString}`;
-    }
-
     return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
@@ -45,90 +29,66 @@ const MessagePreview = ({
     });
   };
 
+  // 🔥 CLEAN SIMPLE ICONS
   const getStatusIcon = () => {
     if (status === "rejected") {
-      return <AlertTriangle className="text-red-500 w-6 h-6" />;
+      return <X className="text-red-500 w-5 h-5" />;       // ❌ simple red X
     }
     if (status === "sent") {
-      return <CheckCircle className="text-green-500 w-6 h-6" />;
-    }
-    if (status === "pending_review") {
-      return (
-        <div className="relative w-6 h-6">
-          <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
-          <CheckCircle className="absolute inset-0 m-auto w-4 h-4 text-gray-400" />
-        </div>
-      );
+      return <Check className="text-green-600 w-5 h-5" />; // ✅ simple green check
     }
     return null;
   };
+
   return (
-    <a
-      href={`/letters/${letterboxId}`}
-      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
+    <div
+      onClick={onClick}
+      className={`block p-4 rounded-xl shadow hover:shadow-md transition cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
-          : isRecipient && unread
+          : status === "sent"
           ? "bg-green-50"
-          : status === "pending_review"
-          ? "bg-gray-50"
           : "bg-white"
-      }`}>
+      }`}
+    >
       <div className="flex items-start">
+
+        {/* LEFT ICON */}
+        <div className="mr-3 mt-2">
+          {getStatusIcon()}
+        </div>
+
+        {/* PROFILE + CONTENT */}
         <Image
           src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
+          alt={`${name} profile`}
           width={36}
           height={36}
+          className="w-12 h-12 rounded-full object-cover mr-4"
         />
+
         <div className="flex-1">
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between">
             <div>
-              <div className="font-semibold text-gray-900">
-                {status === "draft" && lastMessage !== "" && (
-                  <span className="text-red-500 mr-1">[Draft]</span>
-                )}
-                {name}
-              </div>
+              <div className="font-semibold text-gray-900">{name}</div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
-            <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
+            <div className="text-xs text-gray-400">
               {formatDate(lastMessageDate)}
             </div>
           </div>
+
+          {/* MESSAGE */}
+          <div
+            className={`mt-2 text-sm text-gray-700 truncate ${
+              unread && isRecipient ? "font-semibold" : ""
+            }`}
+          >
+            {lastMessage}
+          </div>
         </div>
       </div>
-      <div
-        className={`mt-2 text-sm text-gray-700 truncate ${
-          isRecipient && unread ? "font-semibold" : ""
-        }`}>
-        {lastMessage ? (
-          <div className="flex">
-            {getStatusIcon() && (
-              <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            )}
-            <div className="flex-1">
-              {status === "rejected" && (
-                <div className="font-normal text-red-500">
-                  Your letter was rejected
-                </div>
-              )}
-              {lastMessage}
-            </div>
-          </div>
-        ) : (
-          <div className="flex">
-            <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            {status === "rejected" && (
-              <div className="flex-1 font-normal text-red-500">
-                Your letter was rejected
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </a>
+    </div>
   );
 };
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Button from "./Button";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
-export default function Header({ activeFilter, setActiveFilter, title }) {
+export default function Header({ activeFilter, setActiveFilter, title = "Admin" }) {
   return (
     <div className="bg-red-700 text-white p-4 flex items-center gap-4 rounded-md">
       <Image
@@ -14,7 +14,7 @@ export default function Header({ activeFilter, setActiveFilter, title }) {
         height={150}
         className="h-10 w-10 rounded-full"
       />
-      <h1 className="text-2xl font-semibold">Admin user</h1>
+      <h1 className="text-2xl font-semibold">{title}</h1>
       <div className="ml-auto">
         <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
       </div>
