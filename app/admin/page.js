@@ -192,7 +192,6 @@ export default function Admin() {
     return (
         <PageBackground>
               <PageContainer maxWidth="lg">
-              <BackButton />
               <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus}/>
             
              
