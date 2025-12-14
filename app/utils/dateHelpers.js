@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase/firestore";
 /**
  * Date helper utilities for messaging application
  */
@@ -122,4 +123,8 @@ export const formatTime = (timestamp) => {
     minute: "2-digit",
     hour12: true,
   });
+};
+
+export const dateToTimestamp = (date) => {
+    return Timestamp.fromDate(date);
 };

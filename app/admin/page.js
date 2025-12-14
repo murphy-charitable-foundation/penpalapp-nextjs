@@ -95,6 +95,7 @@ export default function Admin() {
         setIsLoading(true);
         setDocuments([]);
         setLastDoc(null);
+        setHasMore(true);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -159,7 +160,7 @@ export default function Admin() {
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
-              name : userData?.first_name + " " + userData?.last_name || "",
+              name : userData ? `${userData.first_name} ${userData.last_name}` : "",
               lastMessage: docData.content,
               lastMessageDate: docData.created_at, 
             };
@@ -184,7 +185,7 @@ export default function Admin() {
     setActiveFilter(false);
   }
 
-    if (documents == null) {
+    if (isLoading) {
       return <LetterHomeSkeleton/>
     }
     
@@ -243,7 +244,7 @@ export default function Admin() {
 
                 <BottomNavBar />
 
-        
+              {/*
               {userType === "admin" && (
                   <Button
                     btnText="Check For Inactive Chats"
@@ -253,7 +254,7 @@ export default function Admin() {
                     onClick={iterateLetterBoxes}
                   />
               )}
-              
+              */}
               
               {/* Add animation keyframes */}
               <style jsx global>{`
