@@ -40,7 +40,7 @@ export default function Admin() {
     const [lastDoc, setLastDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("sent"); // Default filter
+    const [selectedStatus, setSelectedStatus] = useState("pending_review"); // Default filter
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
@@ -228,7 +228,7 @@ export default function Admin() {
                     <div className="flex justify-center mt-4 w-full">
                       <Button
                         btnText="Load More"
-                        color="green"
+                        color="blue"
                         rounded="rounded-md"
                         onClick={() => fetchLetters(true)}
                       />

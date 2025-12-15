@@ -51,8 +51,8 @@ export default function AdminFilter({
   };
 
 
-  const statusOptions =  new Map([["Sent", "sent"], ["Pending", "pending_review"], ["Rejected", "rejected"]]);
-  const statusLabels =  new Map([["sent", "Sent"], ["pending_review", "Pending"], ["rejected", "Rejected"]]);
+  const statusOptions =  new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
+  const statusLabels =  new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
 
 
   return (
