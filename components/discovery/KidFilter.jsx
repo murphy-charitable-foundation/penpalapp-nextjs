@@ -1,216 +1,131 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Dropdown from "../general/Dropdown";
+import HobbySelect from "../../components/general/HobbySelect";
 
-const LIGHT_BLUE = "#E6EDF4";
-const DIVIDER = "#D9E5F0";
-const PRIMARY = "#4E802A";   // Apply button
-const ACCENT = "#0EA5A8";    // teal when active
-
-function MultiSelectDropdown({
-  options = [],
-  value = [],
-  onChange,
-  placeholder = "Select...",
-  className = "",
-  summaryMax = 30,
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-
-  const toggleVal = (v) => {
-    const exists = value.includes(v);
-    const next = exists ? value.filter((x) => x !== v) : [...value, v];
-    onChange?.(next);
-  };
-
-  const summary = (() => {
-    if (!value?.length) return "";
-    const s = value.join(", ");
-    return s.length > summaryMax ? `${s.slice(0, summaryMax)}…` : s;
-  })();
-
-  return (
-    <div ref={ref} className={`relative ${className}`}>
-      <button
-        type="button"
-        className="w-full h-11 px-4 flex items-center justify-between bg-transparent"
-        onClick={() => setOpen((o) => !o)}
-      >
-        <span className={`truncate ${value?.length ? "text-gray-900" : "text-gray-500"}`}>
-          {value?.length ? summary : placeholder}
-        </span>
-        <span className="text-gray-600">▾</span>
-      </button>
-
-      {open && (
-        <div
-          className="absolute z-20 mt-1 w-full max-h-56 overflow-auto rounded-lg border border-gray-200 bg-white shadow-md"
-          role="listbox"
-        >
-          {options.length === 0 && (
-            <div className="px-3 py-2 text-sm text-gray-500">No options</div>
-          )}
-          {options.map((opt) => {
-            const checked = value.includes(opt);
-            return (
-              <label
-                key={opt}
-                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
-              >
-                <input type="checkbox" className="h-4 w-4" checked={checked} onChange={() => toggleVal(opt)} />
-                <span className="text-gray-900">{opt}</span>
-              </label>
-            );
-          })}
-          {value?.length > 0 && (
-            <div className="sticky bottom-0 bg-white border-t border-gray-100 flex items-center justify-between px-3 py-2">
-              <span className="text-xs text-gray-600">{value.length} selected</span>
-              <button
-                type="button"
-                onClick={() => onChange([])}
-                className="text-xs text-gray-700 underline underline-offset-2 hover:text-gray-900"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+const PRIMARY = "#4E802A";
+const ACCENT = "#0EA5A8";
 
 export default function KidFilter({
-  setHobbies, hobbies,
-  setAge, age,
-  setGender, gender,
+  setHobbies,
+  hobbies,
+  setAge,
+  age,
+  setGender,
+  gender,
   filter,
 }) {
-  const hobbyOptions = ["Reading","Drawing","Music","Coding","Sports","Chess","Cooking","Gardening","Robotics","Dancing"];
   const genderOptions = ["Male", "Female", "Non-binary", "Other"];
-  const ageOptions = Array.from({ length: 18 }, (_, i) => String(i + 1)); // 1..18
 
-  const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
-  const [ageFilter, setAgeFilter] = useState(age ? String(age) : "");
+  const ageOptions = [
+    { id: "under_6", label: "Age 6 and below", min: 0, max: 6 },
+    { id: "7_14", label: "Age 7 - 14", min: 7, max: 14 },
+    { id: "15_18", label: "Age 15 - 18", min: 15, max: 18 },
+  ];
+
   const [genderFilter, setGenderFilter] = useState(gender || "");
+  const [ageFilter, setAgeFilter] = useState(age || null);
 
   useEffect(() => {
-    setHobbiesFilter(hobbies || []);
-    setAgeFilter(age ? String(age) : "");
     setGenderFilter(gender || "");
-  }, [age, gender, hobbies]);
-
-  const fieldLine = (active) =>
-    `h-11 flex items-center border-b-2 ${active ? "border-[var(--accent)]" : "border-gray-300"} focus-within:border-[var(--accent)]`;
+    setAgeFilter(age || null);
+  }, [gender, age]);
 
   const isDirty = useMemo(
-    () => (hobbyFilter?.length || 0) > 0 || !!genderFilter || (ageFilter !== "" && ageFilter !== null),
-    [hobbyFilter, genderFilter, ageFilter]
+    () => (hobbies && hobbies.length > 0) || !!genderFilter || !!ageFilter,
+    [hobbies, genderFilter, ageFilter]
   );
 
   const applyFilter = (e) => {
-    e?.preventDefault?.();
-    const ageNum = ageFilter === "" ? null : Number(ageFilter);
-    filter(ageNum, hobbyFilter, genderFilter);
+    e.preventDefault();
+    filter(ageFilter, hobbies || [], genderFilter);
   };
 
-  const clearFilter = (e) => {
-    e?.preventDefault?.();
-    setHobbies?.(null);
-    setAge?.(null);
-    setGender?.(null);
-    setHobbiesFilter([]);
-    setAgeFilter("");
+  const clearFilter = () => {
+    setHobbies([]);
     setGenderFilter("");
+    setAgeFilter(null);
+    setGender(null);
+    setAge(null);
   };
 
   return (
-    <div className="w-full bg-white" style={{ ["--accent"]: ACCENT }}>
-      <div className="sticky top-0 z-10 w-full">
-        <div className="mx-4 mt-3 rounded-lg bg-[#E6EDF4] text-center text-[14px] text-[#1f2937] py-2">
-          Find and choose your next pen pal
+    <form
+      onSubmit={applyFilter}
+      className="w-full bg-white"
+      style={{ ["--accent"]: ACCENT }}
+    >
+      <div className="mx-auto max-w-[560px] px-5 py-5 space-y-5">
+        {/* ===== HOBBIES ===== */}
+        <div>
+          <label className="block mb-1 text-xs font-medium text-gray-600">
+            Hobbies
+          </label>
+          <div className="border-b-2 border-gray-300 focus-within:border-[var(--accent)]">
+            <HobbySelect
+              hobbies={hobbies || []}
+              setHobbies={setHobbies}
+              wantBorder={false}
+            />
+          </div>
+        </div>
+
+        {/* ===== GENDER ===== */}
+        <div>
+          <label className="block mb-1 text-xs font-medium text-gray-600">
+            Gender
+          </label>
+          <Dropdown
+            options={genderOptions}
+            currentValue={genderFilter || ""}
+            valueChange={(v) => setGenderFilter(v || "")}
+            placeholder="Select gender"
+            className="w-full h-11 bg-transparent"
+          />
+        </div>
+
+        {/* ===== AGE ===== */}
+        <div>
+          <label className="block mb-1 text-xs font-medium text-gray-600">
+            Age
+          </label>
+          <Dropdown
+            options={ageOptions.map((o) => o.label)}
+            currentValue={ageFilter ? ageFilter.label : ""}
+            valueChange={(label) =>
+              setAgeFilter(ageOptions.find((o) => o.label === label) || null)
+            }
+            placeholder="Select age range"
+            className="w-full h-11 bg-transparent"
+          />
+        </div>
+
+        {/* ===== BUTTONS ===== */}
+        <div className="pt-4 flex flex-col items-center gap-3">
+          <button
+            type="submit"
+            disabled={!isDirty}
+            className={`w-full sm:w-[220px] h-10 rounded-full text-sm font-semibold
+              ${
+                isDirty
+                  ? "text-white"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+              }`}
+            style={isDirty ? { backgroundColor: PRIMARY } : {}}
+          >
+            Apply filters
+          </button>
+
+          <button
+            type="button"
+            onClick={clearFilter}
+            className="text-xs text-gray-600 underline"
+          >
+            Clear filters
+          </button>
         </div>
       </div>
-
-      <form className="w-full" onSubmit={applyFilter}>
-        <div className="mx-auto w-full max-w-[560px] px-5 py-5 space-y-5">
-          {/* Hobbies */}
-          <div>
-            <label className="block mb-1 text-xs font-medium text-gray-600">Hobbies</label>
-            <div className={fieldLine((hobbyFilter?.length || 0) > 0)}>
-              <MultiSelectDropdown
-                options={hobbyOptions}
-                value={hobbyFilter}
-                onChange={setHobbiesFilter}
-                placeholder="Select hobbies"
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* Gender */}
-          <div>
-            <label className="block mb-1 text-xs font-medium text-gray-600">Gender</label>
-            <div className={fieldLine(!!genderFilter)}>
-              <Dropdown
-                options={genderOptions}
-                valueChange={setGenderFilter}
-                currentValue={genderFilter || ""}
-                text="Gender"     
-                placeholder="Select gender"
-                className="w-full h-11 bg-transparent border-0 ring-0 px-4"
-                caretClass="text-gray-600"
-              />
-            </div>
-          </div>
-
-          {/* Age */}
-          <div>
-            <label className="block mb-1 text-xs font-medium text-gray-600">Age</label>
-            <div className={fieldLine(ageFilter !== "" && ageFilter !== null)}>
-              <Dropdown
-                options={ageOptions}
-                valueChange={setAgeFilter}
-                currentValue={ageFilter || ""}        
-                text="Age"
-                placeholder="Select age"
-                className="w-full h-11 bg-transparent border-0 ring-0 px-4"
-                caretClass="text-gray-600"
-              />
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <button
-              type="submit"
-              disabled={!isDirty}
-              className={`w-full sm:w-[220px] h-10 rounded-full text-sm font-semibold transition active:scale-95
-                         ${!isDirty ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "text-white shadow-sm"}`}
-              style={!isDirty ? {} : { backgroundColor: PRIMARY }}
-            >
-              Apply filters
-            </button>
-            <button
-              type="button"
-              onClick={clearFilter}
-              className="text-[13px] text-gray-600 hover:text-gray-800 underline-offset-2 hover:underline"
-            >
-              Clear filters
-            </button>
-          </div>
-        </div>
-
-        <div aria-hidden="true" className="h-3" />
-      </form>
-    </div>
+    </form>
   );
 }

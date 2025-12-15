@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { PageBackground } from "../components/general/PageBackground";
 import { PageContainer } from "../components/general/PageContainer";
 import Button from "../components/general/Button";
+import logo from "../public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
@@ -16,7 +16,6 @@ export default function Home() {
 
   useEffect(() => {
     if (isPending) {
-      // Only show spinner if loading takes longer than 200ms
       const timer = setTimeout(() => setShowSpinner(true), 200);
       return () => clearTimeout(timer);
     } else {
@@ -29,65 +28,71 @@ export default function Home() {
       router.push(href);
     });
   };
-  
-  return (
-    <div className="relative min-h-screen bg-gray-100">
-      {showSpinner && <LoadingSpinner />}
 
-      <div className="fixed left-3 top-3 z-50 md:left-5 md:top-5">
-        <BackButton btnType="button" color="transparent" textColor="text-gray-700" size="xs" />
+return (
+  <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
+  {showSpinner && <LoadingSpinner />}
+
+  <PageContainer
+    width="compactXS"
+    padding="none"
+    center={false}
+    className="
+      w-full
+      max-w-[29rem]
+      flex flex-col
+      bg-white
+      rounded-2xl
+      shadow-lg
+      overflow-hidden
+      relative
+      z-20
+    "
+  >
+    {/* LOGO */}
+    <div className="flex justify-center pt-10">
+      <Image
+        src={logo}
+        alt="Murphy Charitable Foundation Uganda"
+        width={150}
+        height={150}
+        className="h-auto w-36 sm:w-40 md:w-44"
+      />
+    </div>
+
+    {/* TITLE */}
+    <div className="px-10 pt-14 text-center">
+      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+        Welcome to Pen Pal App
+      </h1>
+    </div>
+
+    {/* SUBTITLE */}
+    <div className="px-10 mt-3 text-center">
+      <p className="text-gray-700 text-base md:text-lg leading-relaxed">
+        Write, connect, and inspire children in Uganda
+      </p>
+    </div>
+
+    {/* BUTTONS */}
+    <div className="text-center w-full pt-20 pb-10 px-10">
+      <div className="mx-auto max-w-sm space-y-5">
+        <Button
+          btnText="Log in"
+          color="green"
+          onClick={() => router.push("/login")}
+        />
+
+        <Button
+          btnText="Become a Pen Pal Volunteer"
+          color="blue"
+          href="https://calendly.com/murphycharity/60min"
+          external
+        />
       </div>
+    </div>
+  </PageContainer>
+</PageBackground>
+);
 
-      <PageContainer
-        width="compactXS"
-        padding="lg"
-        bg="bg-gray-100"
-        viewportOffset={0}
-        scroll={false}
-        className="rounded-3xl shadow-2xl ring-1 ring-gray-200 min-h-[100dvh] overflow-hidden"
-      >
-        <div className="relative min-h-[90vh]">
-          {/* Logo */}
-          <div className="absolute inset-x-0 top-6 sm:top-8 md:top-10 flex justify-center">
-            <Image
-              src={logo}
-              alt="Murphy Charitable Foundation Uganda"
-              width={160}
-              height={160}
-              className="h-auto w-36 sm:w-40 md:w-44"
-              priority
-            />
-          </div>
-
-              {/* TITLE + SUBTITLE */}
-              <div className="text-center mb-12">
-                <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
-                  Welcome to Pen Pal App
-                </h1>
-                <p className="mt-4 text-gray-800 text-sm md:text-base font-semibold">
-                  Write, connect, and inspire children in Uganda
-                </p>
-              </div>
-
-          {/* Buttons */}
-          <div className="absolute inset-x-0 bottom-10 sm:bottom-14 md:bottom-12 px-6">
-            <div className="mx-auto w-full max-w-sm space-y-5 text-center">
-              <Button
-                color="green"
-                btnText="Log in"
-                onClick={() => handleNavigation('/login')}
-              />
-              <Button
-                color="blue"
-                btnText="Become a Pen Pal Volunteer"
-                href="https://calendly.com/murphycharity/60min"
-                external={true}
-              />
-            </div>
-
-          </PageContainer>
-        </div>
-      </div>
-    </PageBackground>
-  );
 }

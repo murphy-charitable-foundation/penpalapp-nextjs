@@ -70,126 +70,93 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, []);
 
-  const [navH, setNavH] = useState(88);
-  const navWrapRef = useRef(null);
+return (
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex justify-center">
 
-  useLayoutEffect(() => {
-    const el = navWrapRef.current;
-    if (!el) return;
-
-    const update = () => setNavH(el.offsetHeight || 88);
-    update();
-
-    const obs = new ResizeObserver(update);
-    obs.observe(el);
-
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-
-    return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-      obs.disconnect();
-    };
-  }, []);
-
-  return (
-    <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
-
-      {/* TOP GAP */}
-      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
-
-        {/* MAIN CARD */}
-      <div
-         className="relative mx-auto w-full max-w-[29rem] rounded-2xl overflow-hidden shadow-lg flex flex-col min-h-0 bg-white"
-         style={{
-          height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
-         }}
-      >
-
-      {/* PAGE CONTAINER */}
       <PageContainer
-          width="compactXS"
-          padding="none"
-          bg="bg-white"
-          scroll={false}
-          viewportOffset={0}
-          className="flex-1 min-h-0 flex flex-col p-0"
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
-
-      {/* FIXED HEADER */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 pt-3">
-          <PageHeader title="View Profile" image={false} heading={false} />
-      </div>
-
-      {/* SCROLL AREA */}
-        <div
-          className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 p-5"
-          style={{
-          WebkitOverflowScrolling: "touch",
-          paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
-          }}
-        >
-
-          {/* IMAGE */}
-              <div className="my-6 p-20">
-                <div className="relative w-40 h-40 mx-auto">
-                  <Image
-                    src={photoUri || "/murphylogo.png"}
-                    fill
-                    alt="Profile photo"
-                    className="rounded-full object-cover"
-                  />
-                </div>
-              </div>
-
-              {/* NAME / COUNTRY / BIO */}
-              <div className="text-center space-y-2 mb-8">
-                <h2 className="text-2xl font-bold">{firstName} {lastName}</h2>
-                <p className="font-semibold">{country}</p>
-                {bio && <p className="text-gray-500 italic">“{bio}”</p>}
-              </div>
-
-              {/* SECTIONS */}
-              <div className="space-y-8">
-
-                {/* Personal Info */}
-                <ProfileSection title="Personal Information">
-                  {userType !== "international_buddy" && (
-                    <InfoDisplay title="Village" info={village} />
-                  )}
-                  <InfoDisplay title="Birthday" info={birthday} />
-                </ProfileSection>
-
-                {/* Education */}
-                <ProfileSection title="Education & Family">
-                  <InfoDisplay title="Education Level" info={educationLevel} />
-                  {userType !== "international_buddy" && (
-                    <>
-                      <InfoDisplay title="Guardian" info={guardian} />
-                      <InfoDisplay title="Is Orphan" info={isOrphan} />
-                    </>
-                  )}
-                </ProfileSection>
-
-                {/* Interests */}
-                <ProfileSection title="Interest">
-                  <InfoDisplay title="Dream Job" info={dreamJob} />
-                  <InfoDisplay title="Hobby" info={hobby} />
-                  <InfoDisplay title="Favorite Color" info={favoriteColor} />
-                </ProfileSection>
-
-              </div>
-            </div>
-          </PageContainer>
+        {/* ===== HEADER ===== */}
+        <div className="shrink-0 border-b bg-white pt-3">
+          <PageHeader
+            title="View Profile"
+            image={false}
+            heading={false}
+          />
         </div>
-      </div>
 
-      {/* BOTTOM NAV */}
-      <div ref={navWrapRef}>
-        <NavBar />
-      </div>
-    </PageBackground>
-  );
+        {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">
+          
+          {/* PROFILE IMAGE */}
+          <div className="my-6">
+            <div className="relative w-40 h-40 mx-auto">
+              <Image
+                src={photoUri || "/murphylogo.png"}
+                fill
+                alt="Profile photo"
+                className="rounded-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* NAME / COUNTRY / BIO */}
+          <div className="text-center space-y-2 mb-8">
+            <h2 className="text-2xl font-bold">
+              {firstName} {lastName}
+            </h2>
+            <p className="font-semibold">{country}</p>
+            {bio && (
+              <p className="text-gray-500 italic">“{bio}”</p>
+            )}
+          </div>
+
+          {/* ===== SECTIONS ===== */}
+          <div className="space-y-8 pl-4">
+
+            <ProfileSection title="Personal Information">
+              {userType !== "international_buddy" && (
+                <InfoDisplay title="Village" info={village} />
+              )}
+              <InfoDisplay title="Birthday" info={birthday} />
+            </ProfileSection>
+
+            <ProfileSection title="Education & Family">
+              <InfoDisplay
+                title="Education Level"
+                info={educationLevel}
+              />
+              {userType !== "international_buddy" && (
+                <>
+                  <InfoDisplay title="Guardian" info={guardian} />
+                  <InfoDisplay title="Is Orphan" info={isOrphan} />
+                </>
+              )}
+            </ProfileSection>
+
+            <ProfileSection title="Interest">
+              <InfoDisplay title="Dream Job" info={dreamJob} />
+              <InfoDisplay title="Hobby" info={hobby} />
+              <InfoDisplay title="Favorite Color" info={favoriteColor} />
+            </ProfileSection>
+
+          </div>
+        </div>
+
+        {/* ===== NAVBAR ===== */}
+        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+          <NavBar />
+        </div>
+
+      </PageContainer>
+    </div>
+  </PageBackground>
+);
+
+
 }
 

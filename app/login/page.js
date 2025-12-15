@@ -14,9 +14,6 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { PageBackground } from "../../components/general/PageBackground";
 
-const TOP_GAP = 6;
-const GAP_BELOW = 4;
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,115 +67,82 @@ export default function Login() {
 
   const handleInputChange = () => setError("");
 
-  return (
-    <PageBackground className="bg-gray-100 min-h-[100dvh] overflow-hidden flex flex-col ">
-      <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
-        <div
-          className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
-          style={{
-            height: `calc(100dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
-          }}
-        >
-          <PageContainer
-            width="compaxtXS"
-            padding="none"
-            bg="bg-white"
-            scroll={false}
-            viewportOffset={0}
-            className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden px-8 py-8"
-          >
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-              {loading && <LoadingSpinner />}
+return (
+  <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+    <div className="flex-1 flex justify-center items-center px-4">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="w-full max-h-[98dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {/* ===== CONTENT (ONLY SCROLLER) ===== */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-8">
+          {loading && <LoadingSpinner />}
 
-              <PageHeader title="Login" />
+          <PageHeader title="Login" image showBackButton />
 
-              <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                <div>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      handleInputChange();
-                    }}
-                    placeholder="Ex. user@gmail.com"
-                    id="email"
-                    name="email"
-                    label="Email"
-                    error={
-                      error && error.toLowerCase().includes("email")
-                        ? error
-                        : ""
-                    }
-                  />
-                </div>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                handleInputChange();
+              }}
+              placeholder="Ex. user@gmail.com"
+              id="email"
+              name="email"
+              label="Email"
+              error={
+                error && error.toLowerCase().includes("email") ? error : ""
+              }
+            />
 
-                <div>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      handleInputChange();
-                    }}
-                    placeholder="******"
-                    id="password"
-                    name="password"
-                    label="Password"
-                    error={
-                      error && error.toLowerCase().includes("password")
-                        ? error
-                        : ""
-                    }
-                  />
-                </div>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                handleInputChange();
+              }}
+              placeholder="******"
+              id="password"
+              name="password"
+              label="Password"
+              error={
+                error && error.toLowerCase().includes("password")
+                  ? error
+                  : ""
+              }
+            />
 
-                <div className="text-sm text-center">
-                  <Link
-                    href="/reset-password"
-                    className="font-medium text-blue-600 hover:text-blue-500"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
+            <Link
+              href="/reset-password"
+              className="block text-sm text-center font-medium text-blue-600 hover:text-blue-500"
+            >
+              Forgot your password?
+            </Link>
 
-                <div className="flex items-center justify-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="remember-me"
-                    className="ml-2 block text-sm text-gray-900"
-                  >
-                    Remember me
-                  </label>
-                </div>
+            {error &&
+              !error.toLowerCase().includes("email") &&
+              !error.toLowerCase().includes("password") && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
 
-                {error &&
-                  !error.toLowerCase().includes("email") &&
-                  !error.toLowerCase().includes("password") && (
-                    <div className="text-red-500 text-sm text-center">
-                      {error}
-                    </div>
-                  )}
-
-                <div className="flex justify-center">
-                  <Button
-                    btnType="submit"
-                    btnText="Log in"
-                    color="green"
-                    textColor="text-white"
-                    disabled={loading}
-                  />
-                </div>
-              </form>
+            <div className="flex justify-center pt-2">
+              <Button
+                btnType="submit"
+                btnText="Log in"
+                color="green"
+                disabled={loading}
+              />
             </div>
-          </PageContainer>
+          </form>
         </div>
-      </div>
-    </PageBackground>
-  );
+      </PageContainer>
+    </div>
+  </PageBackground>
+);
+
 }

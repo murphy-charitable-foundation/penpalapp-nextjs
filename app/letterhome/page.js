@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
-import NavBar from "../../components/bottom-nav-bar";
+import  NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
@@ -200,100 +200,46 @@ export default function Home() {
 
   //   fetchUserData();
   // }, []);
-const TOP_GAP = 6;
-const GAP_BELOW = 2;
 
-const [navH, setNavH] = useState(88);
-const navWrapRef = useRef(null);
-
-useLayoutEffect(() => {
-  const el = navWrapRef.current;
-  if (!el) return;
-  const update = () => setNavH(el.offsetHeight || 88);
-  update();
-  const ro = new ResizeObserver(update);
-  ro.observe(el);
-  window.addEventListener("resize", update);
-  window.addEventListener("orientationchange", update);
-  return () => {
-    window.removeEventListener("resize", update);
-    window.removeEventListener("orientationchange", update);
-    ro.disconnect();
-  };
-}, []);
 
 return (
-  <PageBackground className="bg-gray-100 min-h-[103dvh] overflow-hidden flex flex-col">
-    <div className="flex-1 min-h-0" style={{ paddingTop: TOP_GAP }}>
-      
-      {/* ===== FIXED CARD (no flicker) ===== */}
-      <div
-        className="relative mx-auto w-full max-w-[29rem] rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-0"
-        style={{
-          // ❗ height دیگر وابسته به navH نیست → ثابت می‌ماند
-          height: `calc(103dvh - ${TOP_GAP}px - ${GAP_BELOW}px - env(safe-area-inset-bottom,0px))`,
-        }}
-      >
-
-        <PageContainer
-          width="compactXS"
-          padding="none"
-          bg="bg-white"
-          scroll={false}
-          viewportOffset={0}
-          className=" flex-1 min-h-0 flex flex-col overflow-hidden"
-        >
-          <ProfileHeader
-            userName={userName}
-            country={country}
-            profileImage={profileImage}
-            id={userId}
-            className="px-2 m-0 rounded-t-2xl"
-          />
-
-          {/* ===== SINGLE SCROLLER ===== */}
-          <div
-            className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
-            style={{
-              // navH فقط فاصله پایین را کنترل می‌کند → بدون Flicker
-              paddingBottom: `calc(${navH}px + ${GAP_BELOW}px + env(safe-area-inset-bottom,0px))`,
-            }}
-          >
-            <main>
-              {isLoading ? (
-                <div className="px-4 md:px-4 py-2">
-                  <LetterHomeSkeleton />
-                </div>
-              ) : conversations.length > 0 ? (
-                <section className="mt-0 pb-5">
-                  <ConversationList
-                    conversations={conversations}
-                    maxHeight="none"
-                  />
-                </section>
-              ) : (
-                <section className="mt-6 px-6">
-                  <EmptyState
-                    title="New friends are coming!"
-                    description="Many friends are coming — hang tight!"
-                  />
-                </section>
-              )}
-            </main>
-          </div>
-        </PageContainer>
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <PageContainer
+      width="compactXS"
+      padding="none"
+      center={false}
+      className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+    >
+      {/* ===== HEADER (FIXED) ===== */}
+      <div className="shrink-0 border-b">
+        <ProfileHeader
+          userName={userName}
+          profileImage={profileImage}
+          id={userId}
+          showCountry={false}
+        />
       </div>
-    </div>
 
-    {/* Navbar is measured, but NOT affecting card height */}
-    <div ref={navWrapRef}>
-      <NavBar />
-    </div>
+      {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-3">
+        {isLoading ? (
+          <LetterHomeSkeleton />
+        ) : conversations.length > 0 ? (
+          <ConversationList conversations={conversations} />
+        ) : (
+          <EmptyState
+            title="New friends are coming!"
+            description="Many friends are coming — hang tight!"
+          />
+        )}
+      </div>
+
+      {/* ===== NAVBAR (FIXED) ===== */}
+      <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+        <NavBar />
+      </div>
+    </PageContainer>
   </PageBackground>
 );
-
-
-
-
 
 }

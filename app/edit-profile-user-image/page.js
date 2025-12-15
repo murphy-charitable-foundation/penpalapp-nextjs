@@ -120,34 +120,49 @@ export default function EditProfileUserImage() {
   };
 
   return (
-    <div>
-      {isSaving ? (
-        <LoadingSpinner></LoadingSpinner>
-      ) : (
-        <PageBackground>
-          <PageContainer maxWidth="lg">
-            <PageHeader title="Edit image" />
-                <div className="flex flex-col items-center gap-6 mt-6">
-                  <EditProfileImage
-                    image={image}
-                    newProfileImage={newProfileImage}
-                    previewURL={previewURL}
-                    handleDrop={handleDrop}
-                    handleCrop={handleCrop}
-                    cropperRef={cropperRef}
-                  />
-                  <i>Click to edit</i>
-                  <Button
-                    btnType="button"
-                    btnText="Save New Profile Picture"
-                    color="green"
-                    onClick={saveImage}
-                  />
-                </div>
-          </PageContainer>
-          <BottomNavBar />
-        </PageBackground>
-      )}
-    </div>
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {/* Loading overlay */}
+      {isSaving && <LoadingSpinner />}
+
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <div className="shrink-0 border-b bg-white pt-4">
+            <PageHeader title="Edit image" image={false}/>
+          </div>
+
+          {/* ===== SINGLE SCROLLER ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 flex flex-col items-center gap-6">
+            <EditProfileImage
+              image={image}
+              newProfileImage={newProfileImage}
+              previewURL={previewURL}
+              handleDrop={handleDrop}
+              handleCrop={handleCrop}
+              cropperRef={cropperRef}
+            />
+
+            <i className="text-sm text-gray-500">Click to edit</i>
+
+            <Button
+              btnType="button"
+              btnText="Save New Profile Picture"
+              color="green"
+              onClick={saveImage}
+            />
+          </div>
+
+          {/* ===== NAVBAR ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <BottomNavBar />
+          </div>
+        </PageContainer>
+      </div>
+    </PageBackground>
   );
 }
