@@ -30,6 +30,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import { useUserData } from "@/context/UserDataContext";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -42,20 +43,10 @@ export default function Home() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
-
+  const { userData, setUserData } = useUserData();
   usePageAnalytics("/letterhome");
 
-  const getUserData = async (uid) => {
-    const docRef = doc(db, "users", uid);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      setError("User data not found.");
-      throw new Error("No user document found.");
-    }
-  };
+  console.log(userData);
 
   const getConversations = async (uid) => {
     try {
@@ -118,7 +109,6 @@ export default function Home() {
         try {
           const uid = user.uid;
 
-          const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
