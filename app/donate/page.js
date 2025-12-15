@@ -54,21 +54,22 @@ export default function Donate() {
           {/* ===== SINGLE SCROLLER ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
             <div className="space-y-2">
-              <p>
-                Your generosity makes our work possible. Whether you contribute
-                financially or as an advocate for good, you make a real
-                difference.
+              <p className="text-black dark:text-black">
+               Your generosity makes our work possible. Whether you contribute
+               financially or as an advocate for good, you make a real
+               difference.
               </p>
 
-              <p className="text-gray-700 text-xs italic">
+              <p className="text-xs italic text-slate-600 dark:text-slate-300">
                 You may include a note to indicate your preferred category:
               </p>
 
-              <p className="text-gray-700 text-xs italic">
-                Education, Beddings &amp; Clothing, Medical Care, or Scholastic
-                Materials.
+               <p className="text-xs italic text-slate-600 dark:text-slate-300">
+               Education, Beddings &amp; Clothing, Medical Care, or Scholastic
+               Materials.
               </p>
             </div>
+
 
             {/* DONATE BUTTON */}
             <div className="mt-4 text-center">

@@ -278,7 +278,7 @@ return (
         "
       >
         {/* ===== HEADER ===== */}
-        <div className="shrink-0 px-4 py-3">
+        <div className="shrink-0 px-4 py-3 border-b pt-4">
           <PageHeader title="Profile" image={false} />
         </div>
 
