@@ -22,13 +22,13 @@ export default function AdminFilter({
   loading,
   setLoading
 }) {
-  const [statusFilter, setStatusFilter] = useState(status || "");
+  const [statusFilter, setStatusFilter] = useState(status || "pending_review");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
   const [endFilter, setEndFilter] = useState(end || "2025-01-01");
-  const [currentFilter, setCurrentFilter] = useState("");
+  const [currentFilter, setCurrentFilter] = useState("Pending Review");
 
   useEffect(() => {
-    setStatusFilter(status || "");
+    setStatusFilter(status || "pending_review");
     setStartFilter(start !== 0 && start !== null ? start : "");
     setEndFilter(end || "");
   }, [status, start, end]);
@@ -37,7 +37,7 @@ export default function AdminFilter({
 
   const applyFilter = async(e) => {
     e.preventDefault();
-    await filter(statusFilter || "all", startFilter, endFilter);
+    await filter(statusFilter || "pending_review", startFilter, endFilter);
 
   };
 
@@ -45,18 +45,17 @@ export default function AdminFilter({
 
   const clearFilter = async (e) => {
   e.preventDefault();
-  setStatusFilter("all");
+  setStatusFilter("pending_review");
   setStartFilter("");
   setEndFilter("");
-  await filter("all", null, null);
+  await filter("pending_review", null, null);
 };
 
 
 
   const statusOptions = new Map([
-  ["All", "all"],
-  ["Sent", "sent"],
   ["Pending Review", "pending_review"],
+  ["Sent", "sent"],
   ["Rejected", "rejected"]
 ]);
 

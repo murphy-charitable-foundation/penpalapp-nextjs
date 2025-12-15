@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, X } from "lucide-react";   // <-- SIMPLE ICONS
+import { Check, X } from "lucide-react";
 import Image from "next/image";
 
 const MessagePreview = ({
@@ -29,13 +29,12 @@ const MessagePreview = ({
     });
   };
 
-  // 🔥 CLEAN SIMPLE ICONS
   const getStatusIcon = () => {
     if (status === "rejected") {
-      return <X className="text-red-500 w-5 h-5" />;       // ❌ simple red X
+      return <X className="text-red-500 w-5 h-5" />;
     }
     if (status === "sent") {
-      return <Check className="text-green-600 w-5 h-5" />; // ✅ simple green check
+      return <Check className="text-green-600 w-5 h-5" />;
     }
     return null;
   };
@@ -52,13 +51,10 @@ const MessagePreview = ({
       }`}
     >
       <div className="flex items-start">
-
         {/* LEFT ICON */}
-        <div className="mr-3 mt-2">
-          {getStatusIcon()}
-        </div>
+        <div className="mr-3 mt-2">{getStatusIcon()}</div>
 
-        {/* PROFILE + CONTENT */}
+        {/* PROFILE IMAGE */}
         <Image
           src={imageSrc}
           alt={`${name} profile`}
@@ -67,13 +63,20 @@ const MessagePreview = ({
           className="w-12 h-12 rounded-full object-cover mr-4"
         />
 
-        <div className="flex-1">
-          <div className="flex justify-between">
-            <div>
-              <div className="font-semibold text-gray-900">{name}</div>
-              <div className="text-sm text-gray-500">{country}</div>
+        {/* MAIN CONTENT */}
+        <div className="flex-1 min-w-0">
+          {/* HEADER ROW */}
+          <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 truncate">
+                {name}
+              </div>
+              <div className="text-sm text-gray-500 truncate">
+                {country}
+              </div>
             </div>
-            <div className="text-xs text-gray-400">
+
+            <div className="text-xs text-gray-400 whitespace-nowrap shrink-0">
               {formatDate(lastMessageDate)}
             </div>
           </div>
