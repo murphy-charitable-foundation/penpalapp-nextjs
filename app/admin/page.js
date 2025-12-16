@@ -125,6 +125,19 @@ const handleReject = async (reason, feedback) => {
   }
 };
 
+const handleClearReview = async (letter) => {
+    // 1. Clear selected letter (IMPORTANT)
+    setSelectedLetter(null);
+
+    setLetters(prev =>
+      prev.filter(l => l.id !== letter.id)
+    );
+
+    await fetchLetters();
+
+  };
+
+
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setIsLoading(true);
@@ -295,16 +308,21 @@ const handleReject = async (reason, feedback) => {
 
 
     {showReview && (
-      <AdminLetterReview
-        letter={selectedLetter}
-        onApprove={handleApprove}
-        onReject={() => {
-          setShowReview(false);
-          setShowRejectModal(true);
-        }}
-        onClose={() => setShowReview(false)}
-      />
-    )}
+  <AdminLetterReview
+    letter={selectedLetter}
+    onApprove={handleApprove}
+    onReject={() => {
+      setShowReview(false);
+      setShowRejectModal(true);
+    }}
+    onClearReview={handleClearReview}
+    onClose={() => {
+      setShowReview(false);
+      setSelectedLetter(null);
+    }}
+  />
+)}
+
 
         {/* REJECT SCREEN */}
         {showRejectModal && (
