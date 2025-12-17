@@ -14,8 +14,6 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
 
-const TOP_GAP = 8;
-const GAP_BELOW = 2;
 
 export default function Page({ params }) {
   const { id } = params;
