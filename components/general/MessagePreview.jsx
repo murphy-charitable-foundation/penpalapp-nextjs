@@ -1,6 +1,7 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const MessagePreview = ({
   profileImage,
@@ -63,7 +64,7 @@ const MessagePreview = ({
     return null;
   };
   return (
-    <a
+    <Link
       href={`/letters/${letterboxId}`}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
@@ -128,7 +129,7 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </Link>
   );
 };
 
