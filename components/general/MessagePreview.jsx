@@ -30,25 +30,27 @@ const MessagePreview = ({
   };
 
   const getStatusIcon = () => {
-    if (status === "rejected") {
-      return <X className="text-red-500 w-5 h-5" />;
-    }
-    if (status === "sent") {
-      return <Check className="text-green-600 w-5 h-5" />;
-    }
-    return null;
-  };
+  if (status === "rejected") {
+    return <X className="text-secondary w-5 h-5" />;
+  }
+  if (status === "sent") {
+    return <Check className="text-primary w-5 h-5" />;
+  }
+  return null;
+};
+
 
   return (
     <div
       onClick={onClick}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition cursor-pointer ${
-        status === "rejected"
-          ? "bg-red-50"
-          : status === "sent"
-          ? "bg-green-50"
-          : "bg-white"
-      }`}
+      status === "rejected"
+        ? "bg-secondary/10"
+        : status === "sent"
+        ? "bg-primary/10"
+        : "bg-white"
+    }`}
+
     >
       <div className="flex items-start">
         {/* LEFT ICON */}
