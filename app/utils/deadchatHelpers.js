@@ -7,29 +7,29 @@ import generateDeadletterEmailTemplate from "../api/deadchat/emailTemplate";
 const SENDER_EMAIL = "penpal@murphycharity.org";
 
 const formatListWithAnd = (arr) => {
-  if (!arr || arr.length === 0) return "[]";
-  if (arr.length === 1) return `[${arr[0]}]`;
-  if (arr.length === 2) return `[${arr[0]} and ${arr[1]}]`;
+  if (!arr || arr.length === 0) return "";
+  if (arr.length === 1) return `${arr[0]}`;
+  if (arr.length === 2) return `${arr[0]} and ${arr[1]}`;
   const allButLast = arr.slice(0, -1).join(", ");
   const last = arr[arr.length - 1];
-  return `[${allButLast}, & ${last}]`;
+  return `${allButLast}, & ${last}`;
 };
 
-export const sendEmail = async (letterBoxId, members, toEmails, reason) => {
+export const sendEmail = async (letterboxId, members, toEmails, reason) => {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   let message;
   const membersNames = members.map(({ firstName = "", lastName = "" }) =>
     [firstName, lastName].filter((s) => s !== "").join(" ")
   );
   if (reason == "admin") {
-    message = `Hello Richard, it seems that a chat in a letterbox with the id: ${letterBoxId}, involving the user/s: ${formatListWithAnd(
+    message = `It seems that a chat in a letterbox with the id: ${letterboxId}, involving the user/s: [${formatListWithAnd(
       membersNames
-    )} has stalled because the user/s with the email/s: ${formatListWithAnd(
+    )}] has stalled because the user/s with the email/s: [${formatListWithAnd(
       toEmails
-    )} has stopped responding. Consider contacting them to see if the chat can be reignited.`;
+    )}] has stopped responding. Consider contacting them to see if the chat can be reignited.`;
   } else {
-    message = `Hello, it seems that your chat in a letterbox with the id: ${letterBoxId}, involving the user/s: ${formatListWithAnd(
-      membersNames
-    )} has stalled. Consider contacting them to see if the chat can be reignited.`;
+    message =
+      "You have unread messages from two weeks ago. Please check them at your earliest convenience.";
   }
 
   let msg;
@@ -39,7 +39,12 @@ export const sendEmail = async (letterBoxId, members, toEmails, reason) => {
       from: SENDER_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
-      html: generateDeadletterEmailTemplate(message),
+      html: generateDeadletterEmailTemplate({
+        baseUrl,
+        to: "Richard",
+        message,
+        letterboxId,
+      }),
     };
   } else {
     msg = {
@@ -47,7 +52,12 @@ export const sendEmail = async (letterBoxId, members, toEmails, reason) => {
       from: SENDER_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
-      html: generateDeadletterEmailTemplate(message),
+      html: generateDeadletterEmailTemplate({
+        baseUrl,
+        to: formatListWithAnd(membersNames),
+        message,
+        letterboxId,
+      }),
     };
   }
   try {
@@ -60,7 +70,7 @@ export const sendEmail = async (letterBoxId, members, toEmails, reason) => {
         reason === "admin" ? "admin_reminded_at" : "user_reminded_at";
       await db
         .collection("letterbox")
-        .doc(letterBoxId)
+        .doc(letterboxId)
         .set(
           {
             [fieldToUpdate]: new Date(),
