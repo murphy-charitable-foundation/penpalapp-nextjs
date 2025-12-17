@@ -822,58 +822,49 @@ export default function Page({ params }) {
     return canSend;
   };
 
-return (
+  return (
   <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <PageContainer
       width="compactXS"
       padding="none"
       center={false}
-      className="
-        flex flex-col
-        bg-white
-        rounded-2xl
-        shadow-lg
-        overflow-hidden
-        min-h-[92dvh]
-      "
+      className="flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden min-h-[92dvh]"
     >
       {/* ===== HEADER ===== */}
       <div className="shrink-0 bg-blue-100 p-4 flex items-center justify-between border-b">
-        {isXButtonDisabled || isUpdatingFirebase ? (
-          <div className="w-6 h-6 flex items-center justify-center">
-            <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <button
-            onClick={handleCloseMessage}
-            className="text-gray-700 hover:text-gray-900"
-          >
-            X
-          </button>
-        )}
+        <button
+          onClick={handleCloseMessage}
+          className="text-gray-700 hover:text-gray-900"
+          disabled={isUpdatingFirebase}
+        >
+          X
+        </button>
 
         {isEditing && (
-          <button
-            onClick={handleSendMessage}
-            disabled={!canSendMessage()}
-            className={`p-1 ${
-              !canSendMessage()
-                ? "cursor-not-allowed opacity-50"
-                : "hover:bg-blue-200 rounded"
-            }`}
-          >
-            <Image
-              src="/send-message-icon.png"
-              alt="Send"
-              width={30}
-              height={30}
-              className="object-contain"
-            />
-          </button>
+          isSendButtonDisabled || isUpdatingFirebase ? (
+            <LoadingSpinner />
+          ) : (
+            <button
+              onClick={handleSendMessage}
+              disabled={!canSendMessage()}
+              className={`p-1 ${
+                !canSendMessage()
+                  ? "cursor-not-allowed opacity-50"
+                  : "hover:bg-blue-200 rounded"
+              }`}
+            >
+              <Image
+                src="/send-message-icon.png"
+                alt={editingMessageId ? "Update message" : "Send message"}
+                width={30}
+                height={30}
+              />
+            </button>
+          )
         )}
       </div>
 
-      {/* ===== MESSAGE LIST (SCROLL AREA) ===== */}
+      {/* ===== MESSAGE LIST ===== */}
       <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100">
         {allMessages.map((message, index) => {
           const messageId = message.id;
@@ -881,42 +872,74 @@ return (
           const isSelected = selectedMessageId === messageId;
           const location = getSenderLocation(message);
 
+          const showDateSeparator =
+            index === 0 ||
+            isDifferentDay(
+              allMessages[index - 1]?.created_at,
+              message.created_at
+            );
+
           return (
             <div key={messageId}>
+              {showDateSeparator && (
+                <div className="text-center text-xs text-gray-500 py-2">
+                  {formatTimestamp(message.created_at)}
+                </div>
+              )}
+
               <div
-                className={`
-                  border-b border-gray-200
-                  ${isSelected ? "bg-white" : index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                `}
+                className={`border-b border-gray-200 ${
+                  isSelected ? "bg-white" : index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                }`}
+                onClick={() => selectMessage(messageId)}
               >
-                <div
-                  className="px-4 py-3"
-                  onClick={() => selectMessage(messageId)}
-                >
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
-                      <ProfileImage
-                        photo_uri={
-                          isSenderUser ? profileImage : recipients[0]?.photo_uri
-                        }
-                        first_name={isSenderUser ? "Me" : recipients[0]?.first_name}
-                        width={48}
-                        height={48}
-                      />
+                <div className="px-4 py-3 flex items-start">
+                  <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
+                    <ProfileImage
+                      photo_uri={
+                        isSenderUser
+                          ? profileImage
+                          : recipients[0]?.photo_uri
+                      }
+                      first_name={
+                        isSenderUser ? "Me" : recipients[0]?.first_name
+                      }
+                      width={48}
+                      height={48}
+                    />
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <span className="font-bold text-black">
+                        {isSenderUser
+                          ? "Me"
+                          : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                      </span>
+                      {location && (
+                        <span className="ml-2 text-sm text-black">
+                          {location}
+                        </span>
+                      )}
                     </div>
 
-                  {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16 relative">
-                          <p className="text-gray-800 whitespace-pre-wrap">
+                    {!isSelected && (
+                      <div className="text-gray-800">
+                        {truncateMessage(message.content)}
+                      </div>
+                    )}
+
+                    {isSelected && (
+                      <div className="mt-2 ml-2">
+                        <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
-                        <div className="flex items-center justify-end w-full">
+
+                        <div className="flex items-center justify-end mt-2">
                           {!isSenderUser && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-
                                 setReportSender(message.sent_by.id);
                                 setReportContent(message.content);
                                 setShowReportPopup(true);
@@ -925,168 +948,141 @@ return (
                                   "/letters/[id]"
                                 );
                               }}
-                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                            >
                               <FaExclamationCircle className="mr-1" size={10} />
                               Report
                             </button>
                           )}
-                          {/* STATUS BANNER */}
-                          {isSenderUser && (
-                            <>
-                              {/* REJECTED */}
-                              {isSenderUser && message.status === "rejected" &&(
-                              <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
-                                <div className="flex items-start text-red-700 font-semibold">
-                                  <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
-                                  <div>
-                                    <div>Your letter was not sent.</div>
 
-                                    {message.rejection_reason && (
-                                      <div className="text-sm text-red-600 mt-1">
-                                        {message.rejection_reason}
-                                      </div>
-                                    )}
-                                  </div>
+                          {isSenderUser && message.status === "rejected" && (
+                            <div className="bg-red-50 border border-red-300 rounded-lg p-3 mt-2">
+                              <div className="flex items-start text-red-700 font-semibold">
+                                <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                <div>
+                                  <div>Your letter was not sent.</div>
+                                  {message.rejection_reason && (
+                                    <div className="text-sm text-red-600 mt-1">
+                                      {message.rejection_reason}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            )}
+                            </div>
+                          )}
 
-                              {/* SENT → GREEN CHECK */}
-                              {message.status === "sent" && (
-                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
-                              )}
-                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
-                              {message.status === "pending_review" && (
-                                <div className="flex items-center justify-end w-full">
-                              {/* Wrapper so the check can stick to the button */}
-                              <div className="relative inline-flex">
+                          {isSenderUser && message.status === "sent" && (
+                            <span className="text-green-500 text-lg font-bold ml-2">
+                              ✓
+                            </span>
+                          )}
+
+                          {isSenderUser &&
+                            message.status === "pending_review" && (
+                              <div className="relative inline-flex ml-2">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-
                                     handleEditMessage(message);
                                     logButtonEvent(
                                       "Edit message clicked!",
                                       "/letters/[id]"
                                     );
                                   }}
-                                  className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
-                                  title="Edit message"
+                                  className="absolute -top-2 -right-8 bg-primary text-white text-xs px-2 py-1 rounded-full"
                                 >
                                   Edit
                                 </button>
-
-                                {/* Check badge in bottom-right of the button */}
                                 <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                  <span className="text-gray-400 text-xs font-bold">✓</span>
+                                  <span className="text-gray-400 text-xs font-bold">
+                                    ✓
+                                  </span>
                                 </div>
                               </div>
-                            </div>
                             )}
-                            </>
-                          )}
                         </div>
                       </div>
-
-                      <div className="text-gray-800">
-                        {isSelected ? "" : truncateMessage(message.content)}
-                      </div>
-                    </div>
-
-        <div className="bg-white">
-          <div className="flex items-center justify-between px-4 py-2">
-            <div className="flex items-center">
-              <Image
-                src="/arrow-left.png"
-                alt="Back"
-                width={20}
-                height={20}
-                className="mr-2"
-              />
-              <span className="text-gray-700">To {recipientName}</span>
-            </div>
-          </div>
-
-          {!isEditing ? (
-            <div className="p-4">
-              <div
-                className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}>
-                {hasDraftContent
-                  ? "Continue draft..."
-                  : "Reply to the letter..."}
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="p-4 relative" style={{ height: "40vh" }}>
-              <textarea
-                ref={textAreaRef}
-                id="message-input"
-                className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-                placeholder={
-                  editingMessageId
-                    ? "Edit your message..."
-                    : "Write your message..."
-                }
-                value={messageContent}
-                onChange={handleMessageChange}
-                style={{
-                  overflowWrap: "break-word",
-                  wordWrap: "break-word",
-                  height: "calc(100% - 24px)",
-                }}
-              />
-            </div>
-          )}
+          );
+        })}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* ===== REPLY AREA ===== */}
+      <div className="bg-white border-t">
+        <div className="flex items-center px-4 py-2">
+          <Image
+            src="/arrow-left.png"
+            alt="Back"
+            width={20}
+            height={20}
+            className="mr-2"
+          />
+          <span className="text-gray-700">To {recipientName}</span>
         </div>
 
-        {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black leading-tight">
-                {editingMessageId ? "Discard changes?" : "Close this message?"}
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                {editingMessageId
-                  ? "Your changes will not be saved."
-                  : "Your message will be saved as a draft."}
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleContinueEditing}
-                  className="flex-1 !bg-[#4E802A] !text-white py-3 px-4 !rounded-2xl hover:!bg-opacity-90 transition-colors">
-                  Stay on page
-                </button>
-                <button
-                  onClick={handleConfirmClose}
-                  className="flex-1 !bg-gray-200 !text-[#4E802A] py-3 px-4 !rounded-2xl hover:!bg-gray-300 transition-colors">
-                  {editingMessageId ? "Discard" : "Close"}
-                </button>
-              </div>
+        {!isEditing ? (
+          <div className="p-4">
+            <div
+              className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
+              onClick={handleReplyClick}
+            >
+              {hasDraftContent
+                ? "Continue draft..."
+                : "Reply to the letter..."}
             </div>
           </div>
-        )}
-
-        {showReportPopup && (
-          <ReportPopup
-            setShowPopup={setShowReportPopup}
-            setShowConfirmReportPopup={setShowConfirmReportPopup}
-            sender={reportSender}
-            content={reportContent}
-          />
-        )}
-        {showConfirmReportPopup && (
-          <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+        ) : (
+          <div className="p-4 relative" style={{ height: "40vh" }}>
+            <textarea
+              ref={textAreaRef}
+              className="w-full h-full p-3 resize-none text-black bg-white focus:outline-none"
+              placeholder={
+                editingMessageId
+                  ? "Edit your message..."
+                  : "Write your message..."
+              }
+              value={messageContent}
+              onChange={handleMessageChange}
+            />
+          </div>
         )}
       </div>
     </PageContainer>
 
-    {/* DIALOGS */}
+    {/* ===== DIALOGS ===== */}
     {showCloseDialog && (
-      <CloseDialog
-        onConfirm={handleConfirmClose}
-        onStay={handleContinueEditing}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+        <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
+          <h2 className="text-xl font-semibold mb-1 text-black">
+            {editingMessageId ? "Discard changes?" : "Close this message?"}
+          </h2>
+          <p className="text-gray-600 mb-6 text-sm">
+            {editingMessageId
+              ? "Your changes will not be saved."
+              : "Your message will be saved as a draft."}
+          </p>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleContinueEditing}
+              className="flex-1 bg-[#4E802A] text-white py-3 rounded-2xl"
+            >
+              Stay on page
+            </button>
+            <button
+              onClick={handleConfirmClose}
+              className="flex-1 bg-gray-200 text-[#4E802A] py-3 rounded-2xl"
+            >
+              {editingMessageId ? "Discard" : "Close"}
+            </button>
+          </div>
+        </div>
+      </div>
     )}
 
     {showReportPopup && (
@@ -1103,5 +1099,4 @@ return (
     )}
   </PageBackground>
 );
-
 }
