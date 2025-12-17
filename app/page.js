@@ -31,7 +31,12 @@ export default function Home() {
 
 return (
   <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
-  {showSpinner && <LoadingSpinner />}
+  {showSpinner && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+     <LoadingSpinner />
+    </div>
+  )}
+
 
   <PageContainer
     width="compactXS"
