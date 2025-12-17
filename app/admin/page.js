@@ -76,6 +76,15 @@ export default function Admin() {
     const [showRejectSuccess, setShowRejectSuccess] = useState(false);
     const pendingCount = documents.filter(doc => doc.status === "pending_review").length;
 
+  const exitReview = () => {
+  setShowReview(false);
+  setSelectedLetter(null);
+  setShowRejectModal(false);
+  setShowApproveSuccess(false);
+  setShowRejectSuccess(false);
+  setSelectedStatus("pending_review");
+};
+
 
 
  const handleApprove = async () => {
@@ -94,7 +103,6 @@ export default function Admin() {
 
     setShowReview(false);
     setShowApproveSuccess(true);
-    await fetchLetters(); // Refresh the list after approval   
   } catch (err) {
     console.error("Approve error:", err);
   }
@@ -119,25 +127,10 @@ const handleReject = async (reason, feedback) => {
 
     setShowRejectModal(false);
     setShowRejectSuccess(true);
-    await fetchLetters(); // Refresh the list after rejection
   } catch (err) {
     console.error("Reject error:", err);
   }
 };
-
-const handleClearReview = async (letter) => {
-    // 1. Clear selected letter (IMPORTANT)
-    setSelectedLetter(null);
-
-    setLetters(prev =>
-      prev.filter(l => l.id !== letter.id)
-    );
-
-    await fetchLetters();
-
-  };
-
-
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setIsLoading(true);
@@ -305,25 +298,20 @@ const handleClearReview = async (letter) => {
     
     return (
        <PageBackground>
+        {/* REVIEW SCREEN */}
+        {showReview && (
+            <AdminLetterReview
+            letter={selectedLetter}
+            onApprove={handleApprove}
+            onReject={() => {
+              setShowReview(false);
+              setShowRejectModal(true);
+            }}
+            onClearReview={exitReview}
+            onClose={exitReview}
+          />
 
-
-    {showReview && (
-  <AdminLetterReview
-    letter={selectedLetter}
-    onApprove={handleApprove}
-    onReject={() => {
-      setShowReview(false);
-      setShowRejectModal(true);
-    }}
-    onClearReview={handleClearReview}
-    onClose={() => {
-      setShowReview(false);
-      setSelectedLetter(null);
-    }}
-  />
-)}
-
-
+          )}
         {/* REJECT SCREEN */}
         {showRejectModal && (
           <AdminRejectModal
@@ -345,8 +333,7 @@ const handleClearReview = async (letter) => {
               <BackButton />
               <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
             
-             
-              
+
               <WelcomeToast 
                 userName={userName}
                 isVisible={showWelcome}

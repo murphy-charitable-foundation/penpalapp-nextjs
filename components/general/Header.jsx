@@ -15,7 +15,7 @@ export default function Header({ activeFilter, setActiveFilter }) {
       >
         <button
           type="button"
-          onClick={() => window.history.back()}
+          onClick={() => setSelectedLetter(null)}
           aria-label="Back"
           className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100"
         >

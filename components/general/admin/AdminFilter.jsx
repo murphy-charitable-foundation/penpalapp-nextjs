@@ -64,13 +64,15 @@ export default function AdminFilter({
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
       <form className="flex flex-col gap-6">
         <div className=" flex flex-row justify-between">
-          <label className="text-black mt-[auto] mb-[auto]">Start date:</label>
-
+          <label className="text-secondary font-medium">Start date:</label>
           <DatePicker selected={startFilter}
           placeHolder={"Select A Date"}
           maxDate={endFilter} 
           onChange={(date) => setStartFilter(date)} 
-          className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
+          className="w-full px-4 py-2 border rounded-md shadow-sm
+           text-black focus:outline-none focus:ring
+           focus:border-secondary focus:ring-secondary-light"
+
           calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
         </div>
         <div className="flex flex-row justify-between">
@@ -86,7 +88,8 @@ export default function AdminFilter({
         <div>
           <label
             htmlFor="status"
-            className="text-sm font-medium text-gray-700 block mb-2"
+            className="text-sm font-medium text-secondary"
+
           >
             Status
           </label>
@@ -104,19 +107,22 @@ export default function AdminFilter({
             <Button
               onClick={applyFilter}
               btnText="Apply Filters"
-              color="blue"
+              color="primary"
               textColor="text-white"
               font="font-bold"
               rounded="rounded-3xl"
               size="w-full"
             />
+
             <Button
               onClick={clearFilter}
               btnText="Clear Filters"
-              textColor="text-black"
+              color="secondary"
+              textColor="text-secondary"
               font="text-lg"
               size="w-full"
             />
+
           </div>
         </div>
       </form>
