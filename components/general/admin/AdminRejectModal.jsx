@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import rejectionReasons from "./rejectionReasons";
-import { ChevronLeft } from "lucide-react";
 
 export default function AdminRejectModal({ letter, onSubmit, onClose }) {
   const [reason, setReason] = useState("");
@@ -14,14 +13,8 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
       <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl">
 
         {/* HEADER */}
-        <div className="flex items-center justify-between px-4 py-3 bg-rose-50 text-gray-900">
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10"
-          >
-            <ChevronLeft size={22} strokeWidth={2.5} />
-          </button>
-
+        <div className="flex items-center px-4 py-3 bg-secondary text-white relative">
+          <button onClick={onClose} className="absolute left-4 text-xl">←</button>
           <h2 className="text-lg font-semibold mx-auto">Give Feedback</h2>
         </div>
 
@@ -51,20 +44,16 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
             className="
               w-full
               border-b-2 border-gray-200
-              focus:border-b-4
+              focus: border-b-4
               focus:border-primary
               focus:outline-none
               resize-none
               py-5
               bg-gray-300
               text-gray-800
-              caret-black
-              placeholder-gray-500
-              focus:placeholder-transparent
             "
             placeholder="Explanation"
           />
-
         </div>
 
         {/* ACTION BAR */}
