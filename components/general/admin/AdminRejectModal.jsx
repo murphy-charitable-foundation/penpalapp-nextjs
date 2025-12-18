@@ -40,18 +40,35 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Explanation
           </label>
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            className="w-full border rounded-md p-3 h-32"
-            placeholder="Write feedback here…"
+             <textarea
+            className="
+              w-full
+              border-b-2 border-gray-200
+              focus: border-b-4
+              focus:border-primary
+              focus:outline-none
+              resize-none
+              py-5
+              bg-gray-300
+              text-gray-800
+            "
+            placeholder="Explanation"
           />
         </div>
 
         {/* ACTION BAR */}
         <div className="px-5 py-4 border-t bg-white">
-          <button
-            className="w-full py-3 bg-primary text-white rounded-md font-medium"
+         <button
+            className="
+              block
+              w-2/5
+              mx-auto
+              py-4
+              bg-primary
+              text-white
+              rounded-full
+              font-semibold
+            "
             onClick={() => onSubmit(reason, feedback)}
           >
             Submit
