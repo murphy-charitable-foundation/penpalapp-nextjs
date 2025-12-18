@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
-// import BottomNavBar from "../../components/bottom-nav-bar";
-import AdminBottomBar from "../../components/general/admin/AdminBottomBar";
+import { useRouter, useSearchParams } from "next/navigation";
+import BottomNavBar from "../../components/bottom-nav-bar";
 
 import {
   collectionGroup,
@@ -75,6 +74,9 @@ export default function Admin() {
     const [showApproveSuccess, setShowApproveSuccess] = useState(false);
     const [showRejectSuccess, setShowRejectSuccess] = useState(false);
     const pendingCount = documents.filter(doc => doc.status === "pending_review").length;
+    const searchParams = useSearchParams();
+    const showApproveSuccessTest= searchParams.get("approveSuccess") === "true";
+    const showRejectSuccessTest= searchParams.get("rejectSuccess") === "true";
 
   const exitReview = () => {
   setShowReview(false);
@@ -96,8 +98,6 @@ export default function Admin() {
       {
         status: "sent",
         updated_at: Timestamp.now(),
-        created_at: selectedLetter.created_at || Timestamp.now(),
-        moderator_id: userId,
       }
     );
 
@@ -120,8 +120,6 @@ const handleReject = async (reason, feedback) => {
         rejection_reason: reason,
         rejection_feedback: feedback,
         updated_at: Timestamp.now(),
-        created_at: selectedLetter.created_at || Timestamp.now(),
-        moderator_id: userId,
       }
     );
 
@@ -130,6 +128,7 @@ const handleReject = async (reason, feedback) => {
   } catch (err) {
     console.error("Reject error:", err);
   }
+
 };
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -322,17 +321,43 @@ const handleReject = async (reason, feedback) => {
         )}
 
         {/* SUCCESS SCREENS */}
-        {showApproveSuccess && (
-          <ApproveSuccessModal onClose={() => setShowApproveSuccess(false)} />
-        )}
+            {showApproveSuccess && (
+              <ApproveSuccessModal
+                onClose={() => setShowApproveSuccess(false)}
+              />
+            )}
+
+            {showApproveSuccessTest && (
+              <ApproveSuccessModal
+                onClose={() => setShowApproveSuccess(false)}
+              />
+            )}
+
+            {showRejectSuccess && (
+              <RejectSuccessModal
+                onClose={() => setShowRejectSuccess(false)}
+              />
+            )}
+
+            {showRejectSuccessTest && (
+              <RejectSuccessModal
+                onClose={() => setShowRejectSuccess(false)}
+              />
+            )}
+
 
         {showRejectSuccess && (
           <RejectSuccessModal onClose={() => setShowRejectSuccess(false)} />
         )}
               <PageContainer maxWidth="lg">
               <BackButton />
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
-            
+              <Header
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                title="All letters"
+                subtitle="Pending moderation"
+              />
+
 
               <WelcomeToast 
                 userName={userName}
@@ -356,7 +381,13 @@ const handleReject = async (reason, feedback) => {
                     <main className="p-6">
                       <section className="mt-8">
                         {!isLoading ? (
-                          <ConversationList conversations={documents}/>
+                            <ConversationList
+                              conversations={documents}
+                              onSelectConversation={(conversation) => {
+                                setSelectedLetter(conversation);
+                                setShowReview(true);
+                              }}
+                            />
                         ) : (
                           <LetterHomeSkeleton />
                         )}
