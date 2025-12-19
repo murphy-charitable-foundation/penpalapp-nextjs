@@ -1,10 +1,20 @@
-import sendgrid from "@sendgrid/mail";
 import { db } from "../firebaseAdmin";
-
+import nodemailer from "nodemailer";
 import { logError } from "./analytics";
 import generateDeadletterEmailTemplate from "../api/deadchat/emailTemplate";
 
 const SENDER_EMAIL = "penpal@murphycharity.org";
+
+const transporter = nodemailer.createTransport({
+    host: process.env.CPANEL_SMTP_HOST,
+    port: parseInt(process.env.CPANEL_SMTP_PORT),
+    secure: process.env.CPANEL_SMTP_PORT == 465, // SSL for 465
+    auth: {
+        user: SENDER_EMAIL, //sender email
+        pass: process.env.PENPAL_EMAIL_PASSWORD, //sender password (cPanel email password)
+    },
+});
+
 
 const formatListWithAnd = (arr) => {
   if (!arr || arr.length === 0) return "";
@@ -61,9 +71,8 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
     };
   }
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY);
     // Send the email
-    await sendgrid.send(msg);
+    await transporter.sendMail(msg);
 
     if (db) {
       const fieldToUpdate =
