@@ -1,10 +1,10 @@
 "use client";
 import { useRef, useState, useLayoutEffect } from "react";
-import Link from 'next/link';
-import Button from '../../components/general/Button';
-import { PageBackground } from '../../components/general/PageBackground';
-import { PageContainer } from '../../components/general/PageContainer';
-import { PageHeader } from '../../components/general/PageHeader';
+import Link from "next/link";
+import Button from "../../components/general/Button";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
 import NavBar from "../../components/bottom-nav-bar";
 import Image from "next/image";
 import { BackButton } from "../../components/general/BackButton";
@@ -21,10 +21,6 @@ export default function Donate() {
 
   const TOP_GAP = 8;
   const GAP_BELOW = 2;
-  /**
-   * Firebase Analytics Documentation Example:
-   * usePageAnalytics("/donate") from useAnalytics.js logs a dead clicks and load times for the /donate page
-   */
 
   usePageAnalytics("/donate");
 
@@ -64,7 +60,7 @@ export default function Donate() {
             width="compactXS"
             padding="none"
             bg="bg-white"
-            scroll={false} 
+            scroll={false}
             viewportOffset={0}
             className="p-0 flex-1 min-h-0 flex flex-col !w-full !max-w-none"
             style={{ maxWidth: "unset", width: "100%" }}
@@ -132,9 +128,8 @@ export default function Donate() {
               </section>
 
               <div className="h-2" />
->>>>>>> c76284f (code rabbit comments)
             </div>
-          </div>
+          </PageContainer>
         </div>
       </div>
 

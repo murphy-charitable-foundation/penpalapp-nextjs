@@ -24,13 +24,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   
-  usePageAnalytics(`/login`);
+  // usePageAnalytics(`/login`);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    logButtonEvent("login button clicked", "/login");
+    // logButtonEvent("login button clicked", "/login");
 
     try {
       if (!email) throw new Error("Please enter your email.");

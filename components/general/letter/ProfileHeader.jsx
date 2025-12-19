@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ProfileImage from "/components/general/ProfileImage";
+import ProfileImage from "../images/ProfileImage";
 
 export default function ProfileHeader({ userName, country, profileImage, id }) {
   return (
