@@ -18,10 +18,16 @@ import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
+import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
+import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
+import ApproveSuccessModal from "../../components/general/admin/ApproveSuccessModal";
+import RejectSuccessModal from "../../components/general/admin/RejectSuccessModal";
+import { Timestamp, updateDoc } from "firebase/firestore";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
+
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -331,11 +337,10 @@ const handleReject = async (reason, feedback) => {
             )}
 
 
-        {showRejectSuccess && (
-          <RejectSuccessModal onClose={() => setShowRejectSuccess(false)} />
-        )}
+    
               <PageContainer maxWidth="lg">
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus}/>
+              <BackButton />
+              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
             
              
               
@@ -373,18 +378,6 @@ const handleReject = async (reason, feedback) => {
                         )}
                       </section>
                   </main>
-
-                  {hasMore === true && (
-                    <div className="flex justify-center mt-4 w-full">
-                      <Button
-                        btnText="Load More"
-                        color="blue"
-                        rounded="rounded-md"
-                        onClick={() => fetchLetters(true)}
-                      />
-                    </div>
-                  )}
-
                   </div>
                 )}
 
@@ -402,7 +395,6 @@ const handleReject = async (reason, feedback) => {
                     onClick={iterateLetterBoxes}
                   />
               )}
-              */}
               
               {/* Add animation keyframes */}
               <style jsx global>{`
