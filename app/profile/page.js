@@ -18,7 +18,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
-import BottomNavBar from "../../components/navigation/BottomNavBar";
+import BottomNavBar from "../../components/bottom-nav-bar";
 
 export default function EditProfile() {
   const router = useRouter();
