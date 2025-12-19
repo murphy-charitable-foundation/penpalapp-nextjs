@@ -1,5 +1,6 @@
 import Link from "next/link";
-import ProfileImage from "../images/ProfileImage";
+import ProfileImage from "../ProfileImage";
+
 
 export default function ProfileHeader({ userName, country, profileImage, id }) {
   return (
