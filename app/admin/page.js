@@ -7,28 +7,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import BottomNavBar from "../../components/bottom-nav-bar";
 
-import {
-  collectionGroup,
-  doc,
-  getDoc,
-  getDocs,
-  collection,
-  query,
-  where,
-  limit,
-  startAfter,
-  updateDoc,
-  Timestamp,
-} from "firebase/firestore";
-
-import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
-import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
-import RejectSuccessModal from "../../components/general/admin/RejectSuccessModal";
-import ApproveSuccessModal from "../../components/general/admin/ApproveSuccessModal";
-
-
-import { storage } from "../firebaseConfig.js";
-import { ref as storageRef, getDownloadURL } from "@firebase/storage";
+import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter, orderBy } from "firebase/firestore";
+import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
+import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
@@ -40,9 +21,7 @@ import AdminFilter from "../../components/general/admin/AdminFilter";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
-import { dateToTimestamp } from "../utils/timestampToDate";
-
-
+import { dateToTimestamp } from "../utils/dateHelpers";
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -61,7 +40,7 @@ export default function Admin() {
     const [lastDoc, setLastDoc] = useState(null);
     const [documents, setDocuments] = useState([]);
     const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("pending_review");
+    const [selectedStatus, setSelectedStatus] = useState("pending_review"); // Default filter
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
@@ -142,20 +121,31 @@ const handleReject = async (reason, feedback) => {
         }
         setUserId(user.uid);
         const userRef= doc(collection(db, "users"), user.uid);
-        const userSnapshot = getDoc(userRef);
-        const userData = (await userSnapshot).data()
-        if (userData.user_type != "admin") {
+        const userSnapshot = await getDoc(userRef);
+        if (!userSnapshot.exists()) {
+          setError("User profile not found.");
+          setIsLoading(false);
+          router.push("/login");
+          return;
+        }      
+        const userData = userSnapshot.data();
+        if (userData?.user_type != "admin") {
           setError("User is not admin");
           setIsLoading(false);
           router.push("/login");
           return;
         }
+        setUserType(userData.user_type);
         setCountry(userData.country);
         setUserName(userData.first_name + " " + userData.last_name);
         const path = `profile/${user.uid}/profile-image`;
         const userPhotoRef = storageRef(storage, path);
-        const userUrl = await getDownloadURL(userPhotoRef);
-        setProfileImage(userUrl);
+        try {
+          const userUrl = await getDownloadURL(userPhotoRef);
+          setProfileImage(userUrl);
+        } catch {
+          setProfileImage("/usericon.png");
+        }
         
       });
   
@@ -168,6 +158,7 @@ const handleReject = async (reason, feedback) => {
         setIsLoading(true);
         setDocuments([]);
         setLastDoc(null);
+        setHasMore(true);
         try {
           // Fetch initial batch of letters
           await fetchLetters();
@@ -194,23 +185,18 @@ const handleReject = async (reason, feedback) => {
     
     let lettersQuery = collectionGroup(db, "letters");
 
-    let queryConstraints = [limit(5)];
-
-    if (selectedStatus && selectedStatus !== "all") {
-      queryConstraints.push(where("status", "==", selectedStatus));
-    }
-
-    if (nextPage && lastDoc) {
-      queryConstraints.push(startAfter(lastDoc));
-    }
-
-    if (startDate) {
-      queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
-    }
-
-    if (endDate) {
-      queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
-    }
+      // 🔹 Apply Filters Dynamically
+      const queryConstraints = [where("status", "==", selectedStatus), orderBy("created_at", "desc"), limit(5)];
+      
+      if (nextPage && lastDoc) {
+        queryConstraints.push(startAfter(lastDoc));
+      }
+      if (startDate) {
+        queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
+      }
+      if (endDate) {
+        queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
+      }
 
     lettersQuery = query(lettersQuery, ...queryConstraints);
 
@@ -232,8 +218,7 @@ const handleReject = async (reason, feedback) => {
                 const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
                 if (userSnapshot.exists()) {
                   userData = userSnapshot.data();
-                  const segments = userSnapshot.ref._key.path.segments; 
-                  const userId = segments[segments.length - 1];     
+                  const userId = userSnapshot.id     
                   const path = `profile/${userId}/profile-image`;
                   const photoRef = storageRef(storage, path);
                   const downloaded = await getDownloadURL(photoRef);
@@ -252,7 +237,7 @@ const handleReject = async (reason, feedback) => {
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
-              name : userData?.first_name + " " + userData?.last_name || "",
+              name : userData ? `${userData.first_name} ${userData.last_name}` : "",
               lastMessage: docData.content,
               lastMessageDate: docData.created_at, 
             };
@@ -291,7 +276,7 @@ const handleReject = async (reason, feedback) => {
     setActiveFilter(false);
   }
 
-    if (documents == null) {
+    if (isLoading) {
       return <LetterHomeSkeleton/>
     }
     
@@ -350,15 +335,10 @@ const handleReject = async (reason, feedback) => {
           <RejectSuccessModal onClose={() => setShowRejectSuccess(false)} />
         )}
               <PageContainer maxWidth="lg">
-              <BackButton />
-              <Header
-                activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
-                title="All letters"
-                subtitle="Pending moderation"
-              />
-
-
+              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus}/>
+            
+             
+              
               <WelcomeToast 
                 userName={userName}
                 isVisible={showWelcome}
@@ -398,7 +378,7 @@ const handleReject = async (reason, feedback) => {
                     <div className="flex justify-center mt-4 w-full">
                       <Button
                         btnText="Load More"
-                        color="green"
+                        color="blue"
                         rounded="rounded-md"
                         onClick={() => fetchLetters(true)}
                       />
@@ -412,7 +392,7 @@ const handleReject = async (reason, feedback) => {
 
                 <BottomNavBar />
 
-        
+              {/*
               {userType === "admin" && (
                   <Button
                     btnText="Check For Inactive Chats"
@@ -422,7 +402,7 @@ const handleReject = async (reason, feedback) => {
                     onClick={iterateLetterBoxes}
                   />
               )}
-              
+              */}
               
               {/* Add animation keyframes */}
               <style jsx global>{`

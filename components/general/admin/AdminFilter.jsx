@@ -43,21 +43,18 @@ export default function AdminFilter({
 
 
 
-  const clearFilter = async (e) => {
-  e.preventDefault();
-  setStatusFilter("pending_review");
-  setStartFilter("");
-  setEndFilter("");
-  await filter("pending_review", null, null);
-};
+  const clearFilter = async(e) => {
+    e.preventDefault()
+    setStatusFilter("sent");
+    setStartFilter("");
+    setEndFilter("");
+    await filter("sent", null, null);
+  
+  };
 
 
-
-  const statusOptions = new Map([
-  ["Pending Review", "pending_review"],
-  ["Sent", "sent"],
-  ["Rejected", "rejected"]
-]);
+  const statusOptions =  new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
+  const statusLabels =  new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
 
 
   return (
@@ -66,7 +63,7 @@ export default function AdminFilter({
         <div className=" flex flex-row justify-between">
           <label className="text-secondary font-medium">Start date:</label>
           <DatePicker selected={startFilter}
-          placeHolder={"Select A Date"}
+          placeholderText={"Select a date"}
           maxDate={endFilter} 
           onChange={(date) => setStartFilter(date)} 
           className="w-full px-4 py-2 border rounded-md shadow-sm
@@ -79,7 +76,7 @@ export default function AdminFilter({
           <label className="text-black  mt-[auto] mb-[auto]" >End date:</label>
 
           <DatePicker selected={endFilter}
-           placeHolder={"Select A Date"}
+           placeholderText={"Select a date"} 
            minDate={startFilter} 
            onChange={(date) => setEndFilter(date)} 
            className="w-full px-4 py-2 text-black border rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300"
@@ -97,7 +94,7 @@ export default function AdminFilter({
           <Dropdown
           options={Array.from(statusOptions.keys())}
           valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
-          currentValue={currentFilter}
+          currentValue={currentFilter || statusLabels.get(status)}
           text="Status"
           />
         </div>
