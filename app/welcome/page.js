@@ -4,8 +4,6 @@ import { useState, useEffect, useRef, useLayoutEffect } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
-import Image from "next/image";
-import BottomNavBar from "../../components/bottom-nav-bar";
 import Button from "../../components/general/Button";
 import { PageBackground } from "../../components/general/PageBackground";
 import PageContainer from "../../components/general/PageContainer";

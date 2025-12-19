@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
-import { auth, db } from '../app/firebaseConfig';
+import { auth, db } from '../app/firebaseConfig'; // Adjust path as needed
 import { getUserPfp } from '../app/utils/letterboxFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
@@ -39,7 +39,7 @@ export function UserProvider({ children }) {
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setUserData(userData);
+            setUserData(userData); // Store all user data
             setUserType(userData.user_type || "Unknown Type");
 
             try {
@@ -52,17 +52,14 @@ export function UserProvider({ children }) {
           } else {
             console.log('No user document found');
             setUserData(null);
-            setUserType('Unknown Type');
+            setUserType('Unknown Type'); // Default fallback
             setProfileImage('');
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
           setUserData(null);
-          setUserType('Unknown Type');
+          setUserType('Unknown Type'); // Default fallback
           setProfileImage('');
-        } finally {
-          // CRITICAL FIX: Always set loading to false after processing authenticated user
-          setLoading(false);
         }
       } else {
         setUser(null);
@@ -72,6 +69,8 @@ export function UserProvider({ children }) {
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
+        } else {
+          setLoading(false); // Only set false for public pages
         }
         setLoading(false);
       }
