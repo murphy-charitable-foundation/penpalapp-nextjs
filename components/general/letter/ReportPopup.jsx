@@ -3,6 +3,8 @@
 
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { PageContainer } from "../PageContainer";
+import Button from "../Button";
+import { logError } from "../../../app/utils/analytics";
 
 
 const ReportPopup = ({

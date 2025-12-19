@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import BottomNavBar from "../../components/bottom-nav-bar";
 
 import Image from "next/image";
 import Link from "next/link";

@@ -21,6 +21,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import { PageHeader } from "../../components/general/PageHeader";
+
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
