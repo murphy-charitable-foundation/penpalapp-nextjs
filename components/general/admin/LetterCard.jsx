@@ -32,10 +32,6 @@ export default function LetterCard({ letter }) {
                 </div>
               </div>
               <div className='flex flex-row gap-x-4 mt-4'>
-                  {/*{letter.letters[0].status === "draft" && <h4 className="text-md">[DRAFT]</h4>}*/}
-                  <div>
-                    <Image src={close} width={40} height={40} />
-                  </div>
                   
                   <h4 className="text-gray-600 text-sm nowrap">{letter.content ?? ''}</h4>
                   <span className="text-xs text-gray-400">{letter.received}</span>

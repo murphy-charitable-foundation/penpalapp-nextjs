@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import BottomNavBar from '../../components/bottom-nav-bar';
+import { useRouter, useSearchParams } from "next/navigation";
+import BottomNavBar from "../../components/bottom-nav-bar";
 
 import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter, orderBy } from "firebase/firestore";
 import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
@@ -18,10 +18,16 @@ import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
+import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
+import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
+import ApproveSuccessModal from "../../components/general/admin/ApproveSuccessModal";
+import RejectSuccessModal from "../../components/general/admin/RejectSuccessModal";
+import { Timestamp, updateDoc } from "firebase/firestore";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
+
 
 export default function Admin() {
     const oneWeekAgo = new Date();
@@ -46,7 +52,69 @@ export default function Admin() {
     const [showWelcome, setShowWelcome] = useState(false);
     const [activeFilter, setActiveFilter] = useState(false);
     const router = useRouter();
+    const [selectedLetter, setSelectedLetter] = useState(null);
+    const [showReview, setShowReview] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    // const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+    const [showRejectSuccess, setShowRejectSuccess] = useState(false);
+    const pendingCount = documents.filter(doc => doc.status === "pending_review").length;
+    const searchParams = useSearchParams();
+    const showApproveSuccessTest= searchParams.get("approveSuccess") === "true";
+    const showRejectSuccessTest= searchParams.get("rejectSuccess") === "true";
 
+  const exitReview = () => {
+  setShowReview(false);
+  setSelectedLetter(null);
+  setShowRejectModal(false);
+  setShowApproveSuccess(false);
+  setShowRejectSuccess(false);
+  setSelectedStatus("pending_review");
+};
+
+
+
+ const handleApprove = async () => {
+  if (!selectedLetter) return;
+
+  try {
+    await updateDoc(
+      doc(db, "letterbox", selectedLetter.letterboxId, "letters", selectedLetter.id),
+      {
+        status: "sent",
+        updated_at: Timestamp.now(),
+      }
+    );
+
+    setShowReview(false);
+    setShowApproveSuccess(true);
+  } catch (err) {
+    console.error("Approve error:", err);
+  }
+};
+
+
+const handleReject = async (reason, feedback) => {
+  if (!selectedLetter) return;
+
+  try {
+    await updateDoc(
+      doc(db, "letterbox", selectedLetter.letterboxId, "letters", selectedLetter.id),
+      {
+        status: "rejected",
+        rejection_reason: reason,
+        rejection_feedback: feedback,
+        updated_at: Timestamp.now(),
+      }
+    );
+
+    setShowRejectModal(false);
+    setShowRejectSuccess(true);
+  } catch (err) {
+    console.error("Reject error:", err);
+  }
+
+};
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setIsLoading(true);
@@ -90,6 +158,7 @@ export default function Admin() {
       return () => unsubscribe();
     }, [router]);
 
+
     useEffect(() => {
       const letterGrab = async() => {
         setIsLoading(true);
@@ -112,8 +181,15 @@ export default function Admin() {
 
 
   const fetchLetters = async (nextPage = false) => {
-    try {
-      let lettersQuery = collectionGroup(db, "letters");
+    
+  try {
+
+    if (!nextPage) {
+      setDocuments([]);   // ← Clears duplicates properly
+      setLastDoc(null);
+    }
+    
+    let lettersQuery = collectionGroup(db, "letters");
 
       // 🔹 Apply Filters Dynamically
       const queryConstraints = [where("status", "==", selectedStatus), orderBy("created_at", "desc"), limit(5)];
@@ -128,7 +204,9 @@ export default function Admin() {
         queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
       }
 
-      lettersQuery = query(lettersQuery, ...queryConstraints);
+    lettersQuery = query(lettersQuery, ...queryConstraints);
+
+
       const querySnapshot = await getDocs(lettersQuery);
       if (!querySnapshot.empty) {
         const newDocs = await Promise.all(
@@ -136,6 +214,10 @@ export default function Admin() {
             const docData = doc.data();
             let userData = null;
             let pfp = "/usericon.png"; // default fallback image
+            const createdAt =
+            docData.created_at ||
+            docData.updated_at ||
+            Timestamp.now();
 
             try {
               if (docData.sent_by) {
@@ -155,7 +237,9 @@ export default function Admin() {
             }
             return {
               id: doc.id,
+              letterboxId: doc.ref.parent.parent.id,
               ...docData,
+              created_at: createdAt, 
               profileImage: pfp,
               country: userData?.country || "",
               user: userData,
@@ -165,8 +249,21 @@ export default function Admin() {
             };
           })
         );
+
         
-        setDocuments((prev) => [...prev, ...newDocs]);
+        setDocuments((prev) => {
+          const combined = [...prev, ...newDocs];
+
+          // Remove duplicates by letterboxId + id
+          const unique = Array.from(
+            new Map(
+              combined.map(item => [`${item.letterboxId}-${item.id}`, item])
+            ).values()
+          );
+
+          return unique;
+        });
+
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
         setHasMore(false); // No more documents to load
@@ -178,6 +275,7 @@ export default function Admin() {
   };
 
   const filter = (status, start, end ) => {
+    //setLastDoc(null);
     setSelectedStatus(status);
     setStartDate(start);
     setEndDate(end);
@@ -189,9 +287,60 @@ export default function Admin() {
     }
     
     return (
-        <PageBackground>
+       <PageBackground>
+        {/* REVIEW SCREEN */}
+        {showReview && (
+            <AdminLetterReview
+            letter={selectedLetter}
+            onApprove={handleApprove}
+            onReject={() => {
+              setShowReview(false);
+              setShowRejectModal(true);
+            }}
+            onClearReview={exitReview}
+            onClose={exitReview}
+          />
+
+          )}
+        {/* REJECT SCREEN */}
+        {showRejectModal && (
+          <AdminRejectModal
+            letter={selectedLetter}
+            onSubmit={handleReject}
+            onClose={() => { setShowRejectModal(false); setShowReview(true); }}
+          />
+        )}
+
+        {/* SUCCESS SCREENS */}
+            {showApproveSuccess && (
+              <ApproveSuccessModal
+                onClose={() => setShowApproveSuccess(false)}
+              />
+            )}
+
+            {showApproveSuccessTest && (
+              <ApproveSuccessModal
+                onClose={() => setShowApproveSuccess(false)}
+              />
+            )}
+
+            {showRejectSuccess && (
+              <RejectSuccessModal
+                onClose={() => setShowRejectSuccess(false)}
+              />
+            )}
+
+            {showRejectSuccessTest && (
+              <RejectSuccessModal
+                onClose={() => setShowRejectSuccess(false)}
+              />
+            )}
+
+
+    
               <PageContainer maxWidth="lg">
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus}/>
+              <BackButton />
+              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"}/>
             
              
               
@@ -217,24 +366,18 @@ export default function Admin() {
                     <main className="p-6">
                       <section className="mt-8">
                         {!isLoading ? (
-                          <ConversationList conversations={documents}/>
+                            <ConversationList
+                              conversations={documents}
+                              onSelectConversation={(conversation) => {
+                                setSelectedLetter(conversation);
+                                setShowReview(true);
+                              }}
+                            />
                         ) : (
                           <LetterHomeSkeleton />
                         )}
                       </section>
                   </main>
-
-                  {hasMore === true && (
-                    <div className="flex justify-center mt-4 w-full">
-                      <Button
-                        btnText="Load More"
-                        color="blue"
-                        rounded="rounded-md"
-                        onClick={() => fetchLetters(true)}
-                      />
-                    </div>
-                  )}
-
                   </div>
                 )}
 
@@ -252,7 +395,6 @@ export default function Admin() {
                     onClick={iterateLetterBoxes}
                   />
               )}
-              */}
               
               {/* Add animation keyframes */}
               <style jsx global>{`

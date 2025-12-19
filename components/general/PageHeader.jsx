@@ -7,7 +7,7 @@ import logo from "../../public/murphylogo.png";
 
 export function PageHeader({
   title,
-  titleColor = "text-gray-800",
+  titleColor = "text-secondary",
   image = true,
   heading = true,
 }) {
@@ -16,11 +16,11 @@ export function PageHeader({
       <div className="flex flex-row items-center justify-between mb-4">
         <BackButton />
         {heading ? (
-          <h2
-            className={`flex-grow text-center text-2xl font-bold ${titleColor}`}
+          <h1
+            className={`flex-grow text-center text-3xl font-bold ${titleColor}`}
           >
             {title}
-          </h2>
+          </h1>
         ) : (
           <span
             className={`flex-grow text-center font-medium ${titleColor} mt-1 mb-1`}

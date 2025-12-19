@@ -9,6 +9,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { set } from "nprogress";
 
+
+
 export default function AdminFilter({
   setStatus,
   status,
@@ -20,13 +22,13 @@ export default function AdminFilter({
   loading,
   setLoading
 }) {
-  const [statusFilter, setStatusFilter] = useState(status || "");
+  const [statusFilter, setStatusFilter] = useState(status || "pending_review");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
   const [endFilter, setEndFilter] = useState(end || "2025-01-01");
-  const [currentFilter, setCurrentFilter] = useState("");
+  const [currentFilter, setCurrentFilter] = useState("Pending Review");
 
   useEffect(() => {
-    setStatusFilter(status || "");
+    setStatusFilter(status || "pending_review");
     setStartFilter(start !== 0 && start !== null ? start : "");
     setEndFilter(end || "");
   }, [status, start, end]);
@@ -35,7 +37,7 @@ export default function AdminFilter({
 
   const applyFilter = async(e) => {
     e.preventDefault();
-    await filter(statusFilter, startFilter, endFilter);
+    await filter(statusFilter || "pending_review", startFilter, endFilter);
 
   };
 
@@ -59,13 +61,15 @@ export default function AdminFilter({
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
       <form className="flex flex-col gap-6">
         <div className=" flex flex-row justify-between">
-          <label className="text-black mt-[auto] mb-[auto]">Start date:</label>
-
+          <label className="text-secondary font-medium">Start date:</label>
           <DatePicker selected={startFilter}
           placeholderText={"Select a date"}
           maxDate={endFilter} 
           onChange={(date) => setStartFilter(date)} 
-          className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
+          className="w-full px-4 py-2 border rounded-md shadow-sm
+           text-black focus:outline-none focus:ring
+           focus:border-secondary focus:ring-secondary-light"
+
           calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
         </div>
         <div className="flex flex-row justify-between">
@@ -80,14 +84,15 @@ export default function AdminFilter({
         </div>
         <div>
           <label
-            htmlFor="gender"
-            className="text-sm font-medium text-gray-700 block mb-2"
+            htmlFor="status"
+            className="text-sm font-medium text-secondary"
+
           >
             Status
           </label>
           
           <Dropdown
-          options={statusOptions.keys().toArray()}
+          options={Array.from(statusOptions.keys())}
           valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
           currentValue={currentFilter || statusLabels.get(status)}
           text="Status"
@@ -99,19 +104,22 @@ export default function AdminFilter({
             <Button
               onClick={applyFilter}
               btnText="Apply Filters"
-              color="blue"
+              color="primary"
               textColor="text-white"
               font="font-bold"
               rounded="rounded-3xl"
               size="w-full"
             />
+
             <Button
               onClick={clearFilter}
               btnText="Clear Filters"
-              textColor="text-black"
+              color="secondary"
+              textColor="text-secondary"
               font="text-lg"
               size="w-full"
             />
+
           </div>
         </div>
       </form>
