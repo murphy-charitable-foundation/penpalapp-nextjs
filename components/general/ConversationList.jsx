@@ -2,6 +2,7 @@ import MessagePreview from "./MessagePreview";
 
 const ConversationList = ({
   conversations,
+  onSelectConversation,
   className = "",
   maxHeight = "50vh",
   bottomGap = 45, // height of bottom navbar (یا هر چیزی زیرش هست)
@@ -20,24 +21,28 @@ const ConversationList = ({
           WebkitOverflowScrolling: "touch",
         }}
       >
-        <ul className="m-0 p-0 list-none w-full space-y-4">
-          {conversations.map((c, i) => (
-            <li key={c.letterboxId || c.id || i} className="w-full">
-              <MessagePreview
-                className={i === 0 ? "first-letter relative" : ""}
-                profileImage={c.profileImage}
-                name={c.name}
-                country={c.country}
-                lastMessage={c.lastMessage}
-                lastMessageDate={c.lastMessageDate}
-                letterboxId={c.letterboxId}
-                status={c.status}
-                isRecipient={c.isRecipient}
-                unread={c.unread}
-              />
-            </li>
-          ))}
-        </ul>
+      <ul className="m-0 p-0 list-none w-full space-y-4">
+  {conversations.map((c, i) => (
+    <li
+      key={`${c.letterboxId}-${c.id}`}
+      className="w-full cursor-pointer"
+      onClick={() => onSelectConversation(c)}
+    >
+      <MessagePreview
+        className={i === 0 ? "first-letter relative" : ""}
+        profileImage={c.profileImage}
+        name={c.name}
+        country={c.country}
+        lastMessage={c.lastMessage}
+        lastMessageDate={c.lastMessageDate}
+        letterboxId={c.letterboxId}
+        status={c.status}
+        isRecipient={c.isRecipient}
+        unread={c.unread}
+      />
+    </li>
+  ))}
+</ul>
 
         {/* فاصله‌ی مرده‌ی زیر لیست تا لبه‌ی کارت */}
         <div aria-hidden className="pointer-events-none" style={{ height: bottomGap }} />
