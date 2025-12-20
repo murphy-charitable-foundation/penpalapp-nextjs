@@ -85,7 +85,7 @@ return (
         <Button
           btnText="Log in"
           color="green"
-          onClick={() => router.push("/login")}
+          onClick={() => handleNavigation("/login")}
         />
 
         <Button

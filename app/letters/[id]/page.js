@@ -32,6 +32,7 @@ import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
+import Button from "../../../components/general/Button"
 import { AlertTriangle } from "lucide-react";
 import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 import { logButtonEvent, logError } from "../../utils/analytics";
@@ -822,28 +823,30 @@ export default function Page({ params }) {
     return canSend;
   };
 
-  return (
+return (
   <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <PageContainer
       width="compactXS"
       padding="none"
       center={false}
-      className="flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden min-h-[92dvh]"
+      className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
     >
       {/* ===== HEADER ===== */}
-      <div className="shrink-0 bg-blue-100 p-4 flex items-center justify-between border-b">
+      <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
         <button
           onClick={handleCloseMessage}
-          className="text-gray-700 hover:text-gray-900"
-          disabled={isUpdatingFirebase}
+          className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
+          title="Close conversation"
         >
           X
         </button>
 
-        {isEditing && (
-          isSendButtonDisabled || isUpdatingFirebase ? (
-            <LoadingSpinner />
-          ) : (
+        {isSendButtonDisabled || isUpdatingFirebase ? (
+          <div className="w-6 h-6 flex items-center justify-center">
+            <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          isEditing && (
             <button
               onClick={handleSendMessage}
               disabled={!canSendMessage()}
@@ -858,172 +861,149 @@ export default function Page({ params }) {
                 alt={editingMessageId ? "Update message" : "Send message"}
                 width={30}
                 height={30}
+                className="object-contain"
+                id="send-letter"
               />
             </button>
           )
         )}
       </div>
 
-      {/* ===== MESSAGE LIST ===== */}
-      <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100">
+      {/* ===== EDITING BANNER ===== */}
+      {editingMessageId && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center text-amber-800 text-sm">
+            <span className="mr-2">✏️</span>
+            <span>Editing message</span>
+          </div>
+          <button
+            onClick={async () => {
+              const letterUserRef = userRef || doc(db, "users", user.uid);
+
+              try {
+                const existingDraft = await fetchDraft(id, letterUserRef, false);
+
+                if (existingDraft && existingDraft.content?.trim()) {
+                  setDraft(existingDraft);
+                  setMessageContent(existingDraft.content);
+                  setHasDraftContent(true);
+                  setIsEditing(true);
+                } else {
+                  setMessageContent("");
+                  setDraft(null);
+                  setHasDraftContent(false);
+                  setIsEditing(false);
+                }
+              } catch {
+                setMessageContent("");
+                setDraft(null);
+                setHasDraftContent(false);
+                setIsEditing(false);
+              }
+
+              setEditingMessageId(null);
+              setEditingMessageOriginalContent("");
+              setSelectedMessageId(null);
+            }}
+            className="text-amber-600 hover:text-amber-800 text-sm underline"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* ===== MESSAGES ===== */}
+      <div className="flex-1 overflow-y-auto bg-gray-100">
         {allMessages.map((message, index) => {
           const messageId = message.id;
-          const isSenderUser = message.sent_by?.id === user?.uid;
           const isSelected = selectedMessageId === messageId;
+          const isSenderUser = message.sent_by?.id === user?.uid;
           const location = getSenderLocation(message);
-
-          const showDateSeparator =
-            index === 0 ||
-            isDifferentDay(
-              allMessages[index - 1]?.created_at,
-              message.created_at
-            );
 
           return (
             <div key={messageId}>
-              {showDateSeparator && (
-                <div className="text-center text-xs text-gray-500 py-2">
-                  {formatTimestamp(message.created_at)}
-                </div>
-              )}
-
               <div
                 className={`border-b border-gray-200 ${
-                  isSelected ? "bg-white" : index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                }`}
-                onClick={() => selectMessage(messageId)}
+                  isSelected ? "bg-white" : "bg-gray-50"
+                } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
               >
-                <div className="px-4 py-3 flex items-start">
-                  <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
-                    <ProfileImage
-                      photo_uri={
-                        isSenderUser
-                          ? profileImage
-                          : recipients[0]?.photo_uri
-                      }
-                      first_name={
-                        isSenderUser ? "Me" : recipients[0]?.first_name
-                      }
-                      width={48}
-                      height={48}
-                    />
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center">
-                      <span className="font-bold text-black">
-                        {isSenderUser
-                          ? "Me"
-                          : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                      </span>
-                      {location && (
-                        <span className="ml-2 text-sm text-black">
-                          {location}
-                        </span>
-                      )}
+                <div
+                  className="px-4 py-3"
+                  onClick={() => selectMessage(messageId)}
+                >
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
+                      <ProfileImage
+                        photo_uri={
+                          isSenderUser
+                            ? profileImage
+                            : recipients[0]?.photo_uri
+                        }
+                        first_name={
+                          isSenderUser ? "Me" : recipients[0]?.first_name
+                        }
+                        width={48}
+                        height={48}
+                      />
                     </div>
 
-                    {!isSelected && (
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <span className="font-bold text-black">
+                          {isSenderUser
+                            ? "Me"
+                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                        </span>
+                        {location && (
+                          <span className="text-black ml-2 text-sm">
+                            {location}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-gray-800">
-                        {truncateMessage(message.content)}
+                        {isSelected
+                          ? ""
+                          : truncateMessage(message.content)}
                       </div>
-                    )}
+                    </div>
 
-                    {isSelected && (
-                      <div className="mt-2 ml-2">
-                        <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-
-                        <div className="flex items-center justify-end mt-2">
-                          {!isSenderUser && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setReportSender(message.sent_by.id);
-                                setReportContent(message.content);
-                                setShowReportPopup(true);
-                                logButtonEvent(
-                                  "Report message clicked!",
-                                  "/letters/[id]"
-                                );
-                              }}
-                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                            >
-                              <FaExclamationCircle className="mr-1" size={10} />
-                              Report
-                            </button>
-                          )}
-
-                          {isSenderUser && message.status === "rejected" && (
-                            <div className="bg-red-50 border border-red-300 rounded-lg p-3 mt-2">
-                              <div className="flex items-start text-red-700 font-semibold">
-                                <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
-                                <div>
-                                  <div>Your letter was not sent.</div>
-                                  {message.rejection_reason && (
-                                    <div className="text-sm text-red-600 mt-1">
-                                      {message.rejection_reason}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {isSenderUser && message.status === "sent" && (
-                            <span className="text-green-500 text-lg font-bold ml-2">
-                              ✓
-                            </span>
-                          )}
-
-                          {isSenderUser &&
-                            message.status === "pending_review" && (
-                              <div className="relative inline-flex ml-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditMessage(message);
-                                    logButtonEvent(
-                                      "Edit message clicked!",
-                                      "/letters/[id]"
-                                    );
-                                  }}
-                                  className="absolute -top-2 -right-8 bg-primary text-white text-xs px-2 py-1 rounded-full"
-                                >
-                                  Edit
-                                </button>
-                                <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                  <span className="text-gray-400 text-xs font-bold">
-                                    ✓
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                        </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="text-gray-500 text-sm">
+                        {formatTimestamp(message.created_at)}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
+
+                {isSelected && (
+                  <div className="px-4 pb-3">
+                    <div className="ml-16">
+                      <p className="text-gray-800 whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ===== REPLY AREA ===== */}
-      <div className="bg-white border-t">
-        <div className="flex items-center px-4 py-2">
-          <Image
-            src="/arrow-left.png"
-            alt="Back"
-            width={20}
-            height={20}
-            className="mr-2"
-          />
-          <span className="text-gray-700">To {recipientName}</span>
+      {/* ===== REPLY ===== */}
+      <div className="bg-white">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center">
+            <Image
+              src="/arrow-left.png"
+              alt="Back"
+              width={20}
+              height={20}
+              className="mr-2"
+            />
+            <span className="text-gray-700">To {recipientName}</span>
+          </div>
         </div>
 
         {!isEditing ? (
@@ -1041,7 +1021,7 @@ export default function Page({ params }) {
           <div className="p-4 relative" style={{ height: "40vh" }}>
             <textarea
               ref={textAreaRef}
-              className="w-full h-full p-3 resize-none text-black bg-white focus:outline-none"
+              className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
               placeholder={
                 editingMessageId
                   ? "Edit your message..."
@@ -1053,50 +1033,53 @@ export default function Page({ params }) {
           </div>
         )}
       </div>
-    </PageContainer>
 
-    {/* ===== DIALOGS ===== */}
-    {showCloseDialog && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-        <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
-          <h2 className="text-xl font-semibold mb-1 text-black">
-            {editingMessageId ? "Discard changes?" : "Close this message?"}
-          </h2>
-          <p className="text-gray-600 mb-6 text-sm">
-            {editingMessageId
-              ? "Your changes will not be saved."
-              : "Your message will be saved as a draft."}
-          </p>
-          <div className="flex space-x-3">
-            <button
-              onClick={handleContinueEditing}
-              className="flex-1 bg-[#4E802A] text-white py-3 rounded-2xl"
-            >
-              Stay on page
-            </button>
-            <button
-              onClick={handleConfirmClose}
-              className="flex-1 bg-gray-200 text-[#4E802A] py-3 rounded-2xl"
-            >
-              {editingMessageId ? "Discard" : "Close"}
-            </button>
+      {/* ===== POPUPS ===== */}
+      {showCloseDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+          <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
+            <h2 className="text-xl font-semibold mb-1 text-black">
+              {editingMessageId ? "Discard changes?" : "Close this message?"}
+            </h2>
+            <p className="text-gray-600 mb-6 text-sm">
+              {editingMessageId
+                ? "Your changes will not be saved."
+                : "Your message will be saved as a draft."}
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleContinueEditing}
+                className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
+              >
+                Stay on page
+              </button>
+              <button
+                onClick={handleConfirmClose}
+                className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
+              >
+                {editingMessageId ? "Discard" : "Close"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {showReportPopup && (
-      <ReportPopup
-        sender={reportSender}
-        content={reportContent}
-        setShowPopup={setShowReportPopup}
-        setShowConfirmReportPopup={setShowConfirmReportPopup}
-      />
-    )}
+      {showReportPopup && (
+        <ReportPopup
+          setShowPopup={setShowReportPopup}
+          setShowConfirmReportPopup={setShowConfirmReportPopup}
+          sender={reportSender}
+          content={reportContent}
+        />
+      )}
 
-    {showConfirmReportPopup && (
-      <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
-    )}
+      {showConfirmReportPopup && (
+        <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+      )}
+    </PageContainer>
   </PageBackground>
 );
+
+
+
 }
