@@ -18,7 +18,6 @@ import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
-import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
@@ -35,6 +34,7 @@ export default function Admin() {
     const [country, setCountry] = useState("");
     const [letters, setLetters] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState("");
     const [profileImage, setProfileImage] = useState("");
     const [lastDoc, setLastDoc] = useState(null);
@@ -165,10 +165,13 @@ export default function Admin() {
             };
           })
         );
-        
+        if (nextPage) {
+          setIsLoadingMore(false);
+        }
         setDocuments((prev) => [...prev, ...newDocs]);
         setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
       } else {
+        setIsLoadingMore(false);
         setHasMore(false); // No more documents to load
       }
     } catch (err) {
@@ -191,7 +194,7 @@ export default function Admin() {
     return (
         <PageBackground>
               <PageContainer maxWidth="lg">
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus}/>
+              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus} isLoadingMore={isLoadingMore}/>
             
              
               
@@ -226,12 +229,20 @@ export default function Admin() {
 
                   {hasMore === true && (
                     <div className="flex justify-center mt-4 w-full">
-                      <Button
-                        btnText="Load More"
-                        color="blue"
-                        rounded="rounded-md"
-                        onClick={() => fetchLetters(true)}
-                      />
+                      {isLoadingMore ? (
+                        <div
+                          className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                          role="status"
+                          aria-label="Loading"
+                        />
+                      ) : (
+                        <Button
+                          btnText="Load More"
+                          color="blue"
+                          rounded="rounded-md"
+                          onClick={() => {setIsLoadingMore(true); fetchLetters(true);}}
+                        />
+                      )}
                     </div>
                   )}
 

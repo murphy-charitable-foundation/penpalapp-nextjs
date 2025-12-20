@@ -4,7 +4,7 @@ import Link from "next/link";
 import Button from "./Button";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
-export default function Header({ activeFilter, setActiveFilter, title, status="sent"}) {
+export default function Header({ activeFilter, setActiveFilter, title, status="sent", isLoadingMore=false }) {
   return (
     <div className={`${status=="sent" 
       ? "bg-green-700" 
@@ -21,23 +21,33 @@ export default function Header({ activeFilter, setActiveFilter, title, status="s
       />
       <h1 className="text-2xl font-semibold">Admin user</h1>
       <div className="ml-auto">
-        <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+        <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} isLoadingMore={isLoadingMore} />
       </div>
     </div>
   );
 }
 
-function FilterButton({ activeFilter, setActiveFilter }) {
+function FilterButton({ activeFilter, setActiveFilter, isLoadingMore }) {
   return (
     <div>
-      <Button
-        btnText={`${!activeFilter ? "Filters" : "Back"}`}
-        color="white"
-        size="xs"
-        onClick={() => {
-          setActiveFilter(!activeFilter);
-        }}
-      >
+      {isLoadingMore ? (
+        <div className="pr-8">
+        <div
+          className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"
+          role="status"
+          aria-label="Loading"
+        />
+        </div>
+      ) : (
+        <Button
+          btnText={`${!activeFilter ? "Filters" : "Back"}`}
+          color="white"
+          size="xs"
+          onClick={() => {
+            setActiveFilter(!activeFilter);
+          }}
+        > 
+      
         <span className="flex items-center">
           <p>Filters</p>
           {!activeFilter ? (
@@ -51,6 +61,7 @@ function FilterButton({ activeFilter, setActiveFilter }) {
           )}
         </span>
       </Button>
+      )}
     </div>
   );
 }
