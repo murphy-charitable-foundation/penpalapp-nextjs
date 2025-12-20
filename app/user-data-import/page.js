@@ -95,179 +95,153 @@ export default function UserDataImport() {
   };
 
   return (
-    <PageBackground>
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {/* ===== DIALOG (OVERLAY) ===== */}
       <Dialog
         isOpen={isDialogOpen}
-        onClose={() => {
-          setIsDialogOpen(false);
-        }}
+        onClose={() => setIsDialogOpen(false)}
         title={dialogTitle}
         content={dialogMessage}
-      ></Dialog>
-      <PageContainer maxWidth="lg">
-        <PageHeader title="Import User Data" />
+      />
 
-        <form onSubmit={handleSubmit} className="space-y-6  p-6 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <div>
-              <Input
-                type="text"
-                id="first-name"
-                name="firstName"
-                label="First Name"
-                error={errors.first_name ? errors.first_name : ""}
-              />
-            </div>
-
-            <div>
-              <Input
-                type="text"
-                id="last-name"
-                name="lastName"
-                label="Last Name"
-                error={errors.last_name ? errors.last_name : ""}
-              />
-            </div>
-
-            <div>
-              <Input
-                type="text"
-                name="email"
-                id="email"
-                label="Email"
-                error={errors.email ? errors.email : ""}
-              />
-            </div>
-
-            <div>
-              <Input
-                type="date"
-                id="birthday"
-                name="birthday"
-                label="Birthday"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-500">
-                Gender
-              </label>
-              <Dropdown
-                options={["Male", "Female", "Other"]}
-                valueChange={(option) => {
-                  setGender(option);
-                }}
-                currentValue={gender}
-                text="Gender"
-              />
-            </div>
-
-            <div>
-              <Input type="text" name="country" id="country" label="Country" />
-            </div>
-
-            <div>
-              <Input type="text" id="village" name="village" label="Village" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-500">
-                Education Level
-              </label>
-              <Dropdown
-                options={[
-                  "Elementary",
-                  "Middle",
-                  "High School",
-                  "College/University",
-                  "No Grade",
-                ]}
-                valueChange={(option) => {
-                  setEducationLevel(option);
-                }}
-                currentValue={educationLevel}
-                text="Education"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-500">
-                Is Orphan
-              </label>
-              <Dropdown
-                options={["No", "Yes"]}
-                valueChange={(option) => {
-                  setIsOrphan(option);
-                }}
-                currentValue={isOrphan}
-                text="Status"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-500">
-                Guardian
-              </label>
-              <Dropdown
-                options={[
-                  "Parents",
-                  "Adoptive Parents",
-                  "Aunt/Uncle",
-                  "Grandparents",
-                  "Other Family",
-                  "Friends",
-                  "Other",
-                ]}
-                valueChange={(option) => {
-                  setGuardian(option);
-                }}
-                currentValue={guardian}
-                text="Education"
-              />
-            </div>
-
-            <div>
-              <Input
-                type="text"
-                name="dreamJob"
-                id="dream-job"
-                label="Dream Job"
-              />
-            </div>
-
-            <div>
-              <Input type="text" id="hobby" name="hobby" label="Hobby" />
-            </div>
-
-            <div>
-              <Input
-                type="text"
-                name="favoriteColor"
-                id="favorite-color"
-                label="Favorite Color"
-              />
-            </div>
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <div className="shrink-0 border-b bg-white pt-4">
+            <PageHeader title="Import User Data" imagesize="sm" />
           </div>
 
-          <div className="col-span-2">
-            <TextArea
-              name="bio"
-              rows={3}
-              maxLength={50}
-              label="Bio/Challenges Faced"
-            />
-          </div>
+          {/* ===== SINGLE SCROLLER ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* BASIC INFO */}
+                <Input
+                  type="text"
+                  name="firstName"
+                  label="First Name"
+                  error={errors.first_name || ""}
+                />
 
-          <div className="flex justify-center">
-            <Button
-              btnType="submit"
-              btnText={isSubmitting ? "Importing..." : "Import User Data"}
-              disabled={isSubmitting}
-            />
+                <Input
+                  type="text"
+                  name="lastName"
+                  label="Last Name"
+                  error={errors.last_name || ""}
+                />
+
+                <Input
+                  type="text"
+                  name="email"
+                  label="Email"
+                  error={errors.email || ""}
+                />
+
+                <Input
+                  type="date"
+                  name="birthday"
+                  label="Birthday"
+                />
+
+                {/* GENDER */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Gender
+                  </label>
+                  <Dropdown
+                    options={["Male", "Female", "Other"]}
+                    valueChange={setGender}
+                    currentValue={gender}
+                    text="Gender"
+                  />
+                </div>
+
+                <Input name="country" label="Country" />
+                <Input name="village" label="Village" />
+
+                {/* EDUCATION */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Education Level
+                  </label>
+                  <Dropdown
+                    options={[
+                      "Elementary",
+                      "Middle",
+                      "High School",
+                      "College/University",
+                      "No Grade",
+                    ]}
+                    valueChange={setEducationLevel}
+                    currentValue={educationLevel}
+                    text="Education"
+                  />
+                </div>
+
+                {/* ORPHAN */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Is Orphan
+                  </label>
+                  <Dropdown
+                    options={["No", "Yes"]}
+                    valueChange={setIsOrphan}
+                    currentValue={isOrphan}
+                    text="Status"
+                  />
+                </div>
+
+                {/* GUARDIAN */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Guardian
+                  </label>
+                  <Dropdown
+                    options={[
+                      "Parents",
+                      "Adoptive Parents",
+                      "Aunt/Uncle",
+                      "Grandparents",
+                      "Other Family",
+                      "Friends",
+                      "Other",
+                    ]}
+                    valueChange={setGuardian}
+                    currentValue={guardian}
+                    text="Guardian"
+                  />
+                </div>
+
+                <Input name="dreamJob" label="Dream Job" />
+                <Input name="hobby" label="Hobby" />
+                <Input name="favoriteColor" label="Favorite Color" />
+              </div>
+
+              {/* BIO */}
+              <TextArea
+                name="bio"
+                rows={3}
+                maxLength={50}
+                label="Bio / Challenges Faced"
+              />
+
+              {/* SUBMIT */}
+              <div className="flex justify-center pt-4">
+                <Button
+                  btnType="submit"
+                  btnText={isSubmitting ? "Importing..." : "Import User Data"}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </form>
           </div>
-        </form>
-      </PageContainer>
+        </PageContainer>
+      </div>
     </PageBackground>
   );
 }

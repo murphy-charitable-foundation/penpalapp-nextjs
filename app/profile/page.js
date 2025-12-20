@@ -33,6 +33,7 @@ import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import NavBar from '../../components/bottom-nav-bar';
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 
@@ -240,303 +241,182 @@ export default function EditProfile() {
     setIsBioModalOpen(true);
   };
 
-  return (
-    <div className="bg-gray-50 min-h-screen">
-      <Dialog
-        isOpen={isDialogOpen}
-        onClose={() => {
-          setIsDialogOpen(false);
-          if (isSaved) router.push("/letterhome");
-        }}
-        title={dialogTitle}
-        content={dialogMessage}
-      ></Dialog>
-      <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <PageHeader title="Profile" image={false} heading={false} />
-        <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
-          {/* Bio Modal */}
-          <Dialog
-            isOpen={isBioModalOpen}
-            onClose={() => setIsBioModalOpen(false)}
-            title="Bio/Challenges"
-            content={bioModalContent}
-            width="large"
-          />
-          {/* Profile Image */}
+return (
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    {/* ===== DIALOGS ===== */}
+    <Dialog
+      isOpen={isDialogOpen}
+      onClose={() => {
+        setIsDialogOpen(false);
+        if (isSaved) router.push("/letterhome");
+      }}
+      title={dialogTitle}
+      content={dialogMessage}
+    />
+
+    <Dialog
+      isOpen={isBioModalOpen}
+      onClose={() => setIsBioModalOpen(false)}
+      title="Bio / Challenges"
+      content={bioModalContent}
+      width="large"
+    />
+
+    {/* ===== MAIN AREA ===== */}
+    <div className="flex-1 min-h-0 flex justify-center">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="
+          min-h-[92dvh]
+          flex flex-col
+          bg-white
+          rounded-2xl
+          shadow-lg
+          overflow-hidden
+        "
+      >
+        {/* ===== HEADER ===== */}
+        <div className="shrink-0 px-4 py-3 border-b pt-4">
+          <PageHeader title="Profile" image={false} />
+        </div>
+
+        {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
+
+          {/* PROFILE IMAGE */}
           <div className="my-6">
             <div className="relative w-40 h-40 mx-auto">
               <Image
-                src={photoUri ? photoUri : "/murphylogo.png"}
-                layout="fill"
-                className="rounded-full"
-                alt="Profile picture"
+                src={photoUri || "/murphylogo.png"}
+                fill
+                alt="Profile"
+                className="rounded-full object-cover"
               />
             </div>
+
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
                 onClick={() => router.push("/edit-profile-user-image")}
-                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                className="px-4 py-2 border border-gray-400 text-green-700 rounded-full hover:bg-gray-100 transition"
               >
                 Edit Photo
               </button>
             </div>
           </div>
 
-          {/* Form Fields */}
-          <div className="space-y-6 mb-[120px]">
-            {/* Personal Information Section */}
+          {/* ===== FORM ===== */}
+          <div className="space-y-6">
+
             <ProfileSection title="Personal Information">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      label="First name"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
-                      error={errors.first_name ? errors.first_name : ""}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      label="Last name"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
-                      error={errors.last_name ? errors.last_name : ""}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="country"
-                    name="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    label="Country"
-                    placeholder="Ex: Country"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-              {userType !== "international_buddy" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      id="village"
-                      name="village"
-                      value={village}
-                      onChange={(e) => setVillage(e.target.value)}
-                      label="Village"
-                      placeholder="Ex: Village"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Bio/Challenges faced</p>
-                  <button
-                    onClick={handleOpenBioModal}
-                    className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
-                  >
-                    <span className="truncate">
-                      {bio ? bio : "Add your bio or challenges..."}
-                    </span>
-                    <svg
-                      className="h-5 w-5 text-gray-400 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="date"
-                    id="birthday"
-                    name="birthday"
-                    value={birthday}
-                    onChange={(e) => setBirthday(e.target.value)}
-                    label="Birthday"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-            </ProfileSection>
-
-            {/* Education & Family Section */}
-            <ProfileSection
-              title={`Education ${
-                userType !== "international_buddy" ? "& Family" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Education level</p>
-                  <Dropdown
-                    options={educationOptions}
-                    valueChange={(option) => {
-                      setEducationLevel(option);
-                    }}
-                    currentValue={educationLevel}
-                    text="Education Level"
-                  />
-                </div>
-              </div>
-              {userType !== "international_buddy" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">Guardian</p>
-                    <Dropdown
-                      options={guardianOptions}
-                      valueChange={(option) => {
-                        setGuardian(option);
-                      }}
-                      currentValue={guardian}
-                      text="Guardian"
-                    />
-                  </div>
-                </div>
-              )}
-              {userType !== "international_buddy" && (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">Is orphan</p>
-
-                    <Dropdown
-                      options={orphanOptions}
-                      valueChange={(option) => {
-                        setIsOrphan(option);
-                      }}
-                      currentValue={isOrphan}
-                      text="Orphan Status"
-                    />
-                  </div>
-                </div>
-              )}
-            </ProfileSection>
-
-            {/* Interest Section */}
-            <ProfileSection title="Interest">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="dreamjob"
-                    name="dreamjob"
-                    value={dreamJob}
-                    onChange={(e) => setDreamJob(e.target.value)}
-                    label="Dream job"
-                    placeholder="Airplane pilot"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="hobby"
-                    name="hobby"
-                    value={hobby}
-                    onChange={(e) => setHobby(e.target.value)}
-                    label="Hobby"
-                    placeholder="Dancing"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-            </ProfileSection>
-
-            {/* Favorite Color */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
                 <Input
-                  type="text"
-                  id="favoriteColor"
-                  name="favoriteColor"
-                  value={favoriteColor}
-                  onChange={(e) => setFavoriteColor(e.target.value)}
-                  label="Favorite Color"
-                  placeholder="Ex: Blue"
-                  borderColor="border-gray-300"
-                  focusBorderColor="focus:border-green-800"
-                  bgColor="bg-transparent"
+                  id="firstName"
+                  label="First name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  error={errors.first_name || ""}
+                />
+                <Input
+                  id="lastName"
+                  label="Last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  error={errors.last_name || ""}
                 />
               </div>
-            </div>
 
-            <div className="flex justify-center">
-              <Link
-                href="/letterhome"
-                className="transition-transform hover:scale-105 focus:outline-none"
-                onClick={(e) => {
-                  e.preventDefault();
-                  saveProfileData();
-                  logButtonEvent("save profile button clicked", "/profile");
-                }}
-              >
-                <Button
-                  btnType="button"
-                  btnText={isSaving ? <LoadingSpinner /> : "Save"}
-                  color="green"
-                  hoverColor="hover:bg-[#48801c]"
-                  textColor="text-gray-200"
-                  disabled={isSaving}
-                  rounded="rounded-full"
+              <Input
+                id="country"
+                label="Country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+              />
+
+              {userType !== "international_buddy" && (
+                <Input
+                  id="village"
+                  label="Village"
+                  value={village}
+                  onChange={(e) => setVillage(e.target.value)}
                 />
-              </Link>
+              )}
+
+              {/* BIO */}
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Bio / Challenges</p>
+                <button
+                  onClick={handleOpenBioModal}
+                  className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
+                >
+                  <span className="truncate">
+                    {bio || "Add your bio or challenges..."}
+                  </span>
+                </button>
+              </div>
+
+              <Input
+                type="date"
+                id="birthday"
+                label="Birthday"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
+              />
+            </ProfileSection>
+
+            <ProfileSection title="Education">
+              <Dropdown
+                options={educationOptions}
+                currentValue={educationLevel}
+                valueChange={setEducationLevel}
+                text="Education Level"
+              />
+            </ProfileSection>
+
+            <ProfileSection title="Interest">
+              <Input
+                id="dreamjob"
+                label="Dream job"
+                value={dreamJob}
+                onChange={(e) => setDreamJob(e.target.value)}
+              />
+              <Input
+                id="hobby"
+                label="Hobby"
+                value={hobby}
+                onChange={(e) => setHobby(e.target.value)}
+              />
+            </ProfileSection>
+
+            <Input
+              id="favoriteColor"
+              label="Favorite color"
+              value={favoriteColor}
+              onChange={(e) => setFavoriteColor(e.target.value)}
+            />
+
+            {/* SAVE */}
+            <div className="flex justify-center py-4">
+              <Button
+                btnText={isSaving ? <LoadingSpinner /> : "Save"}
+                color="green"
+                disabled={isSaving}
+                onClick={saveProfileData}
+                rounded="rounded-full"
+              />
             </div>
           </div>
         </div>
+
+        {/* ===== NAVBAR ===== */}
+        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+          <NavBar />
+        </div>
       </PageContainer>
     </div>
-  );
+  </PageBackground>
+);
+
 }
