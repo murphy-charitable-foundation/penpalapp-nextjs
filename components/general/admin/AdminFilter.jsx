@@ -18,7 +18,7 @@ export default function AdminFilter({
   end,
   filter,
   loading,
-  setLoading
+  setLoading,
 }) {
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
