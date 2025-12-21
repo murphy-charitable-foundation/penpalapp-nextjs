@@ -50,9 +50,7 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
-        console.log("User data:", userSnap.data());
-        if (userSnap.data().user_type === "admin") {
-          
+        if (userSnap.data().user_type == "admin") {
           router.push("/admin");
         } else {
           router.push("/letterhome");
