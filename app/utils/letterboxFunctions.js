@@ -14,9 +14,17 @@ const getUserDoc = async () => {
 
 export const getUserPfp = async(uid) => {
   const path = `profile/${uid}/profile-image`;
-  const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try {
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch (error) {
+    // If file is missing, return null
+    if (error.code == 'storage/object-not-found'){
+      return null;
+    }
+    throw error;
+  }
 }
 
 export const fetchLetterboxes = async () => {
