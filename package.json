@@ -13,7 +13,6 @@
     "@ffmpeg/util": "^0.12.2",
     "@firebase/storage": "^0.12.3",
     "@radix-ui/react-slider": "^1.2.3",
-    "@sendgrid/mail": "^8.1.4",
     "@sentry/nextjs": "^8.26.0",
     "@sentry/react": "^9.43.0",
     "compressorjs": "^1.2.1",
