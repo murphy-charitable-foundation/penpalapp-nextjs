@@ -82,7 +82,7 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error("Error in setupNotifications:", err);
-    return new Response(JSON.stringify({ error: "Failed to setup notifications." }), {
+    return new Response(JSON.stringify({ error: err }), {
       status: 500,
     });
   }
