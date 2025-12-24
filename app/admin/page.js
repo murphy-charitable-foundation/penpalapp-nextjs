@@ -15,7 +15,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
 import { iterateLetterBoxes } from "../utils/deadChat";
-import ConversationList from "../../components/general/ConversationList";
+import MessageList from "../../components/general/admin/MessageList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
@@ -207,7 +207,7 @@ export default function Admin() {
                     <main className="p-6">
                       <section className="mt-8">
                         {!isLoading ? (
-                          <ConversationList conversations={documents}/>
+                          <MessageList conversations={documents}/>
                         ) : (
                           <LetterHomeSkeleton />
                         )}
