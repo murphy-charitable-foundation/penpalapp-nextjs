@@ -92,7 +92,7 @@ export const handleNotificationSetup = async () => {
     if (res.ok) {
       console.log("Notification setup complete:");
     } else {
-      console.log(res);
+      console.log(data);
       console.error("Server error setting up notifications:");
     }
   } catch (err) {
