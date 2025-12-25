@@ -278,13 +278,11 @@ export const fetchRecipients = async (id) => {
       } else {
         pfpToUse = downloaded;
       }
-      //members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
       members.push({ ...userData, id: user.id, pfp: pfpToUse });
     } catch (e) {
       logError(e, {
         description: "Error fetching user:",
       });
-      //members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
       members.push({ ...userData, id: selectedUserDocRef.id, pfp: userData.photo_uri });
     }
   }
