@@ -267,6 +267,10 @@ export const fetchRecipients = async (id) => {
   for (const user of users) {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
+    if (!selUser.exists()) {
+      // Skip users whose documents don't exist
+      continue;
+    }
     const userData = selUser.data();    // utility/helper variable
     try {
       const downloaded = await getUserPfp(user.id);
@@ -283,7 +287,7 @@ export const fetchRecipients = async (id) => {
       logError(e, {
         description: "Error fetching user:",
       });
-      members.push({ ...userData, id: selectedUserDocRef.id, pfp: userData.photo_uri });
+      members.push({ ...userData, id: selectedUserDocRef.id, pfp: userData?.photo_uri || null });
     }
   }
   return members;
