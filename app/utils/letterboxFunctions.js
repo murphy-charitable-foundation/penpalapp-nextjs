@@ -14,9 +14,22 @@ const getUserDoc = async () => {
 
 export const getUserPfp = async(uid) => {
   const path = `profile/${uid}/profile-image`;
-  const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try {
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch (error) {
+    // Return null if there is no profile, so it can be checked in fetchRecipient
+    if (error.code === 'storage/object-not-found') {
+      return null;
+    }
+    logError(error, {
+      description: "Error fetching user profile:",
+    });
+    // Returns null for all other errors so it only has one fallback mechanism
+    return null;
+  }
+  
 }
 
 export const fetchLetterboxes = async () => {
@@ -254,14 +267,27 @@ export const fetchRecipients = async (id) => {
   for (const user of users) {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
+    if (!selUser.exists()) {
+      // Skip users whose documents don't exist
+      continue;
+    }
+    const userData = selUser.data();    // utility/helper variable
     try {
       const downloaded = await getUserPfp(user.id);
-      members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
+
+      // Check here if downloaded is null and provide alternate
+      let pfpToUse;
+      if (downloaded === null) {
+        pfpToUse = userData.photo_uri;
+      } else {
+        pfpToUse = downloaded;
+      }
+      members.push({ ...userData, id: user.id, pfp: pfpToUse });
     } catch (e) {
       logError(e, {
         description: "Error fetching user:",
       });
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
+      members.push({ ...userData, id: selectedUserDocRef.id, pfp: userData?.photo_uri || null });
     }
   }
   return members;
