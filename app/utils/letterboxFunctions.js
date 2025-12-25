@@ -23,7 +23,9 @@ export const getUserPfp = async(uid) => {
     if (error.code === 'storage/object-not-found') {
       return null;
     }
-    console.error(error);
+    logError(error, {
+      description: "Error fetching user profile:",
+    });
     // Returns null for all other errors so it only has one fallback mechanism
     return null;
   }
