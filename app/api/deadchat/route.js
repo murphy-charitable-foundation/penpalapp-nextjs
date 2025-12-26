@@ -69,7 +69,7 @@ export async function POST() {
           latestAdminDeadletterTimestamp
         );
         const diffMs = Math.floor(
-          now - latestAdminDeadletterTimestampDate / (1000 * 60 * 60 * 24)
+          (now - latestAdminDeadletterTimestampDate) / (1000 * 60 * 60 * 24)
         );
         if (adminDiffDays === 0 || diffMs < adminDiffDays) {
           adminDiffDays = diffMs;
@@ -80,7 +80,7 @@ export async function POST() {
           latestUserDeadletterTimestamp
         );
         const diffMs = Math.floor(
-          now - latestUserDeadletterTimestampDate / (1000 * 60 * 60 * 24)
+          (now - latestUserDeadletterTimestampDate) / (1000 * 60 * 60 * 24)
         );
         if (userDiffDays === 0 || diffMs < userDiffDays) {
           userDiffDays = diffMs;
