@@ -18,7 +18,6 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
@@ -235,21 +234,6 @@ export default function Home() {
                   <NavBar />
                 </div>
               </div>
-              {userType === "admin" && (
-                <Button
-                  btnText="Check For Inactive Chats"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={() => {
-                    logButtonEvent(
-                      "check for inactive chats button clicked",
-                      "/letterhome"
-                    );
-                    iterateLetterBoxes();
-                  }}
-                />
-              )}
             </>
           )}
         </>
