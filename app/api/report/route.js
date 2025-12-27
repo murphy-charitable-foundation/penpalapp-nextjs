@@ -65,14 +65,12 @@ export async function POST(request) {
         </body>
       </html>
     `;
-    const SENDER_EMAIL = "penpal@murphycharity.org";
-
-
+    
 
     //SendGrid email configuration
     const msg = {
       to: 'penpal@murphycharity.org', 
-      from: 'penpal@murphycharity.org', // Your verified sender email
+      from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || 'No message provided.',
       html:  emailHtml,
@@ -83,7 +81,7 @@ export async function POST(request) {
         port: parseInt(process.env.CPANEL_SMTP_PORT),
         secure: process.env.CPANEL_SMTP_PORT == 465, // SSL for 465
         auth: {
-            user: SENDER_EMAIL, //sender email
+            user: process.env.PENPAL_EMAIL, //sender email
             pass: process.env.PENPAL_EMAIL_PASSWORD, //sender password (cPanel email password)
         },
     });

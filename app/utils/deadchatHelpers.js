@@ -3,14 +3,13 @@ import nodemailer from "nodemailer";
 import { logError } from "./analytics";
 import generateDeadletterEmailTemplate from "../api/deadchat/emailTemplate";
 
-const SENDER_EMAIL = "penpal@murphycharity.org";
 
 const transporter = nodemailer.createTransport({
     host: process.env.CPANEL_SMTP_HOST,
     port: parseInt(process.env.CPANEL_SMTP_PORT),
     secure: process.env.CPANEL_SMTP_PORT == 465, // SSL for 465
     auth: {
-        user: SENDER_EMAIL, //sender email
+        user: process.env.PENPAL_EMAIL, //sender email
         pass: process.env.PENPAL_EMAIL_PASSWORD, //sender password (cPanel email password)
     },
 });
@@ -46,7 +45,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
   if (reason == "admin") {
     msg = {
       to: "penpal@murphycharity.org",
-      from: SENDER_EMAIL, // Your verified sender email
+      from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
       html: generateDeadletterEmailTemplate({
@@ -59,7 +58,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
   } else {
     msg = {
       to: toEmails,
-      from: SENDER_EMAIL, // Your verified sender email
+      from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
       html: generateDeadletterEmailTemplate({
