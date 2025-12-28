@@ -44,7 +44,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
   let msg;
   if (reason == "admin") {
     msg = {
-      to: "penpal@murphycharity.org",
+      to: process.env.PENPAL_EMAIL,
       from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
