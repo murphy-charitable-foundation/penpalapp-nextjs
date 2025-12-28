@@ -274,24 +274,6 @@ export const fetchRecipients = async (id) => {
 
     // Push the data; if pfpUrl is null, pfp is null as well; UI should handle the default
     members.push({ ...userData, id: user.id, pfp: pfpUrl });
-
-    // try {
-    //   const downloaded = await getUserPfp(user.id);
-
-    //   // Check here if downloaded is null and provide alternate
-    //   let pfpToUse;
-    //   if (downloaded === null) {
-    //     pfpToUse = userData.photo_uri;
-    //   } else {
-    //     pfpToUse = downloaded;
-    //   }
-    //   members.push({ ...userData, id: user.id, pfp: pfpToUse });
-    // } catch (e) {
-    //   logError(e, {
-    //     description: "Error fetching user:",
-    //   });
-    //   members.push({ ...userData, id: selectedUserDocRef.id, pfp: userData?.photo_uri || null });
-    // }
   }
   return members;
 };
