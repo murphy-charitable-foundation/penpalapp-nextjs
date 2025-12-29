@@ -2,34 +2,52 @@
 
 import Link from "next/link";
 import Button from "./Button";
-
-export default function Header({ activeFilter, setActiveFilter }) {
-  
+import Image from "next/image";
+import logo from "/public/murphylogo.png";
+export default function Header({ activeFilter, setActiveFilter, title, status="sent", isLoadingMore=false }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:bg-[#034078] sticky top-0 z-10">
-      <div className="p-4 flex items-center justify-between text-black sm:text-white bg-white sm:bg-[#034078]">
-        <div className="flex gap-4 justify-center w-full">
-          <h1 className="text-xl sm:text-2xl font-bold text-center">
-            Choose a kid to write to
-          </h1>
-        </div>
+    <div className={`${status=="sent" 
+      ? "bg-green-700" 
+      : status=="pending_review" 
+      ? "bg-blue-700" 
+      : "bg-red-700"} 
+    text-white p-4 flex items-center gap-4 rounded-md`}>
+      <Image
+        src={logo}
+        alt="Murphy Charitable Foundation Uganda"
+        width={150}
+        height={150}
+        className="h-10 w-10 rounded-full"
+      />
+      <h1 className="text-2xl font-semibold">Admin user</h1>
+      <div className="ml-auto">
+        <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} isLoadingMore={isLoadingMore} />
       </div>
-
-      <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
     </div>
   );
 }
 
-function FilterButton({ activeFilter, setActiveFilter }) {
+function FilterButton({ activeFilter, setActiveFilter, isLoadingMore }) {
   return (
-    <div className="p-4 bg-[#E6EDF4] sm:bg-[#034078]">
-      <Button
-        btnText="Filters"
-        color="bg-transparent"
-        size="small"
-        onClick={() => {
-          setActiveFilter(!activeFilter);}}
-      >
+    <div>
+      {isLoadingMore ? (
+        <div className="pr-8">
+        <div
+          className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"
+          role="status"
+          aria-label="Loading"
+        />
+        </div>
+      ) : (
+        <Button
+          btnText={`${!activeFilter ? "Filters" : "Back"}`}
+          color="white"
+          size="xs"
+          onClick={() => {
+            setActiveFilter(!activeFilter);
+          }}
+        > 
+      
         <span className="flex items-center">
           <p>Filters</p>
           {!activeFilter ? (
@@ -43,6 +61,7 @@ function FilterButton({ activeFilter, setActiveFilter }) {
           )}
         </span>
       </Button>
+      )}
     </div>
   );
 }
