@@ -932,7 +932,7 @@ return (
                   onClick={() => selectMessage(messageId)}
                 >
                   <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
+                    <div className="shrink-0 border-b">
                       <ProfileImage
                         photo_uri={
                           isSenderUser
@@ -942,8 +942,7 @@ return (
                         first_name={
                           isSenderUser ? "Me" : recipients[0]?.first_name
                         }
-                        width={48}
-                        height={48}
+                        size={12}
                       />
                     </div>
 
