@@ -1,0 +1,21 @@
+{
+    "name": "Pen Pal Magic App",
+    "short_name": "Pen Pal",
+    "description": "To connect 2000 rural Ugandan Children to the World",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#65B427",
+    "icons": [
+      {
+        "src": "/murphylogo.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/murphylogo.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
