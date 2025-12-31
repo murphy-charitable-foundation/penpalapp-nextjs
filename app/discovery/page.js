@@ -63,7 +63,7 @@ export default function Discovery() {
   const [filters, setFilters] = useState({
     age: null,        // { min, max } | null
     gender: null,     // string | null
-    hobbies: [],      // [{ id, label }]  ← بدون system
+    hobbies: [],     
   });
 
   /* ===== PAGINATION ===== */
