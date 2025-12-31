@@ -203,43 +203,45 @@ export default function Home() {
 
 
 return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-    <PageContainer
-      width="compactXS"
-      padding="none"
-      center={false}
-      className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-    >
-      {/* ===== HEADER (FIXED) ===== */}
-      <div className="shrink-0 border-b">
-        <ProfileHeader
-          userName={userName}
-          profileImage={profileImage}
-          id={userId}
-          showCountry={false}
-        />
-      </div>
-
-      {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-3">
-        {isLoading ? (
-          <LetterHomeSkeleton />
-        ) : conversations.length > 0 ? (
-          <ConversationList conversations={conversations} />
-        ) : (
-          <EmptyState
-            title="New friends are coming!"
-            description="Many friends are coming — hang tight!"
+  <>
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {/* ===== HEADER (FIXED) ===== */}
+        <div className="shrink-0 border-b">
+          <ProfileHeader
+            userName={userName}
+            profileImage={profileImage}
+            id={userId}
+            showCountry={false}
           />
-        )}
-      </div>
+        </div>
 
-      {/* ===== NAVBAR (FIXED) ===== */}
-      <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-        <NavBar />
-      </div>
-    </PageContainer>
-  </PageBackground>
+        {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3">
+          {conversations.length > 0 ? (
+            <ConversationList conversations={conversations} />
+          ) : (
+            <EmptyState
+              title="New friends are coming!"
+              description="Many friends are coming — hang tight!"
+            />
+          )}
+        </div>
+
+        {/* ===== NAVBAR (FIXED) ===== */}
+        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+          <NavBar />
+        </div>
+      </PageContainer>
+    </PageBackground>
+
+    {/* ===== SKELETON OVERLAY (kept as previous behavior) ===== */}
+    {isLoading && <LetterHomeSkeleton />}
+  </>
 );
-
 }

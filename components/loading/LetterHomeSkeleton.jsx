@@ -1,28 +1,51 @@
+import React from 'react';
+
 export default function LetterHomeSkeleton() {
   return (
-    <div className="space-y-3">
-      {[...Array(6)].map((_, i) => (
-        <div
-          key={i}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm px-2 py-1 animate-pulse"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-10 bg-gray-200 rounded-full" />
-              <div className="space-y-1">
-                <div className="h-4 w-24 bg-gray-200 rounded" />
-                <div className="h-3 w-16 bg-gray-200 rounded" />
+    <div className="w-full bg-gray-100 min-h-screen py-6 fixed top-0 left-0 z-[100]">
+        <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden animate-pulse">
+          {/* Header Skeleton */}
+          <div className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gray-300 rounded-full" />
+              <div className="ml-3">
+                <div className="h-4 w-24 bg-gray-300 rounded mb-2" />
+                <div className="h-3 w-16 bg-gray-300 rounded" />
               </div>
             </div>
-            <div className="h-3 w-16 bg-gray-200 rounded" />
+            <div className="flex items-center space-x-4">
+              <div className="h-7 w-7 bg-gray-300 rounded" />
+              <div className="h-7 w-7 bg-gray-300 rounded" />
+              <div className="h-7 w-7 bg-gray-300 rounded" />
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 mt-3">
-            <div className="w-4 h-4 rounded-full border-2 border-gray-200" />
-            <div className="h-3 w-32 bg-gray-200 rounded" />
-          </div>
+          {/* Main Skeleton */}
+          <main className="p-6">
+            <section className="mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <div className="h-6 w-32 bg-gray-300 rounded" />
+                <div className="h-8 w-20 bg-gray-300 rounded" />
+              </div>
+              <div>
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md animate-pulse"
+                  >
+                    <div className="flex-grow">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-8 h-8 bg-gray-300 rounded-full" />
+                        <div className="h-4 w-24 bg-gray-300 rounded" />
+                      </div>
+                      <div className="h-3 w-full bg-gray-300 rounded mb-1" />
+                      <div className="h-3 w-1/2 bg-gray-300 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </main>
         </div>
-      ))}
-    </div>
-  );
+      </div>
+  )
 }
