@@ -1,6 +1,6 @@
 "use client";
+import React, { useState, useEffect } from "react";
 import KidFilter from "../discovery/KidFilter";
-import React from "react";
 
 export default function FilterPanel({
   open,
@@ -9,15 +9,28 @@ export default function FilterPanel({
   onClear,
   onClose,
 }) {
-  const handleApply = (ageVal, hobbyArr, genderVal) => {
-    onApply?.({
-      age: Number(ageVal) || 0,
-      gender: genderVal || "",
-      hobbies: Array.isArray(hobbyArr) ? hobbyArr : [],
-    });
+  // local controlled state
+  const [hobbies, setHobbies] = useState([]);
+  const [age, setAge] = useState(null);
+  const [gender, setGender] = useState("");
+
+  // sync initial → local state when panel opens or initial changes
+  useEffect(() => {
+    setHobbies(initial?.hobbies || []);
+    setAge(initial?.age || null);
+    setGender(initial?.gender || "");
+  }, [initial, open]);
+
+  const handleApply = (filters) => {
+    onApply?.(filters);
   };
 
-  const proxyClear = () => { onClear?.(); };
+  const handleClear = () => {
+    setHobbies([]);
+    setAge(null);
+    setGender("");
+    onClear?.();
+  };
 
   return (
     <>
@@ -30,9 +43,9 @@ export default function FilterPanel({
       )}
 
       <div
-        className={`fixed inset-x-0 top-[6dvh] mx-auto z-[99] w-full max-w-[640px] 
-                    transition-transform duration-300
-                    ${open ? "translate-y-0" : "-translate-y-[120%]"}`}
+        className={`fixed inset-x-0 top-[6dvh] mx-auto z-[99] w-full max-w-[640px]
+          transition-transform duration-300
+          ${open ? "translate-y-0" : "-translate-y-[120%]"}`}
       >
         <div className="mx-4 sm:mx-0 rounded-2xl shadow-xl ring-1 ring-black/10 bg-white overflow-hidden">
           {/* Header */}
@@ -43,23 +56,30 @@ export default function FilterPanel({
               aria-label="Close"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M6 6l12 12M18 6L6 18" stroke="#111827" strokeWidth="2" strokeLinecap="round"/>
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="#111827"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
             <h2 className="font-semibold text-[#034792]">Filters</h2>
-            <div className="absolute right-3 w-8 h-8" />
           </div>
 
-          <div className="max-h-[75dvh] overflow-y-auto overscroll-contain"
-               style={{ WebkitOverflowScrolling: "touch" }}>
+          {/* Content */}
+          <div
+            className="max-h-[75dvh] overflow-y-auto overscroll-contain"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             <KidFilter
-              hobbies={initial?.hobbies || []}
-              age={initial?.age || 0}
-              gender={initial?.gender || ""}
+              hobbies={hobbies}
+              setHobbies={setHobbies}
+              age={age}
+              setAge={setAge}
+              gender={gender}
+              setGender={setGender}
               filter={handleApply}
-              setHobbies={proxyClear}
-              setAge={proxyClear}
-              setGender={proxyClear}
             />
           </div>
         </div>

@@ -11,14 +11,14 @@ import KidsList from "../../components/discovery/KidsList";
 
 const PAGE_SIZE = 10;
 
-// --- mock data ---
+// ---- MOCK DATA ----
 const MOCK_KIDS = [
   {
     id: "k1",
     first_name: "Joan",
     last_name: "A.",
     gender: "Female",
-    hobby: ["Reading", "Drawing"],
+    hobby: ["reading", "drawing"],
     date_of_birth: "2012-05-14",
     photoURL: "/usericon.png",
     bio: "Learn, play and write kind letters.",
@@ -28,7 +28,7 @@ const MOCK_KIDS = [
     first_name: "Amir",
     last_name: "K.",
     gender: "Male",
-    hobby: ["Football", "Music"],
+    hobby: ["sports", "music"],
     date_of_birth: "2011-08-02",
     photoURL: "/usericon.png",
     bio: "Curious about music and science.",
@@ -38,13 +38,14 @@ const MOCK_KIDS = [
     first_name: "Sara",
     last_name: "N.",
     gender: "Female",
-    hobby: ["Chess", "Coding"],
+    hobby: ["chess", "coding"],
     date_of_birth: "2013-02-20",
     photoURL: "/usericon.png",
     bio: "Enjoys reading and puzzles.",
   },
 ];
 
+/* ===== AGE CALC ===== */
 function calculateAge(dob) {
   if (!dob) return null;
   const d = new Date(dob);
@@ -58,14 +59,14 @@ function calculateAge(dob) {
 export default function Discovery() {
   const [activeFilter, setActiveFilter] = useState(false);
 
-  // age = { min, max } | undefined
+  /* ===== FILTER STATE ===== */
   const [filters, setFilters] = useState({
-    age: undefined,
-    gender: "",
-    hobbies: [],
+    age: null,        // { min, max } | null
+    gender: null,     // string | null
+    hobbies: [],      // [{ id, label }]  ← بدون system
   });
 
-  // pagination state
+  /* ===== PAGINATION ===== */
   const [visibleKids, setVisibleKids] = useState([]);
   const [cursor, setCursor] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -73,32 +74,36 @@ export default function Discovery() {
   /* ================= FILTER LOGIC ================= */
   const filteredKids = useMemo(() => {
     return MOCK_KIDS.filter((k) => {
-      // gender
-      if (filters.gender && k.gender !== filters.gender) return false;
+      // ---- GENDER ----
+      if (filters.gender && k.gender !== filters.gender) {
+        return false;
+      }
 
-      // age bracket
+      // ---- AGE ----
       if (filters.age) {
         const age = calculateAge(k.date_of_birth);
         if (age === null) return false;
-        if (age < filters.age.min || age > filters.age.max) return false;
+        if (age < filters.age.min || age > filters.age.max) {
+          return false;
+        }
       }
 
-      // hobbies (AND logic, case-insensitive)
-      if (filters.hobbies.length) {
-        const hv = new Set((k.hobby || []).map((h) => h.toLowerCase()));
-        if (
-          !filters.hobbies.every((h) => hv.has(h.toLowerCase()))
-        )
+      // ---- HOBBIES (id-based, AND logic) ----
+      if (filters.hobbies.length > 0) {
+        const kidHobbies = new Set(k.hobby || []);
+        const selectedIds = filters.hobbies.map((h) => h.id);
+
+        if (!selectedIds.every((id) => kidHobbies.has(id))) {
           return false;
+        }
       }
 
       return true;
     });
   }, [filters]);
 
-  /* ================= PAGINATION ================= */
+  /* ================= RESET PAGINATION ON FILTER ================= */
   useEffect(() => {
-    // reset pagination whenever filter result changes
     setCursor(0);
     setVisibleKids(filteredKids.slice(0, PAGE_SIZE));
   }, [filteredKids]);
@@ -138,12 +143,12 @@ export default function Discovery() {
             />
           </div>
 
-          {/* ===== SINGLE SCROLLER ===== */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
+          {/* ===== LIST ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-6">
             {filteredKids.length === 0 ? (
               <EmptyState
                 onClear={() =>
-                  setFilters({ age: undefined, gender: "", hobbies: [] })
+                  setFilters({ age: null, gender: null, hobbies: [] })
                 }
               />
             ) : (
@@ -156,7 +161,7 @@ export default function Discovery() {
             )}
           </div>
 
-          {/* ===== NAVBAR ===== */}
+          {/* ===== NAV ===== */}
           <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
             <NavBar />
           </div>
@@ -165,20 +170,20 @@ export default function Discovery() {
           <FilterPanel
             open={activeFilter}
             initial={{
-              age: filters.age || null,
+              age: filters.age,
               gender: filters.gender,
               hobbies: filters.hobbies,
             }}
             onApply={(f) => {
               setFilters({
-                age: f.age || undefined,
-                gender: f.gender || "",
+                age: f.age || null,
+                gender: f.gender || null,
                 hobbies: Array.isArray(f.hobbies) ? f.hobbies : [],
               });
               setActiveFilter(false);
             }}
             onClear={() =>
-              setFilters({ age: undefined, gender: "", hobbies: [] })
+              setFilters({ age: null, gender: null, hobbies: [] })
             }
             onClose={() => setActiveFilter(false)}
           />
