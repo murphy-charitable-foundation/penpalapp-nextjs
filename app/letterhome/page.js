@@ -19,7 +19,7 @@ import {
 
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
-import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
+import LettersSkeleton from "../../components/loading/LettersSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
@@ -211,37 +211,39 @@ return (
         center={false}
         className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
-        {/* ===== HEADER (FIXED) ===== */}
-        <div className="shrink-0 border-b">
-          <ProfileHeader
-            userName={userName}
-            profileImage={profileImage}
-            id={userId}
-            showCountry={false}
-          />
-        </div>
-
-        {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-3">
-          {conversations.length > 0 ? (
-            <ConversationList conversations={conversations} />
-          ) : (
-            <EmptyState
-              title="New friends are coming!"
-              description="Many friends are coming — hang tight!"
+        {isLoading && <LettersSkeleton />}
+        {!isLoading && (
+          <>
+          {/* ===== HEADER (FIXED) ===== */}
+          <div className="shrink-0 border-b">
+            <ProfileHeader
+              userName={userName}
+              profileImage={profileImage}
+              id={userId}
+              showCountry={false}
             />
-          )}
-        </div>
+          </div>
 
-        {/* ===== NAVBAR (FIXED) ===== */}
-        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-          <NavBar />
-        </div>
+          {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3">
+            {conversations.length > 0 ? (
+              <ConversationList conversations={conversations} />
+            ) : (
+              <EmptyState
+                title="New friends are coming!"
+                description="Many friends are coming — hang tight!"
+              />
+            )}
+          </div>
+
+          {/* ===== NAVBAR (FIXED) ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
+          </>
+        )}
       </PageContainer>
     </PageBackground>
-
-    {/* ===== SKELETON OVERLAY (kept as previous behavior) ===== */}
-    {isLoading && <LetterHomeSkeleton />}
   </>
 );
 }
