@@ -1,4 +1,6 @@
 "use client";
+console.log("✅ ADMIN PAGE.JS LOADED", Date.now());
+
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -62,6 +64,8 @@ export default function Admin() {
     const searchParams = useSearchParams();
     const showApproveSuccessTest= searchParams.get("approveSuccess") === "true";
     const showRejectSuccessTest= searchParams.get("rejectSuccess") === "true";
+    const [authChecked, setAuthChecked] = useState(false);
+
 
   const exitReview = () => {
   setShowReview(false);
@@ -72,6 +76,9 @@ export default function Admin() {
   setSelectedStatus("pending_review");
 };
 
+useEffect(() => {
+  console.log("🟢 ADMIN PAGE MOUNTED", Date.now());
+}, []);
 
 
  const handleApprove = async () => {
@@ -135,6 +142,7 @@ const handleReject = async (reason, feedback) => {
           return;
         }      
         const userData = userSnapshot.data();
+        console.log("🟣 USER TYPE", userData.user_type);
         if (userData?.user_type != "admin") {
           setError("User is not admin");
           setIsLoading(false);
@@ -385,18 +393,19 @@ const handleReject = async (reason, feedback) => {
 
                 <BottomNavBar />
 
+              {/* Admin-only utility button (temporarily disabled) */}
               {/*
-              {userType === "admin" && (
-                  <Button
-                    btnText="Check For Inactive Chats"
-                    color="bg-black"
-                    textColor="text-white"
-                    rounded="rounded-md"
-                    onClick={iterateLetterBoxes}
-                  />
-              )}
-              
+              <Button
+                btnText="Check For Inactive Chats"
+                color="bg-black"
+                textColor="text-white"
+                rounded="rounded-md"
+                onClick={iterateLetterBoxes}
+              />
+              */}
+
               {/* Add animation keyframes */}
+              
               <style jsx global>{`
                 @keyframes slideIn {
                   from {

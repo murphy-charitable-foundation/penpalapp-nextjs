@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import rejectionReasons from "./rejectionReasons";
+import { ChevronLeft } from "lucide-react";
+
 
 export default function AdminRejectModal({ letter, onSubmit, onClose }) {
   const [reason, setReason] = useState("");
@@ -14,7 +16,9 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
 
         {/* HEADER */}
         <div className="flex items-center px-4 py-3 bg-secondary text-white relative">
-          <button onClick={onClose} className="absolute left-4 text-xl">←</button>
+          <button onClick={onClose} className="absolute left-4">
+            <ChevronLeft size={22} />
+          </button>
           <h2 className="text-lg font-semibold mx-auto">Give Feedback</h2>
         </div>
 

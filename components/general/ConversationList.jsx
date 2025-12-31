@@ -29,7 +29,6 @@ const ConversationList = ({
       onClick={() => onSelectConversation(c)}
     >
       <MessagePreview
-        className={i === 0 ? "first-letter relative" : ""}
         profileImage={c.profileImage}
         name={c.name}
         country={c.country}
@@ -39,7 +38,10 @@ const ConversationList = ({
         status={c.status}
         isRecipient={c.isRecipient}
         unread={c.unread}
+        mode="admin"
+        onSelect={() => onSelectConversation(c)}
       />
+
     </li>
   ))}
 </ul>

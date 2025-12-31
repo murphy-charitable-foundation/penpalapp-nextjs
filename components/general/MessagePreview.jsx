@@ -3,8 +3,6 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
 
-
-
 const MessagePreview = ({
   profileImage,
   name,
@@ -15,6 +13,8 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  mode = "inbox", // "inbox" | "admin"
+  onSelect,
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -36,9 +36,15 @@ const MessagePreview = ({
     return null;
   };
 
+  const Wrapper = mode === "inbox" ? "a" : "div";
+  const wrapperProps =
+    mode === "inbox"
+      ? { href: `/letters/${letterboxId}` }
+      : { onClick: onSelect };
+
   return (
-    <a
-      href={`/letters/${letterboxId}`}
+    <Wrapper
+      {...wrapperProps}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
@@ -47,7 +53,8 @@ const MessagePreview = ({
           : status === "pending_review"
           ? "bg-gray-50"
           : "bg-white"
-      }`}>
+      }`}
+    >
       <div className="flex items-start">
         <Image
           src={imageSrc}
@@ -56,27 +63,31 @@ const MessagePreview = ({
           width={36}
           height={36}
         />
+
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
               <div className="font-semibold text-gray-900">
-                {status === "draft" && lastMessage !== "" && (
+                {status === "draft" && lastMessage && (
                   <span className="text-red-500 mr-1">[Draft]</span>
                 )}
                 {name}
               </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
+
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
               {formatTimestamp(lastMessageDate)}
             </div>
           </div>
         </div>
       </div>
+
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}>
+        }`}
+      >
         {lastMessage ? (
           <div className="flex">
             {getStatusIcon() && (
@@ -102,7 +113,7 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </Wrapper>
   );
 };
 
