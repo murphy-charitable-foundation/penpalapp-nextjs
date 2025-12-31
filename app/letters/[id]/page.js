@@ -975,14 +975,89 @@ return (
                 </div>
 
                 {isSelected && (
-                  <div className="px-4 pb-3">
-                    <div className="ml-16">
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                    <div className="px-4 pb-3">
+                      <div className="ml-16 relative">
+                          <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div className="flex items-center justify-end w-full">
+                          {!isSenderUser && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                setReportSender(message.sent_by.id);
+                                setReportContent(message.content);
+                                setShowReportPopup(true);
+                                logButtonEvent(
+                                  "Report message clicked!",
+                                  "/letters/[id]"
+                                );
+                              }}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
+                              <FaExclamationCircle className="mr-1" size={10} />
+                              Report
+                            </button>
+                          )}
+                          {/* STATUS BANNER */}
+                          {isSenderUser && (
+                            <>
+                              {/* REJECTED */}
+                              {isSenderUser && message.status === "rejected" &&(
+                              <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
+                                <div className="flex items-start text-red-700 font-semibold">
+                                  <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                  <div>
+                                    <div>Your letter was not sent.</div>
+
+                                    {message.rejection_reason && (
+                                      <div className="text-sm text-red-600 mt-1">
+                                        {message.rejection_reason}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                              {/* SENT → GREEN CHECK */}
+                              {message.status === "sent" && (
+                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
+                              )}
+                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
+                              {message.status === "pending_review" && (
+                                <div className="flex items-center justify-end w-full">
+                              {/* Wrapper so the check can stick to the button */}
+                              <div className="relative inline-flex">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    handleEditMessage(message);
+                                    logButtonEvent(
+                                      "Edit message clicked!",
+                                      "/letters/[id]"
+                                    );
+                                  }}
+                                  className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
+                                  title="Edit message"
+                                >
+                                  Edit
+                                </button>
+
+                                {/* Check badge in bottom-right of the button */}
+                                <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                  <span className="text-gray-400 text-xs font-bold">✓</span>
+                                </div>
+                              </div>
+                            </div>
+                            )}
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           );
