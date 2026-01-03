@@ -92,8 +92,8 @@ export default function KidFilter({
             onChange={setHobbies}
             allowCustom={false}
             placeholder="Select hobbies"
-            />
-        </div>
+          />
+      </div>
 
 
         {/* GENDER */}

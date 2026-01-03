@@ -1,113 +1,133 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
-const DEFAULT_HOBBIES = [
-  { id: "reading", label: "Reading" },
-  { id: "drawing", label: "Drawing" },
-  { id: "music", label: "Music" },
-  { id: "sports", label: "Sports" },
-  { id: "chess", label: "Chess" },
-  { id: "coding", label: "Coding" },
-];
+import { useEffect, useMemo, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../app/firebaseConfig";
 
 function slugify(label) {
   return label.toLowerCase().trim().replace(/\s+/g, "-");
 }
 
-export default function HobbySelect(props) {
-  const {
+function capFirst(s) {
+  if (!s) return "";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export default function HobbySelect({
   value = [],
   onChange,
   allowCustom = false,
-  placeholder = allowCustom ? "Select or add hobbies" : "Select hobbies",
-  } = props;
+  placeholder,
+  collectionName = "hobbies",
+}) {
+  const safePlaceholder =
+    placeholder || (allowCustom ? "Select or add hobbies" : "Select hobbies");
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  // merge defaults + selected custom hobbies (so custom ones don't disappear)
-  const options = useMemo(() => {
-    const selectedExtras = value.filter(function (v) {
-      return !DEFAULT_HOBBIES.some(function (d) {
-        return d.id === v.id;
-      });
-    });
+  const [isLoading, setIsLoading] = useState(true);
+  const [serverOptions, setServerOptions] = useState([]); // [{id,label}]
 
-    return DEFAULT_HOBBIES.concat(selectedExtras);
-  }, [value]);
+  // Fetch hobbies once
+  useEffect(() => {
+    let alive = true;
+
+    async function fetchHobbies() {
+      try {
+        setIsLoading(true);
+        const snap = await getDocs(collection(db, collectionName));
+
+        const opts = snap.docs
+          .map((d) => {
+            const data = d.data() || {};
+            // supports { hobby: "reading" } or { label: "Reading" } or { name: "Reading" }
+            const raw = (data.hobby || data.label || data.name || "").toString().trim();
+            if (!raw) return null;
+
+            const id = slugify(raw);
+            return { id, label: capFirst(raw.toLowerCase()) };
+          })
+          .filter(Boolean);
+
+        // de-dup by id
+        const uniq = Array.from(new Map(opts.map((o) => [o.id, o])).values());
+
+        if (alive) setServerOptions(uniq);
+      } catch (e) {
+        console.error("Failed to fetch hobbies:", e);
+        if (alive) setServerOptions([]);
+      } finally {
+        if (alive) setIsLoading(false);
+      }
+    }
+
+    fetchHobbies();
+    return () => {
+      alive = false;
+    };
+  }, [collectionName]);
+
+  // merge server options + selected items (so selected doesn't disappear)
+  const options = useMemo(() => {
+    const selectedExtras = value.filter((v) => !serverOptions.some((o) => o.id === v.id));
+    return serverOptions.concat(selectedExtras);
+  }, [serverOptions, value]);
 
   const filteredOptions = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return options;
-    return options.filter(function (o) {
-      return o.label.toLowerCase().includes(q);
-    });
+    return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
   function isSelected(id) {
-    return value.some(function (v) {
-      return v.id === id;
-    });
+    return value.some((v) => v.id === id);
   }
 
   function toggle(opt) {
-    if (isSelected(opt.id)) {
-      onChange(
-        value.filter(function (v) {
-          return v.id !== opt.id;
-        })
-      );
-    } else {
-      onChange(value.concat(opt));
-    }
+    if (!onChange) return;
+    if (isSelected(opt.id)) onChange(value.filter((v) => v.id !== opt.id));
+    else onChange(value.concat(opt));
   }
 
   function addCustom() {
-    var label = query.trim();
+    if (!allowCustom) return;
+
+    const label = query.trim();
     if (!label) return;
 
-    var id = slugify(label);
+    const id = slugify(label);
 
-    // if it matches an existing option, just toggle it
-    var existing = options.find(function (o) {
-      return o.id === id;
-    });
-
+    const existing = options.find((o) => o.id === id);
     if (existing) {
       toggle(existing);
       setQuery("");
       return;
     }
 
-    // otherwise create + select it
-    var custom = { id: id, label: label };
+    const custom = { id, label: capFirst(label) };
     onChange(value.concat(custom));
     setQuery("");
   }
 
-  var selectedLabels = value.map(function (v) {
-    return v.label;
-  }).join(", ");
+  const selectedText = value.map((v) => v.label).join(", ");
 
   return (
     <div className="relative">
-      {/* Trigger */}
       <button
         type="button"
-        onClick={() => setOpen(function (s) { return !s; })}
-        className="w-full h-11 flex items-center justify-between border-b-2 border-gray-300 bg-transparent"
+        disabled={isLoading}
+        onClick={() => setOpen((s) => !s)}
+        className="w-full h-11 flex items-center justify-between border-b-2 border-gray-300 bg-transparent disabled:opacity-60"
       >
-        <span className={"text-left " + (value.length ? "text-gray-900" : "text-gray-400")}>
-          {value.length ? selectedLabels : placeholder}
+        <span className={value.length ? "text-gray-900" : "text-gray-400"}>
+          {value.length ? selectedText : safePlaceholder}
         </span>
         <span className="text-gray-400">▾</span>
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute z-50 mt-2 w-full rounded-xl border bg-white shadow-lg p-3">
-          {/* Search / Add */}
           <div className="flex gap-2">
             <input
               value={query}
@@ -126,16 +146,15 @@ export default function HobbySelect(props) {
             )}
           </div>
 
-          {/* Options */}
           <div className="mt-3 max-h-52 overflow-y-auto">
-            {filteredOptions.length === 0 ? (
-              <div className="py-6 text-sm text-gray-500 text-center">
-                No options
-              </div>
+            {isLoading ? (
+              <div className="py-6 text-sm text-gray-500 text-center">Loading…</div>
+            ) : filteredOptions.length === 0 ? (
+              <div className="py-6 text-sm text-gray-500 text-center">No options</div>
             ) : (
               <ul className="space-y-1">
-                {filteredOptions.map(function (opt) {
-                  var checked = isSelected(opt.id);
+                {filteredOptions.map((opt) => {
+                  const checked = isSelected(opt.id);
                   return (
                     <li key={opt.id}>
                       <button
@@ -143,12 +162,7 @@ export default function HobbySelect(props) {
                         onClick={() => toggle(opt)}
                         className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 text-left"
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          readOnly
-                          className="h-4 w-4"
-                        />
+                        <input type="checkbox" checked={checked} readOnly className="h-4 w-4" />
                         <span className="text-sm text-gray-900">{opt.label}</span>
                       </button>
                     </li>
@@ -158,7 +172,6 @@ export default function HobbySelect(props) {
             )}
           </div>
 
-          {/* Footer */}
           <div className="mt-3 flex justify-between">
             <button
               type="button"
@@ -170,7 +183,6 @@ export default function HobbySelect(props) {
             >
               Clear hobbies
             </button>
-
             <button
               type="button"
               onClick={() => setOpen(false)}
