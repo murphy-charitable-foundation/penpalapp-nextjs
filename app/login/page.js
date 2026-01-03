@@ -76,11 +76,14 @@ return (
         center={false}
         className="w-full max-h-[98dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
+        {/* ===== HEADER ===== */}
+        <div className="pb-4">
+          <PageHeader title="Login" image showBackButton showBorder={false}/>
+        </div>
         {/* ===== CONTENT (ONLY SCROLLER) ===== */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-8">
           {loading && <LoadingSpinner />}
 
-          <PageHeader title="Login" image showBackButton />
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <Input

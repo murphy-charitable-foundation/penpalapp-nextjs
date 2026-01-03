@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
 import NavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 
@@ -18,23 +19,7 @@ export default function About() {
          className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
-          <div className="shrink-0 px-4 py-3 border-b flex items-center">
-            <BackButton size="xs" />
-
-            <h1 className="
-              flex-1
-              text-center
-              text-2xl
-              font-bold
-              tracking-tight
-              text-secondary
-            ">
-              About Us
-            </h1>
-
-            {/* BackButton */}
-            <div className="w-8" />
-          </div>
+          <PageHeader title="About Us" image={false} showBackButton />
 
           {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pt-4 pb-6">

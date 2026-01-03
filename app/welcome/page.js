@@ -22,9 +22,7 @@ export default function Welcome() {
         className="bg-white rounded-2xl shadow-lg overflow-hidden"
       >
         {/* HEADER */}
-        <div className="px-4 py-3 border-b pt-4">
-          <PageHeader title="Welcome" image={false} />
-        </div>
+        <PageHeader title="Welcome" image={false} />
 
         {/* CONTENT – NO SCROLL */}
         <div className="px-6 pb-8 flex flex-col items-center text-center gap-6 pt-6">

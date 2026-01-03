@@ -32,9 +32,7 @@ return (
         "
       >
         {/* ===== HEADER ===== */}
-        <div className="shrink-0 px-4 py-3 border-b pt-4">
-          <PageHeader title="Terms and Conditions" imageSize="sm"/>
-        </div>
+        <PageHeader title="Terms and Conditions" imageSize="sm"/>
 
         {/* ===== SCROLLABLE CONTENT ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">

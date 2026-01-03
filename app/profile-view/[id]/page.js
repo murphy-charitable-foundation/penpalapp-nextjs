@@ -79,13 +79,7 @@ return (
         className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
         {/* ===== HEADER ===== */}
-        <div className="shrink-0 border-b bg-white pt-3">
-          <PageHeader
-            title="View Profile"
-            image={false}
-            heading={false}
-          />
-        </div>
+        <PageHeader title="View Profile" image={false} />
 
         {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">

@@ -132,9 +132,7 @@ export default function EditProfileUserImage() {
           className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
-          <div className="shrink-0 border-b bg-white pt-4">
-            <PageHeader title="Edit image" image={false}/>
-          </div>
+          <PageHeader title="Edit image" image={false}/>
 
           {/* ===== SINGLE SCROLLER ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 flex flex-col items-center gap-6">

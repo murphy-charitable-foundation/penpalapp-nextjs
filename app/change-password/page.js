@@ -85,25 +85,11 @@ return (
         >
 
         {/* ===== HEADER ===== */}
-        <div className="shrink-0 px-4 py-3  flex items-center gap-2">
-          <BackButton size="xs" />
-
-          <h1 className="flex-1 text-center text-xl font-semibold tracking-tight text-secondary">
-            Create Your New Password
-          </h1>
-
-          {/* spacer to center title */}
-          <div className="w-6" />
-        </div>
+        <PageHeader title="Create Your New Password" image showBackButton={false} />
+          
 
         {/* ===== CONTENT (ONLY SCROLLER) ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
-          {/* Header logo only — no back button */}
-          <PageHeader
-            title=""
-            image
-            showBackButton={false}
-          />
 
           <form className="space-y-8 mt-6" onSubmit={handleSubmit}>
             <div>

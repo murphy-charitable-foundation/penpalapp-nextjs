@@ -278,9 +278,7 @@ return (
         "
       >
         {/* ===== HEADER ===== */}
-        <div className="shrink-0 px-4 py-3 border-b pt-4">
-          <PageHeader title="Profile" image={false} />
-        </div>
+        <PageHeader title="Profile" image={false} showBackButton />
 
         {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">

@@ -156,10 +156,8 @@ return (
         center={false}
         className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
-        {/* ===== HEADER (FIXED) ===== */}
-        <div className="shrink-0 px-4 py-3 border-b">
-          <PageHeader title="Create account" image={false} />
-        </div>
+        {/* ===== HEADER ===== */}
+        <PageHeader title="Create account" image={false} />
 
         {/* ===== SINGLE SCROLLER ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-4">
