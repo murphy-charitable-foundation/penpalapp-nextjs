@@ -17,10 +17,10 @@ function slugify(label) {
 
 export default function HobbySelect(props) {
   const {
-    value = [],
-    onChange,
-    allowCustom = true,
-    placeholder = "Select or add hobbies",
+  value = [],
+  onChange,
+  allowCustom = false,
+  placeholder = allowCustom ? "Select or add hobbies" : "Select hobbies",
   } = props;
 
   const [open, setOpen] = useState(false);

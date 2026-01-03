@@ -87,11 +87,12 @@ export default function KidFilter({
            Hobbies
           </label>
 
-         <HobbySelect
-           value={hobbies}
-           onChange={setHobbies}
-           allowCustom
-         />
+          <HobbySelect
+            value={hobbies}
+            onChange={setHobbies}
+            allowCustom={false}
+            placeholder="Select hobbies"
+            />
         </div>
 
 
