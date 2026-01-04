@@ -131,7 +131,6 @@ export default function SendMessage({ kid }) {
     <div>
       <Button
         btnText="Send a message"
-        color="bg-[#034792]"
         textColor="text-white"
         font="font-bold"
         rounded="rounded-3xl"
