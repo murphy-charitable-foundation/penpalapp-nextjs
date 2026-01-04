@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useState, useContext, useEffect } from "react";
+import { logError } from "../app/utils/analytics";
 
 const DeadletterContext = createContext(undefined);
 
@@ -17,12 +18,16 @@ export const DeadletterProvider = ({ children }) => {
           localStorage.setItem("deadletterTimestamp", new Date().toISOString());
           console.log("OnMessage Email Request Success: ", e.data.data);
         } else {
-          console.error("OnMessage Email Request Error: ", e.data.error);
+          logError(`${e.data.error}`, {
+            description: "Web Worker OnMessage Email Request Error",
+          });
         }
         setIsDeadletterLoading(false);
       };
       newWorker.onerror = (error) => {
-        console.error("Worker error:", error);
+        logError(error, {
+          description: "Web Worker OnError",
+        });
         setIsDeadletterLoading(false);
       };
       return () => {
