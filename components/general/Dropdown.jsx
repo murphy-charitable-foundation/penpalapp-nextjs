@@ -36,8 +36,18 @@ export default function Dropdown({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full h-11 px-4 flex items-center justify-between bg-transparent"
+        className={`
+          w-full h-11
+          flex items-center justify-between
+          bg-transparent
+          border-b
+          transition-colors
+          focus:outline-none
+          ${safeValue ? "border-black" : "border-gray-300"}
+        `}
       >
+
+
         <span
           className={`truncate ${
             safeValue ? "text-gray-900" : "text-gray-500"
