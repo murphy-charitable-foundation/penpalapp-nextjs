@@ -67,10 +67,9 @@ export async function POST(request) {
     `;
     
 
-    //SendGrid email configuration
     const msg = {
       to: process.env.PENPAL_EMAIL, 
-      from: process.env.PENPAL_EMAIL, // Your verified sender email
+      from: process.env.PENPAL_EMAIL,
       subject: "Message Reported",
       text: message || 'No message provided.',
       html:  emailHtml,

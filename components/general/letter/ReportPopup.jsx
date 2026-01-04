@@ -31,7 +31,7 @@ const ReportPopup = ({
       }
     } catch (error) {
       logError(error, {
-        description: "Could not send request to SendGrid",
+        description: "Could not send request to Email Service Provider",
       });
     }
   }
