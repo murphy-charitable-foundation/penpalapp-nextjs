@@ -3,32 +3,32 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { logError } from "../app/utils/analytics";
 
-const DeadletterContext = createContext(undefined);
+const DormantLetterboxContext = createContext(undefined);
 
-export const DeadletterProvider = ({ children }) => {
-  const [isDeadletterLoading, setIsDeadletterLoading] = useState(false);
+export const DormantLetterboxProvider = ({ children }) => {
+  const [isDormantLetterboxLoading, setIsDormantLetterboxLoading] = useState(false);
   const [worker, setWorker] = useState(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const newWorker = new Worker("/workers/deadletterWorker.js");
+      const newWorker = new Worker("/workers/dormantLetterboxWorker.js");
       setWorker(newWorker);
       newWorker.onmessage = (e) => {
         if (e.data.success) {
-          localStorage.setItem("deadletterTimestamp", new Date().toISOString());
+          localStorage.setItem("dormantLetterboxTimestamp", new Date().toISOString());
           console.log("OnMessage Email Request Success: ", e.data.data);
         } else {
           logError(`${e.data.error}`, {
             description: "Web Worker OnMessage Email Request Error",
           });
         }
-        setIsDeadletterLoading(false);
+        setIsDormantLetterboxLoading(false);
       };
       newWorker.onerror = (error) => {
         logError(error, {
           description: "Web Worker OnError",
         });
-        setIsDeadletterLoading(false);
+        setIsDormantLetterboxLoading(false);
       };
       return () => {
         console.log("Terminating worker");
@@ -37,10 +37,10 @@ export const DeadletterProvider = ({ children }) => {
     }
   }, []);
 
-  const handleDeadletterWorker = () => {
-    const deadletterTimestamp = localStorage.getItem("deadletterTimestamp");
-    if (deadletterTimestamp) {
-      const timestampDate = new Date(deadletterTimestamp);
+  const handleDormantLetterboxWorker = () => {
+    const dormantLetterboxTimestamp = localStorage.getItem("dormantLetterboxTimestamp");
+    if (dormantLetterboxTimestamp) {
+      const timestampDate = new Date(dormantLetterboxTimestamp);
       const now = new Date();
       const diffInDays = Math.floor(
         (now - timestampDate) / (1000 * 60 * 60 * 24)
@@ -52,28 +52,28 @@ export const DeadletterProvider = ({ children }) => {
     }
 
     if (worker) {
-      setIsDeadletterLoading(true);
+      setIsDormantLetterboxLoading(true);
       worker.postMessage({});
     }
   };
 
   return (
-    <DeadletterContext.Provider
+    <DormantLetterboxContext.Provider
       value={{
-        isDeadletterLoading,
-        setIsDeadletterLoading,
-        handleDeadletterWorker,
+        isDormantLetterboxLoading,
+        setIsDormantLetterboxLoading,
+        handleDormantLetterboxWorker,
       }}
     >
       {children}
-    </DeadletterContext.Provider>
+    </DormantLetterboxContext.Provider>
   );
 };
 
-export const useDeadletter = () => {
-  const context = useContext(DeadletterContext);
+export const useDormantLetterbox = () => {
+  const context = useContext(DormantLetterboxContext);
   if (context === undefined) {
-    throw new Error("useDeadletter must be used within a DeadletterProvider");
+    throw new Error("useDormantLetterbox must be used within a DormantLetterboxProvider");
   }
   return context;
 };

@@ -35,4 +35,4 @@ reviews:
     - "!components/letter/**"
     - "!app/utils/dateHelpers.js"
     - "!app/utils/timestampToDate.js"
-    - "!app/utils/deadchatHelpers.js"
+    - "!app/utils/dormantLetterboxHelpers.js"

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldPath } from "firebase-admin/firestore";
 
 import { db, auth } from "../../firebaseAdmin";
-import { sendEmail } from "../../utils/deadchatHelpers";
+import { sendEmail } from "../../utils/dormantLetterboxHelpers";
 
 export async function POST() {
   if (auth == null) {
@@ -50,8 +50,8 @@ export async function POST() {
 
     for (const letterBox of letterBoxes) {
       const latestMessageTimestamp = letterBox?.latestLetter?.created_at;
-      const latestAdminDeadletterTimestamp = letterBox?.admin_reminded_at;
-      const latestUserDeadletterTimestamp = letterBox?.user_reminded_at;
+      const latestAdminDormantLetterboxTimestamp = letterBox?.admin_reminded_at;
+      const latestUserDormantLetterboxTimestamp = letterBox?.user_reminded_at;
       const now = new Date();
       let adminDiffDays = 0;
       let userDiffDays = 0;
@@ -64,23 +64,23 @@ export async function POST() {
         userDiffDays = diffDays;
       }
 
-      if (latestAdminDeadletterTimestamp) {
-        const latestAdminDeadletterTimestampDate = new Date(
-          latestAdminDeadletterTimestamp
+      if (latestAdminDormantLetterboxTimestamp) {
+        const latestAdminDormantLetterboxTimestampDate = new Date(
+          latestAdminDormantLetterboxTimestamp
         );
         const diffMs = Math.floor(
-          (now - latestAdminDeadletterTimestampDate) / (1000 * 60 * 60 * 24)
+          (now - latestAdminDormantLetterboxTimestampDate) / (1000 * 60 * 60 * 24)
         );
         if (adminDiffDays === 0 || diffMs < adminDiffDays) {
           adminDiffDays = diffMs;
         }
       }
-      if (latestUserDeadletterTimestamp) {
-        const latestUserDeadletterTimestampDate = new Date(
-          latestUserDeadletterTimestamp
+      if (latestUserDormantLetterboxTimestamp) {
+        const latestUserDormantLetterboxTimestampDate = new Date(
+          latestUserDormantLetterboxTimestamp
         );
         const diffMs = Math.floor(
-          (now - latestUserDeadletterTimestampDate) / (1000 * 60 * 60 * 24)
+          (now - latestUserDormantLetterboxTimestampDate) / (1000 * 60 * 60 * 24)
         );
         if (userDiffDays === 0 || diffMs < userDiffDays) {
           userDiffDays = diffMs;
@@ -110,6 +110,7 @@ export async function POST() {
         const emails = userRecords
           .filter((record) => record !== null)
           .map((record) => record.email);
+
 
         if (userDiffDays >= 14) {
           emailPromises.push(
@@ -148,7 +149,7 @@ export async function POST() {
 
     return NextResponse.json(
       {
-        message: "Deadletter Request Success!",
+        message: "DormantLetterbox Request Success!",
         successEmails: successEmails,
         failedEmails: failedEmails,
         letterBoxes: letterBoxes,

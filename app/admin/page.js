@@ -21,10 +21,10 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
-import { useDeadletter } from "../../context/DeadletterContext";
+import { useDormantLetterbox } from "../../context/DormantLetterboxContext";
 
 export default function Admin() {
-    const { isDeadletterLoading, handleDeadletterWorker } = useDeadletter();
+    const { isDormantLetterboxLoading, handleDormantLetterboxWorker } = useDormantLetterbox();
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
@@ -49,8 +49,8 @@ export default function Admin() {
     const router = useRouter();
 
     useEffect(() => {
-      if (!isDeadletterLoading) {
-        handleDeadletterWorker();
+      if (!isDormantLetterboxLoading) {
+        handleDormantLetterboxWorker();
       }
     }, []);
 

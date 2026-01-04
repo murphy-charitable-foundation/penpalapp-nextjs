@@ -1,4 +1,4 @@
-const generateDeadletterEmailTemplate = ({
+const generateDormantLetterboxEmailTemplate = ({
   baseUrl,
   to,
   message,
@@ -125,4 +125,4 @@ const generateDeadletterEmailTemplate = ({
   return emailHtml;
 };
 
-export default generateDeadletterEmailTemplate;
+export default generateDormantLetterboxEmailTemplate;

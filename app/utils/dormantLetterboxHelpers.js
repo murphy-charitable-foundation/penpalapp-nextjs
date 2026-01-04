@@ -1,7 +1,7 @@
 import { db } from "../firebaseAdmin";
 import nodemailer from "nodemailer";
 import { logError } from "./analytics";
-import generateDeadletterEmailTemplate from "../api/deadchat/emailTemplate";
+import generateDormantLetterboxEmailTemplate from "../api/dormantletterbox/emailTemplate";
 
 
 const transporter = nodemailer.createTransport({
@@ -48,7 +48,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
-      html: generateDeadletterEmailTemplate({
+      html: generateDormantLetterboxEmailTemplate({
         baseUrl,
         to: "Richard",
         message,
@@ -61,7 +61,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
-      html: generateDeadletterEmailTemplate({
+      html: generateDormantLetterboxEmailTemplate({
         baseUrl,
         to: formatListWithAnd(membersNames),
         message,

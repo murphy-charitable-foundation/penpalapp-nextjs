@@ -1,6 +1,6 @@
 self.onmessage = async function () {
   try {
-    const result = await sendDeadletter();
+    const result = await sendDormantLetterbox();
     const data = await result.json();
     self.postMessage({ success: true, data });
   } catch (error) {
@@ -8,8 +8,8 @@ self.onmessage = async function () {
   }
 };
 
-async function sendDeadletter() {
-  const response = await fetch("/api/deadchat", {
+async function sendDormantLetterbox() {
+  const response = await fetch("/api/dormantletterbox", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
