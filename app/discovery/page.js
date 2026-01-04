@@ -88,13 +88,14 @@ export default function Discovery() {
         }
       }
 
-      // ---- HOBBIES (id-based, AND logic) ----
+      // ---- HOBBIES (id-based, OR logic) ----
       if (filters.hobbies.length > 0) {
         const kidHobbies = new Set(k.hobby || []);
         const selectedIds = filters.hobbies.map((h) => h.id);
 
-        if (!selectedIds.every((id) => kidHobbies.has(id))) {
-          return false;
+        const hasAny = selectedIds.some((id) => kidHobbies.has(id));
+        if (!hasAny) {
+           return false;
         }
       }
 
