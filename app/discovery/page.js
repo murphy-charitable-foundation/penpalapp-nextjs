@@ -40,8 +40,9 @@ function calculateAge(dob) {
   return age;
 }
 
-export default function DiscoveryPage() {
-  usePageAnalytics("/discovery");
+        q = query(q, where("birthday", ">=", minBirthDate));
+        q = query(q, where("birthday", "<=", maxBirthDate));
+      }
 
   const PAGE_SIZE = 10;
 
