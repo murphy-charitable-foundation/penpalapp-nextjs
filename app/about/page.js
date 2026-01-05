@@ -5,7 +5,6 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import NavBar from "../../components/bottom-nav-bar";
-import { BackButton } from "../../components/general/BackButton";
 
 export default function About() {
   return (

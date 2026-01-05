@@ -1,54 +1,40 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+
+import { db } from "../firebaseConfig"; 
+
 import NavBar from "../../components/bottom-nav-bar";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import Header from "../../components/general/Header";
+
 import FilterPanel from "../../components/discovery/FilterPanel";
-import EmptyState from "../../components/discovery/EmptyState";
 import KidsList from "../../components/discovery/KidsList";
+import EmptyState from "../../components/discovery/EmptyState";
 
 const PAGE_SIZE = 10;
 
-// ---- MOCK DATA ----
-const MOCK_KIDS = [
-  {
-    id: "k1",
-    first_name: "Joan",
-    last_name: "A.",
-    gender: "Female",
-    hobby: ["reading", "drawing"],
-    date_of_birth: "2012-05-14",
-    photoURL: "/usericon.png",
-    bio: "Learn, play and write kind letters.",
-  },
-  {
-    id: "k2",
-    first_name: "Amir",
-    last_name: "K.",
-    gender: "Male",
-    hobby: ["sports", "music"],
-    date_of_birth: "2011-08-02",
-    photoURL: "/usericon.png",
-    bio: "Curious about music and science.",
-  },
-  {
-    id: "k3",
-    first_name: "Sara",
-    last_name: "N.",
-    gender: "Female",
-    hobby: ["chess", "coding"],
-    date_of_birth: "2013-02-20",
-    photoURL: "/usericon.png",
-    bio: "Enjoys reading and puzzles.",
-  },
-];
-
-/* ===== AGE CALC ===== */
+/* ===== AGE CALC (supports Firestore Timestamp) ===== */
 function calculateAge(dob) {
   if (!dob) return null;
-  const d = new Date(dob);
+
+  let d = null;
+
+  // Firestore Timestamp
+  if (typeof dob === "object" && dob?.toDate) {
+    d = dob.toDate();
+  } else if (dob instanceof Date) {
+    d = dob;
+  } else {
+    // string like "2012-05-14"
+    const parsed = new Date(dob);
+    if (!Number.isNaN(parsed.getTime())) d = parsed;
+  }
+
+  if (!d) return null;
+
   const now = new Date();
   let age = now.getFullYear() - d.getFullYear();
   const m = now.getMonth() - d.getMonth();
@@ -61,19 +47,55 @@ export default function Discovery() {
 
   /* ===== FILTER STATE ===== */
   const [filters, setFilters] = useState({
-    age: null,        // { min, max } | null
-    gender: null,     // string | null
-    hobbies: [],     
+    age: null, // { min, max } | null
+    gender: null, // string | null
+    hobbies: [],
   });
+
+  /* ===== FIRESTORE DATA ===== */
+  const [kids, setKids] = useState([]);
+  const [kidsLoading, setKidsLoading] = useState(true);
+  const [kidsError, setKidsError] = useState("");
+
+  const KIDS_COLLECTION = "kids"; 
+
+  useEffect(() => {
+    let alive = true;
+
+    async function fetchKids() {
+      try {
+        setKidsLoading(true);
+        setKidsError("");
+
+        const snap = await getDocs(collection(db, KIDS_COLLECTION));
+        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        if (alive) setKids(data);
+      } catch (e) {
+        console.error("Failed to fetch kids:", e);
+        if (alive) {
+          setKids([]);
+          setKidsError("Failed to load data.");
+        }
+      } finally {
+        if (alive) setKidsLoading(false);
+      }
+    }
+
+    fetchKids();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   /* ===== PAGINATION ===== */
   const [visibleKids, setVisibleKids] = useState([]);
   const [cursor, setCursor] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // load more spinner
 
   /* ================= FILTER LOGIC ================= */
   const filteredKids = useMemo(() => {
-    return MOCK_KIDS.filter((k) => {
+    return kids.filter((k) => {
       // ---- GENDER ----
       if (filters.gender && k.gender !== filters.gender) {
         return false;
@@ -90,20 +112,19 @@ export default function Discovery() {
 
       // ---- HOBBIES (id-based, OR logic) ----
       if (filters.hobbies.length > 0) {
-        const kidHobbies = new Set(k.hobby || []);
+        const kidHobbiesArr = Array.isArray(k.hobby) ? k.hobby : [];
+        const kidHobbies = new Set(kidHobbiesArr);
         const selectedIds = filters.hobbies.map((h) => h.id);
 
         const hasAny = selectedIds.some((id) => kidHobbies.has(id));
-        if (!hasAny) {
-           return false;
-        }
+        if (!hasAny) return false;
       }
 
       return true;
     });
-  }, [filters]);
+  }, [kids, filters]);
 
-  /* ================= RESET PAGINATION ON FILTER ================= */
+  /* ================= RESET PAGINATION ON FILTER / DATA ================= */
   useEffect(() => {
     setCursor(0);
     setVisibleKids(filteredKids.slice(0, PAGE_SIZE));
@@ -113,6 +134,7 @@ export default function Discovery() {
     if (loading) return;
     setLoading(true);
 
+  
     setTimeout(() => {
       const next = filteredKids.slice(
         cursor + PAGE_SIZE,
@@ -146,7 +168,11 @@ export default function Discovery() {
 
           {/* ===== LIST ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-6">
-            {filteredKids.length === 0 ? (
+            {kidsLoading ? (
+              <div className="py-6 text-sm text-gray-600">Loading…</div>
+            ) : kidsError ? (
+              <div className="py-6 text-sm text-red-600">{kidsError}</div>
+            ) : filteredKids.length === 0 ? (
               <EmptyState
                 onClear={() =>
                   setFilters({ age: null, gender: null, hobbies: [] })
