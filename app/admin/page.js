@@ -14,15 +14,16 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
-import { iterateLetterBoxes } from "../utils/deadChat";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
+import { useDormantLetterbox } from "../../context/DormantLetterboxContext";
 
 export default function Admin() {
+    const { isDormantLetterboxLoading, handleDormantLetterboxWorker } = useDormantLetterbox();
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
 
@@ -46,6 +47,12 @@ export default function Admin() {
     const [showWelcome, setShowWelcome] = useState(false);
     const [activeFilter, setActiveFilter] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+      if (!isDormantLetterboxLoading) {
+        handleDormantLetterboxWorker();
+      }
+    }, []);
 
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -253,18 +260,6 @@ export default function Admin() {
 
                 <BottomNavBar />
 
-              {/*
-              {userType === "admin" && (
-                  <Button
-                    btnText="Check For Inactive Chats"
-                    color="bg-black"
-                    textColor="text-white"
-                    rounded="rounded-md"
-                    onClick={iterateLetterBoxes}
-                  />
-              )}
-              */}
-              
               {/* Add animation keyframes */}
               <style jsx global>{`
                 @keyframes slideIn {
