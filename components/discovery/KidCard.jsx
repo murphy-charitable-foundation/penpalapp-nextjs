@@ -29,7 +29,7 @@ export default function KidCard({ kid, calculateAge }) {
       </h2>
 
       <p className="text-xs mb-1 text-left text-black">
-        {calculateAge(kid?.date_of_birth)} years old
+        {calculateAge(kid?.birthday)} years old
       </p>
       <p
         className="text-left mb-2 text-gray-900 text-xs break-words"
