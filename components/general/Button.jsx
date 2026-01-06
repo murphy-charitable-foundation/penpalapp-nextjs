@@ -4,6 +4,7 @@ export default function Button({
   color = 'blue',
   btnText,
   btnType,
+  textColor='text-white',
   disabled,
   size = 'default',
   onClick,
