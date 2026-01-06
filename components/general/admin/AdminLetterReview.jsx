@@ -87,40 +87,22 @@ export default function AdminLetterReview({ letter, onApprove, onReject, onClose
 
   
       {/* ACTION BAR */}
-  <div className="px-6 py-4 border-t bg-white">
-  <div className="flex gap-4">
+      <div className="px-6 py-4 border-t bg-white">
+  <div className="flex justify-between gap-4">
     {status === "pending_review" && (
       <>
-        {/* Approve (PRIMARY – RIGHT SIDE) */}
         <Button
           btnText="Approve"
           onClick={onApprove}
-          className="
-            flex-1
-            py-4
-            bg-primary
-            text-white
-            rounded-full
-          "
+          color="green"
         />
-
-        {/* Reject (SECONDARY – LEFT SIDE) */}
         <Button
           btnText="Reject"
           onClick={onReject}
-          className="
-            flex-1
-            py-4
-            bg-white
-            border border-gray-300
-            text-gray-800
-            hover:bg-gray-100
-            rounded-full
-          "
+          color="gray"
         />
       </>
     )}
-
 
     {(status === "sent" || status === "rejected") && (
       <Button

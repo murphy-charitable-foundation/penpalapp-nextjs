@@ -16,14 +16,7 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
 
         {/* HEADER */}
         <div className="flex items-center px-4 py-3 bg-secondary text-white relative">
-          <button onClick={onClose} 
-          className="absolute 
-                    left-4 flex 
-                    items-center 
-                    justify-center 
-                    w-9 h-9 
-                    rounded-full 
-                    hover:bg-white/10">
+          <button onClick={onClose} className="absolute left-4">
             <ChevronLeft size={22} />
           </button>
           <h2 className="text-lg font-semibold mx-auto">Give Feedback</h2>
@@ -38,16 +31,7 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="
-              w-full
-              px-4 py-3
-              pr-10
-              border
-              rounded-md
-              mb-6
-              appearance-none
-              bg-white
-            "
+            className="w-full p-3 border rounded-md mb-6"
           >
             <option value="">Select a reason…</option>
             {rejectionReasons.map((r) => (
@@ -60,24 +44,22 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Explanation
           </label>
-          <textarea
-          className="
-            w-full
-            border-b-2 border-gray-200
-            focus:border-b-4
-            focus:border-primary
-            focus:outline-none
-            resize-none
-            px-4 py-4
-            bg-white
-            text-gray-800
-            leading-relaxed
-          "
-          placeholder="Explanation"
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-        />
+             <textarea
+            className="
+              w-full
+              border-b-2 border-gray-200
+              focus: border-b-4
+              focus:border-primary
+              focus:outline-none
+              resize-none
+              py-5
+              bg-gray-300
+              text-gray-800
+            "
+            placeholder="Explanation"
+          />
         </div>
+
         {/* ACTION BAR */}
         <div className="px-5 py-4 border-t bg-white">
          <button
