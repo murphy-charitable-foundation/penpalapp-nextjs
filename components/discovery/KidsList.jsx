@@ -3,6 +3,7 @@
 import React from "react";
 import KidCard from "./KidCard";
 import Button from "../general/Button";
+import EmptyState from "../discovery/EmptyState";
 
 export default function KidsList({
   kids = [],
@@ -10,7 +11,22 @@ export default function KidsList({
   lastKidDoc,
   loadMoreKids,
   loading = false,
+
+  // ✅ empty state controls
+  showEmpty = false,
+  onClearFilters,
+  onEditFilters,
+
+  // ✅ prevent showing empty state when error exists
+  error = "",
 }) {
+  if (error) return null;
+
+  const shouldShowEmpty = showEmpty && !loading && kids.length === 0;
+  if (shouldShowEmpty) {
+    return <EmptyState onClear={onClearFilters} onEdit={onEditFilters} />;
+  }
+
   return (
     <section className="w-full max-w-full">
       <div className="flex flex-col gap-3 w-full max-w-full">

@@ -4,37 +4,31 @@ import KidFilter from "../discovery/KidFilter";
 
 export default function FilterPanel({
   open,
-  initial,   // { age, gender, hobbies }
+  initial, // { age, gender, hobbies }
   onApply,
-  onClear,
   onClose,
 }) {
-  // local controlled state
   const [hobbies, setHobbies] = useState([]);
   const [age, setAge] = useState(null);
   const [gender, setGender] = useState("");
 
-  // sync initial → local state when panel opens or initial changes
   useEffect(() => {
     setHobbies(initial?.hobbies || []);
-    setAge(initial?.age || null);
+    setAge(initial?.age ?? null);
     setGender(initial?.gender || "");
   }, [initial, open]);
 
-  const handleApply = (filters) => {
-    onApply?.(filters);
-  };
-
-  const handleClear = () => {
-    setHobbies([]);
-    setAge(null);
-    setGender("");
-    onClear?.();
+  const handleApplyFromKidFilter = (payload) => {
+    onApply?.({
+      age: payload?.age ?? null,
+      gender: payload?.gender ?? "",
+      hobbies: payload?.hobbies ?? [],
+    });
+    onClose?.();
   };
 
   return (
     <>
-      {/* Backdrop */}
       {open && (
         <div
           className="fixed inset-0 z-[98] bg-black/35 backdrop-blur-[2px]"
@@ -79,7 +73,7 @@ export default function FilterPanel({
               setAge={setAge}
               gender={gender}
               setGender={setGender}
-              filter={handleApply}
+              filter={handleApplyFromKidFilter}
             />
           </div>
         </div>
