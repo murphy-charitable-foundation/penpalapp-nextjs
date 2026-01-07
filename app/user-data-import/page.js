@@ -112,7 +112,7 @@ export default function UserDataImport() {
           className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
-          <PageHeader title="Import User Data" imagesize="sm" />
+          <PageHeader title="Import User Data" imageSize="sm" />
 
           {/* ===== SINGLE SCROLLER ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">

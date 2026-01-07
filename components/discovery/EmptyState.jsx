@@ -8,7 +8,6 @@ export default function EmptyState({ onClear, onEdit }) {
       aria-live="polite"
     >
       <div className="rounded-2xl bg-[#F4F7FB] ring-1 ring-black/5 p-6 text-center">
-        
         {/* Icon */}
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-[#E6EDF4] flex items-center justify-center">
           <svg
@@ -51,7 +50,7 @@ export default function EmptyState({ onClear, onEdit }) {
 
           <button
             type="button"
-            onClick={onClear}
+            onClick={typeof onClear === "function" ? onClear : undefined}
             className="rounded-full bg-[#034792] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 active:scale-95"
           >
             Clear filters

@@ -39,12 +39,15 @@ export default function NavBar() {
   };
 
   const handleLogout = async () => {
+    setIsMenuOpen(false);
+    setIsNavigating(true);
+
     try {
-      setIsNavigating(true);
       await signOut(auth);
       router.push("/login");
     } catch (error) {
       console.error("Error signing out:", error);
+    } finally {
       setIsNavigating(false);
     }
   };
