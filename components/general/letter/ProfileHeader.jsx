@@ -11,7 +11,7 @@ export default function ProfileHeader({
   return (
     <header className="bg-blue-100 border-b border-gray-200 px-4 py-3">
       <Link
-        href={`/profile-view/${id}`}
+        href={`/profile`}
         className="flex items-center gap-2 sm:gap-3"
       >
         <ProfileImage
