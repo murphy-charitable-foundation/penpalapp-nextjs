@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { db } from "../../app/firebaseConfig";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -44,10 +44,10 @@ export default function UserDataImport() {
       const email = formData.get("email");
       const password = formData.get("password");
       const userData = {
-        first_name: formData.get("firstName"),
-        last_name: formData.get("lastName"),
-        email,
-        birthday: formData.get("birthday"),
+        first_name: (() => { const s = formData.get("firstName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        last_name: (() => { const s = formData.get("lastName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        email: "",
+        birthday: formData.get("birthday") ? Timestamp.fromDate(new Date(formData.get("birthday"))) : null,
         country: formData.get("country"),
         village: formData.get("village"),
         bio: formData.get("bio"),
