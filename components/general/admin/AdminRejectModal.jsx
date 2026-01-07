@@ -15,7 +15,7 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
       <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl">
 
         {/* HEADER */}
-        <div className="flex items-center px-4 py-3 bg-secondary text-white relative">
+        <div className="flex items-center px-4 py-3 bg-primary text-white relative">
           <button onClick={onClose} className="absolute left-4">
             <ChevronLeft size={22} />
           </button>
@@ -29,10 +29,20 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
             Reason
           </label>
           <select
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="w-full p-3 border rounded-md mb-6"
-          >
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="
+                    w-full
+                    pl-3
+                    pr-10
+                    py-3
+                    border
+                    rounded-md
+                    mb-6
+                    appearance-none
+
+                  "
+                >
             <option value="">Select a reason…</option>
             {rejectionReasons.map((r) => (
               <option key={r.category} value={r.category}>
@@ -44,15 +54,17 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Explanation
           </label>
-             <textarea
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
             className="
               w-full
               border-b-2 border-gray-200
-              focus: border-b-4
+              focus:border-b-4
               focus:border-primary
               focus:outline-none
               resize-none
-              py-5
+              px-4 py-5
               bg-gray-300
               text-gray-800
             "
@@ -68,7 +80,7 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
               w-2/5
               mx-auto
               py-4
-              bg-primary
+              bg-dark-green
               text-white
               rounded-full
               font-semibold
