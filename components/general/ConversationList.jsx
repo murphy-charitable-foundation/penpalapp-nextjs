@@ -1,12 +1,17 @@
 import MessagePreview from "./MessagePreview";
 
-const ConversationList = ({ conversations }) => {
+const ConversationList = ({
+  conversations,
+  isAdmin = false,
+  onSelectConversation,
+}) => {
+
   return (
     <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
       {conversations.map((conversation, i) => (
-        <div key={conversation.id}>
+        <div key={`${conversation.letterboxId}-${conversation.id}-${i}`}>
           <MessagePreview
-            className={ i === 0 && 'first-letter relative'}
+            className={i === 0 ? "first-letter relative" : ""}
             profileImage={conversation.profileImage}
             name={conversation.name}
             country={conversation.country}
@@ -16,6 +21,8 @@ const ConversationList = ({ conversations }) => {
             status={conversation.status}
             isRecipient={conversation.isRecipient}
             unread={conversation.unread}
+            isAdmin={isAdmin}
+            onClick={() => onSelectConversation(conversation)}
           />
         </div>
       ))}

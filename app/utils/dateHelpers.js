@@ -107,3 +107,6 @@ export const formatTimestamp = (timestamp) => {
 export const dateToTimestamp = (date) => {
   return Timestamp.fromDate(date); // Convert back to Firestore Timestamp
 };
+
+// Backward compatibility for older imports
+export const formatTime = formatTimestamp;

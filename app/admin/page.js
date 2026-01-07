@@ -17,6 +17,10 @@ import WelcomeToast from "../../components/general/WelcomeToast";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
+import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
+import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
+import RejectSuccessModal from "../../components/general/admin/RejectSuccessModal";
+import ApproveSuccessModal from "../../components/general/admin/ApproveSuccessModal";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
@@ -34,6 +38,9 @@ export default function Admin() {
     const [userType, setUserType] = useState("");
     const [country, setCountry] = useState("");
     const [letters, setLetters] = useState([]);
+    const [showReject, setShowReject] = useState(false); // For reject dialog
+    const [showRejectSuccess, setShowRejectSuccess] = useState(false);
+    const [showApproveSuccess, setShowApproveSuccess] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState("");
@@ -46,6 +53,8 @@ export default function Admin() {
     const [endDate, setEndDate] = useState(null); // Optional category filter
     const [showWelcome, setShowWelcome] = useState(false);
     const [activeFilter, setActiveFilter] = useState(false);
+    const [selectedLetter, setSelectedLetter] = useState(null);
+    const [showReview, setShowReview] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -160,16 +169,19 @@ export default function Admin() {
             } catch (error) {
               console.error("Error fetching user or photo:", error);
             }
-            return {
-              id: doc.id,
-              ...docData,
-              profileImage: pfp,
-              country: userData?.country || "",
-              user: userData,
-              name : userData ? `${userData.first_name} ${userData.last_name}` : "",
-              lastMessage: docData.content,
-              lastMessageDate: docData.created_at, 
-            };
+            const letterboxId = doc.ref.parent.parent?.id;
+
+          return {
+            id: doc.id, 
+            letterboxId, // get parent letterbox ID to prevent key conflicts and duplicates
+            ...docData,
+            profileImage: pfp,
+            country: userData?.country || "",
+            user: userData,
+            name: userData ? `${userData.first_name} ${userData.last_name}` : "",
+            lastMessage: docData.content,
+            lastMessageDate: docData.created_at,
+          };
           })
         );
         if (nextPage) {
@@ -223,15 +235,76 @@ export default function Admin() {
                 
                 ) : (
                   <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
+
+                    <div className="mb-3 text-sm text-gray-500">
+                        Showing {documents.length} {selectedStatus.replace("_", " ")} letters
+                      </div>
             
                     <main className="p-6">
                       <section className="mt-8">
                         {!isLoading ? (
-                          <ConversationList conversations={documents}/>
+                          <ConversationList
+                            conversations={documents}
+                            isAdmin
+                            onSelectConversation={(conversation) => {
+                              setSelectedLetter(conversation);
+                              setShowReview(true);
+                            }}
+                          />
                         ) : (
                           <LetterHomeSkeleton />
                         )}
-                      </section>
+                         {showReview && selectedLetter && (
+                          <AdminLetterReview
+                            letter={selectedLetter}
+                            onClose={() => {
+                              setShowReview(false);
+                              setSelectedLetter(null);
+                            }}
+                            onApprove={() => {
+                              console.log("approve", selectedLetter.id);
+                              setShowReview(false);
+                              setShowApproveSuccess(true);
+                            }}
+                            onReject={() => {
+                            setShowReview(false);
+                            setShowReject(true);
+                          }} 
+                          />
+                        
+                        )}
+                        {showApproveSuccess && selectedLetter && (
+                        <ApproveSuccessModal
+                          onClose={() => {
+                            setShowApproveSuccess(false);
+                            setSelectedLetter(null);
+                          }}
+                        />
+                      )}
+                      {showRejectSuccess && (
+                        <RejectSuccessModal
+                          onClose={() => {
+                            setShowRejectSuccess(false);
+                            setSelectedLetter(null);
+                          }}
+                        />
+                      )}
+
+                      {showReject && selectedLetter && (
+                          <AdminRejectModal
+                            letter={selectedLetter}
+                            onClose={() => {
+                              setShowReject(false);
+                              setSelectedLetter(null);
+                            }}
+                            onSubmit={(reason, feedback) => {
+                              console.log("REJECT:", selectedLetter.id, reason, feedback);
+                              setShowReject(false);
+                              setShowRejectSuccess(true);
+                            }}
+                          />
+                        )}
+                     </section>
                   </main>
 
                   {hasMore === true && (
@@ -255,8 +328,6 @@ export default function Admin() {
 
                   </div>
                 )}
-
-
 
                 <BottomNavBar />
 
