@@ -105,38 +105,45 @@ export default function UserDataImport() {
 
       console.log("no errors");
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-
-      const userId = firebaseUser.uid;
-    
-     const internationalBuddyUID = internationalBuddyUid.uid;
-
       try {
-        const response = await fetch('/api/updateConnectedPenpals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ internationalBuddyUID, userId }),
-        });
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        const userId = firebaseUser.uid;
 
-        const result = await response.json();
+        const internationalBuddyUID = internationalBuddyUid.uid;
 
-        if (response.ok) {
-          console.log('Success:', result.message);
-        } else {
-          console.error('Error:', result.error);
+        try {
+          const response = await fetch('/api/updateConnectedPenpals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ internationalBuddyUID, userId }),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            console.log('Success:', result.message);
+          } else {
+            console.error('Error:', result.error);
+          }
+        } catch (err) {
+          console.error('Request failed:', err);
         }
-      } catch (err) {
-        console.error('Request failed:', err);
+        await setDoc(doc(db, "users", userId), userData);
+
+      } catch (error) {
+        newErrors.email = "email already in use";
+        setErrors(newErrors);
+        return;
       }
 
-      await setDoc(doc(db, "users", userId), userData);
 
       // Reset form
       e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
+      setErrors({});
     } catch (error) {
       logError(error, {
         description: "Error importing user data: ",
