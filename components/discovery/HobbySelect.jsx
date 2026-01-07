@@ -23,6 +23,8 @@ export default function HobbySelect({
   const safePlaceholder =
     placeholder || (allowCustom ? "Select or add hobbies" : "Select hobbies");
 
+  const safeOnChange = typeof onChange === "function" ? onChange : () => {};
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -41,8 +43,9 @@ export default function HobbySelect({
         const opts = snap.docs
           .map((d) => {
             const data = d.data() || {};
-            // supports { hobby: "reading" } or { label: "Reading" } or { name: "Reading" }
-            const raw = (data.hobby || data.label || data.name || "").toString().trim();
+            const raw = (data.hobby || data.label || data.name || "")
+              .toString()
+              .trim();
             if (!raw) return null;
 
             const id = slugify(raw);
@@ -50,7 +53,6 @@ export default function HobbySelect({
           })
           .filter(Boolean);
 
-        // de-dup by id
         const uniq = Array.from(new Map(opts.map((o) => [o.id, o])).values());
 
         if (alive) setServerOptions(uniq);
@@ -68,9 +70,11 @@ export default function HobbySelect({
     };
   }, [collectionName]);
 
-  // merge server options + selected items (so selected doesn't disappear)
+  
   const options = useMemo(() => {
-    const selectedExtras = value.filter((v) => !serverOptions.some((o) => o.id === v.id));
+    const selectedExtras = value.filter(
+      (v) => !serverOptions.some((o) => o.id === v.id)
+    );
     return serverOptions.concat(selectedExtras);
   }, [serverOptions, value]);
 
@@ -85,9 +89,8 @@ export default function HobbySelect({
   }
 
   function toggle(opt) {
-    if (!onChange) return;
-    if (isSelected(opt.id)) onChange(value.filter((v) => v.id !== opt.id));
-    else onChange(value.concat(opt));
+    if (isSelected(opt.id)) safeOnChange(value.filter((v) => v.id !== opt.id));
+    else safeOnChange(value.concat(opt));
   }
 
   function addCustom() {
@@ -106,7 +109,7 @@ export default function HobbySelect({
     }
 
     const custom = { id, label: capFirst(label) };
-    onChange(value.concat(custom));
+    safeOnChange(value.concat(custom));
     setQuery("");
   }
 
@@ -148,9 +151,13 @@ export default function HobbySelect({
 
           <div className="mt-3 max-h-52 overflow-y-auto">
             {isLoading ? (
-              <div className="py-6 text-sm text-gray-500 text-center">Loading…</div>
+              <div className="py-6 text-sm text-gray-500 text-center">
+                Loading…
+              </div>
             ) : filteredOptions.length === 0 ? (
-              <div className="py-6 text-sm text-gray-500 text-center">No options</div>
+              <div className="py-6 text-sm text-gray-500 text-center">
+                No options
+              </div>
             ) : (
               <ul className="space-y-1">
                 {filteredOptions.map((opt) => {
@@ -162,8 +169,15 @@ export default function HobbySelect({
                         onClick={() => toggle(opt)}
                         className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 text-left"
                       >
-                        <input type="checkbox" checked={checked} readOnly className="h-4 w-4" />
-                        <span className="text-sm text-gray-900">{opt.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          readOnly
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm text-gray-900">
+                          {opt.label}
+                        </span>
                       </button>
                     </li>
                   );
@@ -176,7 +190,7 @@ export default function HobbySelect({
             <button
               type="button"
               onClick={() => {
-                onChange([]);
+                safeOnChange([]);
                 setQuery("");
               }}
               className="text-xs text-gray-600 underline"

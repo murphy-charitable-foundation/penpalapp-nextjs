@@ -29,6 +29,7 @@ export default function KidFilter({
 
   useEffect(() => {
     setGenderFilter(gender || "");
+
     if (age?.min !== undefined && age?.max !== undefined) {
       const match = AGE_BRACKETS.find(
         (b) => b.min === age.min && b.max === age.max
@@ -40,38 +41,34 @@ export default function KidFilter({
   }, [gender, age]);
 
   const isDirty = useMemo(() => {
-    return (
-      hobbies.length > 0 ||
-      Boolean(genderFilter) ||
-      Boolean(ageFilter)
-    );
+    return hobbies.length > 0 || Boolean(genderFilter) || Boolean(ageFilter);
   }, [hobbies, genderFilter, ageFilter]);
 
   const applyFilter = (e) => {
     e.preventDefault();
 
-    const ageRange = ageFilter
-      ? { min: ageFilter.min, max: ageFilter.max }
-      : null;
+    const ageRange = ageFilter ? { min: ageFilter.min, max: ageFilter.max } : null;
+    const genderValue = genderFilter || null;
 
-    filter({
+    filter?.({
       age: ageRange,
-      gender: genderFilter || null,
+      gender: genderValue,
       hobbies,
     });
 
-    setAge(ageRange);
-    setGender(genderFilter || null);
+    setAge?.(ageRange);
+    setGender?.(genderValue);
   };
 
   const clearFilter = () => {
-    setHobbies([]);
-    setGender(null);
-    setAge(null);
+    setHobbies?.([]);
+    setGender?.(null);
+    setAge?.(null);
+
     setGenderFilter("");
     setAgeFilter(null);
 
-    filter({ age: null, gender: null, hobbies: [] });
+    filter?.({ age: null, gender: null, hobbies: [] });
   };
 
   return (
@@ -81,10 +78,10 @@ export default function KidFilter({
       style={{ ["--accent"]: ACCENT }}
     >
       <div className="px-5 py-5 space-y-5">
-      {/* HOBBIES */}
+        {/* HOBBIES */}
         <div>
           <label className="block mb-1 text-xs font-medium text-gray-600">
-           Hobbies
+            Hobbies
           </label>
 
           <HobbySelect
@@ -93,8 +90,7 @@ export default function KidFilter({
             allowCustom={false}
             placeholder="Select hobbies"
           />
-      </div>
-
+        </div>
 
         {/* GENDER */}
         <div>
@@ -118,9 +114,7 @@ export default function KidFilter({
             options={AGE_BRACKETS.map((b) => b.label)}
             currentValue={ageFilter?.label || ""}
             valueChange={(label) =>
-              setAgeFilter(
-                AGE_BRACKETS.find((b) => b.label === label) || null
-              )
+              setAgeFilter(AGE_BRACKETS.find((b) => b.label === label) || null)
             }
             placeholder="Select age range"
           />
@@ -132,9 +126,7 @@ export default function KidFilter({
             type="submit"
             disabled={!isDirty}
             className={`w-full h-10 rounded-full text-sm font-semibold ${
-              isDirty
-                ? "text-white"
-                : "bg-gray-200 text-gray-500"
+              isDirty ? "text-white" : "bg-gray-200 text-gray-500"
             }`}
             style={isDirty ? { backgroundColor: PRIMARY } : {}}
           >

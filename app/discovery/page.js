@@ -288,7 +288,6 @@ export default function ChooseKid() {
         open={filtersOpen}
         initial={{ age, gender, hobbies }}
         onApply={handleApplyFilters}
-        onClear={handleClearFilters}
         onClose={() => setFiltersOpen(false)}
       />
     </PageBackground>
