@@ -42,7 +42,7 @@ export default function UserDataImport() {
       const formData = new FormData(e.currentTarget);
       const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
       const email = formData.get("email");
-    const password = formData.get("password");
+      const password = formData.get("password");
       const userData = {
         first_name: formData.get("firstName"),
         last_name: formData.get("lastName"),
@@ -84,51 +84,53 @@ export default function UserDataImport() {
       }
 
       // Fetch UID of international buddy
-    const uidRes = await fetch("/api/getUidByEmail", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: internationalBuddyEmail }),
-    });
+      const uidRes = await fetch("/api/getUidByEmail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: internationalBuddyEmail }),
+      });
 
-    const internationalBuddyUid = await uidRes.json();
+      const internationalBuddyUid = await uidRes.json();
 
-    if (!uidRes.ok) {
-      newErrors.internationalbuddyemail = "No user found with this email";
-      setErrors(newErrors);
-      return;
-    }
+      if (!uidRes.ok) {
+        newErrors.internationalbuddyemail = "No user found with this email";
+        setErrors(newErrors);
+        return;
+      }
 
-     // Add connected_penpals and increment count
-     userData.connected_penpals = [`/users/${internationalBuddyUid.uid}`];
-     userData.connected_penpals_count = 1;
+      // Add connected_penpals and increment count
+      userData.connected_penpals = [`/users/${internationalBuddyUid.uid}`];
+      userData.connected_penpals_count = 1;
 
 
       console.log("no errors");
 
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
 
-    const userId = firebaseUser.uid;
+      const userId = firebaseUser.uid;
     
      const internationalBuddyUID = internationalBuddyUid.uid;
 
-  try {
-    const response = await fetch('/api/updateConnectedPenpals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ internationalBuddyUID, userId }),
-    });
+      try {
+        const response = await fetch('/api/updateConnectedPenpals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ internationalBuddyUID, userId }),
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (response.ok) {
-      console.log('Success:', result.message);
-    } else {
-      console.error('Error:', result.error);
-    }
-  } catch (err) {
-    console.error('Request failed:', err);
-  }
+        if (response.ok) {
+          console.log('Success:', result.message);
+        } else {
+          console.error('Error:', result.error);
+        }
+      } catch (err) {
+        console.error('Request failed:', err);
+      }
+
+      await setDoc(doc(db, "users", userId), userData);
 
       // Reset form
       e.target?.closest('form')?.reset();
