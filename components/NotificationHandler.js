@@ -31,7 +31,6 @@ export function NotificationHandler({ children }) {
       if (user && hasMessagingSupport) {
         unsubscribeMessage = onMessage(messaging, (payload) => {
           const { title, body } = payload.notification || {};
-          console.log("Notification Received");
           if (!title && !body) return;
 
           if (hasNotificationSupport && Notification.permission === "granted") {
