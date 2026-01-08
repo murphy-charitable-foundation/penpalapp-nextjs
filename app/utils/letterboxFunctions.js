@@ -302,6 +302,12 @@ export const sendNotification = async (letterboxRef, message) => {
     return;
   }
 
+  // Validate letterboxRef parameter.
+  if (!letterboxRef || !letterboxRef.id) {
+    console.error("Invalid letterboxRef: missing or has no id property.");
+    return;
+  }
+
   try {
     // Retrieve Firebase Auth ID token for authorization.
     const idToken = await auth.currentUser.getIdToken();
@@ -336,6 +342,7 @@ export const sendNotification = async (letterboxRef, message) => {
     return result;
   } catch (e) {
     console.error("Error in sendNotification:", e);
+    return { error: e.message };
   }
 };
 
