@@ -30,6 +30,7 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
+
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");

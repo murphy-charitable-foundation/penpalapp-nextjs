@@ -50,14 +50,11 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
-        if (userSnap.data().user_type == "admin") {
-          router.push("/admin");
-        } else {
-          router.push("/letterhome");
-        }
-      } else {
-        router.push("/create-acc");
-      }
+  router.push("/letterhome"); // force non-admin
+} else {
+  router.push("/create-acc");
+}
+
     } catch (error) {
       setLoading(false);
       console.error("Authentication error:", error.message);

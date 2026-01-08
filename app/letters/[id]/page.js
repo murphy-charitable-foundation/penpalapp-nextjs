@@ -39,6 +39,7 @@ import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
 
+
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
   try {

@@ -8,9 +8,13 @@ import { DormantLetterboxProvider } from '../context/DormantLetterboxContext';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Pen Pal Magic App',
+  title: {
+    default: 'Pen Pal Magic',
+    template: '%s · Pen Pal Magic',
+  },
   description: 'To connect 2000 rural Ugandan Children to the World',
-}
+};
+
 
 export default function RootLayout({ children }) {
   return (
