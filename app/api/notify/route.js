@@ -10,10 +10,12 @@ const requiredEnvVars = [
 ];
 
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
-const FIREBASE_PROJECT_ID = JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
 const envError = missingVars.length > 0
   ? `Missing Firebase env vars: ${missingVars.join(", ")}`
   : null;
+const FIREBASE_PROJECT_ID = envError
+  ? null
+  : JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
 if (!FIREBASE_PROJECT_ID) {
   console.log("error retrieving project id");
 }
@@ -67,6 +69,7 @@ async function getConversationTokens(conversationId, senderUid) {
 
     if (tokenSnap.exists) {
       const tokenData = tokenSnap.data();
+      if (!tokenData.fcmToken) continue;
       tokens.push({
         token: tokenData.fcmToken,
         name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
@@ -142,7 +145,7 @@ export async function POST(req) {
           };
         })
     );
-    const results = await Promise.allSettled(sendPromises);
+    const results = await Promise.all(sendPromises);
 
     return new Response(JSON.stringify({
       message: "Notification processing complete.",

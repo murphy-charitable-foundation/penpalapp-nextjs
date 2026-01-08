@@ -7,11 +7,6 @@ const requiredEnvVars = [
   "FIREBASE_PRIVATE_KEY",
   "FIREBASE_CLIENT_EMAIL"
 ];
-const requiredEnvVars = [
-  "FIREBASE_CONFIG",
-  "FIREBASE_PRIVATE_KEY",
-  "FIREBASE_CLIENT_EMAIL"
-];
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 const envError = missingVars.length > 0
   ? `Missing Firebase env vars: ${missingVars.join(", ")}`
@@ -28,9 +23,6 @@ if (!envError) {
     console.error("error retrieving project id in setup");
   }
 }
-const envError = missingVars.length > 0
-  ? `Missing Firebase env vars: ${missingVars.join(", ")}`
-  : null;
 
 if (!envError && !admin.apps.length) {
   admin.initializeApp({
