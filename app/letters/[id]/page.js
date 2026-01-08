@@ -436,7 +436,11 @@ export default function Page({ params }) {
       }
       
       // Clear states
-      sendNotification(globalLetterboxReference, "You have a new message!")
+      if (globalLetterboxReference) {
+        sendNotification(globalLetterboxReference, "You have a new message!").catch(error => {
+          console.error("Failed to send notification:", error);
+        });
+      }
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
