@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import SelectProfileImage from "./select-profile-image-wrapper";
 import SelectProfileLocation from "./select-location";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "@firebase/storage";
 import { auth, db, storage } from "../app/firebaseConfig";
 import Button from "./general/Button";
 import Image from "next/image";
+import { useUserData } from "../context/UserDataContext";
 
 const EditProfileImage = ({ router }) => {
+  const { userData, setUserData } = useUserData();
+
   const [image, setImage] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
   const [newProfileImage, setNewProfileImage] = useState(null);
@@ -15,15 +18,15 @@ const EditProfileImage = ({ router }) => {
   const [stage, setStage] = useState(0);
   const [storageUrl, setStorageUrl] = useState(null);
   const [location, setLocation] = useState(null);
-  const [user, setUser] = useState(null);
   const cropperRef = useRef();
 
   const buttonClasses = () => {
     if (!previewURL) {
-      return "w-[80%] mx-auto mt-[100px] p-2 bg-[#1C1B1F1F] text-[#1D1D00] font-semibold  rounded-[100px]";
+      return "w-[80%] mx-auto mt-[100px] p-2 bg-[#1C1B1F1F] text-[#1D1D00] font-semibold rounded-[100px]";
     }
-    return "w-[80%] mx-auto mt-[100px] p-2 bg-[] text-white font-semibold  rounded-[100px]";
+    return "w-[80%] mx-auto mt-[100px] p-2 bg-[] text-white font-semibold rounded-[100px]";
   };
+
   const [countries, setCountries] = useState([]);
 
   useEffect(() => {
@@ -34,19 +37,13 @@ const EditProfileImage = ({ router }) => {
       const data = await res.json();
       setCountries(data.data);
     };
+
     fetchCountries();
+
     if (stage === null) {
       updateStage(0);
     }
   }, [stage]);
-
-  useEffect(() => {
-    const findUser = async () => {
-      userData = useUserData();
-      setUser(u.data());
-    };
-    findUser();
-  }, []);
 
   const handleDrop = (acceptedFiles) => {
     setImage(URL.createObjectURL(acceptedFiles[0]));
@@ -71,7 +68,6 @@ const EditProfileImage = ({ router }) => {
 
   const handleSave = () => {
     onSave();
-    // Reset state
     setImage(null);
   };
 
@@ -83,44 +79,48 @@ const EditProfileImage = ({ router }) => {
   };
 
   const updateStage = async (stage, skip = false) => {
-    if (skip) {
-      resetAll();
-    }
+    if (skip) resetAll();
+
     const uid = auth.currentUser?.uid;
-    if (stage === 2) {
-      // const uid = user.uid; // Get the user ID from the created user
-      // Create a document in Firestore in "users" collection with UID as the document key
-      if (previewURL) {
-        const storageRef = ref(storage, `profile/${previewURL}`);
-        const uploadTask = uploadBytesResumable(storageRef, previewURL);
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            // const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // setUploadProgress(progress);
-          },
-          (error) => {
-            console.error("Upload error:", error);
-          },
-          async () => {
-            const url = await getDownloadURL(uploadTask.snapshot.ref);
-            setStorageUrl(url);
-            console.log(storageUrl);
-            await updateDoc(doc(db, "users", uid), {
-              photo_uri: storageUrl,
-            });
-          }
-        );
-      }
+
+    if (stage === 2 && previewURL) {
+      const storageRef = ref(storage, `profile/${uid}`);
+      const uploadTask = uploadBytesResumable(storageRef, croppedImage);
+
+      uploadTask.on(
+        "state_changed",
+        null,
+        console.error,
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+
+          await updateDoc(doc(db, "users", uid), {
+            photo_uri: url,
+          });
+
+          setUserData((prev) => ({
+            ...prev,
+            photo_uri: url,
+          }));
+        }
+      );
     }
+
     if (stage === 3) {
       if (location) {
         await updateDoc(doc(db, "users", uid), {
           country: location,
         });
+
+        setUserData((prev) => ({
+          ...prev,
+          country: location,
+        }));
       }
+
       router.push("/profile");
     }
+
     setStage(stage);
   };
 
@@ -131,12 +131,16 @@ const EditProfileImage = ({ router }) => {
           <Image
             className="absolute top-0 left-0 bottom-0 right-0 h-full w-full object-cover"
             src="/welcomebackground.jpeg"
+            alt=""
+            fill
           />
           <div className="min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col p-4 text-white text-center">
-            <h2 className="text-[32px]">Welcome {user?.firstName}</h2>
+            <h2 className="text-[32px]">
+              Welcome {userData?.firstName}
+            </h2>
             <p>
               We are so happy to be here, thanks for your support and help. You
-              are part of the family now.{" "}
+              are part of the family now.
             </p>
             <Button
               btnType="button"
@@ -150,6 +154,7 @@ const EditProfileImage = ({ router }) => {
           </div>
         </div>
       )}
+
       {stage === 1 && (
         <SelectProfileImage
           image={image}

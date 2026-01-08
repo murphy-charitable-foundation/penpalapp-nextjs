@@ -46,8 +46,6 @@ export default function Home() {
   const { userData, setUserData } = useUserData();
   usePageAnalytics("/letterhome");
 
-  console.log(userData);
-
   const getConversations = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
@@ -109,9 +107,9 @@ export default function Home() {
         try {
           const uid = user.uid;
 
-          setUserName(userData.first_name || "Unknown User");
-          setCountry(userData.country || "Unknown Country");
-          setUserType(userData.user_type || "Unknown Type");
+          setUserName(userData?.first_name || "Unknown User");
+          setCountry(userData?.country || "Unknown Country");
+          setUserType(userData?.user_type || "Unknown Type");
           const downloaded = await getUserPfp(uid);
           setProfileImage(downloaded || "");
 
