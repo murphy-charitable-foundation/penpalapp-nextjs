@@ -42,6 +42,8 @@ export function NotificationHandler({ children }) {
               // Mobile required path
               navigator.serviceWorker.getRegistration().then((reg) => {
                 if (reg) reg.showNotification(title, { body });
+              }).catch((err) => {
+                console.warn("Service worker registration error:", err);
               });
             }
 
