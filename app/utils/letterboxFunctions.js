@@ -13,7 +13,6 @@ export const getUserDoc = async () => {
 };
 
 export const getUserPfp = async(uid) => {
-<<<<<<< HEAD
   const path = `profile/${uid}/profile-image`;
   try {
     const photoRef = storageRef(storage, path);
@@ -31,16 +30,6 @@ export const getUserPfp = async(uid) => {
     return null;
   }
   
-=======
-  try {
-    const path = `profile/${uid}/profile-image`;
-    const photoRef = storageRef(storage, path);
-    const downloaded = await getDownloadURL(photoRef)
-    return downloaded;
-  } catch(e) {
-    return null;
-  }
->>>>>>> Adding UserData context to prevent repeated unecessary database calls
 }
 
 export const fetchLetterboxes = async () => {
