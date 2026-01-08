@@ -294,3 +294,55 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     return false;
   }
 };
+
+export const sendNotification = async (letterboxRef, message) => {
+  // Verify that the user is authenticated.
+  if (!auth.currentUser) {
+    console.error("User not authenticated.");
+    return;
+  }
+
+  // Validate letterboxRef parameter.
+  if (!letterboxRef || !letterboxRef.id) {
+    console.error("Invalid letterboxRef: missing or has no id property.");
+    return;
+  }
+
+  try {
+    // Retrieve Firebase Auth ID token for authorization.
+    const idToken = await auth.currentUser.getIdToken();
+
+    // Retrieve the conversation (letterbox) ID.
+    const conversationId = letterboxRef.id;
+
+    // Build payload.
+    const payload = {
+      conversationId: conversationId,
+      message: message || "You have a notification.",
+    };
+
+    // Send to notify API with auth header.
+    const response = await fetch("/api/notify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Failed to send notifications:", result.error);
+      return result;
+    }
+
+    console.log("Notifications sent successfully:", result);
+    return result;
+  } catch (e) {
+    console.error("Error in sendNotification:", e);
+    return { error: e.message };
+  }
+};
+
