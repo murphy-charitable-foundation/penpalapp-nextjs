@@ -7,10 +7,26 @@ const requiredEnvVars = [
   "FIREBASE_PRIVATE_KEY",
   "FIREBASE_CLIENT_EMAIL"
 ];
+const requiredEnvVars = [
+  "FIREBASE_CONFIG",
+  "FIREBASE_PRIVATE_KEY",
+  "FIREBASE_CLIENT_EMAIL"
+];
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
-const FIREBASE_PROJECT_ID = JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
-if (!FIREBASE_PROJECT_ID) {
-  console.log("error retrieving project id in setup");
+const envError = missingVars.length > 0
+  ? `Missing Firebase env vars: ${missingVars.join(", ")}`
+  : null;
+
+let FIREBASE_PROJECT_ID = null;
+if (!envError) {
+  try {
+    FIREBASE_PROJECT_ID = JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
+  } catch (e) {
+    console.error("Invalid FIREBASE_CONFIG JSON:", e.message);
+  }
+  if (!FIREBASE_PROJECT_ID) {
+    console.error("error retrieving project id in setup");
+  }
 }
 const envError = missingVars.length > 0
   ? `Missing Firebase env vars: ${missingVars.join(", ")}`
