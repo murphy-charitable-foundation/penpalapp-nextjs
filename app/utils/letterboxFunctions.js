@@ -6,11 +6,13 @@ import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
-const getUserDoc = async () => {
-  const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
+export const getUserDoc = async (uid) => {
+  if (!uid) return { userDocRef: null, userDocSnapshot: null };
+  const userDocRef = doc(collection(db, "users"), uid);
   const userDocSnapshot = await getDoc(userDocRef);
   return { userDocRef, userDocSnapshot };
 };
+
 
 export const getUserPfp = async(uid) => {
   const path = `profile/${uid}/profile-image`;
@@ -39,8 +41,8 @@ export const fetchLetterboxes = async () => {
     retryFetch();
     return;
   }
-  const { userDocRef, userDocSnapshot } = await getUserDoc();
-  if (!userDocSnapshot.exists()) return;
+  const { userDocRef, userDocSnapshot } = await getUserDoc(auth.currentUser.uid);
+  if (!userDocSnapshot?.exists()) return;
 
   const letterboxQuery = query(
     collection(db, "letterbox"),
