@@ -11,168 +11,158 @@ import {
   where,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db, auth } from "../firebaseConfig"; // Ensure this path is correct
-import KidCard from "../../components/discovery/KidCard";
-import KidFilter from "../../components/discovery/KidFilter";
-import Link from "next/link";
-import Header from "../../components/general/Header";
-import KidsList from "../../components/discovery/KidsList";
-import { PageContainer } from "../../components/general/PageContainer";
-import { BackButton } from "../../components/general/BackButton";
+import { onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
+
+import { db, auth } from "../firebaseConfig";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import { onAuthStateChanged } from "firebase/auth";
 
-const PAGE_SIZE = 10; // Number of kids per page
+import PageBackground from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
+import NavBar from "../../components/bottom-nav-bar";
+
+import KidsList from "../../components/discovery/KidsList";
+import FilterPanel from "../../components/discovery/FilterPanel";
+
+const PAGE_SIZE = 10;
 
 export default function ChooseKid() {
-  const [activeFilter, setActiveFilter] = useState(false);
+  const router = useRouter();
+
   const [kids, setKids] = useState([]);
   const [lastKidDoc, setLastKidDoc] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [userId, setUserId] = useState("");
+  const [error, setError] = useState("");
 
-  const [age, setAge] = useState(0);
+  const [age, setAge] = useState(null);
   const [gender, setGender] = useState("");
   const [hobbies, setHobbies] = useState([]);
+
+  
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   usePageAnalytics("/discovery");
 
+  // ✅ auth listener: 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        //redirect if everything is loaded and still no user
         router.push("/login");
         return;
-      } else {
-        try {
-          const uid = user.uid;
-          setUserId(uid);
-          await fetchKids(uid);
-        } catch (err) {
-          setError("Error fetching user data");
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
       }
+      setUserId(user.uid);
     });
     return () => unsubscribe();
-  }, [age, gender, hobbies]);
+  }, [router]);
 
   useEffect(() => {
-    console.log("Age:", age);
-  }, [age]);
+    if (!userId) return;
 
-  const fetchKids = async (uid) => {
+    setKids([]);
+    setLastKidDoc(null);
+    setInitialLoad(true);
+
+    fetchKids(userId, true);
+  }, [userId, age, gender, hobbies]);
+
+  const fetchKids = async (uid, reset = false) => {
     setLoading(true);
-    try {
-      if (!uid) {
-        throw new Error("Login error. User may not be logged in properly.");
-      }
-      const userRef = doc(db, "users", uid);
-      const kidsCollectionRef = collection(db, "users");
-      let q = query(kidsCollectionRef);
+    setError("");
 
-      // Apply filters
-      if (age > 0) {
-        const currentDate = new Date();
-        const minBirthDate = new Date(
-          currentDate.getFullYear() - age - 1,
-          currentDate.getMonth(),
-          currentDate.getDate()
-        );
+    try {
+      if (!uid) throw new Error("Login error. User may not be logged in.");
+
+      const userRef = doc(db, "users", uid);
+      const usersRef = collection(db, "users");
+      let q = query(usersRef);
+
+      const ageActive = age?.min != null && age?.max != null;
+
+      //AGE range on server (birthday)
+      if (ageActive) {
+        const now = new Date();
+
         const maxBirthDate = new Date(
-          currentDate.getFullYear() - age,
-          currentDate.getMonth(),
-          currentDate.getDate()
+          now.getFullYear() - age.min,
+          now.getMonth(),
+          now.getDate()
+        );
+
+        const minBirthDate = new Date(
+          now.getFullYear() - age.max - 1,
+          now.getMonth(),
+          now.getDate()
         );
 
         q = query(q, where("birthday", ">=", minBirthDate));
         q = query(q, where("birthday", "<=", maxBirthDate));
       }
 
-      if (gender && gender.length > 0) {
-        q = query(q, where("gender", "==", gender));
+      // ✅ Gender on server
+      const genderNorm = (gender || "").trim();
+      if (genderNorm) {
+        q = query(q, where("gender", "==", genderNorm));
       }
 
-      if (hobbies && hobbies.length > 0) {
+      // ✅ Hobbies on server
+      if (hobbies?.length) {
         q = query(q, where("hobby", "array-contains-any", hobbies));
       }
 
+      // ✅ Base constraint always
       q = query(q, where("user_type", "==", "child"));
-      q = query(q, where("connected_penpals_count", "<", 3));
 
-      if (lastKidDoc && !initialLoad) {
+
+      // pagination
+      if (!reset && lastKidDoc && !initialLoad) {
         q = query(q, startAfter(lastKidDoc));
       }
+
       q = query(q, limit(PAGE_SIZE));
+
       const snapshot = await getDocs(q);
 
-      const filteredSnapshot = snapshot.docs.filter((doc) => {
-        const data = doc.data();
+      const filteredSnapshot = snapshot.docs.filter((d) => {
+        const data = d.data();
         return !data.connected_penpals?.some(
-          (penpalRef) => penpalRef.path === userRef.path
+          (penpalRef) => penpalRef?.path === userRef.path
         );
       });
 
       const kidsList = await Promise.all(
-        filteredSnapshot.map(async (doc) => {
-          //Still needed as photo_uri is not currently directly stored under profile
-          const data = doc.data();
+        filteredSnapshot.map(async (d) => {
+          const data = d.data();
+
           try {
             if (data.photo_uri) {
               const storage = getStorage();
               const photoRef = ref(storage, data.photo_uri);
               const photoURL = await getDownloadURL(photoRef);
-              return {
-                id: doc.id,
-                ...data,
-                photoURL,
-              };
-            } else {
-              return {
-                id: doc.id,
-                ...data,
-                photoURL: "/usericon.png", // Default image if no photo_uri
-              };
+              return { id: d.id, ...data, photoURL };
             }
-          } catch (error) {
-            if (error.code === "storage/object-not-found") {
-              return {
-                id: doc.id,
-                ...data,
-                photoURL: "/usericon.png", // Default image if photo not found
-              };
-            } else {
-              console.error("Error fetching photo URL:", error);
-              return {
-                id: doc.id,
-                ...data,
-                photoURL: "/usericon.png", // Default image if other errors
-              };
-            }
+
+            return { id: d.id, ...data, photoURL: "/usericon.png" };
+          } catch {
+            return { id: d.id, ...data, photoURL: "/usericon.png" };
           }
         })
       );
 
-      setKids((prevKids) => {
-        if (initialLoad) {
-          return kidsList;
-        } else {
-          return [...prevKids, ...kidsList];
-        }
-      });
+      const finalKids = ageActive
+        ? kidsList.filter((k) => (k.connected_penpals_count ?? 0) < 3)
+        : kidsList;
 
-      if (snapshot.docs.length > 0) {
-        setLastKidDoc(snapshot.docs[snapshot.docs.length - 1]);
-      } else {
-        setLastKidDoc(null);
-      }
-    } catch (error) {
-      logError(error, {
-        description: "Error fetching kids:",
-      });
+      setKids((prev) => (reset ? finalKids : [...prev, ...finalKids]));
+      setLastKidDoc(
+        snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
+      );
+    } catch (e) {
+      setError("Error fetching kids");
+      logError(e, { description: "Error fetching kids" });
     } finally {
       setLoading(false);
       setInitialLoad(false);
@@ -180,96 +170,126 @@ export default function ChooseKid() {
   };
 
   function calculateAge(birthdayTimestamp) {
-    if (!birthdayTimestamp) return 0; // Handle null/undefined case
+    if (!birthdayTimestamp) return 0;
 
     let birthdayDate;
     try {
-      // Handle different timestamp formats
-      if (birthdayTimestamp instanceof Date) {
-        birthdayDate = birthdayTimestamp;
-      } else if (typeof birthdayTimestamp.toDate === "function") {
-        // Firebase Timestamp
+      if (birthdayTimestamp instanceof Date) birthdayDate = birthdayTimestamp;
+      else if (typeof birthdayTimestamp.toDate === "function")
         birthdayDate = birthdayTimestamp.toDate();
-      } else if (birthdayTimestamp._seconds) {
-        // Firestore Timestamp
+      else if (birthdayTimestamp?._seconds)
         birthdayDate = new Date(birthdayTimestamp._seconds * 1000);
-      } else {
-        // Try to parse as date string
-        birthdayDate = new Date(birthdayTimestamp);
-      }
+      else birthdayDate = new Date(birthdayTimestamp);
 
-      if (isNaN(birthdayDate.getTime())) {
-        console.error("Invalid date:", birthdayTimestamp);
-        return 0;
-      }
+      if (isNaN(birthdayDate.getTime())) return 0;
 
-      const currentDate = new Date();
-      const diffInYears =
-        currentDate.getFullYear() - birthdayDate.getFullYear();
+      const now = new Date();
+      let years = now.getFullYear() - birthdayDate.getFullYear();
 
       if (
-        currentDate.getMonth() < birthdayDate.getMonth() ||
-        (currentDate.getMonth() === birthdayDate.getMonth() &&
-          currentDate.getDate() < birthdayDate.getDate())
+        now.getMonth() < birthdayDate.getMonth() ||
+        (now.getMonth() === birthdayDate.getMonth() &&
+          now.getDate() < birthdayDate.getDate())
       ) {
-        return diffInYears - 1;
+        years -= 1;
       }
 
-      return diffInYears;
-    } catch (error) {
-      console.error("Error calculating age:", error);
+      return years;
+    } catch {
       return 0;
     }
   }
 
-  const filter = async (age, hobby, gender) => {
-    setKids([]);
-    setLastKidDoc(null);
-    setInitialLoad(true);
-    setAge(age);
-    setHobbies(hobby);
-    setGender(gender);
-    setActiveFilter(false);
-  };
-
   const loadMoreKids = () => {
-    if (loading) return;
-    fetchKids(userId);
+    if (loading || !userId) return;
+    fetchKids(userId, false);
     logButtonEvent("Load more button clicked!", "/discovery");
   };
 
+  const handleApplyFilters = ({ age, gender, hobbies }) => {
+    setAge(age ?? null); // {min,max} یا null
+    setGender(gender ?? "");
+    setHobbies(hobbies ?? []);
+    setFiltersOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setAge(null);
+    setGender("");
+    setHobbies([]);
+    setFiltersOpen(false);
+  };
+
   return (
-    <PageContainer maxWidth="lg">
-      <BackButton />
-      <div className="min-h-screen p-4 bg-white">
-        <div className="bg-white">
-          <Header
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-          />
-          {activeFilter ? (
-            <div className="h-auto">
-              <KidFilter
-                setAge={setAge}
-                setGender={setGender}
-                setHobbies={setHobbies}
-                hobbies={hobbies}
-                age={age}
-                gender={gender}
-                filter={filter}
-              />
-            </div>
-          ) : (
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          <PageHeader title="Discovery" image={false} showBackButton />
+
+          {/* Filters bar */}
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="w-full h-14 px-6 bg-blue-50 flex items-center justify-between text-lg font-semibold text-gray-900 border-y border-blue-100 hover:bg-blue-100 transition"
+              aria-label="Open filters"
+            >
+              <span>Filters</span>
+              <svg
+                className={`h-5 w-5 text-gray-700 transition-transform ${
+                  filtersOpen ? "rotate-180" : ""
+                }`}
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+            {error ? (
+              <div className="text-sm text-red-600 mb-3">{error}</div>
+            ) : null}
+
             <KidsList
               kids={kids}
               calculateAge={calculateAge}
               lastKidDoc={lastKidDoc}
               loadMoreKids={loadMoreKids}
               loading={loading}
+              error={error}
+              showEmpty={!initialLoad}
+              onClearFilters={handleClearFilters}
+              onEditFilters={() => setFiltersOpen(true)}
             />
-          )}
-        </div>
+          </div>
+
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
+        </PageContainer>
       </div>
-    </PageContainer>
+
+      <FilterPanel
+        open={filtersOpen}
+        initial={{ age, gender, hobbies }}
+        onApply={handleApplyFilters}
+        onClose={() => setFiltersOpen(false)}
+      />
+    </PageBackground>
   );
 }
