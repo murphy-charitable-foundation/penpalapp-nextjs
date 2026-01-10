@@ -16,6 +16,7 @@ import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
+import { createConnection } from "../utils/letterboxFunctions";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +113,8 @@ export default function UserDataImport() {
 
         const internationalBuddyUID = internationalBuddyUid.uid;
 
+        createConnection(uidRes, firebaseUser);
+        /*
         try {
           const response = await fetch('/api/updateConnectedPenpals', {
             method: 'POST',
@@ -129,6 +132,7 @@ export default function UserDataImport() {
         } catch (err) {
           console.error('Request failed:', err);
         }
+          */
         await setDoc(doc(db, "users", userId), userData);
 
       } catch (error) {
