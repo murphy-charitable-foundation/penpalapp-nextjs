@@ -295,15 +295,15 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
   }
 };
 
-export   const createConnection = async (user, userRef, kid) => {
+export   const createConnection = async (userDocRef, kid) => {
     try {
       console.log("Kid:", kid);
-      console.log("User:", user);
+      console.log("User:", userDocRef);
 
-      if (kid != null && user != null) {
+      if (kid != null && userDocRef != null) {
         if (kid.connected_penpals_count < 3) {
           // Define references for user and kid
-          const userDocRef = doc(db, "users", auth.currentUser.uid);
+          //const userDocRef = doc(db, "users", auth.currentUser.uid);
           const kidDocRef = doc(db, "users", kid.id);
 
           // query DB to check for existing letterbox
@@ -337,7 +337,7 @@ export   const createConnection = async (user, userRef, kid) => {
             console.log("Letterbox created");
 
             await addDoc(collection(letterboxRef, "letters"), {
-              sent_by: userRef,
+              sent_by: userDocRef,
               content: "Please complete your first letter here...",
               status: "draft",
               updated_at: new Date(),
