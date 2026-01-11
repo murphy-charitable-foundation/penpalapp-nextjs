@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, Timestamp } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, Timestamp, getDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../../app/firebaseConfig";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
@@ -99,48 +99,38 @@ export default function UserDataImport() {
         return;
       }
 
-      // Add connected_penpals and increment count
-      userData.connected_penpals = [`/users/${internationalBuddyUid.uid}`];
-      userData.connected_penpals_count = 1;
-
-
-      console.log("no errors");
-
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
-        const userId = firebaseUser.uid;
 
-        const internationalBuddyUID = internationalBuddyUid.uid;
+        // Create user via server-side Admin API so current user stays signed in
+        const createRes = await fetch("/api/createUser", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, userData }),
+        });
 
-        createConnection(uidRes, firebaseUser);
-        /*
-        try {
-          const response = await fetch('/api/updateConnectedPenpals', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ internationalBuddyUID, userId }),
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-            console.log('Success:', result.message);
-          } else {
-            console.error('Error:', result.error);
-          }
-        } catch (err) {
-          console.error('Request failed:', err);
+        const createJson = await createRes.json();
+        if (!createRes.ok) {
+          throw new Error(createJson.error || "Failed to create user");
         }
-          */
-        await setDoc(doc(db, "users", userId), userData);
+
+        const kidId = createJson.uid;
+
+        const kidRef = doc(db, "users", kidId);
+        const docSnap = await getDoc(kidRef);
+        if (docSnap.exists()) {
+          const kid = { id: kidId, ...docSnap.data(), photoURL: "/usericon.png" };
+          const internationalBuddyUID = internationalBuddyUid.uid;
+          const buddyRef = doc(db, "users", internationalBuddyUID);
+          const letterboxRef = await createConnection(buddyRef, kid);
+        } else {
+          throw new Error("Error creating user");
+        }
 
       } catch (error) {
         newErrors.email = "email already in use";
         setErrors(newErrors);
         return;
       }
-
 
       // Reset form
       e.target?.closest('form')?.reset();
