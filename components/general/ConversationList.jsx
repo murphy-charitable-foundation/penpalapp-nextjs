@@ -16,6 +16,7 @@ const ConversationList = ({ conversations }) => {
             status={conversation.status}
             isRecipient={conversation.isRecipient}
             unread={conversation.unread}
+            id={conversation.recipientId}
           />
         </div>
       ))}

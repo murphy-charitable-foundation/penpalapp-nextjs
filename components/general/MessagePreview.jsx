@@ -1,8 +1,8 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
-
 
 
 const MessagePreview = ({
@@ -15,11 +15,12 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  id
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
   const getStatusIcon = () => {
-    if (status === "rejected") {
+    if (status === "Rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
     if (status === "sent") {
@@ -40,7 +41,7 @@ const MessagePreview = ({
     <a
       href={`/letters/${letterboxId}`}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
-        status === "rejected"
+        status === "Rejected"
           ? "bg-red-50"
           : isRecipient && unread
           ? "bg-green-50"
@@ -49,13 +50,15 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        <Image
-          src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
-          width={36}
-          height={36}
-        />
+        <Link href={"/profile-view/" + id}>
+          <Image
+            src={imageSrc}
+            alt={`${name}'s profile`}
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            width={36}
+            height={36}
+          />
+        </Link>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
@@ -83,7 +86,7 @@ const MessagePreview = ({
               <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
             )}
             <div className="flex-1">
-              {status === "rejected" && (
+              {status === "Rejected" && (
                 <div className="font-normal text-red-500">
                   Your letter was rejected
                 </div>
@@ -94,7 +97,7 @@ const MessagePreview = ({
         ) : (
           <div className="flex">
             <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            {status === "rejected" && (
+            {status === "Rejected" && (
               <div className="flex-1 font-normal text-red-500">
                 Your letter was rejected
               </div>
