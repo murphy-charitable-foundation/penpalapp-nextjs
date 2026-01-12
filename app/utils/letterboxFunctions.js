@@ -14,9 +14,22 @@ const getUserDoc = async () => {
 
 export const getUserPfp = async(uid) => {
   const path = `profile/${uid}/profile-image`;
-  const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try {
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch (error) {
+    // Return null if there is no profile; default should be handled by UI
+    if (error.code === 'storage/object-not-found') {
+      return null;
+    }
+    logError(error, {
+      description: "Error fetching user profile:",
+    });
+    // Returns null for all other errors so it only has one fallback mechanism
+    return null;
+  }
+  
 }
 
 export const fetchLetterboxes = async () => {
@@ -254,15 +267,13 @@ export const fetchRecipients = async (id) => {
   for (const user of users) {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
-    try {
-      const downloaded = await getUserPfp(user.id);
-      members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
-    } catch (e) {
-      logError(e, {
-        description: "Error fetching user:",
-      });
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
-    }
+    const userData = selUser.data();    // utility/helper variable
+
+    // Call the only source of profile
+    const pfpUrl = await getUserPfp(user.id);
+
+    // Push the data; if pfpUrl is null, pfp is null as well; UI should handle the default
+    members.push({ ...userData, id: user.id, pfp: pfpUrl });
   }
   return members;
 };
