@@ -10,7 +10,6 @@ export default function KidsList({ kids, calculateAge, lastKidDoc, loadMoreKids,
             kid={kid}
             calculateAge={calculateAge}
             key={kid?.id}
-            style={{ minHeight: "300px", minWidth: "280px" }}
           />
         ))}
       </div>

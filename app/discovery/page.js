@@ -88,8 +88,8 @@ export default function ChooseKid() {
           currentDate.getDate()
         );
 
-        q = query(q, where("date_of_birth", ">=", minBirthDate));
-        q = query(q, where("date_of_birth", "<=", maxBirthDate));
+        q = query(q, where("birthday", ">=", minBirthDate));
+        q = query(q, where("birthday", "<=", maxBirthDate));
       }
 
       if (gender && gender.length > 0) {
