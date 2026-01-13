@@ -72,37 +72,25 @@ export default function Login() {
   };
 
   return (
-    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-      <div className="flex-1 flex justify-center items-center">
-        <PageContainer
-          width="compactXS"
-          padding="none"
-          center={false}
-          className="w-full max-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-        >
-          {/* ===== HEADER ===== */}
-          <div className="pb-4">
-            <PageHeader title="Login" image showBackButton showBorder={false} />
-          </div>
-
-          {/* ===== CONTENT (ONLY SCROLLER) ===== */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-8">
-            {loading && <LoadingSpinner />}
-
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  handleInputChange();
-                }}
-                placeholder="Ex. user@gmail.com"
-                id="email"
-                name="email"
-                label="Email"
-                error={error && error.toLowerCase().includes("email") ? error : ""}
-              />
+    <PageContainer maxWidth="md" padding="p-8">
+      {loading && <LoadingSpinner />}
+      <PageHeader title="Login" />
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <div>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="Ex. user@gmail.com"
+            id="email"
+            name="email"
+            label="Email"
+            error={error && error.toLowerCase().includes("email") ? error : ""}
+          />
+        </div>
 
               <Input
                 type="password"

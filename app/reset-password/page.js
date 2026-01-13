@@ -51,7 +51,7 @@ export default function ResetPassword() {
       logError(error, { description: "Error resetting password:", error});
     }
 
-    logButtonEvent("Reset Password clicked!", "/reset-password");
+    logButtonEvent("reset_password_submit", "/reset-password");
   }
 
   function closeModal() {
@@ -71,6 +71,7 @@ export default function ResetPassword() {
     </div>
   );
 
+<<<<<<< HEAD
 return (
   <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     {/* ===== MAIN AREA ===== */}
@@ -117,6 +118,41 @@ return (
               rounded="rounded-full"
             />
           </div>
+=======
+  return (
+    <PageBackground>
+      <PageContainer maxWidth="lg">
+        <div className="p-0 bg-white">
+          <PageHeader title="Reset Your Password" />
+          <form
+            method="post"
+            onSubmit={(e) => {
+              e.preventDefault();
+              resetPassword();
+            }}
+          >
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ex: user@gmail.com"
+              name="email"
+              id="email"
+              required
+              label="Registered Email"
+              error={errors.email ? errors.email : ""}
+            />
+
+            <div className="mt-6 flex justify-center">
+              <Button
+                btnType="submit"
+                btnText="Reset"
+                color="gray"
+                size="default"
+              />
+            </div>
+          </form>
+>>>>>>> 5e79c75 (Use POST for login and reset-password forms to prevent credentials in URL)
         </div>
       </PageContainer>
     </div>
