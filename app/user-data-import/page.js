@@ -102,14 +102,19 @@ export default function UserDataImport() {
       try {
 
         // Create user via server-side Admin API so current user stays signed in
+        const token = await auth.currentUser.getIdToken();
         const createRes = await fetch("/api/createUser", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, userData }),
         });
 
         const createJson = await createRes.json();
         if (!createRes.ok) {
+          newErrors.email = createJson.error || "Failed to create user";
+          setErrors(newErrors);
           throw new Error(createJson.error || "Failed to create user");
         }
 
@@ -123,11 +128,11 @@ export default function UserDataImport() {
           const buddyRef = doc(db, "users", internationalBuddyUID);
           const letterboxRef = await createConnection(buddyRef, kid);
         } else {
-          throw new Error("Error creating user");
+          throw new Error("Error linking user");
         }
 
       } catch (error) {
-        newErrors.email = "email already in use";
+        newErrors.email = error.message;
         setErrors(newErrors);
         return;
       }
@@ -171,7 +176,7 @@ export default function UserDataImport() {
                 type="text"
                 id="first-name"
                 name="firstName"
-                label="First Name"
+                label="Child's First Name"
                 placeholder="e.g., Jane"
                 error={errors.first_name ? errors.first_name : ""}
               />
@@ -182,7 +187,7 @@ export default function UserDataImport() {
                 type="text"
                 id="last-name"
                 name="lastName"
-                label="Last Name"
+                label="Child's Last Name"
                 placeholder="e.g., Smith"
                 error={errors.last_name ? errors.last_name : ""}
               />
@@ -193,7 +198,7 @@ export default function UserDataImport() {
                 type="text"
                 name="email"
                 id="email"
-                label="Email"
+                label="Child's Email"
                 placeholder="me@example.com"
                 error={errors.email ? errors.email : ""}
               />
@@ -209,6 +214,8 @@ export default function UserDataImport() {
                 error={errors.internationalbuddyemail ? errors.internationalbuddyemail : ""}
               />
             </div>
+
+            <div className="col-span-full py-2 px-0 border-b border-gray-300 text-sm font-medium mb-1 text-gray-500">Child's Information</div>
 
             <div>
               <Input
