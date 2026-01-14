@@ -696,10 +696,11 @@ export default function Page({ params }) {
         if (fetchedRecipients?.length > 0) {
           const userRefDoc = doc(db, "users", currentUser.uid);
 
-          // All messages written BY ME (any status)
+          // All messages written BY ME (excluding draft)
           const myMessagesQuery = query(
             lRef,
             where("sent_by", "==", userRefDoc),
+            where("status", "!=", "draft"),
             orderBy("created_at", "asc")
           );
       
