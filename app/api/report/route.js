@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import sendgrid from '@sendgrid/mail';
+import nodemailer from "nodemailer";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { logError } from "../../utils/analytics";
 
 export async function POST(request) {
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
     const {receiver_email, currentUrl, sender, excerpt } = body; 
@@ -66,19 +65,29 @@ export async function POST(request) {
         </body>
       </html>
     `;
+    
 
-
-    //SendGrid email configuration
     const msg = {
-      to: 'penpal@murphycharity.org', 
-      from: 'penpal@murphycharity.org', // Your verified sender email
+      to: process.env.PENPAL_EMAIL, 
+      from: process.env.PENPAL_EMAIL,
       subject: "Message Reported",
       text: message || 'No message provided.',
       html:  emailHtml,
     };
 
+    const transporter = nodemailer.createTransport({
+        host: process.env.CPANEL_SMTP_HOST,
+        port: parseInt(process.env.CPANEL_SMTP_PORT),
+        secure: process.env.CPANEL_SMTP_PORT == 465, // SSL for 465
+        auth: {
+            user: process.env.PENPAL_EMAIL, //sender email
+            pass: process.env.PENPAL_EMAIL_PASSWORD, //sender password (cPanel email password)
+        },
+    });
+    
+
     // Send the email
-    await sendgrid.send(msg);
+    await transporter.sendMail(msg);
     return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
     
 

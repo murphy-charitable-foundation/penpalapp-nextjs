@@ -88,8 +88,8 @@ export default function ChooseKid() {
           currentDate.getDate()
         );
 
-        q = query(q, where("birthday", ">=", minBirthDate));
-        q = query(q, where("birthday", "<=", maxBirthDate));
+        q = query(q, where("date_of_birth", ">=", minBirthDate));
+        q = query(q, where("date_of_birth", "<=", maxBirthDate));
       }
 
       if (gender && gender.length > 0) {
@@ -243,10 +243,7 @@ export default function ChooseKid() {
       <BackButton />
       <div className="min-h-screen p-4 bg-white">
         <div className="bg-white">
-          <Header
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-          />
+          <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Choose a kid to write to"} />
           {activeFilter ? (
             <div className="h-auto">
               <KidFilter

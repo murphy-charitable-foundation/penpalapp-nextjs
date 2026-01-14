@@ -4,7 +4,7 @@ import SendMessage from "./SendMessage";
 
 
 //Card for kid
-export default function KidCard({ kid, calculateAge }) {
+export default async function KidCard({ kid, calculateAge }) {
   return (
     <div
       key={kid?.id}
@@ -13,7 +13,7 @@ export default function KidCard({ kid, calculateAge }) {
     >
       <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
         <Image
-          src={kid?.photoURL || "/usericon.png"}
+          src={downloaded || "/usericon.png"}
           alt="Kid picture"
           width={220}
           height={220}
@@ -29,7 +29,7 @@ export default function KidCard({ kid, calculateAge }) {
       </h2>
 
       <p className="text-xs mb-1 text-left text-black">
-        {calculateAge(kid?.birthday)} years old
+        {calculateAge(kid?.date_of_birth)} years old
       </p>
       <p
         className="text-left mb-2 text-gray-900 text-xs break-words"
@@ -38,15 +38,7 @@ export default function KidCard({ kid, calculateAge }) {
         {kid?.bio}
       </p>
       <div className="flex justify-start flex-wrap gap-2 mb-4">
-        {typeof kid?.hobby === "string" && (
-          <span
-            className="px-3 py-1 text-xs rounded-full"
-            style={{ backgroundColor: "#f8fcec", color: "black" }}
-          >
-            {kid?.hobby}
-          </span>
-        )}
-        {kid?.hobby?.map && kid.hobby?.map((hobby, idx) => (
+        {kid.hobby?.map((hobby, idx) => (
           <span
             key={idx}
             className="px-3 py-1 text-xs rounded-full"

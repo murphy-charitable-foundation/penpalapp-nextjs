@@ -42,15 +42,9 @@ jobs:
       # Prebuild to .vercel/output on the runner
       - name: Vercel build (prebuilt)
         run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-          vercel build --prod \
-          --token="${{ env.VERCEL_TOKEN }}" \
-          --scope="${{ env.VERCEL_ORG }}"
-          else
           vercel build \
-          --token="${{ env.VERCEL_TOKEN }}" \
-          --scope="${{ env.VERCEL_ORG }}"
-          fi
+            --token="${{ env.VERCEL_TOKEN }}" \
+            --scope="${{ env.VERCEL_ORG }}"
 
       # Deploy prebuilt artifact (no build on Vercel)
       - name: Deploy prebuilt
