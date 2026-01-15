@@ -22,7 +22,7 @@ export default function KidFilter({
   setGender,
   filter,
 }) {
-  const genderOptions = ["Male", "Female", "Non-binary", "Other"];
+  const genderOptions = ["Male", "Female", "Non-binary"];
 
   const [genderFilter, setGenderFilter] = useState(gender || "");
   const [ageFilter, setAgeFilter] = useState(null);
