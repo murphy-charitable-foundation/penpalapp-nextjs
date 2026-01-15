@@ -1116,7 +1116,7 @@ return (
       {/* ===== POPUPS ===== */}
       {showCloseDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-          <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] h-[245px] mx-auto">
+          <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
             <h2 className="text-xl font-semibold mb-1 text-black">
               {editingMessageId ? "Discard changes?" : "Close this message?"}
             </h2>
