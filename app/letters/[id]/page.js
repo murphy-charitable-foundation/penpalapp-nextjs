@@ -832,7 +832,7 @@ return (
       className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
     >
       {/* ===== HEADER ===== */}
-      <div className="bg-blue-100 p-4 flex items-center justify-between border-b">
+      <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
         <button
           onClick={handleCloseMessage}
           className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
@@ -841,20 +841,22 @@ return (
           X
         </button>
 
-        {isSendButtonDisabled || isUpdatingFirebase ? (
-          <div className="w-6 h-6 flex items-center justify-center">
-            <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          isEditing && (
+        {/* Keep header layout stable (no mount/unmount jumps) */}
+        <div className="w-10 h-10 flex items-center justify-center">
+          {isSendButtonDisabled || isUpdatingFirebase ? (
+            <div className="w-6 h-6 flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+          ) : (
             <button
               onClick={handleSendMessage}
-              disabled={!canSendMessage()}
+              disabled={!isEditing || !canSendMessage()}
               className={`p-1 ${
-                !canSendMessage()
+                !isEditing || !canSendMessage()
                   ? "cursor-not-allowed opacity-50"
                   : "hover:bg-blue-200 rounded"
               }`}
+              style={{ visibility: isEditing ? "visible" : "hidden" }}
             >
               <Image
                 src="/send-message-icon.png"
@@ -865,17 +867,20 @@ return (
                 id="send-letter"
               />
             </button>
-          )
-        )}
+          )}
+        </div>
       </div>
 
       {/* ===== EDITING BANNER ===== */}
       {editingMessageId && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center text-amber-800 text-sm">
-            <span className="mr-2">✏️</span>
-            <span>Editing message</span>
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
+          <div className="flex items-center text-amber-800 text-sm min-w-0">
+            <span className="mr-2 shrink-0" aria-hidden="true">
+              ✏️
+            </span>
+            <span className="whitespace-nowrap truncate">Editing message</span>
           </div>
+
           <button
             onClick={async () => {
               const letterUserRef = userRef || doc(db, "users", user.uid);
@@ -905,8 +910,9 @@ return (
               setEditingMessageOriginalContent("");
               setSelectedMessageId(null);
             }}
-            className="text-amber-600 hover:text-amber-800 text-sm underline"
+            className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
           >
+            {/* Keep banner height consistent while editing */}
             Cancel
           </button>
         </div>
@@ -932,12 +938,10 @@ return (
                   onClick={() => selectMessage(messageId)}
                 >
                   <div className="flex items-center">
-                    <div className="shrink-0 border-b">
+                    <div className="shrink-0">
                       <ProfileImage
                         photo_uri={
-                          isSenderUser
-                            ? profileImage
-                            : recipients[0]?.photo_uri
+                          isSenderUser ? profileImage : recipients[0]?.photo_uri
                         }
                         first_name={
                           isSenderUser ? "Me" : recipients[0]?.first_name
@@ -960,9 +964,7 @@ return (
                         )}
                       </div>
                       <div className="text-gray-800">
-                        {isSelected
-                          ? ""
-                          : truncateMessage(message.content)}
+                        {isSelected ? "" : truncateMessage(message.content)}
                       </div>
                     </div>
 
@@ -975,35 +977,37 @@ return (
                 </div>
 
                 {isSelected && (
-                    <div className="px-4 pb-3">
-                      <div className="ml-16 relative">
-                          <p className="text-gray-800 whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        <div className="flex items-center justify-end w-full">
-                          {!isSenderUser && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
+                  <div className="px-4 pb-3">
+                    <div className="ml-16 relative">
+                      <p className="text-gray-800 whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                      <div className="flex items-center justify-end w-full">
+                        {!isSenderUser && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
 
-                                setReportSender(message.sent_by.id);
-                                setReportContent(message.content);
-                                setShowReportPopup(true);
-                                logButtonEvent(
-                                  "Report message clicked!",
-                                  "/letters/[id]"
-                                );
-                              }}
-                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
-                              <FaExclamationCircle className="mr-1" size={10} />
-                              Report
-                            </button>
-                          )}
-                          {/* STATUS BANNER */}
-                          {isSenderUser && (
-                            <>
-                              {/* REJECTED */}
-                              {isSenderUser && message.status === "rejected" &&(
+                              setReportSender(message.sent_by.id);
+                              setReportContent(message.content);
+                              setShowReportPopup(true);
+                              logButtonEvent(
+                                "Report message clicked!",
+                                "/letters/[id]"
+                              );
+                            }}
+                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                          >
+                            <FaExclamationCircle className="mr-1" size={10} />
+                            Report
+                          </button>
+                        )}
+
+                        {/* STATUS BANNER */}
+                        {isSenderUser && (
+                          <>
+                            {/* REJECTED */}
+                            {isSenderUser && message.status === "rejected" && (
                               <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
                                 <div className="flex items-start text-red-700 font-semibold">
                                   <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
@@ -1020,44 +1024,49 @@ return (
                               </div>
                             )}
 
-                              {/* SENT → GREEN CHECK */}
-                              {message.status === "sent" && (
-                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">✓</span>
-                              )}
-                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
-                              {message.status === "pending_review" && (
-                                <div className="flex items-center justify-end w-full">
-                              {/* Wrapper so the check can stick to the button */}
-                              <div className="relative inline-flex">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                            {/* SENT → GREEN CHECK */}
+                            {message.status === "sent" && (
+                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">
+                                ✓
+                              </span>
+                            )}
 
-                                    handleEditMessage(message);
-                                    logButtonEvent(
-                                      "Edit message clicked!",
-                                      "/letters/[id]"
-                                    );
-                                  }}
-                                  className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
-                                  title="Edit message"
-                                >
-                                  Edit
-                                </button>
+                            {/* PENDING REVIEW → GRAY DASHED CHECK */}
+                            {message.status === "pending_review" && (
+                              <div className="flex items-center justify-end w-full">
+                                {/* Wrapper so the check can stick to the button */}
+                                <div className="relative inline-flex">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
 
-                                {/* Check badge in bottom-right of the button */}
-                                <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                  <span className="text-gray-400 text-xs font-bold">✓</span>
+                                      handleEditMessage(message);
+                                      logButtonEvent(
+                                        "Edit message clicked!",
+                                        "/letters/[id]"
+                                      );
+                                    }}
+                                    className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
+                                    title="Edit message"
+                                  >
+                                    Edit
+                                  </button>
+
+                                  {/* Check badge in bottom-right of the button */}
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs font-bold">
+                                      ✓
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
                             )}
-                            </>
-                          )}
-                        </div>
+                          </>
+                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1086,9 +1095,7 @@ return (
               className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
               onClick={handleReplyClick}
             >
-              {hasDraftContent
-                ? "Continue draft..."
-                : "Reply to the letter..."}
+              {hasDraftContent ? "Continue draft..." : "Reply to the letter..."}
             </div>
           </div>
         ) : (
@@ -1097,9 +1104,7 @@ return (
               ref={textAreaRef}
               className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
               placeholder={
-                editingMessageId
-                  ? "Edit your message..."
-                  : "Write your message..."
+                editingMessageId ? "Edit your message..." : "Write your message..."
               }
               value={messageContent}
               onChange={handleMessageChange}
