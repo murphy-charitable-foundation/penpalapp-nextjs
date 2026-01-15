@@ -1046,7 +1046,7 @@ return (
                                         "/letters/[id]"
                                       );
                                     }}
-                                    className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
+                                    className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
                                     title="Edit message"
                                   >
                                     Edit
