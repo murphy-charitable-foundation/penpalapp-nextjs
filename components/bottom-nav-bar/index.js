@@ -109,27 +109,21 @@ export default function NavBar() {
 
         {isMenuOpen && (
           <div className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2">
-            {navLinks.map((link) =>
-              link.onClick ? (
-                <button
-                  key={link.label}
-                  onClick={link.onClick}
-                  className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
-                >
-                  {link.icon}
-                  <span className="text-sm">{link.label}</span>
-                </button>
-              ) : (
-                <button
-                  key={link.href}
-                  onClick={() => handleNavigation(link.href)}
-                  className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
-                >
-                  {link.icon}
-                  <span className="text-xs">{link.label}</span>
-                </button>
-              )
-            )}
+            {navLinks.map((link) => (
+              <button
+                key={link.label || link.href}
+                onClick={
+                  link.onClick
+                    ? link.onClick
+                    : () => handleNavigation(link.href)
+                }
+                className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
+              >
+                {link.icon}
+                {/* Keep menu item text size consistent */}
+                <span className="text-sm">{link.label}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>
