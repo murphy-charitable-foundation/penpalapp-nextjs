@@ -83,26 +83,25 @@ export default function UserDataImport() {
         setErrors(newErrors);
         return;
       }
-
-      // Fetch UID of international buddy
-      const uidRes = await fetch("/api/getUidByEmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: internationalBuddyEmail }),
-      });
-
-      const internationalBuddyUid = await uidRes.json();
-
-      if (!uidRes.ok) {
-        newErrors.internationalbuddyemail = "No user found with this email";
-        setErrors(newErrors);
-        return;
-      }
-
       try {
+        // Fetch UID of international buddy
+        const token = await auth.currentUser.getIdToken();
+        const uidRes = await fetch("/api/getUidByEmail", {
+          method: "POST",
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json" },
+          body: JSON.stringify({ email: internationalBuddyEmail }),
+        });
+
+        const internationalBuddyUid = await uidRes.json();
+        if (!uidRes.ok) {
+          newErrors.internationalbuddyemail = internationalBuddyUid.error || "No user found with this email";
+          setErrors(newErrors);
+          throw new Error (internationalBuddyUid.error || "No user found with this email");
+        }
 
         // Create user via server-side Admin API so current user stays signed in
-        const token = await auth.currentUser.getIdToken();
         const createRes = await fetch("/api/createUser", {
           method: "POST",
           headers: {
@@ -132,9 +131,10 @@ export default function UserDataImport() {
         }
 
       } catch (error) {
-        newErrors.email = error.message;
-        setErrors(newErrors);
-        return;
+        logError(error, {
+          description: "Error creating user or linking international buddy: ",    
+        })
+        throw error;
       }
 
       // Reset form
@@ -379,15 +379,15 @@ export default function UserDataImport() {
             />
           </div>
           <div>
-  <Input
-    type="password"
-    name="password"
-    id="password"
-    label="Password"
-    placeholder="Enter a secure password"
-    error={errors.password ? errors.password : ""}
-  />
-</div>
+            <Input
+              type="password"
+              name="password"
+              id="password"
+              label="Password"
+              placeholder="Enter a secure password"
+              error={errors.password ? errors.password : ""}
+            />
+          </div>
 
           <div className="flex justify-center">
             <Button
