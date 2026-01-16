@@ -36,21 +36,23 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 
-import { saveAvatar, base64ToBlob, confirmDeleteAvatar } from '@/app/utils/avatarUtils';
-import AvatarCropper from '@/components/general/AvatarCropper';
-import AvatarMenu from '@/components/avatar/AvatarMenu';
+import {
+  saveAvatar,
+  base64ToBlob,
+  confirmDeleteAvatar,
+} from "@/app/utils/avatarUtils";
+import AvatarCropper from "@/components/general/AvatarCropper";
+import AvatarMenu from "@/components/avatar/AvatarMenu";
 import { uploadFile } from "../lib/uploadFile";
 
-
 export default function EditProfile() {
-
   const [showMenu, setShowMenu] = useState(false);
   const [avatar, setAvatar] = useState(null);
   const [mode, setMode] = useState(null); // 'camera' | 'gallery'
   const avatarRef = useRef();
   const [image, setImage] = useState("");
   const [croppedImage, setCroppedImage] = useState(null);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const cropperRef = useRef();
   // State initializations
   const [firstName, setFirstName] = useState("");
@@ -86,7 +88,7 @@ export default function EditProfile() {
   const [storageUrl, setStorageUrl] = useState(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmInfo, setConfirmInfo] = useState('');
+  const [confirmInfo, setConfirmInfo] = useState("");
 
   const router = useRouter();
   usePageAnalytics("/profile");
@@ -261,7 +263,6 @@ export default function EditProfile() {
     setIsBioModalOpen(true);
   };
 
-
   const handleSaveAvatar = async (inputAvatar) => {
     await saveAvatar({
       avatar: inputAvatar,
@@ -283,10 +284,23 @@ export default function EditProfile() {
     });
   };
 
-  const handleConfirm = () => {
-    setConfirmOpen(false);
-    setAvatar(null);
-    setShowMenu(false);
+  const handleConfirm = async () => {
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return;
+      // Best-effort delete from storage; ignore if missing
+      const path = `profile/${uid}/profile-image`;
+      await Promise.allSettled([
+        deleteObject(ref(storage, path)),
+        updateDoc(doc(db, "users", uid), { photo_uri: null }),
+      ]);
+      setAvatar(null);
+    } catch (e) {
+      console.error("Failed to delete avatar:", e);
+    } finally {
+      setConfirmOpen(false);
+      setShowMenu(false);
+    }
   };
 
   const handleCancel = () => {
@@ -294,16 +308,15 @@ export default function EditProfile() {
   };
 
   const handleGetAvatar = (type) => {
-    setMode(type)
+    setMode(type);
     setTimeout(() => {
-      avatarRef.current?.pickPicture()
-    }, 50)
-  }
+      avatarRef.current?.pickPicture();
+    }, 50);
+  };
   //Avatar end
   if (loading) return <LoadingSpinner />;
   return (
     <div className="bg-gray-50 min-h-screen">
-
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => {
@@ -379,32 +392,47 @@ export default function EditProfile() {
                 content={bioModalContent}
                 width="large"
               />
-
             </div>
             {
               <div className="flex justify-center">
-                <div className="w-48 h-48 rounded-full bg-[#4E802A] flex items-center justify-center relative"
+                <div
+                  className="w-48 h-48 rounded-full bg-[#4E802A] flex items-center justify-center relative"
                   onClick={() => setShowMenu(true)}
                 >
-                  {!avatar ? (<Image
-                    src="/blackcameraicon.svg"
-                    alt="camera"
-                    width={35}
-                    height={35}
-                  />) :
-                    (<>
+                  {!avatar ? (
+                    <Image
+                      src="/blackcameraicon.svg"
+                      alt="camera"
+                      width={35}
+                      height={35}
+                    />
+                  ) : (
+                    <>
                       <Image
                         src={avatar}
                         alt="avatar"
                         width={300}
                         height={300}
                         className="object-cover rounded-full"
-                      /><div className="w-10 h-10 rounded-full bg-blue-900 absolute bottom-1 right-2 text-white flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                      />
+                      <div className="w-10 h-10 rounded-full bg-blue-900 absolute bottom-1 right-2 text-white flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="size-5"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
+                          />
                         </svg>
-                      </div></>
-                    )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             }
@@ -414,7 +442,6 @@ export default function EditProfile() {
               {/* Personal Information Section */}
               <ProfileSection title="Personal Information">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <Input
@@ -485,7 +512,9 @@ export default function EditProfile() {
                 )}
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <p className="text-sm text-gray-500">Bio/Challenges faced</p>
+                    <p className="text-sm text-gray-500">
+                      Bio/Challenges faced
+                    </p>
                     <button
                       onClick={handleOpenBioModal}
                       className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
@@ -533,11 +562,11 @@ export default function EditProfile() {
                 </div>
               </ProfileSection>
 
-
               {/* Education & Family Section */}
               <ProfileSection
-                title={`Education ${userType !== "international_buddy" ? "& Family" : ""
-                  }`}
+                title={`Education ${
+                  userType !== "international_buddy" ? "& Family" : ""
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
@@ -668,8 +697,8 @@ export default function EditProfile() {
       <AvatarMenu
         show={showMenu}
         onClose={() => setShowMenu(false)}
-        onCamera={() => handleGetAvatar('camera')}
-        onGallery={() => handleGetAvatar('gallery')}
+        onCamera={() => handleGetAvatar("camera")}
+        onGallery={() => handleGetAvatar("gallery")}
         onDelete={onImageDelete}
         avatar={avatar}
       />
@@ -678,10 +707,10 @@ export default function EditProfile() {
           type={mode}
           ref={avatarRef}
           onComplete={(croppedImage) => {
-            handleSaveAvatar(croppedImage)
-            setAvatar(croppedImage)
-            setMode(null)
-            setShowMenu(false)
+            handleSaveAvatar(croppedImage);
+            setAvatar(croppedImage);
+            setMode(null);
+            setShowMenu(false);
           }}
         />
       )}

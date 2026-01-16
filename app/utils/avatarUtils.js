@@ -1,14 +1,17 @@
 // src/lib/avatarUtils.js
 
-import { doc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/app/firebaseConfig'; 
-import { uploadFile } from '@/app/lib/uploadFile'; 
+import { doc, updateDoc } from "firebase/firestore";
+import { auth, db } from "@/app/firebaseConfig";
+import { uploadFile } from "@/app/lib/uploadFile";
 
-export const base64ToBlob = (base64, type = 'image/jpeg') => {
+export const base64ToBlob = (base64, type = "image/jpeg") => {
   try {
-    const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+    const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
 
-    const byteCharacters = atob(base64Data);
+    const byteCharacters =
+      typeof atob === "function"
+        ? atob(base64Data)
+        : Buffer.from(base64Data, "base64").toString("binary");
     const byteArrays = [];
 
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -17,11 +20,10 @@ export const base64ToBlob = (base64, type = 'image/jpeg') => {
 
     return new Blob([new Uint8Array(byteArrays)], { type });
   } catch (error) {
-    console.error('base64ToBlob failed:', error);
-    throw new Error('Invalid base64 string');
+    console.error("base64ToBlob failed:", error);
+    throw new Error("Invalid base64 string");
   }
 };
-
 
 export const saveAvatar = async ({
   avatar,
@@ -31,12 +33,15 @@ export const saveAvatar = async ({
   onError = () => {},
 }) => {
   if (!avatar) {
-    alert('Please select an avatar!');
+    alert("Please select an avatar!");
     return;
   }
 
   const uid = auth.currentUser?.uid;
-  if (!uid) return;
+  if (!uid) {
+    onError?.(new Error("Not authenticated"));
+    return;
+  }
 
   setLoading(true);
 
@@ -45,23 +50,34 @@ export const saveAvatar = async ({
     `profile/${uid}/profile-image`,
     () => {}, // optional progress callback
     (error) => {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       setLoading(false);
-      alert('Upload error:' + error);
+      alert(`Upload error: ${error?.message || "Unknown error"}`);
       onError(error);
     },
     async (url) => {
-      if (url) {
-        await updateDoc(doc(db, 'users', uid), { photo_uri: url });
-        setStorageUrl(url);
-        setLoading(false);
+      if (!url) return;
+      try {
+        await updateDoc(doc(db, "users", uid), { photo_uri: url });
+        setStorageUrl?.(url);
         onSuccess(url);
+      } catch (e) {
+        console.error("Firestore update error:", e);
+        onError?.(e);
+        alert(`Failed to save avatar: ${e?.message || "Unknown error"}`);
+      } finally {
+        setLoading(false);
       }
     }
   );
 };
 
-export const confirmDeleteAvatar = async ({ setConfirmOpen, setConfirmInfo }) => {
-  setConfirmInfo('Are you sure you want to delete the current profile picture?');
+export const confirmDeleteAvatar = async ({
+  setConfirmOpen,
+  setConfirmInfo,
+}) => {
+  setConfirmInfo(
+    "Are you sure you want to delete the current profile picture?"
+  );
   setConfirmOpen(true);
 };

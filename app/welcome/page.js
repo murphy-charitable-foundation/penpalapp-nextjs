@@ -42,7 +42,6 @@ export default function Welcome() {
           </Link>
         </div>
       </div>
-
     </div>
   );
 }

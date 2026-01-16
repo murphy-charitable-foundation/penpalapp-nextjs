@@ -1,65 +1,75 @@
-'use client'
-import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
-import Cropper from 'react-easy-crop'
+"use client";
+import {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import Cropper from "react-easy-crop";
 
-const AvatarCropper = forwardRef(({ type = 'gallery', onComplete }, ref) => {
-  const inputRef = useRef(null)
-  const [imageSrc, setImageSrc] = useState(null)
-  const [showCropper, setShowCropper] = useState(false)
+const AvatarCropper = forwardRef(({ type = "gallery", onComplete }, ref) => {
+  const inputRef = useRef(null);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
 
-  const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
-
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = () => {
-      setImageSrc(reader.result)
-      setShowCropper(true)
-    }
-    reader.readAsDataURL(file)
-  }
+      setImageSrc(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const onCropComplete = useCallback((_, areaPixels) => {
-    setCroppedAreaPixels(areaPixels)
-  }, [])
+    setCroppedAreaPixels(areaPixels);
+  }, []);
 
   const cropImage = useCallback(async () => {
-    if (!croppedAreaPixels || !imageSrc) return
+    if (!croppedAreaPixels || !imageSrc) return;
 
-    const image = new Image()
-    image.src = imageSrc
-    await new Promise(resolve => (image.onload = resolve))
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
 
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.error("Canvas 2D context not available");
+      return;
+    }
+    const { x, y, width, height } = croppedAreaPixels;
+    canvas.width = width;
+    canvas.height = height;
 
-    const { x, y, width, height } = croppedAreaPixels
-    canvas.width = width
-    canvas.height = height
+    ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+    const base64 = canvas.toDataURL("image/jpeg");
 
-    ctx.drawImage(image, x, y, width, height, 0, 0, width, height)
-    const base64 = canvas.toDataURL('image/jpeg')
-
-    setShowCropper(false)
-    setImageSrc(null)
-    onComplete?.(base64)
-  }, [croppedAreaPixels, imageSrc, onComplete])
+    setShowCropper(false);
+    setImageSrc(null);
+    onComplete?.(base64);
+  }, [croppedAreaPixels, imageSrc, onComplete]);
 
   useImperativeHandle(ref, () => ({
     pickPicture: () => inputRef.current?.click(),
-  }))
+  }));
 
   return (
     <>
       <input
         type="file"
         accept="image/*"
-        capture={type === 'camera' ? 'user' : undefined}
+        capture={type === "camera" ? "user" : undefined}
         ref={inputRef}
         onChange={handleFileChange}
         className="hidden"
@@ -100,8 +110,8 @@ const AvatarCropper = forwardRef(({ type = 'gallery', onComplete }, ref) => {
         </div>
       )}
     </>
-  )
-})
+  );
+});
 
-AvatarCropper.displayName = 'AvatarCropper'
-export default AvatarCropper
+AvatarCropper.displayName = "AvatarCropper";
+export default AvatarCropper;
