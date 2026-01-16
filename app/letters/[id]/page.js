@@ -696,11 +696,10 @@ export default function Page({ params }) {
         if (fetchedRecipients?.length > 0) {
           const userRefDoc = doc(db, "users", currentUser.uid);
 
-          // All messages written BY ME (excluding draft)
+          // All messages written BY ME
           const myMessagesQuery = query(
             lRef,
             where("sent_by", "==", userRefDoc),
-            where("status", "!=", "draft"),
             orderBy("created_at", "asc")
           );
       
@@ -720,6 +719,11 @@ export default function Page({ params }) {
       
           const pushDocs = (snap) => {
             snap.forEach((docSnap) => {
+              // Skip drafts on client side
+              if (docSnap.data().status === "draft") {
+                return;
+              }
+              
               const msg = {
                 id: docSnap.id,
                 ...docSnap.data(),
