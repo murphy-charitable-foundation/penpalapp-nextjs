@@ -38,6 +38,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
   const timerRef = useRef(null);
   const audioPlayerRef = useRef(null); // Used for playing the preview audio
   const sendAfterStopRef = useRef(false); // Flag if 'Send' was clicked during recording
+  const cancelNextRecordingRef = useRef(false); // True when Delete cancels an in-progress recording
 
   // --- 1. Listen for Login Status ---
   useEffect(() => {
@@ -50,8 +51,9 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
 
   // --- 2. Utility Functions ---
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const total = Math.floor(seconds);
+    const mins = Math.floor(total / 60);
+    const secs = total % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
@@ -87,6 +89,12 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
       };
 
       mediaRecorder.onstop = () => {
+        if (cancelNextRecordingRef.current) {
+          cancelNextRecordingRef.current = false;
+          stream.getTracks().forEach((track) => track.stop());
+          audioChunksRef.current = [];
+          return;
+        }
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
 
@@ -136,7 +144,10 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
 
   const handleDelete = () => {
     // Reset all states
-    if (status === "recording") stopRecording();
+    if (status === "recording") {
+      cancelNextRecordingRef.current = true;
+      stopRecording();
+    }
     if (audioUrl) URL.revokeObjectURL(audioUrl);
 
     setStatus("idle");

@@ -20,8 +20,12 @@ export default function LocalDownload() {
   const [imgContent, setImgContent] = useState("");
 
   async function handleFileChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) {
+      input.value = "";
+      return;
+    }
 
     console.log("Start compressing:", file.name);
 
@@ -40,6 +44,7 @@ export default function LocalDownload() {
 
     // cleanup
     URL.revokeObjectURL(url);
+    input.value = "";
   }
 
   const handleRequireLogin = () => {
@@ -72,11 +77,16 @@ export default function LocalDownload() {
         <AudioPlayer src={audioContent} />
       </div>
       <div>
-        <img
-          src={imgContent}
-          className="rounded-lg w-full h-auto max-h-[300px] object-cover cursor-zoom-in bg-slate-200"
-          onClick={() => window.open(imgContent, "_blank")}
-        />
+        {imgContent && (
+          <div>
+            <img
+              src={imgContent}
+              className="rounded-lg w-full h-auto max-h-[300px] object-cover cursor-zoom-in bg-slate-200"
+              onClick={() => window.open(imgContent, "_blank")}
+              alt="Uploaded preview"
+            />
+          </div>
+        )}
       </div>
       <div>
         <VideoPlayer src={videoContent} />

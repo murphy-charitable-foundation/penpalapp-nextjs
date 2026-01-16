@@ -43,18 +43,19 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     setStatus("preview"); // Open modal
   };
 
-  const handleCancel = () => {
-    setFile(null);
-    setStatus("idle");
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
   const resetState = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setFile(null);
+    setPreviewUrl(null);
     setStatus("idle");
     setProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCancel = () => {
+    resetState();
   };
 
   const handleSend = async () => {
@@ -102,8 +103,8 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
       }
 
       setStatus("uploading");
-
-      const ext = fileToUpload.name.split(".").pop() || "jpg";
+      const nameExt = fileToUpload.name?.split(".").pop();
+      const ext = (nameExt || "jpg").toLowerCase();
       const fileName = `img_${Date.now()}.${ext}`;
       const storageRef = ref(storage, `users/${user.uid}/images/${fileName}`);
 

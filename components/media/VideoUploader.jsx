@@ -52,10 +52,10 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     tempVideo.onloadedmetadata = () => {
       const duration = tempVideo.duration;
 
-      // Limit to 20 seconds
-      if (duration > 20) {
+      // Limit to 60 seconds
+      if (duration > 60) {
         alert(
-          `Video duration (${Math.round(duration)}s) exceeds the 20s limit.`
+          `Video duration (${Math.round(duration)}s) exceeds the 60s limit.`
         );
         URL.revokeObjectURL(url);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -141,7 +141,10 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           resolve(blob);
         };
 
-        mediaRecorder.onerror = (e) => reject(e);
+        mediaRecorder.onerror = (e) => {
+          URL.revokeObjectURL(videoUrl);
+          reject(e);
+        };
 
         mediaRecorder.start();
         video.play().catch(reject);
@@ -159,7 +162,10 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         };
         drawFrame();
       };
-      video.onerror = () => reject(new Error("Video load error"));
+      video.onerror = () => {
+        URL.revokeObjectURL(videoUrl); // 释放内存
+        reject(new Error("Video load error"));
+      };
     });
   };
 
@@ -238,8 +244,9 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
       );
     } catch (error) {
       console.error("Error processing video", error);
-      setStatus("idle");
+      //setStatus("idle");
       alert("Error processing video.");
+      handleCancel();
     }
   };
 
