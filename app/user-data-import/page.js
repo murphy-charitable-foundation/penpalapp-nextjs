@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, Timestamp, getDoc } from "firebase/firestore";
+import { doc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../../app/firebaseConfig";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -17,6 +17,10 @@ import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { createConnection } from "../utils/letterboxFunctions";
+import Image from "next/image";
+import logo from "../../public/murphylogo.png";
+import EditProfileImage from "../../components/edit-profile-image";
+import { uploadFile } from "../lib/uploadFile";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,10 +32,40 @@ export default function UserDataImport() {
   const [educationLevel, setEducationLevel] = useState("");
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [croppedImage, setCroppedImage] = useState(null);
+  const [croppedBlob, setCroppedBlob] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   const router = useRouter();
   const auth = getAuth();
+  const fileInputRef = useRef(null);
+  const cropperRef = useRef(null);
   usePageAnalytics("/user-data-import");
+
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setShowCropper(true);
+    }
+  };
+
+  const handleCrop = () => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      const canvas = cropperRef.current.cropper.getCroppedCanvas();
+      canvas.toBlob((blob) => {
+        setCroppedBlob(blob);
+        setCroppedImage(URL.createObjectURL(blob));
+        setShowCropper(false);
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -130,6 +164,22 @@ export default function UserDataImport() {
           throw new Error("Error linking user");
         }
 
+        // Upload profile image if available
+        if (croppedBlob) {
+          uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
+            (progress) => console.log('Upload progress:', progress),
+            (error) => {
+              logError(error, { description: "Error uploading profile image" });
+              throw error;
+            },
+            async (url) => {
+              // Update user photo_uri
+              const userRef = doc(db, "users", kidId);
+              await updateDoc(userRef, { photo_uri: url });
+            }
+          );
+        }
+
       } catch (error) {
         logError(error, {
           description: "Error creating user or linking international buddy: ",    
@@ -166,7 +216,41 @@ export default function UserDataImport() {
         content={dialogMessage}
       ></Dialog>
       <PageContainer maxWidth="lg">
-        <PageHeader title="Import User Data" />
+        <PageHeader title="Import User Data" image={false}/>
+
+        <div className="flex justify-center">
+          {croppedImage ? (
+            <img src={croppedImage} alt="Profile" width={200} className="rounded-full cursor-pointer" onClick={handleImageClick} />
+          ) : (
+            <Image src={logo} alt="Foundation Logo" width={200} margin={0} className="cursor-pointer" onClick={handleImageClick} />
+          )}
+        </div>
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
+        {showCropper && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
+            <div
+              className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
+              onClick={() => handleCrop()}
+            />
+      
+            <div
+              className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
+              
+              <div className="flex justify-center">
+                <EditProfileImage
+                  image={URL.createObjectURL(selectedFile)}
+                  newProfileImage={null}
+                  previewURL={null}
+                  handleDrop={() => {}}
+                  handleCrop={() => {}}
+                  cropperRef={cropperRef}
+                  onDone={handleCrop}
+                />
+              </div>
+      
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6  p-6 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

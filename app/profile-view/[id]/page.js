@@ -74,7 +74,7 @@ export default function Page({ params }) {
           setFirstName(userData.first_name || "");
           setLastName(userData.last_name || "");
           setEmail(userData.email || "");
-          setBirthday(userData.birthday || "");
+          setBirthday(userData.birthday ? new Date(userData.birthday.seconds * 1000 + userData.birthday.nanoseconds / 1000000).toLocaleDateString() : "");
           setCountry(userData.country || "");
           setVillage(userData.village || "");
           setBio(userData.bio || "");
