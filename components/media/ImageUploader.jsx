@@ -3,7 +3,7 @@ import { Loader2, Image as ImageIcon, X, Send } from "lucide-react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 
-import Compress from "compress.js";
+import imageCompression from "browser-image-compression";
 
 import { storage, auth } from "../../app/firebaseConfig";
 
@@ -38,6 +38,8 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     const f = e.target.files?.[0];
     if (!f) return;
 
+    e.target.value = "";
+
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
     setStatus("preview"); // Open modal
@@ -68,34 +70,24 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
 
       if (file.size > 200 * 1024) {
         try {
-          const compress = new Compress();
-          const results = await compress.compress([file], {
-            size: 2,
-            quality: 0.8,
-            maxWidth: 1920,
-            maxHeight: 1920,
-            resize: true,
-            rotate: false,
-          });
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+            fileType: "image/jpeg",
+            initialQuality: 0.8,
+          };
 
-          if (results && results.length > 0) {
-            const img = results[0];
-            const base64str = img.data;
-            const imgExt = img.ext;
-            const compressedFile = Compress.convertBase64ToFile(
-              base64str,
-              imgExt
-            );
+          const compressedFile = await imageCompression(file, options);
 
-            console.log(
-              `Compression: ${(file.size / 1024).toFixed(2)}KB -> ${(
-                compressedFile.size / 1024
-              ).toFixed(2)}KB`
-            );
+          console.log(
+            `Compression: ${(file.size / 1024).toFixed(2)}KB -> ${(
+              compressedFile.size / 1024
+            ).toFixed(2)}KB`
+          );
 
-            if (compressedFile.size < file.size) {
-              fileToUpload = compressedFile;
-            }
+          if (compressedFile.size < file.size) {
+            fileToUpload = compressedFile;
           }
         } catch (compressErr) {
           console.error("Compression failed, using original", compressErr);
@@ -103,7 +95,9 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
       }
 
       setStatus("uploading");
+
       const nameExt = fileToUpload.name?.split(".").pop();
+
       const ext = (nameExt || "jpg").toLowerCase();
       const fileName = `img_${Date.now()}.${ext}`;
       const storageRef = ref(storage, `users/${user.uid}/images/${fileName}`);
