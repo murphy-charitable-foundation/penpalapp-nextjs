@@ -20,6 +20,8 @@ export default function EditProfileUserImage() {
   const [storageUrl, setStorageUrl] = useState(null);
   const [user, setUser] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -77,12 +79,16 @@ export default function EditProfileUserImage() {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
         setCroppedImage(blob);
+
+        setHasUnsavedChanges(true); // Mark that there are unsaved changes
+
       });
     }
   };
 
   const handleDrop = (acceptedFiles) => {
     setImage(URL.createObjectURL(acceptedFiles[0]));
+    setHasUnsavedChanges(true); // Mark that there are unsaved changes after dropping a new image
   };
 
   const saveImage = async () => {
@@ -107,6 +113,9 @@ export default function EditProfileUserImage() {
         console.log("Image Url:" + url);
         if (url) {
           await updateDoc(doc(db, "users", uid), { photo_uri: url });
+
+          setHasUnsavedChanges(false); // Reset unsaved changes flag because changes are saved
+
           router.push("/profile");
         }
       }
@@ -123,8 +132,22 @@ export default function EditProfileUserImage() {
           <div className="max-w-lg mx-auto p-6">
             <div className="flex flex-col justify-between items-center">
               <div className="block">
-                <BackButton />
+                <div
+                  onClickCapture={(e) => {
+                    if (hasUnsavedChanges) {
+                      const confirmLeave = window.confirm(
+                        "You have unsaved changes. Are you sure you want to leave?"
+                      );
 
+                      if (!confirmLeave) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }
+                  }}
+                >
+                  <BackButton />
+                </div>
                 <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
                   Edit image
                 </h1>

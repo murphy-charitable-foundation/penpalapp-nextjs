@@ -61,6 +61,8 @@ export default function EditProfile() {
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [userType, setUserType] = useState("international_buddy");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
 
   // Modal state
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
@@ -103,6 +105,55 @@ export default function EditProfile() {
     };
     fetchUserData();
   }, [auth.currentUser]);
+
+
+  useEffect(() => {
+  const originalPush = router.push;
+  const originalBack = router.back;
+
+  router.push = (...args) => {
+    if (
+      hasUnsavedChanges &&
+      !window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      )
+    ) {
+      return;
+    }
+    originalPush(...args);
+  };
+
+  router.back = () => {
+    if (
+      hasUnsavedChanges &&
+      !window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      )
+    ) {
+      return;
+    }
+    originalBack();
+  };
+
+  return () => {
+    router.push = originalPush;
+    router.back = originalBack;
+  };
+}, [hasUnsavedChanges, router]);
+
+
+  useEffect(() => {
+  const handleBeforeUnload = (e) => {
+    if (!hasUnsavedChanges) return;
+    e.preventDefault();
+    e.returnValue = ""; // required for Chrome
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () =>
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+}, [hasUnsavedChanges]);
+
 
   // Save profile data to Firestore
   const saveProfileData = async () => {
@@ -209,7 +260,10 @@ export default function EditProfile() {
       </p>
       <textarea
         value={tempBio}
-        onChange={(e) => setTempBio(e.target.value)}
+        onChange={(e) => {
+          setTempBio(e.target.value);
+          setHasUnsavedChanges(true);
+        }}
         className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
         placeholder="Write about yourself or challenges you've faced..."
         maxLength={200}
@@ -295,7 +349,10 @@ export default function EditProfile() {
                       id="firstName"
                       name="firstName"
                       value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
                       label="First name"
                       borderColor="border-gray-300"
                       focusBorderColor="focus:border-green-800"
@@ -312,7 +369,10 @@ export default function EditProfile() {
                       id="lastName"
                       name="lastName"
                       value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
                       label="Last name"
                       borderColor="border-gray-300"
                       focusBorderColor="focus:border-green-800"
@@ -329,7 +389,10 @@ export default function EditProfile() {
                     id="country"
                     name="country"
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
                     label="Country"
                     placeholder="Ex: Country"
                     borderColor="border-gray-300"
@@ -346,7 +409,10 @@ export default function EditProfile() {
                       id="village"
                       name="village"
                       value={village}
-                      onChange={(e) => setVillage(e.target.value)}
+                      onChange={(e) => {
+                        setVillage(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
                       label="Village"
                       placeholder="Ex: Village"
                       borderColor="border-gray-300"
@@ -396,7 +462,10 @@ export default function EditProfile() {
                     id="birthday"
                     name="birthday"
                     value={birthday}
-                    onChange={(e) => setBirthday(e.target.value)}
+                    onChange={(e) => {
+                      setBirthday(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
                     label="Birthday"
                     borderColor="border-gray-300"
                     focusBorderColor="focus:border-green-800"
@@ -419,6 +488,7 @@ export default function EditProfile() {
                     options={educationOptions}
                     valueChange={(option) => {
                       setEducationLevel(option);
+                      setHasUnsavedChanges(true);
                     }}
                     currentValue={educationLevel}
                     text="Education Level"
@@ -433,6 +503,7 @@ export default function EditProfile() {
                       options={guardianOptions}
                       valueChange={(option) => {
                         setGuardian(option);
+                        setHasUnsavedChanges(true);
                       }}
                       currentValue={guardian}
                       text="Guardian"
@@ -449,6 +520,7 @@ export default function EditProfile() {
                       options={orphanOptions}
                       valueChange={(option) => {
                         setIsOrphan(option);
+                        setHasUnsavedChanges(true);
                       }}
                       currentValue={isOrphan}
                       text="Orphan Status"
@@ -467,7 +539,10 @@ export default function EditProfile() {
                     id="dreamjob"
                     name="dreamjob"
                     value={dreamJob}
-                    onChange={(e) => setDreamJob(e.target.value)}
+                    onChange={(e) => {
+                      setDreamJob(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
                     label="Dream job"
                     placeholder="Airplane pilot"
                     borderColor="border-gray-300"
@@ -484,7 +559,10 @@ export default function EditProfile() {
                     id="hobby"
                     name="hobby"
                     value={hobby}
-                    onChange={(e) => setHobby(e.target.value)}
+                    onChange={(e) => {
+                      setHobby(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
                     label="Hobby"
                     placeholder="Dancing"
                     borderColor="border-gray-300"
@@ -503,7 +581,10 @@ export default function EditProfile() {
                   id="favoriteColor"
                   name="favoriteColor"
                   value={favoriteColor}
-                  onChange={(e) => setFavoriteColor(e.target.value)}
+                  onChange={(e) => {
+                    setFavoriteColor(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
                   label="Favorite Color"
                   placeholder="Ex: Blue"
                   borderColor="border-gray-300"
