@@ -74,6 +74,8 @@ export default function EditProfile() {
   const router = useRouter();
   usePageAnalytics("/profile");
 
+  
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (auth.currentUser) {
@@ -106,40 +108,6 @@ export default function EditProfile() {
     fetchUserData();
   }, [auth.currentUser]);
 
-
-  useEffect(() => {
-  const originalPush = router.push;
-  const originalBack = router.back;
-
-  router.push = (...args) => {
-    if (
-      hasUnsavedChanges &&
-      !window.confirm(
-        "You have unsaved changes. Are you sure you want to leave?"
-      )
-    ) {
-      return;
-    }
-    originalPush(...args);
-  };
-
-  router.back = () => {
-    if (
-      hasUnsavedChanges &&
-      !window.confirm(
-        "You have unsaved changes. Are you sure you want to leave?"
-      )
-    ) {
-      return;
-    }
-    originalBack();
-  };
-
-  return () => {
-    router.push = originalPush;
-    router.back = originalBack;
-  };
-}, [hasUnsavedChanges, router]);
 
 
   useEffect(() => {
@@ -191,6 +159,7 @@ export default function EditProfile() {
           throw new Error("Form validation error(s)");
         }
         await updateDoc(userProfileRef, userProfile);
+        setHasUnsavedChanges(false);
         setIsSaved(true);
         setIsDialogOpen(true);
         setDialogTitle("Congratulations!");
@@ -299,14 +268,39 @@ export default function EditProfile() {
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => {
-          setIsDialogOpen(false);
-          if (isSaved) router.push("/letterhome");
-        }}
+        setIsDialogOpen(false);
+
+        if (
+          isSaved &&
+          (!hasUnsavedChanges ||
+            window.confirm(
+              "You have unsaved changes. Are you sure you want to leave?"
+            ))
+        ) {
+          router.push("/letterhome");
+        }
+      }}
         title={dialogTitle}
         content={dialogMessage}
       ></Dialog>
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <PageHeader title="Profile" image={false} heading={false} />
+      <PageHeader
+          title="Profile"
+          image={false}
+          heading={false}
+          onBack={() => {
+            if (
+              hasUnsavedChanges &&
+              !window.confirm(
+                "You have unsaved changes. Are you sure you want to leave?"
+              )
+            ) {
+              return false; // block navigation
+            }
+            return true; // allow navigation
+          }}
+        />
+      
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
           {/* Bio Modal */}
           <Dialog
@@ -329,7 +323,15 @@ export default function EditProfile() {
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
-                onClick={() => router.push("/edit-profile-user-image")}
+                onClick={() => {
+                  if (
+                    hasUnsavedChanges &&
+                    !window.confirm("You have unsaved changes. Are you sure you want to leave?")
+                  ) {
+                    return;
+                  }
+                  router.push("/edit-profile-user-image");
+                }}
                 className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
               >
                 Edit Photo

@@ -10,11 +10,12 @@ export function PageHeader({
   titleColor = "text-gray-800",
   image = true,
   heading = true,
+  onBack,
 }) {
   return (
     <>
       <div className="flex flex-row items-center justify-between mb-4">
-        <BackButton />
+        <BackButton onBack={onBack} />
         {heading ? (
           <h2
             className={`flex-grow text-center text-2xl font-bold ${titleColor}`}
