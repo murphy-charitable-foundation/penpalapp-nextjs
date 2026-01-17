@@ -55,13 +55,20 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
+      const dataDoc = draftDoc.data();
+
+      // Helper variable to safely convert Firestore timestamps to JS dates
+      const safeDate = (timestamp) => timestamp?.toDate?.() || timestamp;
+
       const draftData = {
         id: draftDoc.id,
-        ...draftDoc.data(),
-        created_at:
-          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
-        updated_at:
-          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+        ...dataDoc,
+        created_at: safeDate(dataDoc.created_at),
+        updated_at: safeDate(dataDoc.updated_at),
+
+        // If the new field exists, use it, 
+        // if old doc, use updated_at so UI don't crash
+        drafted_at: safeDate(dataDoc.drafted_at) || safeDate(dataDoc.updated_at)
       };
 
       return draftData;
@@ -73,6 +80,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         content: "",
         status: "draft",
         created_at: new Date(),
+        drafted_at: new Date(),
         updated_at: new Date(),
         deleted: null,
         unread: true,
@@ -176,6 +184,7 @@ export default function Page({ params }) {
           sent_by: letterUserRef,
           content: trimmedContent,
           status: "draft",
+          drafted_at: currentTime,
           updated_at: currentTime,
           deleted: null,
           unread: true,
@@ -323,6 +332,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
+        drafted_at: currentTime,
         updated_at: currentTime,
       };
 
@@ -353,6 +363,7 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
+              drafted_at: currentTime,
               updated_at: currentTime,
             };
           }
@@ -412,6 +423,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
+        drafted_at: currentTime,
         updated_at: currentTime,
         deleted: null,
         unread: true,
@@ -719,11 +731,20 @@ export default function Page({ params }) {
       
           const pushDocs = (snap) => {
             snap.forEach((docSnap) => {
+              const snapData = docSnap.data();
+
+              // Helper to convert safely timestamp to Date
+              const safeDate = (ts) => ts?.toDate?.() || ts;
+
               const msg = {
                 id: docSnap.id,
-                ...docSnap.data(),
-                created_at: docSnap.data().created_at?.toDate(),
-                updated_at: docSnap.data().updated_at?.toDate(),
+                ...snapData,
+                created_at: safeDate(snapData.created_at),
+                updated_at: safeDate(snapData.updated_at),
+
+                // Read the new field if it exists;
+                // Fallback to old field (updated_at) if does not exist
+                drafted_at: safeDate(snapData.drafted_at) || safeDate(snapData.updated_at)
               };
       
               // Normalize Firestore DocumentReference → { id }
@@ -743,8 +764,18 @@ export default function Page({ params }) {
           // remove duplicates
           const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
       
+          // filter out the current draft from the history list
+          // if editing a current draft, do not show it on message history list
+          const filteredUnique = unique.filter(msg => {
+            // if there is earlier drafts (draftData), exclude it from the list
+            if (draftData && msg.id === draftData.id) {
+              return false;
+            }
+            return true;
+          });
           // sort chronologically
-          const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
+          const sortedMessages = filteredUnique.sort((a,b) => a.created_at - b.created_at);
+
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
               if (message.sent_by?.id !== currentUser.uid) {

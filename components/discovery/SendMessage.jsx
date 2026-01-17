@@ -90,6 +90,7 @@ export default function SendMessage({ kid }) {
               sent_by: userRef,
               content: "Please complete your first letter here...",
               status: "draft",
+              drafted_at: new Date(),
               updated_at: new Date(),
               deleted: null
             });

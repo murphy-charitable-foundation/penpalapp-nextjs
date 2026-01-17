@@ -239,14 +239,21 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
         allLetters.push({ id: doc?.id, ...doc?.data() });
     });
 
+  // Helper function for checking the dates
+  const getSortDate = (doc) => {
+    // Use the new field if it exists; otherwise the legacy field (updated_at)
+    return doc?.drafted_at?.toDate?.() || doc?.updated_at?.toDate?.() || new Date(0);
+  }
+
   if (allLetters.length === 0) return null;
   else if (allLetters.length === 1) return allLetters[0];
-  else if (
-    allLetters[0]?.updated_at?.toDate?.() >
-    allLetters[1]?.updated_at?.toDate?.()
-  )
-    return allLetters[0];
-  else return allLetters[1];
+  else {
+    // Utilize helper function
+    const date1 = getSortDate(allLetters[0]);
+    const date2 = getSortDate(allLetters[1]);
+
+    return date1 > date2 ? allLetters[0]: allLetters[1];
+  }
 };
 
 export const fetchRecipients = async (id) => {
