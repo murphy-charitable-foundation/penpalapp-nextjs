@@ -88,16 +88,22 @@ export default function EditProfileUserImage() {
   const file = acceptedFiles[0];
   if (!file) return;
 
-  const url = URL.createObjectURL(file);
-
-  // clean up previous preview URL
   if (objectUrl) {
     URL.revokeObjectURL(objectUrl);
   }
 
+  const url = URL.createObjectURL(file);
   setObjectUrl(url);
   setImage(url);
 };
+
+useEffect(() => {
+  return () => {
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+}, [objectUrl]);
 
 
   const saveImage = async () => {
