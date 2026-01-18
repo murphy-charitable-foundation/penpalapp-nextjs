@@ -19,27 +19,11 @@ export async function POST() {
     const letterboxSnapshot = await db.collection("letterbox").get();
     const letterBoxesPromises = letterboxSnapshot.docs.map(async (doc) => {
       const docData = doc.data();
-      const latestLetterSnapshot = await doc.ref
-        .collection("letters")
-        .orderBy("created_at", "desc")
-        .limit(1)
-        .get();
-
-      let latestLetter = null;
-      if (!latestLetterSnapshot.empty) {
-        const letterDoc = latestLetterSnapshot.docs[0];
-        const letterData = letterDoc.data();
-        latestLetter = {
-          id: letterDoc.id,
-          created_at: letterData.created_at?.toDate?.(),
-          sent_by: letterData.sent_by?.id,
-        };
-      }
 
       return {
         id: doc.id,
         members: docData.members.map((member) => member.id),
-        latestLetter,
+        letterbox_updated_at: docData.updated_at?.toDate?.(),
         user_reminded_at: docData.user_reminded_at?.toDate?.(),
         admin_reminded_at: docData.admin_reminded_at?.toDate?.(),
       };
@@ -49,16 +33,16 @@ export async function POST() {
     const emailPromises = [];
 
     for (const letterBox of letterBoxes) {
-      const latestMessageTimestamp = letterBox?.latestLetter?.created_at;
+      const letterBoxUpdatedAtTimestamp = letterBox?.letterbox_updated_at;
       const latestAdminDormantLetterboxTimestamp = letterBox?.admin_reminded_at;
       const latestUserDormantLetterboxTimestamp = letterBox?.user_reminded_at;
       const now = new Date();
       let adminDiffDays = 0;
       let userDiffDays = 0;
 
-      if (latestMessageTimestamp) {
-        const latestMessageTimestampDate = new Date(latestMessageTimestamp);
-        const diffMs = now - latestMessageTimestampDate;
+      if (letterBoxUpdatedAtTimestamp) {
+        const letterBoxUpdatedAtTimestampDate = new Date(letterBoxUpdatedAtTimestamp);
+        const diffMs = now - letterBoxUpdatedAtTimestampDate;
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         adminDiffDays = diffDays;
         userDiffDays = diffDays;
