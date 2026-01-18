@@ -52,6 +52,8 @@ export default function UserDataImport() {
     if (file) {
       setSelectedFile(file);
       setShowCropper(true);
+      // Reset the input value to allow selecting the same file again
+      fileInputRef.current.value = '';
     }
   };
 
@@ -188,6 +190,8 @@ export default function UserDataImport() {
       }
 
       // Reset form
+      setCroppedBlob(null);
+      setCroppedImage(null);
       e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
