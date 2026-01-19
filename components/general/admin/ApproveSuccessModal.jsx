@@ -1,14 +1,19 @@
 "use client";
+
 import Image from "next/image";
+import Button from "../../general/Button";
 
-export default function ApproveSuccessModal({ onClose, onRevert }) {
+export default function ApproveSuccessView({
+  onClose,
+  onRevert,
+}) {
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/30">
-      <div className="w-full max-w-lg mx-auto bg-white rounded-lg shadow-xl p-8 text-center">
+    <div className="w-full flex justify-center py-16">
+      <div className="w-full max-w-lg mx-auto text-center">
 
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-6">
           <Image
-            src="/lettericon.png"
+            src="/sent-letter.png"
             alt="Letter approved"
             width={104}
             height={104}
@@ -19,22 +24,25 @@ export default function ApproveSuccessModal({ onClose, onRevert }) {
           Letter Approved
         </h2>
 
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 mb-10">
           The letter has been approved and sent.
         </p>
 
-        <button
-          onClick={onClose}
-          className="bg-primary text-white px-6 py-3 rounded-full w-full max-w-xs mx-auto text-lg"
-        >
-          Back to moderation
-        </button>
-        <button
-          onClick={onRevert}
-          className="mt-4 text-sm text-gray-500 underline"
-        >
-          Revert to pending review
-        </button>
+        <div className="flex flex-col items-center gap-4">
+          <Button
+            btnText="Back to letters"
+            color="green"
+            onClick={onClose}
+          />
+
+          <Button
+            btnText="Revert to pending review"
+            color="transparent"
+            size="small"
+            onClick={onRevert}
+          />
+        </div>
+
       </div>
     </div>
   );

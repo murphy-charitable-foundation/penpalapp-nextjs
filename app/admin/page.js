@@ -20,8 +20,6 @@ import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
 import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
-import RejectSuccessModal from "../../components/general/admin/RejectSuccessModal";
-import ApproveSuccessModal from "../../components/general/admin/ApproveSuccessModal";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
@@ -40,8 +38,6 @@ export default function Admin() {
     const [country, setCountry] = useState("");
     const [letters, setLetters] = useState([]);
     const [showReject, setShowReject] = useState(false); // For reject dialog
-    const [showRejectSuccess, setShowRejectSuccess] = useState(false);
-    const [showApproveSuccess, setShowApproveSuccess] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState("");
@@ -228,8 +224,6 @@ export default function Admin() {
       rejection_feedback: null,
       updated_at: null, // might change to serverTimestamp() if preferred
     });
-    setShowApproveSuccess(false);
-    setShowRejectSuccess(false);
     setSelectedLetter(null);
 
   };
@@ -263,73 +257,51 @@ export default function Admin() {
                         Showing {documents.length} {selectedStatus.replace("_", " ")} letters
                       </div>
             
-                    <main className="p-6">
-                      <section className="mt-8">
-                        {!isLoading ? (
-                          <ConversationList
-                            conversations={documents}
-                            isAdmin
-                            onSelectConversation={(conversation) => {
-                              setSelectedLetter(conversation);
-                              setShowReview(true);
-                            }}
-                          />
-                        ) : (
-                          <LetterHomeSkeleton />
-                        )}
-                         {showReview && selectedLetter && (
-                          <AdminLetterReview
-                            letter={selectedLetter}
-                            onClose={() => {
-                              setShowReview(false);
-                              setSelectedLetter(null);
-                            }}
-                            onApprove={() => {
-                              console.log("approve", selectedLetter.id);
-                              setShowReview(false);
-                              setShowApproveSuccess(true);
-                            }}
-                            onReject={() => {
-                            setShowReview(false);
-                            setShowReject(true);
-                          }} 
-                          />
-                        
-                        )}
-                        {showApproveSuccess && selectedLetter && (
-                        <ApproveSuccessModal
-                          onRevert={() => revertToPending(selectedLetter)}
-                          onClose={() => {
-                            setShowApproveSuccess(false);
-                            setSelectedLetter(null);
-                          }}
-                        />
-                      )}
-                      {showRejectSuccess && selectedLetter && (
-                        <RejectSuccessModal
-                          onRevert={() => revertToPending(selectedLetter)}  
-                          onClose={() => {
-                            setShowRejectSuccess(false);
-                            setSelectedLetter(null);
-                          }}
-                        />
-                      )}
+                  <main className="p-6">
+                  <section className="mt-8">
+                    {!isLoading ? (
+                      <ConversationList
+                        conversations={documents}
+                        isAdmin
+                        onSelectConversation={(conversation) => {
+                          setSelectedLetter(conversation);
+                          setShowReview(true);
+                        }}
+                      />
+                    ) : (
+                      <LetterHomeSkeleton />
+                    )}
 
-                      {showReject && selectedLetter && (
-                          <AdminRejectModal
-                            letter={selectedLetter}
-                            onClose={() => {
-                              setShowReject(false);
-                              setSelectedLetter(null);
-                            }}
-                            onSubmit={(reason, feedback) => {
-                              console.log("REJECT:", selectedLetter.id, reason, feedback);
-                              setShowReject(false);
-                              setShowRejectSuccess(true);
-                            }}
-                          />
-                        )}
-                     </section>
+                  {showReview && selectedLetter && (
+                    <AdminLetterReview
+                      letter={selectedLetter}
+                      onClose={() => {
+                        setShowReview(false);
+                        setSelectedLetter(null);
+                      }}
+                      onApprove={async () => {
+                        const letterRef = doc(
+                          db,
+                          "letterboxes",
+                          selectedLetter.letterboxId,
+                          "letters",
+                          selectedLetter.id
+                        );
+
+                        await updateDoc(letterRef, {
+                          status: "approved",
+                          moderator_id: userId,
+                          updated_at: new Date(),
+                        });
+                      }}
+                      onReject={() => {
+                        setShowReject(true); // open reject modal
+                      }}
+                    />
+                  )}
+
+                  </section>
+
                   </main>
 
                   {hasMore === true && (
