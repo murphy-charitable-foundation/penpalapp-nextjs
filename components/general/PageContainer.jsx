@@ -11,7 +11,7 @@ export function PageContainer({
   className = "",
 }) {
   return (
-    <div className="w-full flex justify-center py-2">
+    <div className="w-full flex justify-center">
       <div className={`w-full ${WIDTHS[width]}`}>
         <div
           className={`
