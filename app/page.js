@@ -82,6 +82,9 @@ return (
     {/* BUTTONS */}
     <div className="text-center w-full pt-20 pb-10 px-10">
       <div className="mx-auto max-w-sm space-y-5">
+
+        {/*TODO: Button is inactive on first app load but works after a page refresh.
+        Likely related to initial state hydration or lifecycle timing.*/}
         <Button
           btnText="Log in"
           color="green"

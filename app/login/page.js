@@ -119,7 +119,7 @@ return (
                   : ""
               }
             />
-
+            {/* TODO: This link doesn't respond. A spinner is shown, but the app redirects to the login page. */}
             <Link
               href="/reset-password"
               className="block text-sm text-center font-medium text-blue-600 hover:text-blue-500"

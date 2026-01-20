@@ -988,7 +988,7 @@ return (
                             onClick={(e) => {
                               e.stopPropagation();
 
-                              setReportSender(message.sent_by.id);
+                              setReportSender(message.sent_by?.id);
                               setReportContent(message.content);
                               setShowReportPopup(true);
                               logButtonEvent(
