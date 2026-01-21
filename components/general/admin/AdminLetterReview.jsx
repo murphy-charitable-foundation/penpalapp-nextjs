@@ -3,20 +3,36 @@
 import { useState } from "react";
 import Image from "next/image";
 import Button from "../../general/Button";
-import { ChevronLeft, CheckCircle, MailX } from "lucide-react";
+import {
+  ChevronLeft,
+  AlertTriangle,
+} from "lucide-react";
 
 export default function AdminLetterReview({
   letter,
   onApprove,
-  onReject,        // opens reject flow (parent)
-  onRejectSuccess, // parent calls this AFTER rejection is saved
+  onReject,   // opens AdminRejectModal (parent)
+  onRevert,   // clears review status
   onClose,
 }) {
-  const [view, setView] = useState("review");
-  // "review" | "approved" | "rejected"
   const [isExiting, setIsExiting] = useState(false);
 
   if (!letter) return null;
+
+  // Normalize status
+  const status =
+    letter.status === "sent" || letter.status === "approved"
+      ? "approved"
+      : letter.status === "rejected"
+      ? "rejected"
+      : "pending_review";
+
+  const headerColor =
+    status === "approved"
+      ? "bg-green-600"
+      : status === "rejected"
+      ? "bg-red-600"
+      : "bg-primary";
 
   const sentAt = letter.lastMessageDate
     ? new Date(letter.lastMessageDate.seconds * 1000).toLocaleTimeString([], {
@@ -38,104 +54,114 @@ export default function AdminLetterReview({
         ${isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"}
       `}
     >
-      <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl">
+      <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl overflow-hidden">
 
         {/* HEADER */}
-        <div className="flex items-center justify-between px-4 py-3 bg-primary text-white">
+        <div className={`flex items-center px-4 py-3 text-white ${headerColor}`}>
           <button
             onClick={exitAndClose}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 transition"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <h2 className="text-lg font-semibold">
-            {view === "review" ? letter.name : "Status"}
+          <h2 className="text-lg font-semibold mx-auto">
+            {letter.name}
           </h2>
-          <div className="w-6" />
+          <div className="w-9" />
         </div>
 
-        {/* REVIEW VIEW */}
-        {view === "review" && (
-          <>
-            <div className="flex-1 overflow-y-auto px-8 py-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={letter.profileImage || "/usericon.png"}
-                    alt="sender"
-                    width={36}
-                    height={36}
-                    className="rounded-full object-cover"
-                  />
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {letter.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      To {letter.recipientName}
-                    </div>
-                  </div>
+        {/* LETTER CONTENT — VISIBLE */}
+        <div className="flex-1 overflow-y-auto px-8 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Image
+                src={letter.profileImage || "/usericon.png"}
+                alt="sender"
+                width={36}
+                height={36}
+                className="rounded-full"
+              />
+              <div>
+                <div className="font-semibold text-gray-900">
+                  {letter.name}
                 </div>
-                <div className="text-sm text-gray-500">{sentAt}</div>
+                <div className="text-sm text-gray-500">
+                  To {letter.recipientName}
+                </div>
               </div>
+            </div>
+            <div className="text-sm text-gray-500">{sentAt}</div>
+          </div>
 
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {letter.lastMessage}
-              </p>
+          <p className="text-gray-700 whitespace-pre-wrap">
+            {letter.lastMessage}
+          </p>
+        </div>
+
+        {/* REJECTED STATUS BANNER */}
+        {status === "rejected" && (
+          <div className="relative mx-6 mb-4 rounded-lg bg-red-50 p-4">
+            <AlertTriangle className="absolute top-3 right-3 h-5 w-5 text-red-500" />
+
+            <div className="flex gap-3">
+              <div>
+                <h4 className="font-semibold text-red-700">
+                  Your letter was disapproved.
+                </h4>
+
+                {letter.rejection_reason && (
+                  <p className="text-sm text-red-700 mt-1">
+                    {letter.rejection_reason}
+                  </p>
+                )}
+
+                {letter.rejection_feedback && (
+                  <p className="text-sm text-red-700 mt-1">
+                    {letter.rejection_feedback}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div className="px-6 py-4 border-t flex justify-center gap-4">
+            <div className="flex justify-center gap-3 mt-4">
               <Button
-                btnText="Approve"
+                btnText="Clear the review status"
+                color="blue"
+                onClick={() => onRevert(letter)}
+              />
+              <Button
+                btnText="Edit"
                 color="green"
-                onClick={async () => {
-                  await onApprove();
-                  setView("approved");
-                }}
-              />
-              <Button
-                btnText="Reject"
-                color="red"
-                onClick={onReject} // parent opens AdminRejectModal
+                className="bg-white text-gray-900 border border-gray-400"
+                onClick={onReject}
               />
             </div>
-          </>
+          </div>
         )}
 
-        {/* APPROVED SUCCESS VIEW */}
-        {view === "approved" && (
-          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-            <CheckCircle className="w-14 h-14 text-green-600 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Letter Approved
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              The letter has been approved and sent.
-            </p>
-
+        {/* APPROVED — CLEAR ONLY */}
+        {status === "approved" && (
+          <div className="mx-6 mb-4 flex justify-center">
             <Button
-              btnText="Go to letters"
-              className="mt-6"
-              onClick={exitAndClose}
+              btnText="Clear the review status"
+              color="blue"
+              onClick={() => onRevert(letter)}
             />
           </div>
         )}
 
-        {/* REJECTED SUCCESS VIEW */}
-        {view === "rejected" && (
-          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-            <MailX className="w-14 h-14 text-red-600 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Rejection Feedback Sent
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              The user has received your feedback.
-            </p>
-
+        {/* ACTIONS — ONLY FOR PENDING REVIEW */}
+        {status === "pending_review" && (
+          <div className="px-6 py-4 border-t flex justify-center gap-4">
             <Button
-              btnText="Go to letters"
-              className="mt-6"
-              onClick={exitAndClose}
+              btnText="Approve"
+              color="green"
+              onClick={onApprove}
+            />
+            <Button
+              btnText="Reject"
+              color="red"
+              onClick={onReject}
             />
           </div>
         )}

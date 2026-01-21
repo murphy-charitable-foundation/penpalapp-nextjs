@@ -13,7 +13,6 @@ import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
 import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
@@ -37,7 +36,6 @@ export default function Admin() {
     const [userType, setUserType] = useState("");
     const [country, setCountry] = useState("");
     const [letters, setLetters] = useState([]);
-    const [showReject, setShowReject] = useState(false); // For reject dialog
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [error, setError] = useState("");
@@ -52,6 +50,7 @@ export default function Admin() {
     const [activeFilter, setActiveFilter] = useState(false);
     const [selectedLetter, setSelectedLetter] = useState(null);
     const [showReview, setShowReview] = useState(false);
+    const [showReject, setShowReject] = useState(false); // New state for reject modal
     const router = useRouter();
 
     useEffect(() => {
@@ -208,25 +207,31 @@ export default function Admin() {
     }
     
   const revertToPending = async (letter) => {
-    if(!letter) return;
+  if (!letter) return;
 
-    const letterRef= doc(
-      db,
-      "letterboxes",
-      letter.letterboxId,
-      "letters",
-      letter.id
-    );
-    await updateDoc(letterRef, {
-      status: "pending_review",
-      moderator_id: null,
-      rejection_reason: null,
-      rejection_feedback: null,
-      updated_at: null, // might change to serverTimestamp() if preferred
-    });
-    setSelectedLetter(null);
+  const letterRef = doc(
+    db,
+    "letterboxes",
+    letter.letterboxId,
+    "letters",
+    letter.id
+  );
 
-  };
+  await updateDoc(letterRef, {
+    status: "pending_review",
+    moderator_id: null,
+    rejection_reason: null,
+    rejection_feedback: null,
+    updated_at: null,
+  });
+
+  setSelectedLetter((prev) => ({
+    ...prev,
+    status: "pending_review",
+    rejection_feedback: null,
+  }));
+};
+
     return (
         <PageBackground>
               <PageContainer maxWidth="lg">
@@ -264,9 +269,17 @@ export default function Admin() {
                         conversations={documents}
                         isAdmin
                         onSelectConversation={(conversation) => {
-                          setSelectedLetter(conversation);
-                          setShowReview(true);
-                        }}
+                        setSelectedLetter({
+                          ...conversation,
+                          initialView:
+                            conversation.status === "approved"
+                              ? "approved"
+                              : conversation.status === "rejected"
+                              ? "rejected"
+                              : "review",
+                        });
+                        setShowReview(true);
+                      }}
                       />
                     ) : (
                       <LetterHomeSkeleton />
@@ -287,18 +300,50 @@ export default function Admin() {
                           "letters",
                           selectedLetter.id
                         );
-
                         await updateDoc(letterRef, {
                           status: "approved",
                           moderator_id: userId,
                           updated_at: new Date(),
                         });
+                         setSelectedLetter((prev) => ({
+                          ...prev,
+                          status: "approved",
+                        }));
+                        setSelectedStatus("approved");
                       }}
-                      onReject={() => {
-                        setShowReject(true); // open reject modal
-                      }}
+                      onReject={()=> setShowReject(true)}
+                      onRevert={revertToPending}
                     />
                   )}
+
+          {showReject && selectedLetter && (
+            <AdminRejectModal
+              letter={selectedLetter}
+              onClose={() => setShowReject(false)}
+              onSubmit={async (reason, feedback) => {
+                const letterRef = doc(
+                  db,
+                  "letterboxes",
+                  selectedLetter.letterboxId,
+                  "letters",
+                  selectedLetter.id
+                );
+
+                await updateDoc(letterRef, {
+                  status: "rejected",
+                  moderator_id: userId,
+                  rejection_reason: reason,
+                  rejection_feedback: feedback,
+                  updated_at: new Date(),
+                });
+
+                setShowReject(false);
+                setShowReview(false);
+                setSelectedLetter(null);
+              }}
+            />
+          )}
+
 
                   </section>
 
