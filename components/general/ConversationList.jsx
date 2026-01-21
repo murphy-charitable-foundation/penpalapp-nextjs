@@ -1,4 +1,4 @@
-import MessagePreview from "./MessagePreview";
+import MessagePreview from "./MessagePreview.jsx";
 
 const ConversationList = ({
   conversations,
