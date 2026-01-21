@@ -13,7 +13,7 @@ export default function ApproveSuccessView({
 
         <div className="flex justify-center mb-6">
           <Image
-            src="/sent-letter.png"
+            src="/rejection-success.png"
             alt="Letter approved"
             width={104}
             height={104}
