@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   '/donate', 
   '/welcome',
   '/create-acc',
+  '/reset-password',
 ]; // public routes that don't require authentication
 
 export function UserProvider({ children }) {
