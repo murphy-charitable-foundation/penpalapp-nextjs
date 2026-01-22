@@ -20,6 +20,8 @@ export default function EditProfileUserImage() {
   const [storageUrl, setStorageUrl] = useState(null);
   const [user, setUser] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [objectUrl, setObjectUrl] = useState(null);
+
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -60,6 +62,7 @@ export default function EditProfileUserImage() {
       }
     });
 
+
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
@@ -82,8 +85,26 @@ export default function EditProfileUserImage() {
   };
 
   const handleDrop = (acceptedFiles) => {
-    setImage(URL.createObjectURL(acceptedFiles[0]));
+  const file = acceptedFiles[0];
+  if (!file) return;
+
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+  }
+
+  const url = URL.createObjectURL(file);
+  setObjectUrl(url);
+  setImage(url);
+};
+
+useEffect(() => {
+  return () => {
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+    }
   };
+}, [objectUrl]);
+
 
   const saveImage = async () => {
     setIsSaving(true);

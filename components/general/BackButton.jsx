@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 
-export function BackButton() {
+export function BackButton({ onBack }) {
   const router = useRouter();
 
   const handleClick = () => {
+
+    if (onBack && onBack() === false) return;
+
     router.back();
   };
 
