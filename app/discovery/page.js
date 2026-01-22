@@ -6,9 +6,9 @@ import {
   getDocs,
   doc,
   query,
+  where,
   startAfter,
   limit,
-  where,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
@@ -21,16 +21,16 @@ import { usePageAnalytics } from "../useAnalytics";
 import PageBackground from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
-import NavBar from "../../components/bottom-nav-bar";
-
-import KidsList from "../../components/discovery/KidsList";
 import FilterPanel from "../../components/discovery/FilterPanel";
 import Header from "../../components/general/Header";
+import NavBar from "../../components/bottom-nav-bar";
+import KidsList from "../../components/discovery/KidsList";
 
 const PAGE_SIZE = 20;
 
 export default function ChooseKid() {
   const router = useRouter();
+  usePageAnalytics("/discovery");
 
   const [kids, setKids] = useState([]);
   const [lastKidDoc, setLastKidDoc] = useState(null);
@@ -45,9 +45,7 @@ export default function ChooseKid() {
 
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  usePageAnalytics("/discovery");
-
-  //Auth guard
+  // Auth guard
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -60,7 +58,7 @@ export default function ChooseKid() {
     return () => unsubscribe();
   }, [router]);
 
-  //refetch when filters change
+  // Refetch when filters change
   useEffect(() => {
     if (!userId) return;
 
@@ -79,26 +77,18 @@ export default function ChooseKid() {
       const userRef = doc(db, "users", uid);
       const usersRef = collection(db, "users");
 
-      let q = query(usersRef, where("user_type", "==", "child"));
+      let q = query(
+        usersRef,
+        where("user_type", "==", "child"),
+        where("connected_penpals_count", "<", 3) // Server-side filter
+      );
 
-      const ageActive = age?.min != null && age?.max != null;
-      if (ageActive) {
+      // Client-side filters
+      if (age?.min != null && age?.max != null) {
         const now = new Date();
-
-        const maxBirthDate = new Date(
-          now.getFullYear() - age.min,
-          now.getMonth(),
-          now.getDate()
-        );
-
-        const minBirthDate = new Date(
-          now.getFullYear() - age.max - 1,
-          now.getMonth(),
-          now.getDate()
-        );
-
-        q = query(q, where("birthday", ">=", minBirthDate));
-        q = query(q, where("birthday", "<=", maxBirthDate));
+        const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
+        const minBirthDate = new Date(now.getFullYear() - age.max - 1, now.getMonth(), now.getDate());
+        q = query(q, where("birthday", ">=", minBirthDate), where("birthday", "<=", maxBirthDate));
       }
 
       if (gender?.trim()) {
@@ -119,15 +109,12 @@ export default function ChooseKid() {
 
       const availableDocs = snapshot.docs.filter((d) => {
         const data = d.data();
-        return !data.connected_penpals?.some(
-          (ref) => ref?.path === userRef.path
-        );
+        return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
       });
 
       const kidsList = await Promise.all(
         availableDocs.map(async (d) => {
           const data = d.data();
-
           try {
             if (data.photo_uri) {
               const storage = getStorage();
@@ -135,7 +122,6 @@ export default function ChooseKid() {
               const photoURL = await getDownloadURL(photoRef);
               return { id: d.id, ...data, photoURL };
             }
-
             return { id: d.id, ...data, photoURL: "/usericon.png" };
           } catch {
             return { id: d.id, ...data, photoURL: "/usericon.png" };
@@ -143,16 +129,8 @@ export default function ChooseKid() {
         })
       );
 
-      const finalKids = ageActive
-        ? kidsList.filter((k) => (k.connected_penpals_count ?? 0) < 3)
-        : kidsList;
-
-      setKids((prev) => (reset ? finalKids : [...prev, ...finalKids]));
-      setLastKidDoc(
-        snapshot.docs.length
-          ? snapshot.docs[snapshot.docs.length - 1]
-          : null
-      );
+      setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
+      setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
     } catch (e) {
       setError("Error fetching kids");
       logError(e, { description: "Error fetching kids" });
@@ -169,20 +147,16 @@ export default function ChooseKid() {
       const date =
         birthdayTimestamp instanceof Date
           ? birthdayTimestamp
-          : birthdayTimestamp.toDate?.() ??
-            new Date(birthdayTimestamp._seconds * 1000);
+          : birthdayTimestamp.toDate?.() ?? new Date(birthdayTimestamp._seconds * 1000);
 
       const now = new Date();
       let years = now.getFullYear() - date.getFullYear();
-
       if (
         now.getMonth() < date.getMonth() ||
-        (now.getMonth() === date.getMonth() &&
-          now.getDate() < date.getDate())
+        (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
       ) {
         years -= 1;
       }
-
       return years;
     } catch {
       return 0;
@@ -218,13 +192,9 @@ export default function ChooseKid() {
           center={false}
           className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
-        {/* ===== HEADER ===== */}
-        <PageHeader title="Discovery" image={false} showBackButton />
-         {/* ===== Filter Panel ===== */}
-          <Header
-            activeFilter={filtersOpen}
-            setActiveFilter={setFiltersOpen}
-          />
+          <PageHeader title="Discovery" image={false} showBackButton />
+
+          <Header activeFilter={filtersOpen} setActiveFilter={setFiltersOpen} />
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {error && <div className="text-red-600 mb-3">{error}</div>}
