@@ -99,7 +99,7 @@ export default function ChooseKid() {
         q = query(q, where("hobby", "array-contains-any", hobbies));
       }
 
-      if (!reset && lastKidDoc && !initialLoad) {
+      if (!reset && lastKidDoc) {
         q = query(q, startAfter(lastKidDoc));
       }
 
@@ -203,6 +203,7 @@ export default function ChooseKid() {
               kids={kids}
               calculateAge={calculateAge}
               loadMoreKids={loadMoreKids}
+              lastKidDoc={lastKidDoc}
               loading={loading}
               showEmpty={!initialLoad}
               onClearFilters={handleClearFilters}
