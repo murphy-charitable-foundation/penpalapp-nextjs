@@ -6,7 +6,7 @@ import Image from "next/image";
 
 import Button from "../../components/general/Button";
 import { PageBackground } from "../../components/general/PageBackground";
-import PageContainer from "../../components/general/PageContainer";
+import  PageContainer from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 
 export default function Welcome() {

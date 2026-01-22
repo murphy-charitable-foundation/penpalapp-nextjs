@@ -78,7 +78,7 @@ export default function Login() {
           width="compactXS"
           padding="none"
           center={false}
-          className="w-full max-h-[98dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+          className="w-full max-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
           <div className="pb-4">

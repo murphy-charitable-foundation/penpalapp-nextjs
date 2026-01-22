@@ -18,8 +18,8 @@ export default function Header({ activeFilter, setActiveFilter }) {
         className="w-full h-12 px-4 flex items-center justify-between border-b bg-[#E6EDF4]"
         style={{ borderColor: DIVIDER }}
       >
-        <span className="text-[20px] text-gray-700 p-4">
-          Filters
+        <span className="text-md font-medium text-gray-700 p-4">
+          Choose a kid to write to
         </span>
 
         <svg

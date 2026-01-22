@@ -19,7 +19,7 @@ export function PageContainer({
             bg-white
             rounded-2xl
             shadow-lg
-            overflow-y-auto   
+            overflow-y-hidden  
             overscroll-contain
             scrollbar-gutter-stable
             flex

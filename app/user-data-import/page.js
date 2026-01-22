@@ -109,7 +109,7 @@ export default function UserDataImport() {
           width="compactXS"
           padding="none"
           center={false}
-          className="min-h-[92dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
           <PageHeader title="Import User Data" imageSize="sm" />

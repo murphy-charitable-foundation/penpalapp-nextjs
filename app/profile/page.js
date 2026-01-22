@@ -268,7 +268,7 @@ return (
         padding="none"
         center={false}
         className="
-          min-h-[92dvh]
+          min-h-[100dvh]
           flex flex-col
           bg-white
           rounded-2xl

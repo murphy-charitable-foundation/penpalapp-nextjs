@@ -12,12 +12,12 @@ export default function KidsList({
   loadMoreKids,
   loading = false,
 
-  // ✅ empty state controls
+  //empty state controls
   showEmpty = false,
   onClearFilters,
   onEditFilters,
 
-  // ✅ prevent showing empty state when error exists
+  //prevent showing empty state when error exists
   error = "",
 }) {
   if (error) return null;
@@ -44,7 +44,7 @@ export default function KidsList({
           <Button
             onClick={loadMoreKids}
             btnText={loading ? "Loading..." : "Load more"}
-            color="bg-[#034792]"
+            color="bg-blue-500"
             textColor="text-white"
             rounded="rounded-full"
             size="px-5 py-2 text-sm"
