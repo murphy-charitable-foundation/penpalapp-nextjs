@@ -73,7 +73,7 @@ export default function Login() {
 
   return (
     <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-      <div className="flex-1 flex justify-center items-center px-4">
+      <div className="flex-1 flex justify-center items-center">
         <PageContainer
           width="compactXS"
           padding="none"
