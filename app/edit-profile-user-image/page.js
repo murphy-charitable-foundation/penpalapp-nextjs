@@ -7,8 +7,13 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 import Button from "../../components/general/Button";
+import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import * as Sentry from "@sentry/nextjs";
+import { PageHeader } from "../../components/general/PageHeader";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
@@ -115,41 +120,47 @@ export default function EditProfileUserImage() {
   };
 
   return (
-    <div>
-      {isSaving ? (
-        <LoadingSpinner></LoadingSpinner>
-      ) : (
-        <div className="bg-gray-50 min-h-screen">
-          <div className="max-w-lg mx-auto p-6">
-            <div className="flex flex-col justify-between items-center">
-              <div className="block">
-                <BackButton />
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {/* Loading overlay */}
+      {isSaving && <LoadingSpinner />}
 
-                <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
-                  Edit image
-                </h1>
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-6 mt-6">
-              <EditProfileImage
-                image={image}
-                newProfileImage={newProfileImage}
-                previewURL={previewURL}
-                handleDrop={handleDrop}
-                handleCrop={handleCrop}
-                cropperRef={cropperRef}
-              />
-              <i>Click to edit</i>
-              <Button
-                btnType="button"
-                btnText="Save New Profile Picture"
-                color="green"
-                onClick={saveImage}
-              />
-            </div>
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <PageHeader title="Edit image" image={false}/>
+
+          {/* ===== SINGLE SCROLLER ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 flex flex-col items-center gap-6">
+            <EditProfileImage
+              image={image}
+              newProfileImage={newProfileImage}
+              previewURL={previewURL}
+              handleDrop={handleDrop}
+              handleCrop={handleCrop}
+              cropperRef={cropperRef}
+            />
+
+            <i className="text-sm text-gray-500">Click to edit</i>
+
+            <Button
+              btnType="button"
+              btnText="Save New Profile Picture"
+              color="green"
+              onClick={saveImage}
+            />
           </div>
-        </div>
-      )}
-    </div>
+
+          {/* ===== NAVBAR ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <BottomNavBar />
+          </div>
+        </PageContainer>
+      </div>
+    </PageBackground>
   );
 }
