@@ -21,6 +21,7 @@ import {
   logButtonEvent,
   logLoadingTime,
 } from "../utils/analytics";
+import { initializeNotifications } from '../utils/notification'
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -51,6 +52,7 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
