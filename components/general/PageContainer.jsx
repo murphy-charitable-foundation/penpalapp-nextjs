@@ -1,4 +1,7 @@
 "use client";
+// TODO: Refactor PageContainer to expose constrained variant/layout props
+// (e.g. size, padding, alignment) instead of accepting arbitrary className overrides.
+// This will keep the component API consistent and easier to maintain.
 
 const WIDTHS = {
   compactXS: "max-w-[29rem]",
