@@ -131,7 +131,7 @@ export async function POST(req) {
         token,
         notification: {
           title: "New Letterbox Message",
-          body: message || "You have a new message.",
+          body: message || `New message for ${name}`,
         },
       })
         .then(response => ({ success: true, name, response }))
