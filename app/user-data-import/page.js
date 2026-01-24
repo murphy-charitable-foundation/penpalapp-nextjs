@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../app/firebaseConfig";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -10,7 +9,6 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
 import TextArea from "../../components/general/TextArea";
-import * as Sentry from "@sentry/nextjs";
 import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
@@ -27,7 +25,6 @@ export default function UserDataImport() {
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
 
-  const router = useRouter();
 
   usePageAnalytics("/user-data-import");
 

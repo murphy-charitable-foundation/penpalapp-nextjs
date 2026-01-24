@@ -1,20 +1,15 @@
 "use client";
 
 // pages/change-password.js
-import { db, auth } from "../firebaseConfig";
-import React, { useState, useEffect } from "react";
+import { auth } from "../firebaseConfig";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import logo from "/public/murphylogo.png";
-import Image from "next/image";
-//import { sendPasswordResetEmail } from 'firebase/auth';
-import { updatePassword, signOut } from "firebase/auth";
-//import { handleLogout } from '../profile/page';
+import { updatePassword } from "firebase/auth";
 import PasswordChecklist from "react-password-checklist";
 import Dialog from "../../components/general/Dialog";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
-import { BackButton } from "../../components/general/BackButton";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logButtonEvent, logError } from "../utils/analytics";

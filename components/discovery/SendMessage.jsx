@@ -12,7 +12,6 @@ export default function SendMessage({ kid }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
-  const [kidRef, setKidRef] = useState();
 
   useEffect(() => {
     //This gets the penpal data

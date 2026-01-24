@@ -8,7 +8,6 @@ import {
   getDoc,
   updateDoc,
   setDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
@@ -17,24 +16,19 @@ import {
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-  fetchLetterbox,
   fetchRecipients,
 } from "../../../app/utils/letterboxFunctions";
-import { formatTimestamp, isDifferentDay } from "../../../app/utils/dateHelpers";
+import { formatTimestamp } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
-import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
-import { usePathname } from "next/navigation";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
-import Button from "../../../components/general/Button"
 import { AlertTriangle } from "lucide-react";
-import LoadingSpinner from "../../../components/loading/LoadingSpinner";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
@@ -112,20 +106,16 @@ export default function Page({ params }) {
   const [profileImage, setProfileImage] = useState("");
 
   const [messageContent, setMessageContent] = useState("");
-  const messageInputRef = useRef(null);
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
-  const pathname = usePathname();
 
   const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
-    useState("");
+  const [editingMessageOriginalContent, setEditingMessageOriginalContent] = useState("");
 
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
   const [lettersRef, setLettersRef] = useState(null);
-  const [userType, setUserType] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -532,15 +522,7 @@ export default function Page({ params }) {
       textAreaRef.current?.focus();
     }, 100);
   };
-
-  const handleReportUserClick = () => {
-    if (recipients.length > 0) {
-      setReportSender(recipients[0].id);
-      setReportContent("General report about user behavior");
-      setShowReportPopup(true);
-    }
-  };
-
+  
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
@@ -618,9 +600,6 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
-
-    const chat_user = localStorage.getItem("chat_user");
-    setUserType(chat_user);
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
