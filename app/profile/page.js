@@ -3,28 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
-import * as Sentry from "@sentry/nextjs";
-import {
-  User,
-  MapPin,
-  Home,
-  FileText,
-  Calendar,
-  GraduationCap,
-  Users,
-  Heart,
-  Briefcase,
-  Square,
-  Palette,
-} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import List from "../../components/general/List";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
@@ -34,7 +18,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import NavBar from '../../components/bottom-nav-bar';
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logError } from "../utils/analytics";
+import { logError } from "../utils/analytics";
 
 export default function EditProfile() {
   // State initializations
@@ -49,11 +33,10 @@ export default function EditProfile() {
   const [isOrphan, setIsOrphan] = useState(false);
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
-  const [gender, setGender] = useState("");
+  const gender = "";
   const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
-  const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -63,9 +46,6 @@ export default function EditProfile() {
   const [userType, setUserType] = useState("international_buddy");
 
   // Modal state
-  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
-  const [isGuardianModalOpen, setIsGuardianModalOpen] = useState(false);
-  const [isOrphanModalOpen, setIsOrphanModalOpen] = useState(false);
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
 
@@ -157,10 +137,7 @@ export default function EditProfile() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
+      if (!currentUser) {
         router.push("/login"); // Redirect to login page
       }
     });
@@ -168,16 +145,6 @@ export default function EditProfile() {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      // User is signed out
-      router.push("/login");
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
-  };
 
   // Education options
   const educationOptions = [
@@ -187,19 +154,6 @@ export default function EditProfile() {
     "College/University",
     "No Grade",
   ];
-
-  // Guardian options
-  const guardianOptions = [
-    "Parents",
-    "Adoptive Parents",
-    "Aunt/Uncle",
-    "Grandparents",
-    "Other Family",
-    "Friends",
-    "Other",
-  ];
-
-  const orphanOptions = ["Yes", "No"];
 
   // Bio Modal content
   const bioModalContent = (

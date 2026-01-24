@@ -1,15 +1,9 @@
 // pages/terms-conditions.js
 "use client"
-import Link from "next/link";
-import Image from "next/image";
-import logo from "/public/murphylogo.png";
-import { BackButton } from "../../components/general/BackButton";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import { useEffect } from "react";
 import { usePageAnalytics } from "../useAnalytics";
-import { logLoadingTime } from "../utils/analytics";
 
 export default function TermsCondition() {
   usePageAnalytics("/terms-conditions");

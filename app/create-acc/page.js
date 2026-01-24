@@ -2,18 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
-import { handleLogout } from "../profile/page";
-import EditProfileImage from "../../components/edit-profile";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
-import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import Dialog from "../../components/general/Dialog";
@@ -31,7 +27,6 @@ export default function CreateAccount() {
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [showPasswordChecklist, setShowPasswordChecklist] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
   const [errors, setErrors] = useState({});
   const [isValidPassword, setisValidPassword] = useState(false);
   const [termsCheck, setTermsCheck] = useState(false);
@@ -123,7 +118,6 @@ export default function CreateAccount() {
         connected_penpals_count: 0,
       });
 
-      setShowCreate(false);
       localStorage.setItem("userFirstName", firstName);
       logButtonEvent("Create Account Button Clicked!", "/create-acc");
 

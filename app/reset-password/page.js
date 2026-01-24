@@ -3,11 +3,9 @@
 {
   /* pages/reset-password.js */
 }
-import { db, auth } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import logo from "/public/murphylogo.png";
-import Image from "next/image";
 import { sendPasswordResetEmail } from "firebase/auth";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
@@ -16,8 +14,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
-import { useEffect } from "react";
+import { logButtonEvent } from "../utils/analytics";
 import * as Sentry from "@sentry/nextjs";
 
 export default function ResetPassword() {
