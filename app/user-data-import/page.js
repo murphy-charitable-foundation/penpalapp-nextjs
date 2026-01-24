@@ -224,12 +224,21 @@ export default function UserDataImport() {
 
         <div className="flex justify-center">
           {croppedImage ? (
-            <img src={croppedImage} alt="Profile" width={200} className="rounded-full cursor-pointer" onClick={handleImageClick} />
+            <img src={croppedImage} alt="Profile" width={200} className="rounded-full" />
           ) : (
-            <Image src={logo} alt="Foundation Logo" width={200} margin={0} className="cursor-pointer" onClick={handleImageClick} />
+            <Image src={logo} alt="Foundation Logo" width={200} margin={0} />
           )}
         </div>
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={handleImageClick}
+            className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+          >
+            Upload Photo
+          </button>
+        </div>
         {showCropper && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
             <div
