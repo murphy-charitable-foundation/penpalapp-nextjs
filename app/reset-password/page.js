@@ -51,7 +51,7 @@ export default function ResetPassword() {
       Sentry.captureException("Error resetting password:", error);
     }
 
-    logButtonEvent("Reset Password clicked!", "/reset-password");
+    logButtonEvent("reset_password_submit", "/reset-password");
   }
 
   function closeModal() {
@@ -76,7 +76,13 @@ export default function ResetPassword() {
       <PageContainer maxWidth="lg">
         <div className="p-0 bg-white">
           <PageHeader title="Reset Your Password" />
-          <div className="mt-10">
+          <form
+            method="post"
+            onSubmit={(e) => {
+              e.preventDefault();
+              resetPassword();
+            }}
+          >
             <Input
               type="email"
               value={email}
@@ -88,18 +94,16 @@ export default function ResetPassword() {
               label="Registered Email"
               error={errors.email ? errors.email : ""}
             />
-          </div>
 
-          <div className="mt-6 flex justify-center">
-            <Button
-              btnType="button"
-              btnText="Reset"
-              color="gray"
-              textColor="text-gray-400"
-              size="default"
-              onClick={resetPassword}
-            />
-          </div>
+            <div className="mt-6 flex justify-center">
+              <Button
+                btnType="submit"
+                btnText="Reset"
+                color="gray"
+                size="default"
+              />
+            </div>
+          </form>
         </div>
       </PageContainer>
       <Dialog

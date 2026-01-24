@@ -85,7 +85,11 @@ export default function Login() {
     <PageContainer maxWidth="md" padding="p-8">
       {loading && <LoadingSpinner />}
       <PageHeader title="Login" />
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+      <form
+          method="post"
+          className="mt-8 space-y-6"
+          onSubmit={handleSubmit}
+        >
         <div>
           <Input
             type="email"
