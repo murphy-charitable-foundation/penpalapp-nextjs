@@ -9,7 +9,7 @@ GitHub Actions builds the application → Vercel deploys it.
 - Push to main → production deployment on Vercel
 - PR to main → preview with deployment card in PR
 
-## Pipeline
+## CI/CD Pipeline
 
 ```
 1. Checkout code
@@ -28,7 +28,11 @@ Stored in Vercel, automatically downloaded.
 ```
 NEXT_PUBLIC_FIREBASE_API_KEY
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-... (and other FIREBASE variables)
+NEXT_PUBLIC_FIREBASE_PROJECT_ID
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+NEXT_PUBLIC_FIREBASE_APP_ID
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 ```
 
 **Private** (server only):
@@ -48,9 +52,9 @@ SENTRY_AUTH_TOKEN
 
 ## Track Deployment
 
-1. **GitHub Actions** → Actions → latest run
-2. **Vercel** → https://vercel.com → Deployments
-3. **PR** → deployment card with preview URL at bottom
+**PR** → deployment card with preview URL at bottom
+
+![Vercel Deployment Card](https://github.com/user-attachments/assets/deployment-card-example.png)
 
 ## If Deployment Fails
 

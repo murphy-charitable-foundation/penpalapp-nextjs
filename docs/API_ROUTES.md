@@ -103,12 +103,16 @@ export async function POST(request) {
 
 3. Call from frontend:
 ```javascript
+'use client';
+
 const response = await fetch('/api/[name]', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ /* data */ })
 });
 ```
+
+> **Note**: API routes run on the server (`use server` by default in Next.js App Router). Frontend components that call these routes should use `'use client'` directive.
 
 ## Error Logging
 

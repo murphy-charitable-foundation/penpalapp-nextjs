@@ -5,6 +5,7 @@ A Next.js application for connecting pen pals through letters. Built with Fireba
 ## Documentation
 
 For detailed information about the project architecture, API routes, and deployment, see the [docs](./docs) folder:
+- [ARCHITECTURE.md](./docs/ARCHITECTURE.md) - Application architecture and component organization
 - [DEPLOYMENT.md](./docs/DEPLOYMENT.md) - How the app is built and deployed
 - [API_ROUTES.md](./docs/API_ROUTES.md) - API endpoints documentation
 
