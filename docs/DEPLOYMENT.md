@@ -52,9 +52,14 @@ SENTRY_AUTH_TOKEN
 
 ## Track Deployment
 
-**PR** → deployment card with preview URL at bottom
+**PR** → GitHub Actions deployment card with preview URL at bottom
 
-![Vercel Deployment Card](https://github.com/user-attachments/assets/deployment-card-example.png)
+After deployment, GitHub shows a deployment card in the PR:
+- Shows `github-actions deployed to pr-{number}`
+- Click **"View deployment"** button to open the preview
+- Preview link is public and doesn't require authentication
+
+![Deployment Card Example](./deployment-card.png)
 
 ## If Deployment Fails
 
