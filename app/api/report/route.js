@@ -1,3 +1,25 @@
+/**
+ * POST /api/report
+ * 
+ * Sends a report about inappropriate message content
+ * 
+ * Request body:
+ * {
+ *   receiver_email: string,  // user_uid who is being reported
+ *   currentUrl: string,      // URL of the conversation (e.g., "/letters/123")
+ *   sender: string,          // user_uid who is reporting
+ *   excerpt: string          // text excerpt of the reported message
+ * }
+ * 
+ * Response (success):
+ * { message: "Email sent successfully!" }
+ * 
+ * Response (error):
+ * { message: "Failed to send email.", error: "..." }
+ * 
+ * Sends email to: admin (penpal@murphycharity.org)
+ */
+
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import { doc, getDoc } from "firebase/firestore";
