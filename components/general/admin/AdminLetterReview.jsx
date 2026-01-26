@@ -49,12 +49,12 @@ export default function AdminLetterReview({
   return (
     <div
       className={`
-        fixed inset-0 z-[10000] flex justify-center bg-black/30
+        fixed inset-0 z-[10000] mt-4 flex justify-center bg-gray-100
         transition-all duration-300
         ${isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"}
       `}
     >
-      <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl overflow-hidden">
+      <div className="w-full max-w-lg mx-auto bg-white flex flex-col h-full rounded-lg shadow-xl overflow-hidden">
 
         {/* HEADER */}
         <div className={`flex items-center px-4 py-3 text-white ${headerColor}`}>

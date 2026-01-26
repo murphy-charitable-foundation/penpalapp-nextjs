@@ -7,28 +7,46 @@ import { ChevronLeft } from "lucide-react";
 export default function AdminRejectModal({ letter, onSubmit, onClose }) {
   const [reason, setReason] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [isExiting, setIsExiting] = useState(false);
+
+  const exitAndClose = () => {
+    setIsExiting(true);
+    setTimeout(onClose, 300);
+  };
 
   if (!letter) return null;
 
   return (
-    <div className="fixed inset-0 z-[999] flex justify-center bg-black/30">
-      <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl">
+    <div
+      className={`
+        fixed inset-0 z-[10000] flex bg-gray-100
+        transition-all duration-300
+        ${isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"}
+      `}
+    >
+      <div className="w-full max-w-lg mx-auto bg-white flex flex-col rounded-lg shadow-xl overflow-hidden">
 
         {/* HEADER */}
-        <div className="flex items-center px-4 py-3 bg-primary text-white relative">
-          <button onClick={onClose} className="absolute left-4">
-            <ChevronLeft size={22} />
+      <div className={`flex items-center px-4 py-3 text-white bg-primary`}>
+            <button
+            onClick={exitAndClose}
+            className="flex items-center w-9 h-9 rounded-full hover:bg-white/10"
+          >
+            <ChevronLeft className="h-6 w-6" />
           </button>
-          <h2 className="text-lg font-semibold mx-auto">Give Feedback</h2>
+          <h2 className="text-lg font-semibold mx-auto">
+            {letter.name}
+          </h2>
+          <div className="w-9" />
         </div>
 
         {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-6">
 
-          <label className="block mb-1 text-sm font-medium text-gray-700">
-            Reason
-          </label>
-          <select
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              Reason
+            </label>
+            <select
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   className="
