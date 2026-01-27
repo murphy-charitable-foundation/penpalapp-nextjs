@@ -103,7 +103,7 @@ export default function Home() {
 
             return {
               id: letter?.id,
-              profileImage: recipient?.photo_uri || "",
+              profileImage: profileImage || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
@@ -185,6 +185,7 @@ export default function Home() {
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
             const downloaded = await getUserPfp(uid);
+            console.log("downloaded", downloaded);
             setProfileImage(downloaded || "");
 
             // Show welcome message

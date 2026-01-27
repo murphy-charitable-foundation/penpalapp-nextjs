@@ -21,6 +21,7 @@ import {
   logButtonEvent,
   logLoadingTime,
 } from "../utils/analytics";
+import { useCachedUsers } from "../contexts/CachedUserContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -28,8 +29,18 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { hydrated } = useCachedUsers();
   
   usePageAnalytics(`/login`);
+
+  useEffect(() => {
+    const checkCached = () => {
+      if (!hydrated) { 
+        router.push("/children-gallery");
+      }
+    }
+    checkCached();
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,11 +57,19 @@ export default function Login() {
         email,
         password
       );
+
       const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
+      const data = userSnap.data()
 
       if (userSnap.exists()) {
+        addCachedUser({
+          "id": uid,
+          "name": data.first_name,
+          "email": email,
+          "photoURL":  data?.photo_uri || ""
+        })
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
