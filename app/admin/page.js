@@ -63,8 +63,9 @@ export default function Admin() {
   const [activeFilter, setActiveFilter] = useState(false);
 
   const [selectedLetter, setSelectedLetter] = useState(null);
-  const [showReview, setShowReview] = useState(false);
-  const [showReject, setShowReject] = useState(false);
+  const [activeView, setActiveView] = useState("inbox");
+// "inbox" | "review" | "reject"
+
 
   const router = useRouter();
 
@@ -74,17 +75,6 @@ export default function Admin() {
     }
   }, [isDormantLetterboxLoading]);
 
-  useEffect(() => {
-  if (showReject) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
-
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, [showReject]);
 
 
   useEffect(() => {
@@ -233,7 +223,7 @@ export default function Admin() {
         maxWidth="lg"
         className="px-6 pt-6 pb-24 space-y-0"
       >
-        {!showReview && (
+        {activeView === "inbox" && (
           <Header
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
@@ -260,8 +250,8 @@ export default function Admin() {
             setEnd={setEndDate}
           />
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl flex flex-col h-[75vh]">
-            {!showReview && (
+          <div className="bg-white border border-gray-200 rounded-xl flex flex-col flex-1 min-h-0">
+            {activeView === "inbox" && (
               <div className="px-6 py-3 text-sm text-gray-500">
                 Showing {documents.length}{" "}
                 {selectedStatus.replace("_", " ")} letters
@@ -269,53 +259,57 @@ export default function Admin() {
             )}
 
             <div className="flex-1 min-h-0">
-              {showReview && selectedLetter ? (
-                <AdminLetterReview
-                  letter={selectedLetter}
-                  onClose={() => {
-                    setShowReview(false);
-                    setSelectedLetter(null);
-                  }}
-                  onApprove={async () => {
-                    try {
-                      const ref = doc(
-                        db,
-                        "letterboxes",
-                        selectedLetter.letterboxId,
-                        "letters",
-                        selectedLetter.id
-                      );
-                      await updateDoc(ref, {
-                        status: "approved",
-                        moderator_id: userId,
-                        updated_at: new Date(),
-                      });
-                    } catch (err) {
-                      console.warn("Approve blocked by Firestore rules", err);
-                    }
 
-                    setSelectedStatus("approved");
-                    setShowReview(false);
-                    setSelectedLetter(null);
-                  }}
-                  onReject={() => { setShowReject(true); setShowReview(false); }}
-                  onRevert={revertToPending}
-                />
-              ) : (
-                <main className="overflow-y-auto p-6">
-                  <ConversationList
-                    conversations={documents}
-                    isAdmin
-                    onSelectConversation={(c) => {
-                      setSelectedLetter(c);
-                      setShowReview(true);
-                    }}
-                  />
-                </main>
-              )}
-            </div>
+  {activeView === "inbox" && (
+    <main className="overflow-y-auto p-6">
+      <ConversationList
+        conversations={documents}
+        isAdmin
+        onSelectConversation={(c) => {
+          setSelectedLetter(c);
+          setActiveView("review");
+        }}
+      />
+    </main>
+  )}
 
-            {!showReview && hasMore && (
+  {activeView === "review" && selectedLetter && (
+    <AdminLetterReview
+      letter={selectedLetter}
+      onClose={() => {
+        setActiveView("inbox");
+        setSelectedLetter(null);
+      }}
+      onApprove={async () => {
+        try {
+          const ref = doc(
+            db,
+            "letterboxes",
+            selectedLetter.letterboxId,
+            "letters",
+            selectedLetter.id
+          );
+          await updateDoc(ref, {
+            status: "approved",
+            moderator_id: userId,
+            updated_at: new Date(),
+          });
+        } catch (err) {
+          console.warn("Approve blocked by Firestore rules", err);
+        }
+
+        setSelectedStatus("approved");
+        setActiveView("inbox");
+        setSelectedLetter(null);
+      }}
+      onReject={() => setActiveView("reject")}
+      onRevert={revertToPending}
+    />
+  )}
+
+</div>
+
+            {activeView === "inbox" && hasMore && (
               <div className="flex justify-center py-4">
                 {isLoadingMore ? (
                   <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -335,10 +329,10 @@ export default function Admin() {
           </div>
         )}
 
-        {showReject && selectedLetter && (
+        {activeView === "reject" && selectedLetter && (
           <AdminRejectModal
             letter={selectedLetter}
-            onClose={() => setShowReject(false)}
+            onClose={() => setActiveView("review")}
             onSubmit={async (reason, feedback) => {
               try {
                 const ref = doc(
@@ -358,10 +352,8 @@ export default function Admin() {
               } catch (err) {
                 console.warn("Reject blocked by Firestore rules", err);
               }
-
-              setShowReject(false);
-              setShowReview(false);
               setSelectedLetter(null);
+              setActiveView("inbox");
             }}
           />
         )}

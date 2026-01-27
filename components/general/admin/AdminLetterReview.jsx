@@ -1,25 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Button from "../../general/Button";
-import {
-  ChevronLeft,
-  AlertTriangle,
-} from "lucide-react";
+import { ChevronLeft, AlertTriangle } from "lucide-react";
 
 export default function AdminLetterReview({
   letter,
   onApprove,
-  onReject,   // opens AdminRejectModal (parent)
-  onRevert,   // clears review status
+  onReject,
+  onRevert,
   onClose,
 }) {
-  const [isExiting, setIsExiting] = useState(false);
-
   if (!letter) return null;
 
-  // Normalize status
   const status =
     letter.status === "sent" || letter.status === "approved"
       ? "approved"
@@ -29,7 +22,7 @@ export default function AdminLetterReview({
 
   const headerColor =
     status === "approved"
-      ? "bg-green-600"
+      ? "bg-dark-green"
       : status === "rejected"
       ? "bg-red-600"
       : "bg-primary";
@@ -41,37 +34,28 @@ export default function AdminLetterReview({
       })
     : "";
 
-  const exitAndClose = () => {
-    setIsExiting(true);
-    setTimeout(onClose, 300);
-  };
-
   return (
-    <div
-      className={`
-        fixed inset-0 z-[10000] mt-4 flex justify-center bg-gray-100
-        transition-all duration-300
-        ${isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"}
-      `}
-    >
-      <div className="w-full max-w-lg mx-auto bg-white flex flex-col h-full rounded-lg shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-[10000] flex items-start justify-center bg-gray-100">
+      <div className="w-full max-w-lg bg-white flex flex-col h-full rounded-lg shadow-xl overflow-hidden">
 
         {/* HEADER */}
-        <div className={`flex items-center px-4 py-3 text-white ${headerColor}`}>
+        <div className={`flex items-center px-4 h-14 text-white ${headerColor}`}>
           <button
-            onClick={exitAndClose}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10"
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <h2 className="text-lg font-semibold mx-auto">
+
+          <h2 className="flex-1 text-center text-lg font-semibold truncate">
             {letter.name}
           </h2>
-          <div className="w-9" />
+
+          <div className="w-10 h-10" />
         </div>
 
-        {/* LETTER CONTENT — VISIBLE */}
-        <div className="flex-1 overflow-y-auto px-8 py-6">
+        {/* CONTENT */}
+        <div className="flex-1 overflow-y-auto px-8 pt-6 pb-0 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <Image
@@ -96,75 +80,66 @@ export default function AdminLetterReview({
           <p className="text-gray-700 whitespace-pre-wrap">
             {letter.lastMessage}
           </p>
-        </div>
 
-        {/* REJECTED STATUS BANNER */}
-        {status === "rejected" && (
-          <div className="relative mx-6 mb-4 rounded-lg bg-red-50 p-4">
-            <AlertTriangle className="absolute top-3 right-3 h-5 w-5 text-red-500" />
+          {/* spacer pushes rejected card to bottom */}
+          <div className="flex-grow" />
 
-            <div className="flex gap-3">
-              <div>
-                <h4 className="font-semibold text-red-700">
-                  Your letter was disapproved.
-                </h4>
+          {status === "rejected" && (
+            <div className="relative mt-8 rounded-lg bg-red-50 p-4">
+              <AlertTriangle className="absolute top-3 right-3 h-5 w-5 text-red-500" />
 
-                {letter.rejection_reason && (
-                  <p className="text-sm text-red-700 mt-1">
-                    {letter.rejection_reason}
-                  </p>
-                )}
+              <h4 className="font-semibold text-red-700">
+                Your letter was disapproved.
+              </h4>
 
-                {letter.rejection_feedback && (
-                  <p className="text-sm text-red-700 mt-1">
-                    {letter.rejection_feedback}
-                  </p>
-                )}
+              {letter.rejection_reason && (
+                <p className="text-sm text-red-700 mt-1">
+                  {letter.rejection_reason}
+                </p>
+              )}
+
+              {letter.rejection_feedback && (
+                <p className="text-sm text-red-700 mt-1">
+                  {letter.rejection_feedback}
+                </p>
+              )}
+
+              <div className="flex justify-center gap-3 mt-4">
+                <Button
+                  btnText="Clear the review status"
+                  color="blue"
+                  onClick={() => onRevert(letter)}
+                />
+                <Button
+                  btnText="Edit"
+                  color="green"
+                  className="bg-white text-gray-900 border border-gray-400"
+                  onClick={onReject}
+                />
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="flex justify-center gap-3 mt-4">
+        {/* STICKY ACTION BAR */}
+        <div className="bg-gray-50 border-t px-6 py-4 mt-auto">
+          {status === "approved" && (
+            <div className="flex justify-center">
               <Button
                 btnText="Clear the review status"
                 color="blue"
                 onClick={() => onRevert(letter)}
               />
-              <Button
-                btnText="Edit"
-                color="green"
-                className="bg-white text-gray-900 border border-gray-400"
-                onClick={onReject}
-              />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* APPROVED — CLEAR ONLY */}
-        {status === "approved" && (
-          <div className="mx-6 mb-4 flex justify-center">
-            <Button
-              btnText="Clear the review status"
-              color="blue"
-              onClick={() => onRevert(letter)}
-            />
-          </div>
-        )}
-
-        {/* ACTIONS — ONLY FOR PENDING REVIEW */}
-        {status === "pending_review" && (
-          <div className="px-6 py-4 border-t flex justify-center gap-4">
-            <Button
-              btnText="Approve"
-              color="green"
-              onClick={onApprove}
-            />
-            <Button
-              btnText="Reject"
-              color="red"
-              onClick={onReject}
-            />
-          </div>
-        )}
+          {status === "pending_review" && (
+            <div className="flex justify-center gap-4">
+              <Button btnText="Approve" color="green" onClick={onApprove} />
+              <Button btnText="Reject" color="red" onClick={onReject} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
