@@ -13,6 +13,8 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  isAdmin = false,
+  onClick,
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -63,9 +65,10 @@ const MessagePreview = ({
     }
     return null;
   };
-  return (
-    <Link
-      href={`/letters/${letterboxId}`}
+
+  // ✅ shared card UI
+  const CardContent = (
+    <div
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
@@ -74,7 +77,8 @@ const MessagePreview = ({
           : status === "pending_review"
           ? "bg-gray-50"
           : "bg-white"
-      }`}>
+      }`}
+    >
       <div className="flex items-start">
         <Image
           src={imageSrc}
@@ -83,6 +87,7 @@ const MessagePreview = ({
           width={36}
           height={36}
         />
+
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
@@ -94,16 +99,19 @@ const MessagePreview = ({
               </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
+
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
               {formatDate(lastMessageDate)}
             </div>
           </div>
         </div>
       </div>
+
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}>
+        }`}
+      >
         {lastMessage ? (
           <div className="flex">
             {getStatusIcon() && (
@@ -129,6 +137,21 @@ const MessagePreview = ({
           </div>
         )}
       </div>
+    </div>
+  );
+
+  // 🚨 ADMIN: modal-only (NO navigation)
+  if (isAdmin) {
+  return (
+    <div onClick={onClick}>
+      {CardContent}
+    </div>
+  );
+}
+  // 👤 USER: normal navigation
+  return (
+    <Link href={`/letters/${letterboxId}`}>
+      {CardContent}
     </Link>
   );
 };
