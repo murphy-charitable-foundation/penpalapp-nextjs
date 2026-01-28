@@ -207,7 +207,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     lRef,
     where("sent_by", "==", userRef),
     where("content", "!=", ""),
-    orderBy("updated_at", "desc"),
+    orderBy("drafted_at", "desc"),  // Refactored updated_at to drafted_at
     limit(1) // grab a few in case of fallback
   );
 
@@ -216,7 +216,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     lRef,
     where("status", "==", "sent"),
     where("content", "!=", ""),
-    orderBy("updated_at", "desc"),
+    orderBy("drafted_at", "desc"), // refactored updated_at to drafted_at
     limit(1)
   );
 

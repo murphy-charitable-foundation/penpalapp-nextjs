@@ -47,7 +47,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       lettersRef,
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
-      orderBy("updated_at", "desc"),
+      orderBy("drafted_at", "desc"),  // refactored updated_at to drafted_at
       limit(1)
     );
 
@@ -60,8 +60,8 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         ...draftDoc.data(),
         created_at:
           draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
-        updated_at:
-          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+        drafted_at:   // Refactored updated_at to drafted_at
+          draftDoc.data().drafted_at?.toDate?.() || draftDoc.data().drafted_at, 
       };
 
       return draftData;
@@ -73,7 +73,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         content: "",
         status: "draft",
         created_at: new Date(),
-        updated_at: new Date(),
+        drafted_at: new Date(),  // Refactored updated_at to drafted_at
         deleted: null,
         unread: true,
       };
@@ -176,7 +176,7 @@ export default function Page({ params }) {
           sent_by: letterUserRef,
           content: trimmedContent,
           status: "draft",
-          updated_at: currentTime,
+          drafted_at: currentTime,  // Refactored updated_at to drafted_at
           deleted: null,
           unread: true,
         };
@@ -323,7 +323,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
-        updated_at: currentTime,
+        drafted_at: currentTime, // Refactored updated_at to drafted_at
       };
 
       await updateDoc(messageRef, updateData);
@@ -353,7 +353,7 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
-              updated_at: currentTime,
+              drafted_at: currentTime, // Refactored updated_at to drafted_at
             };
           }
           return msg;
@@ -412,7 +412,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        updated_at: currentTime,
+        drafted_at: currentTime,  // Refactored updated_at to drafted_at
         deleted: null,
         unread: true,
       };
@@ -728,7 +728,7 @@ export default function Page({ params }) {
                 id: docSnap.id,
                 ...docSnap.data(),
                 created_at: docSnap.data().created_at?.toDate(),
-                updated_at: docSnap.data().updated_at?.toDate(),
+                drafted_at: docSnap.data().drafted_at?.toDate(), // Refactore updated_at to drafted_at
               };
       
               // Normalize Firestore DocumentReference → { id }
