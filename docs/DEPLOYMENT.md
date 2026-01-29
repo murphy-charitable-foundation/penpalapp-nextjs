@@ -42,6 +42,10 @@ FIREBASE_ADMIN_SDK_JSON
 SENTRY_AUTH_TOKEN
 ```
 
+## Error Logging & Analytics Reports
+
+For error logging (Sentry + Firebase Analytics) and instructions on creating reports in the Firebase/Google Analytics dashboard, see [app/README.MD](app/README.MD).
+
 ## Production vs Preview
 
 | | Main | Other branches |
