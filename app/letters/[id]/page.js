@@ -374,7 +374,7 @@ export default function Page({ params }) {
 
       const letterboxRef = doc(db, "letterbox", id);
       await updateDoc(letterboxRef, {
-        updated_at: currentTime,
+        drafted_at: currentTime,
       });
 
       // Clear states

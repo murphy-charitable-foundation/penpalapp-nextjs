@@ -82,7 +82,7 @@ export default function SendMessage({ kid }) {
                 kidDocRef   
               ],
               created_at: dateNow,
-              updated_at: dateNow,
+              drafted_at: dateNow,
               archived_at: null,
             });
 
