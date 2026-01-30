@@ -50,12 +50,12 @@ export default function Dropdown({
         </button>
         {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         <Dialog
-        isOpen={isModalOpen} 
-        onClose={() => {
-            setIsModalOpen(false);}}
-        title={text}
-        content={modalContent}
-        width="large"
+            isOpen={isModalOpen} 
+            onClose={() => {
+                setIsModalOpen(false);}}
+            title={text}
+            content={modalContent}
+            width="large"
         />
     </>
   );
