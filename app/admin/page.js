@@ -69,6 +69,17 @@ export default function Admin() {
 
   const router = useRouter();
 
+  const updateLocalLetter = (id, updates) => {
+  setDocuments(prev =>
+    prev.map(l => (l.id === id ? { ...l, ...updates } : l))
+  );
+};
+
+const currentLetter =
+  selectedLetter &&
+  documents.find(d => d.id === selectedLetter.id) ||
+  selectedLetter;
+
   useEffect(() => {
     if (!isDormantLetterboxLoading) {
       handleDormantLetterboxWorker();
@@ -118,16 +129,19 @@ export default function Admin() {
   }, [router]);
 
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      setDocuments([]);
-      setLastDoc(null);
-      setHasMore(true);
-      await fetchLetters();
-      setIsLoading(false);
-    };
-    load();
-  }, [selectedStatus, startDate, endDate]);
+  if (activeView !== "inbox") return;
+
+  const load = async () => {
+    setIsLoading(true);
+    setDocuments([]);
+    setLastDoc(null);
+    setHasMore(true);
+    await fetchLetters();
+    setIsLoading(false);
+  };
+
+  load();
+}, [selectedStatus, startDate, endDate, activeView]);
 
   const fetchLetters = async (nextPage = false) => {
     const constraints = [
@@ -275,33 +289,36 @@ export default function Admin() {
 
   {activeView === "review" && selectedLetter && (
     <AdminLetterReview
-      letter={selectedLetter}
+      letter={currentLetter}
       onClose={() => {
         setActiveView("inbox");
         setSelectedLetter(null);
       }}
       onApprove={async () => {
-        try {
-          const ref = doc(
-            db,
-            "letterboxes",
-            selectedLetter.letterboxId,
-            "letters",
-            selectedLetter.id
-          );
-          await updateDoc(ref, {
-            status: "approved",
-            moderator_id: userId,
-            updated_at: new Date(),
-          });
-        } catch (err) {
-          console.warn("Approve blocked by Firestore rules", err);
-        }
+  if (!currentLetter) return;
 
-        setSelectedStatus("approved");
-        setActiveView("inbox");
-        setSelectedLetter(null);
-      }}
+  const { id, letterboxId } = currentLetter;
+
+  setSelectedLetter(null); // 🔑 detach first
+  setActiveView("inbox");
+
+  updateLocalLetter(id, {
+    status: "approved",
+    moderator_id: userId,
+  });
+
+  try {
+    const ref = doc(db, "letterboxes", letterboxId, "letters", id);
+    await updateDoc(ref, {
+      status: "approved",
+      moderator_id: userId,
+      updated_at: new Date(),
+    });
+  } catch (err) {
+    console.warn("Approve blocked", err);
+  }
+
+}}
       onReject={() => setActiveView("reject")}
       onRevert={revertToPending}
     />
