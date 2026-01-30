@@ -372,6 +372,11 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageData);
       }
 
+      const letterboxRef = doc(db, "letterbox", id);
+      await updateDoc(letterboxRef, {
+        drafted_at: currentTime,
+      });
+
       // Clear states
 
       setMessageContent("");

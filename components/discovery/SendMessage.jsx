@@ -75,12 +75,14 @@ export default function SendMessage({ kid }) {
           let letterboxRef;
 
           if (querySnapshot.empty) { // if there's no letterbox, create one.
+            const dateNow = new Date();
             letterboxRef = await addDoc(collection(db, "letterbox"), {
               members: [
                 userDocRef, 
                 kidDocRef   
               ],
-              created_at: new Date(),
+              created_at: dateNow,
+              drafted_at: dateNow,
               archived_at: null,
             });
 
