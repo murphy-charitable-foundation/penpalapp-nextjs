@@ -6,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { updateDoc } from "firebase/firestore";
+import SuccessModal from "../../components/general/admin/SuccessModal";
 
 import {
   collectionGroup,
@@ -65,6 +66,8 @@ export default function Admin() {
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [activeView, setActiveView] = useState("inbox");
 // "inbox" | "review" | "reject"
+const [reviewAction, setReviewAction] = useState(null);
+// null | "approved" | "rejected"
 
 
   const router = useRouter();
@@ -274,57 +277,60 @@ const currentLetter =
 
             <div className="flex-1 min-h-0">
 
-  {activeView === "inbox" && (
-    <main className="overflow-y-auto p-6">
-      <ConversationList
-        conversations={documents}
-        isAdmin
-        onSelectConversation={(c) => {
-          setSelectedLetter(c);
-          setActiveView("review");
-        }}
-      />
-    </main>
-  )}
+            {activeView === "inbox" && (
+              <main className="overflow-y-auto p-6">
+                <ConversationList
+                  conversations={documents}
+                  isAdmin
+                  onSelectConversation={(c) => {
+                    setSelectedLetter(c);
+                    setActiveView("review");
+                  }}
+                />
+              </main>
+            )}
 
-  {activeView === "review" && selectedLetter && (
-    <AdminLetterReview
-      letter={currentLetter}
-      onClose={() => {
-        setActiveView("inbox");
-        setSelectedLetter(null);
+       {activeView === "review" && selectedLetter && !reviewAction && (
+          <AdminLetterReview
+            letter={currentLetter}
+            reviewAction={reviewAction}
+            onClose={() => {
+              setReviewAction(null);
+              setActiveView("inbox");
+              setSelectedLetter(null);
+            }}
+            onApprove={async () => {
+        if (!currentLetter) return;
+
+        const { id, letterboxId } = currentLetter;
+
+
+        updateLocalLetter(id, {
+          status: "approved",
+          moderator_id: userId,
+        });
+
+        setReviewAction("approved");
+
+
+        try {
+          const ref = doc(db, "letterboxes", letterboxId, "letters", id);
+          await updateDoc(ref, {
+            status: "approved",
+            moderator_id: userId,
+            updated_at: new Date(),
+          });
+        } catch (err) {
+          console.warn("Approve blocked", err);
+        }
+
       }}
-      onApprove={async () => {
-  if (!currentLetter) return;
+            onReject={() => setActiveView("reject")}
+            onRevert={revertToPending}
+          />
+        )}
 
-  const { id, letterboxId } = currentLetter;
-
-  setSelectedLetter(null); // 🔑 detach first
-  setActiveView("inbox");
-
-  updateLocalLetter(id, {
-    status: "approved",
-    moderator_id: userId,
-  });
-
-  try {
-    const ref = doc(db, "letterboxes", letterboxId, "letters", id);
-    await updateDoc(ref, {
-      status: "approved",
-      moderator_id: userId,
-      updated_at: new Date(),
-    });
-  } catch (err) {
-    console.warn("Approve blocked", err);
-  }
-
-}}
-      onReject={() => setActiveView("reject")}
-      onRevert={revertToPending}
-    />
-  )}
-
-</div>
+      </div>
 
             {activeView === "inbox" && hasMore && (
               <div className="flex justify-center py-4">
@@ -346,11 +352,14 @@ const currentLetter =
           </div>
         )}
 
-        {activeView === "reject" && selectedLetter && (
+        {activeView === "reject" && selectedLetter && !reviewAction && (
           <AdminRejectModal
             letter={selectedLetter}
             onClose={() => setActiveView("review")}
             onSubmit={async (reason, feedback) => {
+
+              setReviewAction("rejected");
+
               try {
                 const ref = doc(
                   db,
@@ -369,6 +378,16 @@ const currentLetter =
               } catch (err) {
                 console.warn("Reject blocked by Firestore rules", err);
               }
+    
+            }}
+          />
+        )}
+
+        {reviewAction && (
+          <SuccessModal
+            type={reviewAction} // "approved" | "rejected"
+            onClose={() => {
+              setReviewAction(null);
               setSelectedLetter(null);
               setActiveView("inbox");
             }}
