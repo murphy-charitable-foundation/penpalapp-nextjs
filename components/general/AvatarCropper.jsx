@@ -87,10 +87,11 @@ const AvatarCropper = forwardRef(({ type = "gallery", onComplete }, ref) => {
               aspect={1}
               cropShape="round"
               cropSize={{ width: 360, height: 360 }}
-              objectFit="horizontal-cover"
+              objectFit="contain"
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
+              restrictPosition={false}
             />
           </div>
           <div className="p-4 flex justify-between bg-black text-white">
