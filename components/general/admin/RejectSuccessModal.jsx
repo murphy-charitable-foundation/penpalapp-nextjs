@@ -35,7 +35,7 @@ export default function RejectSuccessModal({
               Thanks for your feedback.
             </p>
 
-            {/* CTAs — same pattern as ApproveSuccess */}
+          {/* ACTION BUTTONS */}
             <div className="flex flex-col items-center gap-4">
               <Button
                 btnText="Go to letters"
@@ -43,13 +43,12 @@ export default function RejectSuccessModal({
                 color="green"
                 size="small"
               />
-
-              <Button
+               <Button
                 btnText="Revert to pending review"
                 onClick={onRevert}
-                color="transparent"
+                color="gray"
                 size="small"
-              />
+              /> 
             </div>
 
           </div>

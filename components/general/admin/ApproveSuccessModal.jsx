@@ -36,15 +36,13 @@ export default function ApproveSuccessView({
                 color="green"
                 onClick={onClose}
               />
-
               <Button
                 btnText="Revert to pending review"
-                color="transparent"
+                color="gray"
                 size="small"
                 onClick={onRevert}
               />
             </div>
-
           </div>
         </div>
       </div>

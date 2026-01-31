@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { updateDoc } from "firebase/firestore";
 import SuccessModal from "../../components/general/admin/SuccessModal";
+import { deleteField } from "firebase/firestore";
 
 import {
   collectionGroup,
@@ -207,32 +208,43 @@ const currentLetter =
     setActiveFilter(false);
   };
 
+  const clearFilters = () => {
+  setSelectedStatus("pending_review");
+  setStartDate(null);
+  setEndDate(null);
+  setActiveFilter(false);
+};
+
   if (isLoading) return <LetterHomeSkeleton />;
 
   const revertToPending = async (letter) => {
-    if (!letter) return;
+  if (!letter) return;
 
-    try {
-      const ref = doc(
-        db,
-        "letterboxes",
-        letter.letterboxId,
-        "letters",
-        letter.id
-      );
-      await updateDoc(ref, {
-        status: "pending_review",
-        moderator_id: null,
-        rejection_reason: null,
-        rejection_feedback: null,
-        updated_at: null,
-      });
-    } catch (err) {
-      console.warn("Revert blocked by Firestore rules", err);
-    }
+  try {
+    const ref = doc(
+      db,
+      "letterboxes",
+      letter.letterboxId,
+      "letters",
+      letter.id
+    );
 
-    setSelectedLetter(null);
-  };
+    await updateDoc(ref, {
+      status: "pending_review",
+      moderator_id: deleteField(),
+      rejection_reason: deleteField(),
+      rejection_feedback: deleteField(),
+      updated_at: deleteField(),
+    });
+  } catch (err) {
+    console.warn("Revert blocked by Firestore rules", err);
+  }
+
+  // 🔑 RESET FLOW (order matters)
+  setReviewAction(null);
+  setSelectedLetter(null);
+  setActiveView("inbox");
+};
 
   return (
     <PageBackground>
@@ -259,6 +271,7 @@ const currentLetter =
         {activeFilter ? (
           <AdminFilter
             filter={filter}
+            clearFilters={clearFilters}
             status={selectedStatus}
             setStatus={setSelectedStatus}
             start={startDate}
@@ -391,6 +404,7 @@ const currentLetter =
               setSelectedLetter(null);
               setActiveView("inbox");
             }}
+            onRevert={() => revertToPending(selectedLetter)}
           />
         )}
 

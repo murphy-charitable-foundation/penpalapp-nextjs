@@ -84,8 +84,15 @@ export default function AdminLetterReview({
           {/* spacer pushes rejected card to bottom */}
           <div className="flex-grow" />
 
-          {status === "rejected" && (
-            <div className="relative mt-8 rounded-lg bg-red-50 p-4">
+          {/* Rejected banner (kept mounted, smooth fade) */}
+          <div className="mt-8 min-h-[150px]">
+            <div
+              className={`relative rounded-lg bg-red-50 p-4 transition-opacity duration-150 ${
+                status === "rejected"
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              }`}
+            >
               <AlertTriangle className="absolute top-3 right-3 h-5 w-5 text-red-500" />
 
               <h4 className="font-semibold text-red-700">
@@ -113,16 +120,15 @@ export default function AdminLetterReview({
                 <Button
                   btnText="Edit"
                   color="green"
-                  className="bg-white text-gray-900 border border-gray-400"
                   onClick={onReject}
                 />
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        </div> 
 
         {/* STICKY ACTION BAR */}
-        <div className="bg-gray-50 border-t px-6 py-4 mt-auto">
+        <div className="bg-gray-50 border-t px-6 py-4">
           {status === "approved" && (
             <div className="flex justify-center">
               <Button

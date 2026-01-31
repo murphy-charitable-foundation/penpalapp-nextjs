@@ -17,6 +17,7 @@ export default function AdminFilter({
   setEnd,
   end,
   filter,
+  clearFilters,
   loading,
   setLoading,
 }) {
@@ -41,14 +42,10 @@ export default function AdminFilter({
 
 
 
-  const clearFilter = async(e) => {
-    e.preventDefault()
-    setStatusFilter("sent");
-    setStartFilter("");
-    setEndFilter("");
-    await filter("sent", null, null);
-  
-  };
+  const clearFilter = (e) => {
+  e.preventDefault();
+  clearFilters();
+};
 
 
   const statusOptions =  new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
