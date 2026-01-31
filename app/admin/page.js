@@ -1,282 +1,415 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import BottomNavBar from '../../components/bottom-nav-bar';
+import BottomNavBar from "../../components/bottom-nav-bar";
+import { updateDoc } from "firebase/firestore";
+import SuccessModal from "../../components/general/admin/SuccessModal";
+import { deleteField } from "firebase/firestore";
 
-import { collectionGroup, doc, getDoc, getDocs, collection, query, where, limit, startAfter, orderBy } from "firebase/firestore";
-import { storage } from "../firebaseConfig.js"; // ✅ Use initialized instance
-import { ref as storageRef, getDownloadURL } from "@firebase/storage"; // keep these
+import {
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  limit,
+  startAfter,
+  orderBy,
+} from "firebase/firestore";
+
+import { storage } from "../firebaseConfig.js";
+import { ref as storageRef, getDownloadURL } from "@firebase/storage";
+
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import { BackButton } from "../../components/general/BackButton";
 import WelcomeToast from "../../components/general/WelcomeToast";
 import ConversationList from "../../components/general/ConversationList";
 import Header from "../../components/general/Header";
 import AdminFilter from "../../components/general/admin/AdminFilter";
+import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
+import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
 import { useDormantLetterbox } from "../../context/DormantLetterboxContext";
 
 export default function Admin() {
-    const { isDormantLetterboxLoading, handleDormantLetterboxWorker } = useDormantLetterbox();
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); // Subtract 7 days
+  const { isDormantLetterboxLoading, handleDormantLetterboxWorker } =
+    useDormantLetterbox();
 
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); // Subtract 1 month
-    const [userName, setUserName] = useState("");
-    const [userId, setUserId] = useState("");
-    const [userType, setUserType] = useState("");
-    const [country, setCountry] = useState("");
-    const [letters, setLetters] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [error, setError] = useState("");
-    const [profileImage, setProfileImage] = useState("");
-    const [lastDoc, setLastDoc] = useState(null);
-    const [documents, setDocuments] = useState([]);
-    const [hasMore, setHasMore] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState("pending_review"); // Default filter
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null); // Optional category filter
-    const [showWelcome, setShowWelcome] = useState(false);
-    const [activeFilter, setActiveFilter] = useState(false);
-    const router = useRouter();
+  const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState("");
+  const [userType, setUserType] = useState("");
+  const [country, setCountry] = useState("");
+  const [letters, setLetters] = useState([]); // intentionally kept
+  const [profileImage, setProfileImage] = useState(""); // intentionally kept
 
-    useEffect(() => {
-      if (!isDormantLetterboxLoading) {
-        handleDormantLetterboxWorker();
-      }
-    }, []);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState("");
 
-    useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        setIsLoading(true);
-  
-        if (!user) {
-          setError("No user logged in.");
-          setIsLoading(false);
-          router.push("/login");
-          return;
-        }
-        setUserId(user.uid);
-        const userRef= doc(collection(db, "users"), user.uid);
-        const userSnapshot = await getDoc(userRef);
-        if (!userSnapshot.exists()) {
-          setError("User profile not found.");
-          setIsLoading(false);
-          router.push("/login");
-          return;
-        }      
-        const userData = userSnapshot.data();
-        if (userData?.user_type != "admin") {
-          setError("User is not admin");
-          setIsLoading(false);
-          router.push("/login");
-          return;
-        }
-        setUserType(userData.user_type);
-        setCountry(userData.country);
-        setUserName(userData.first_name + " " + userData.last_name);
-        const path = `profile/${user.uid}/profile-image`;
-        const userPhotoRef = storageRef(storage, path);
-        try {
-          const userUrl = await getDownloadURL(userPhotoRef);
-          setProfileImage(userUrl);
-        } catch {
-          setProfileImage("/usericon.png");
-        }
-        
-      });
-  
-      return () => unsubscribe();
-    }, [router]);
+  const [documents, setDocuments] = useState([]);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
 
-    useEffect(() => {
-      const letterGrab = async() => {
-        setIsLoading(true);
-        setDocuments([]);
-        setLastDoc(null);
-        setHasMore(true);
-        try {
-          // Fetch initial batch of letters
-          await fetchLetters();
-        } catch (err) {
-          console.error("Error fetching data:", err);
-          setError("Failed to load data.");
-        } finally {
-          setIsLoading(false);
-        }
-      }
-      letterGrab();
+  const [selectedStatus, setSelectedStatus] = useState("pending_review");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
-    }, [selectedStatus, startDate, endDate])
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [activeFilter, setActiveFilter] = useState(false);
+
+  const [selectedLetter, setSelectedLetter] = useState(null);
+  const [activeView, setActiveView] = useState("inbox");
+// "inbox" | "review" | "reject"
+const [reviewAction, setReviewAction] = useState(null);
+// null | "approved" | "rejected"
 
 
-  const fetchLetters = async (nextPage = false) => {
-    try {
-      let lettersQuery = collectionGroup(db, "letters");
+  const router = useRouter();
 
-      // 🔹 Apply Filters Dynamically
-      const queryConstraints = [where("status", "==", selectedStatus), orderBy("created_at", "desc"), limit(5)];
-      
-      if (nextPage && lastDoc) {
-        queryConstraints.push(startAfter(lastDoc));
-      }
-      if (startDate) {
-        queryConstraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
-      }
-      if (endDate) {
-        queryConstraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
-      }
+  const updateLocalLetter = (id, updates) => {
+  setDocuments(prev =>
+    prev.map(l => (l.id === id ? { ...l, ...updates } : l))
+  );
+};
 
-      lettersQuery = query(lettersQuery, ...queryConstraints);
-      const querySnapshot = await getDocs(lettersQuery);
-      if (!querySnapshot.empty) {
-        const newDocs = await Promise.all(
-          querySnapshot.docs.map(async (doc) => {
-            const docData = doc.data();
-            let userData = null;
-            let pfp = "/usericon.png"; // default fallback image
+const currentLetter =
+  selectedLetter &&
+  documents.find(d => d.id === selectedLetter.id) ||
+  selectedLetter;
 
-            try {
-              if (docData.sent_by) {
-                const userSnapshot = await getDoc(docData.sent_by); // sent_by must be a DocumentReference
-                if (userSnapshot.exists()) {
-                  userData = userSnapshot.data();
-                  const userId = userSnapshot.id     
-                  const path = `profile/${userId}/profile-image`;
-                  const photoRef = storageRef(storage, path);
-                  const downloaded = await getDownloadURL(photoRef);
-                  pfp = downloaded;
- 
-                }
-              }
-            } catch (error) {
-              console.error("Error fetching user or photo:", error);
-            }
-            return {
-              id: doc.id,
-              ...docData,
-              profileImage: pfp,
-              country: userData?.country || "",
-              user: userData,
-              name : userData ? `${userData.first_name} ${userData.last_name}` : "",
-              lastMessage: docData.content,
-              lastMessageDate: docData.created_at, 
-            };
-          })
-        );
-        if (nextPage) {
-          setIsLoadingMore(false);
-        }
-        setDocuments((prev) => [...prev, ...newDocs]);
-        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1]); // Store last doc for pagination
-      } else {
-        setIsLoadingMore(false);
-        setHasMore(false); // No more documents to load
-      }
-    } catch (err) {
-      console.error("Error fetching more letters:", err);
-      setError("Failed to load more data.");
+  useEffect(() => {
+    if (!isDormantLetterboxLoading) {
+      handleDormantLetterboxWorker();
     }
+  }, [isDormantLetterboxLoading]);
+
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setUserId(user.uid);
+
+      const userRef = doc(collection(db, "users"), user.uid);
+      const snap = await getDoc(userRef);
+
+      if (!snap.exists() || snap.data()?.user_type !== "admin") {
+        router.push("/login");
+        return;
+      }
+
+      const data = snap.data();
+      setUserType(data.user_type);
+      setCountry(data.country);
+      setUserName(`${data.first_name} ${data.last_name}`);
+
+      try {
+        const imgRef = storageRef(
+          storage,
+          `profile/${user.uid}/profile-image`
+        );
+        setProfileImage(await getDownloadURL(imgRef));
+      } catch {
+        setProfileImage("/usericon.png");
+      }
+
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+  if (activeView !== "inbox") return;
+
+  const load = async () => {
+    setIsLoading(true);
+    setDocuments([]);
+    setLastDoc(null);
+    setHasMore(true);
+    await fetchLetters();
+    setIsLoading(false);
   };
 
-  const filter = (status, start, end ) => {
+  load();
+}, [selectedStatus, startDate, endDate, activeView]);
+
+  const fetchLetters = async (nextPage = false) => {
+    const constraints = [
+      where("status", "==", selectedStatus),
+      orderBy("created_at", "desc"),
+      limit(5),
+    ];
+
+    if (nextPage && lastDoc) constraints.push(startAfter(lastDoc));
+    if (startDate)
+      constraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
+    if (endDate)
+      constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
+
+    const q = query(collectionGroup(db, "letters"), ...constraints);
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      setHasMore(false);
+      setIsLoadingMore(false);
+      return;
+    }
+
+    const newDocs = await Promise.all(
+      snap.docs.map(async (d) => {
+        const data = d.data();
+        let pfp = "/usericon.png";
+
+        try {
+          if (data.sent_by) {
+            const imgRef = storageRef(
+              storage,
+              `profile/${data.sent_by.id}/profile-image`
+            );
+            pfp = await getDownloadURL(imgRef);
+          }
+        } catch {}
+
+        return {
+          id: d.id,
+          letterboxId: d.ref.parent.parent?.id,
+          ...data,
+          profileImage: pfp,
+          name: data?.name || "",
+          lastMessage: data.content,
+          lastMessageDate: data.created_at,
+        };
+      })
+    );
+
+    setDocuments((prev) => [...prev, ...newDocs]);
+    setLastDoc(snap.docs[snap.docs.length - 1]);
+    setIsLoadingMore(false);
+  };
+
+  const filter = (status, start, end) => {
     setSelectedStatus(status);
     setStartDate(start);
     setEndDate(end);
     setActiveFilter(false);
+  };
+
+  const clearFilters = () => {
+  setSelectedStatus("pending_review");
+  setStartDate(null);
+  setEndDate(null);
+  setActiveFilter(false);
+};
+
+  if (isLoading) return <LetterHomeSkeleton />;
+
+  const revertToPending = async (letter) => {
+  if (!letter) return;
+
+  try {
+    const ref = doc(
+      db,
+      "letterboxes",
+      letter.letterboxId,
+      "letters",
+      letter.id
+    );
+
+    await updateDoc(ref, {
+      status: "pending_review",
+      moderator_id: deleteField(),
+      rejection_reason: deleteField(),
+      rejection_feedback: deleteField(),
+      updated_at: deleteField(),
+    });
+  } catch (err) {
+    console.warn("Revert blocked by Firestore rules", err);
   }
 
-    if (isLoading) {
-      return <LetterHomeSkeleton/>
-    }
-    
-    return (
-        <PageBackground>
-              <PageContainer maxWidth="lg">
-              <Header activeFilter={activeFilter} setActiveFilter={setActiveFilter} title={"Select message types"} status={selectedStatus} isLoadingMore={isLoadingMore}/>
-            
-             
-              
-              <WelcomeToast 
-                userName={userName}
-                isVisible={showWelcome}
-                onClose={() => setShowWelcome(false)}
-              />
-              {activeFilter ? (
-                  <AdminFilter setStatus={setSelectedStatus} 
-                  status={selectedStatus} 
-                  setStart={setStartDate} 
-                  start={startDate} 
-                  setEnd={setEndDate} 
-                  end={endDate}
-                  filter={filter}
-                  loading={isLoading}
-                  setLoading={setIsLoading}  />
-                
+  // 🔑 RESET FLOW (order matters)
+  setReviewAction(null);
+  setSelectedLetter(null);
+  setActiveView("inbox");
+};
+
+  return (
+    <PageBackground>
+      <PageContainer
+        maxWidth="lg"
+        className="px-6 pt-6 pb-24 space-y-0"
+      >
+        {activeView === "inbox" && (
+          <Header
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+            title="Select message types"
+            status={selectedStatus}
+            isLoadingMore={isLoadingMore}
+          />
+        )}
+
+        <WelcomeToast
+          userName={userName}
+          isVisible={showWelcome}
+          onClose={() => setShowWelcome(false)}
+        />
+
+        {activeFilter ? (
+          <AdminFilter
+            filter={filter}
+            clearFilters={clearFilters}
+            status={selectedStatus}
+            setStatus={setSelectedStatus}
+            start={startDate}
+            setStart={setStartDate}
+            end={endDate}
+            setEnd={setEndDate}
+          />
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-xl flex flex-col flex-1 min-h-0">
+            {activeView === "inbox" && (
+              <div className="px-6 py-3 text-sm text-gray-500">
+                Showing {documents.length}{" "}
+                {selectedStatus.replace("_", " ")} letters
+              </div>
+            )}
+
+            <div className="flex-1 min-h-0">
+
+            {activeView === "inbox" && (
+              <main className="overflow-y-auto p-6">
+                <ConversationList
+                  conversations={documents}
+                  isAdmin
+                  onSelectConversation={(c) => {
+                    setSelectedLetter(c);
+                    setActiveView("review");
+                  }}
+                />
+              </main>
+            )}
+
+       {activeView === "review" && selectedLetter && !reviewAction && (
+          <AdminLetterReview
+            letter={currentLetter}
+            reviewAction={reviewAction}
+            onClose={() => {
+              setReviewAction(null);
+              setActiveView("inbox");
+              setSelectedLetter(null);
+            }}
+            onApprove={async () => {
+        if (!currentLetter) return;
+
+        const { id, letterboxId } = currentLetter;
+
+
+        updateLocalLetter(id, {
+          status: "approved",
+          moderator_id: userId,
+        });
+
+        setReviewAction("approved");
+
+
+        try {
+          const ref = doc(db, "letterboxes", letterboxId, "letters", id);
+          await updateDoc(ref, {
+            status: "approved",
+            moderator_id: userId,
+            updated_at: new Date(),
+          });
+        } catch (err) {
+          console.warn("Approve blocked", err);
+        }
+
+      }}
+            onReject={() => setActiveView("reject")}
+            onRevert={revertToPending}
+          />
+        )}
+
+      </div>
+
+            {activeView === "inbox" && hasMore && (
+              <div className="flex justify-center py-4">
+                {isLoadingMore ? (
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg pb-6 overflow-hidden">
-            
-                    <main className="p-6">
-                      <section className="mt-8">
-                        {!isLoading ? (
-                          <ConversationList conversations={documents}/>
-                        ) : (
-                          <LetterHomeSkeleton />
-                        )}
-                      </section>
-                  </main>
-
-                  {hasMore === true && (
-                    <div className="flex justify-center mt-4 w-full">
-                      {isLoadingMore ? (
-                        <div
-                          className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
-                          role="status"
-                          aria-label="Loading"
-                        />
-                      ) : (
-                        <Button
-                          btnText="Load More"
-                          color="blue"
-                          rounded="rounded-md"
-                          onClick={() => {setIsLoadingMore(true); fetchLetters(true);}}
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  </div>
+                  <Button
+                    btnText="Load More"
+                    color="blue"
+                    rounded="rounded-md"
+                    onClick={() => {
+                      setIsLoadingMore(true);
+                      fetchLetters(true);
+                    }}
+                  />
                 )}
+              </div>
+            )}
+          </div>
+        )}
 
+        {activeView === "reject" && selectedLetter && !reviewAction && (
+          <AdminRejectModal
+            letter={selectedLetter}
+            onClose={() => setActiveView("review")}
+            onSubmit={async (reason, feedback) => {
 
+              setReviewAction("rejected");
 
-                <BottomNavBar />
+              try {
+                const ref = doc(
+                  db,
+                  "letterboxes",
+                  selectedLetter.letterboxId,
+                  "letters",
+                  selectedLetter.id
+                );
+                await updateDoc(ref, {
+                  status: "rejected",
+                  moderator_id: userId,
+                  rejection_reason: reason,
+                  rejection_feedback: feedback,
+                  updated_at: new Date(),
+                });
+              } catch (err) {
+                console.warn("Reject blocked by Firestore rules", err);
+              }
+    
+            }}
+          />
+        )}
 
-              {/* Add animation keyframes */}
-              <style jsx global>{`
-                @keyframes slideIn {
-                  from {
-                    opacity: 0;
-                    transform: translateX(30px);
-                  }
-                  to {
-                    opacity: 1;
-                    transform: translateX(0);
-                  }
-                }
-                .animate-slide-in {
-                  animation: slideIn 0.3s ease-out forwards;
-                }
-              `}</style>
-              </PageContainer>
-            </PageBackground>
-          );
+        {reviewAction && (
+          <SuccessModal
+            type={reviewAction} // "approved" | "rejected"
+            onClose={() => {
+              setReviewAction(null);
+              setSelectedLetter(null);
+              setActiveView("inbox");
+            }}
+            onRevert={() => revertToPending(selectedLetter)}
+          />
+        )}
+
+        <BottomNavBar />
+      </PageContainer>
+    </PageBackground>
+  );
 }
