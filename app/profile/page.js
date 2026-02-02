@@ -45,7 +45,10 @@ export default function EditProfile() {
   const [village, setVillage] = useState("");
   const [bio, setBio] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
-  const [isOrphan, setIsOrphan] = useState(false);
+
+  // so it should NOT be boolean to avoid toLowerCase() crash.
+  const [isOrphan, setIsOrphan] = useState("No");
+
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
   const [gender, setGender] = useState("");
@@ -57,6 +60,7 @@ export default function EditProfile() {
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
+
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -75,94 +79,6 @@ export default function EditProfile() {
   usePageAnalytics("/profile");
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setFirstName(userData.first_name || "");
-          setLastName(userData.last_name || "");
-          setEmail(userData.email || "");
-          setBirthday(userData.birthday || "");
-          setCountry(userData.country || "");
-          setVillage(userData.village || "");
-          setBio(userData.bio || "");
-          setEducationLevel(userData.education_level || "");
-          setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.guardian || "");
-          setDreamJob(userData.dream_job || "");
-          setHobby(userData.hobby || "");
-          setFavoriteColor(userData.favorite_color || "");
-          setPhotoUri(userData.photo_uri || "");
-          setUserType(userData.user_type || "");
-
-          if (Array.isArray(userData.hobbies)) {
-            setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
-          } else if (userData.hobby) {
-            setHobbies([
-              { id: userData.hobby.toLowerCase(), label: userData.hobby },
-            ]);
-          }
-        }
-      }
-    };
-
-    fetchUserData();
-  }, [auth.currentUser]);
-
-  const saveProfileData = async () => {
-    if (auth.currentUser) {
-      const uid = auth.currentUser.uid;
-      const userProfileRef = doc(db, "users", uid);
-
-      const userProfile = {
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        birthday,
-        country,
-        village,
-        bio,
-        education_level: educationLevel,
-        is_orphan: isOrphan.toLowerCase() === "yes",
-        guardian,
-        dream_job: dreamJob,
-        hobby,
-        hobbies: hobbies.map((h) => h.id),
-        favorite_color: favoriteColor,
-        gender,
-      };
-
-      const newErrors = {};
-      if (!userProfile.first_name.trim() && !userProfile.last_name.trim()) {
-        newErrors.first_name = "Name is required";
-        newErrors.last_name = "Name is required";
-      }
-
-      try {
-        if (Object.keys(newErrors).length > 0) {
-          setErrors(newErrors);
-          throw new Error("Form validation error(s)");
-        }
-        await updateDoc(userProfileRef, userProfile);
-        setIsSaved(true);
-        setIsDialogOpen(true);
-        setDialogTitle("Congratulations!");
-        setDialogMessage("Profile saved successfully!");
-      } catch (error) {
-        setIsDialogOpen(true);
-        setDialogTitle("Oops!");
-        setDialogMessage("Error saving profile.");
-        logError(error, { description: "Error saving profile " });
-        Sentry.captureException?.(error);
-      }
-    }
-  };
-
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -171,8 +87,105 @@ export default function EditProfile() {
         router.push("/login");
       }
     });
+
     return () => unsubscribe();
   }, [router]);
+
+  // Fetch user data whenever `user` changes (NOT auth.currentUser)
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user?.uid) return;
+
+      const uid = user.uid;
+      const docRef = doc(db, "users", uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+
+        setFirstName(userData.first_name || "");
+        setLastName(userData.last_name || "");
+        setEmail(userData.email || "");
+        setBirthday(userData.birthday || "");
+        setCountry(userData.country || "");
+        setVillage(userData.village || "");
+        setBio(userData.bio || "");
+        setEducationLevel(userData.education_level || "");
+        setIsOrphan(userData.is_orphan ? "Yes" : "No");
+        setGuardian(userData.guardian || "");
+        setDreamJob(userData.dream_job || "");
+        setHobby(userData.hobby || "");
+        setFavoriteColor(userData.favorite_color || "");
+        setPhotoUri(userData.photo_uri || "");
+        setUserType(userData.user_type || "");
+
+        if (Array.isArray(userData.hobbies)) {
+          setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
+        } else if (userData.hobby) {
+          setHobbies([{ id: userData.hobby.toLowerCase(), label: userData.hobby }]);
+        } else {
+          setHobbies([]);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
+  const saveProfileData = async () => {
+    // Use `user` state instead of auth.currentUser
+    if (!user?.uid) return;
+
+    const uid = user.uid;
+    const userProfileRef = doc(db, "users", uid);
+
+    const userProfile = {
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      birthday,
+      country,
+      village,
+      bio,
+      education_level: educationLevel,
+      is_orphan: String(isOrphan).toLowerCase() === "yes",
+      guardian,
+      dream_job: dreamJob,
+      hobby,
+      hobbies: hobbies.map((h) => h.id),
+      favorite_color: favoriteColor,
+      gender,
+    };
+
+    const newErrors = {};
+    if (!userProfile.first_name.trim() && !userProfile.last_name.trim()) {
+      newErrors.first_name = "Name is required";
+      newErrors.last_name = "Name is required";
+    }
+
+    try {
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        throw new Error("Form validation error(s)");
+      }
+
+      setIsSaving(true);
+      await updateDoc(userProfileRef, userProfile);
+
+      setIsSaved(true);
+      setIsDialogOpen(true);
+      setDialogTitle("Congratulations!");
+      setDialogMessage("Profile saved successfully!");
+    } catch (error) {
+      setIsDialogOpen(true);
+      setDialogTitle("Oops!");
+      setDialogMessage("Error saving profile.");
+      logError(error, { description: "Error saving profile " });
+      Sentry.captureException?.(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleOpenBioModal = () => {
     setTempBio(bio);
