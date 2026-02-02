@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -46,7 +46,7 @@ export default function EditProfile() {
   const [bio, setBio] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
 
-  // so it should NOT be boolean to avoid toLowerCase() crash.
+  // use this like a Yes/No string; keep it consistent.
   const [isOrphan, setIsOrphan] = useState("No");
 
   const [guardian, setGuardian] = useState("");
@@ -78,6 +78,7 @@ export default function EditProfile() {
   const router = useRouter();
   usePageAnalytics("/profile");
 
+  //Source of truth for auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -91,7 +92,7 @@ export default function EditProfile() {
     return () => unsubscribe();
   }, [router]);
 
-  // Fetch user data whenever `user` changes (NOT auth.currentUser)
+  // Fetch profile data whenever React `user` changes
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.uid) return;
@@ -122,18 +123,23 @@ export default function EditProfile() {
         if (Array.isArray(userData.hobbies)) {
           setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
         } else if (userData.hobby) {
-          setHobbies([{ id: userData.hobby.toLowerCase(), label: userData.hobby }]);
+          setHobbies([
+            { id: userData.hobby.toLowerCase(), label: userData.hobby },
+          ]);
         } else {
           setHobbies([]);
         }
+      } else {
+        // Doc missing is fine; save will upsert using setDoc(merge)
+        setHobbies([]);
       }
     };
 
     fetchUserData();
   }, [user]);
 
+  // Defensive upsert save
   const saveProfileData = async () => {
-    // Use `user` state instead of auth.currentUser
     if (!user?.uid) return;
 
     const uid = user.uid;
@@ -170,7 +176,9 @@ export default function EditProfile() {
       }
 
       setIsSaving(true);
-      await updateDoc(userProfileRef, userProfile);
+
+      // Upsert: create if missing, update if exists
+      await setDoc(userProfileRef, userProfile, { merge: true });
 
       setIsSaved(true);
       setIsDialogOpen(true);
@@ -180,7 +188,7 @@ export default function EditProfile() {
       setIsDialogOpen(true);
       setDialogTitle("Oops!");
       setDialogMessage("Error saving profile.");
-      logError(error, { description: "Error saving profile " });
+      logError(error, { description: "Error saving profile" });
       Sentry.captureException?.(error);
     } finally {
       setIsSaving(false);
@@ -307,7 +315,9 @@ export default function EditProfile() {
                   )}
 
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Bio / Challenges</p>
+                    <p className="text-sm text-gray-500 mb-1">
+                      Bio / Challenges
+                    </p>
                     <button
                       type="button"
                       onClick={handleOpenBioModal}
