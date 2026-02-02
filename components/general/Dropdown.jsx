@@ -41,6 +41,7 @@ export default function Dropdown({
           flex items-center justify-between
           bg-transparent
           border-b
+          font-semibold
           transition-colors
           focus:outline-none
           ${safeValue ? "border-black" : "border-gray-300"}
