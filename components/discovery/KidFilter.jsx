@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Dropdown from "../general/Dropdown";
-import HobbySelect from "../discovery/HobbySelect";
+import HobbySelect from "../general/HobbySelect";
 
 const PRIMARY = "#4E802A";
 const ACCENT = "#0EA5A8";
@@ -57,6 +57,7 @@ export default function KidFilter({ filter }) {
             value={hobbies}
             onChange={setHobbies}
             allowCustom={false}
+            editable={false}
             placeholder="Select hobbies"
           />
         </div>

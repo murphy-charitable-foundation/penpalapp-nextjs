@@ -14,6 +14,10 @@ import {
 } from "../utils/letterboxFunctions";
 
 import LettersSkeleton from "../../components/loading/LettersSkeleton";
+import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+import ProfileImage from "/components/general/ProfileImage";
+import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
+import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -188,7 +192,7 @@ return (
         center={false}
         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
-        {isLoading && <LettersSkeleton />}
+        {isLoading && <LetterHomeSkeleton />}
         {!isLoading && (
           <>
           {/* ===== HEADER (FIXED) ===== */}
