@@ -16,7 +16,7 @@ import Dropdown from "../../components/general/Dropdown";
 
 import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logError } from "../utils/analytics";
+import { logButtonEvent } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 
 export default function UserDataImport() {
@@ -66,6 +66,7 @@ export default function UserDataImport() {
         gender: gender,
       };
 
+      // Custom validation
       if (!userData.first_name.trim() && !userData.last_name.trim()) {
         newErrors.first_name = "Name is required";
         newErrors.last_name = "Name is required";
@@ -92,7 +93,6 @@ export default function UserDataImport() {
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
     } catch (error) {
-      logError(error, { description: "Error importing user data: " });
       Sentry.captureException?.(error);
 
       setIsDialogOpen(true);
@@ -135,21 +135,21 @@ export default function UserDataImport() {
                     type="text"
                     name="firstName"
                     label="First Name"
-                    error={errors.first_name || ""}
+                    error={errors.first_name}
                   />
 
                   <Input
                     type="text"
                     name="lastName"
                     label="Last Name"
-                    error={errors.last_name || ""}
+                    error={errors.last_name}
                   />
 
                   <Input
                     type="text"
                     name="email"
                     label="Email"
-                    error={errors.email || ""}
+                    error={errors.email}
                   />
 
                   <Input type="date" name="birthday" label="Birthday" />
@@ -238,7 +238,6 @@ export default function UserDataImport() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input name="dreamJob" label="Dream Job" />
-
                   <Input name="favoriteColor" label="Favorite Color" />
 
                   <div className="md:col-span-2">
