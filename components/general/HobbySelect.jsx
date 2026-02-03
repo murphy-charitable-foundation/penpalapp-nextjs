@@ -16,8 +16,8 @@ function capFirst(s) {
 export default function HobbySelect({
   value = [],
   onChange,
-  editable = false, 
-  allowCustom = false, 
+  editable = false,
+  allowCustom = false,
   placeholder,
   collectionName = "hobbies",
 }) {
@@ -29,9 +29,8 @@ export default function HobbySelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [serverOptions, setServerOptions] = useState([]); // [{id,label}]
+  const [serverOptions, setServerOptions] = useState([]);
 
-  // ================== FETCH HOBBIES ==================
   useEffect(() => {
     let alive = true;
 
@@ -69,7 +68,6 @@ export default function HobbySelect({
     };
   }, [collectionName]);
 
-  // ================== MERGE SERVER + SELECTED ==================
   const options = useMemo(() => {
     const selectedExtras = value.filter(
       (v) => !serverOptions.some((o) => o.id === v.id)
@@ -83,7 +81,6 @@ export default function HobbySelect({
     return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
-  // ================== HELPERS ==================
   function isSelected(id) {
     return value.some((v) => v.id === id);
   }
@@ -96,11 +93,10 @@ export default function HobbySelect({
     }
   }
 
-  // ================== ADD CUSTOM ==================
-  async function addCustom() {
+  async function addCustom(rawLabel) {
     if (!allowCustom) return;
 
-    const label = query.trim();
+    const label = (rawLabel ?? query).trim();
     if (!label) return;
 
     const id = slugify(label);
@@ -114,7 +110,6 @@ export default function HobbySelect({
 
     const newOption = { id, label: capFirst(label) };
 
-    // write --> Firestore
     if (editable) {
       try {
         setIsLoading(true);
@@ -134,7 +129,13 @@ export default function HobbySelect({
 
   const selectedText = value.map((v) => v.label).join(", ");
 
-  // ================== RENDER ==================
+  const canShowAddRow =
+    allowCustom &&
+    query.trim() &&
+    !options.some((o) => o.id === slugify(query));
+
+  const showNoOptions = !allowCustom && filteredOptions.length === 0;
+
   return (
     <div className="relative">
       <button
@@ -158,25 +159,12 @@ export default function HobbySelect({
               placeholder="Search hobbies..."
               className="flex-1 border rounded-lg px-3 py-2 text-sm"
             />
-            {allowCustom && editable && (
-              <button
-                type="button"
-                onClick={addCustom}
-                className="px-3 py-2 text-sm rounded-lg bg-gray-200"
-              >
-                Add
-              </button>
-            )}
           </div>
 
           <div className="mt-3 max-h-52 overflow-y-auto">
             {isLoading ? (
               <div className="py-6 text-sm text-gray-500 text-center">
                 Loading…
-              </div>
-            ) : filteredOptions.length === 0 ? (
-              <div className="py-6 text-sm text-gray-500 text-center">
-                No options
               </div>
             ) : (
               <ul className="space-y-1">
@@ -202,6 +190,27 @@ export default function HobbySelect({
                     </li>
                   );
                 })}
+
+                {canShowAddRow && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => addCustom(query)}
+                      className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 text-left"
+                    >
+                      <span className="text-sm font-semibold">+</span>
+                      <span className="text-sm text-gray-900">
+                        Add &quot;{query.trim()}&quot;
+                      </span>
+                    </button>
+                  </li>
+                )}
+
+                {showNoOptions && (
+                  <li className="py-6 text-sm text-gray-500 text-center">
+                    No options
+                  </li>
+                )}
               </ul>
             )}
           </div>
