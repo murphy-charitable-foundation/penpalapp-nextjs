@@ -16,7 +16,7 @@ import Dropdown from "../../components/general/Dropdown";
 
 import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 
 export default function UserDataImport() {

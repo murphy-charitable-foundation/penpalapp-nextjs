@@ -16,7 +16,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError, logLoadingTime } from "../utils/analytics";
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 
