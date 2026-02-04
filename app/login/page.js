@@ -72,70 +72,71 @@ export default function Login() {
   };
 
   return (
+  <PageBackground>
     <PageContainer maxWidth="md" padding="p-8">
       {loading && <LoadingSpinner />}
+
       <PageHeader title="Login" />
+
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              handleInputChange();
-            }}
-            placeholder="Ex. user@gmail.com"
-            id="email"
-            name="email"
-            label="Email"
-            error={error && error.toLowerCase().includes("email") ? error : ""}
-          />
+        <Input
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            handleInputChange();
+          }}
+          placeholder="Ex. user@gmail.com"
+          id="email"
+          name="email"
+          label="Email"
+          error={error && error.toLowerCase().includes("email") ? error : ""}
+        />
+
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            handleInputChange();
+          }}
+          placeholder="******"
+          id="password"
+          name="password"
+          label="Password"
+          error={
+            error && error.toLowerCase().includes("password") ? error : ""
+          }
+        />
+
+        {/* Forgot password */}
+        <div className="block text-md text-center">
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Forgot your password?
+          </button>
         </div>
 
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  handleInputChange();
-                }}
-                placeholder="******"
-                id="password"
-                name="password"
-                label="Password"
-                error={error && error.toLowerCase().includes("password") ? error : ""}
-              />
+        {/* Other errors */}
+        {error &&
+          !error.toLowerCase().includes("email") &&
+          !error.toLowerCase().includes("password") && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
 
-              {/* ===== FORGOT PASSWORD BUTTON ===== */}
-              <div className="block text-md text-center">
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  className="font-medium text-blue-600 hover:text-blue-500"
-                >
-                  Forgot your password?
-                </button>
-              </div>
-
-              {/* ===== OTHER ERRORS ===== */}
-              {error &&
-                !error.toLowerCase().includes("email") &&
-                !error.toLowerCase().includes("password") && (
-                  <p className="text-red-500 text-sm text-center">{error}</p>
-                )}
-
-              <div className="flex justify-center pt-2">
-                <Button
-                  btnType="submit"
-                  btnText="Log in"
-                  color="green"
-                  disabled={loading}
-                />
-              </div>
-            </form>
-          </div>
-        </PageContainer>
-      </div>
-    </PageBackground>
-  );
+        <div className="flex justify-center pt-2">
+          <Button
+            btnType="submit"
+            btnText="Log in"
+            color="green"
+            disabled={loading}
+          />
+        </div>
+      </form>
+    </PageContainer>
+  </PageBackground>
+);
 }
