@@ -110,6 +110,7 @@ export default function EditProfile() {
         setBirthday(userData.birthday || "");
         setCountry(userData.country || "");
         setVillage(userData.village || "");
+        setGender(userData.gender || "");
         setBio(userData.bio || "");
         setEducationLevel(userData.education_level || "");
         setIsOrphan(userData.is_orphan ? "Yes" : "No");
@@ -303,6 +304,24 @@ export default function EditProfile() {
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                   />
+
+                  {/* Gender */}
+                  <div className="rounded-2xl bg-white p-4">
+                    <h3 className="text-sm font-semibold text-secondary mb-4">
+                      Pronouns:
+                    </h3>
+
+                    <Dropdown
+                      options={[
+                        "He/Him",
+                        "She/Her",
+                        "Other"
+                      ]}
+                      currentValue={gender}
+                      valueChange={setGender}
+                      text="Pronouns"
+                    />
+                  </div>
 
                   {userType !== "international_buddy" && (
                     <Input
