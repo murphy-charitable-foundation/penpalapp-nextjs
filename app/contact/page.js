@@ -47,6 +47,7 @@ export default function Contact() {
             alt="Murphy Charitable Foundation logo"
             width={100}
             height={100}
+            priority
           />
         </div>
 
