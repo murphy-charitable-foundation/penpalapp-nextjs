@@ -1,26 +1,37 @@
 import Link from "next/link";
-import ProfileImage from "../ProfileImage";
-import Button from "../Button";
+import ProfileImage from "/components/general/ProfileImage";
 
-export default function ProfileHeader({ userName, country, profileImage, id }) {
+export default function ProfileHeader({
+  userName,
+  country,
+  profileImage,
+  id,
+  showCountry = true, 
+}) {
   return (
-    <header className="flex justify-between items-center bg-blue-100 p-5 border-b border-gray-200">
-      <Link href={"/profile-view/" + id}>
-        <Button
-          btnText={
-            <div className="flex items-center">
-              <ProfileImage photo_uri={profileImage} first_name={userName} />
-              <div className="ml-3">
-              <div className="font-semibold text-lg">{userName}</div>
-              <div className="text-sm text-gray-600">{country}</div>
-            </div>
-            </div>
-          }
-          color="bg-transparent"
-          textColor="text-gray-700"
-          hoverColor="hover:text-gray-600"
+    <header className="bg-blue-100 border-b border-gray-200 px-4 py-3">
+      <Link
+        href={`/profile`}
+        className="flex items-center gap-2 sm:gap-3"
+      >
+        <ProfileImage
+          photo_uri={profileImage}
+          first_name={userName}
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full ring-2 ring-white"
         />
+
+        <div className="min-w-0">
+          <div className="font-semibold text-lg text-slate-900 truncate">
+            {userName || "—"}
+          </div>
+
+          {showCountry && country && (
+            <div className="text-sm text-slate-600 truncate">
+              {country}
+            </div>
+          )}
+        </div>
       </Link>
     </header>
   );
-} 
+}

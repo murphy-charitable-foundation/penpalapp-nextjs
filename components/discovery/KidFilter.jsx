@@ -1,121 +1,115 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig";
-import HobbySelect from "../general/HobbySelect";
-import Input from "../general/Input";
-import Button from "../general/Button";
+import React, { useState, useMemo } from "react";
 import Dropdown from "../general/Dropdown";
+import HobbySelect from "../general/HobbySelect";
 
-export default function KidFilter({
-  setHobbies,
-  hobbies,
-  setAge,
-  age,
-  setGender,
-  gender,
-  filter,
-}) {
-  const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
-  const [ageFilter, setAgeFilter] = useState(age !== 0 ? age : "");
-  const [genderFilter, setGenderFilter] = useState(gender || "");
+const PRIMARY = "#4E802A";
+const ACCENT = "#0EA5A8";
 
-  useEffect(() => {
-    setHobbiesFilter(hobbies || []);
-    setAgeFilter(age !== 0 && age !== null ? age : "");
-    setGenderFilter(gender || "");
-  }, [age, gender, hobbies]);
+const AGE_BRACKETS = [
+  { label: "Age 6 and below", min: 0, max: 6 },
+  { label: "Age 7 - 14", min: 7, max: 14 },
+  { label: "Age 15 - 18", min: 15, max: 18 },
+];
 
+export default function KidFilter({ filter }) {
+  const genderOptions = ["He/Him", "She/Her", "Other"];
 
+  const [hobbies, setHobbies] = useState([]);
+  const [gender, setGender] = useState(null);
+  const [age, setAge] = useState(null);
+
+  const ageLabel = useMemo(() => {
+    if (!age) return "";
+    const match = AGE_BRACKETS.find(
+      (b) => b.min === age.min && b.max === age.max
+    );
+    return match ? match.label : "";
+  }, [age]);
+
+  const isDirty = hobbies.length > 0 || Boolean(gender) || Boolean(age);
 
   const applyFilter = (e) => {
     e.preventDefault();
-    filter(ageFilter, hobbyFilter, genderFilter);
+    filter?.({ age, gender, hobbies });
   };
-
-
 
   const clearFilter = () => {
-    setHobbies(null);
-    setAge(null);
+    setHobbies([]);
     setGender(null);
-    setHobbiesFilter([]);
-    setAgeFilter("");
-    setGenderFilter("");
+    setAge(null);
+    filter?.({ age: null, gender: null, hobbies: [] });
   };
 
-  const genderOptions = ["Male", "Female", "Non-binary", "Other"];
-
   return (
-    <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
-      <form className="flex flex-col gap-6">
+    <form
+      onSubmit={applyFilter}
+      className="w-full bg-white"
+      style={{ ["--accent"]: ACCENT }}
+    >
+      <div className="px-5 py-5 space-y-5">
         <div>
-          <label
-            htmlFor="village"
-            className="text-sm font-medium text-gray-700 block mb-2"
-          >
-            Hobby
+          <label className="block mb-1 text-xs font-medium text-gray-600">
+            Hobbies
           </label>
-          
-          <HobbySelect setHobbies={setHobbiesFilter} hobbies={hobbyFilter} wantBorder={false}/>
+          <HobbySelect
+            value={hobbies}
+            onChange={setHobbies}
+            allowCustom={false}
+            editable={false}
+            placeholder="Select hobbies"
+          />
         </div>
+
         <div>
-          <label
-            htmlFor="gender"
-            className="text-sm font-medium text-gray-700 block mb-2"
-          >
+          <label className="block mb-1 text-xs font-medium text-gray-600">
             Gender
           </label>
-          
           <Dropdown
-          options={genderOptions}
-          valueChange={setGenderFilter}
-          currentValue={genderFilter}
-          text="Gender"
+            options={genderOptions}
+            currentValue={gender || ""}
+            valueChange={(v) => setGender(v || null)}
+            placeholder="Select gender"
           />
         </div>
+
         <div>
-          <label
-            htmlFor="age"
-            className="text-md font-medium text-gray-700 block mb-2 px-2"
-          >
+          <label className="block mb-1 text-xs font-medium text-gray-600">
             Age
           </label>
-          <Input
-            type="number"
-            id="age"
-            value={ageFilter}
-            onChange={(e) => setAgeFilter(e.target.value)}
-            placeholder="Input your age"
-            size="w-full"
-            padding="p-2"
-            borderColor="border-black"
-            textColor="text-black"
+          <Dropdown
+            options={AGE_BRACKETS.map((b) => b.label)}
+            currentValue={ageLabel}
+            valueChange={(label) => {
+              const b = AGE_BRACKETS.find((x) => x.label === label);
+              setAge(b ? { min: b.min, max: b.max } : null);
+            }}
+            placeholder="Select age range"
           />
         </div>
-        <div className="flex justify-center mt-24">
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={applyFilter}
-              btnText="Apply Filters"
-              color="blue"
-              textColor="text-white"
-              font="font-bold"
-              rounded="rounded-3xl"
-              size="w-full"
-            />
-            <Button
-              onClick={clearFilter}
-              btnText="Clear Filters"
-              textColor="text-black"
-              font="text-lg"
-              size="w-full"
-            />
-          </div>
+
+        <div className="pt-4 flex flex-col items-center gap-3">
+          <button
+            type="submit"
+            disabled={!isDirty}
+            className={`w-full h-10 rounded-full text-sm font-semibold ${
+              isDirty ? "text-white" : "bg-gray-200 text-gray-500"
+            }`}
+            style={isDirty ? { backgroundColor: PRIMARY } : {}}
+          >
+            Apply filters
+          </button>
+
+          <button
+            type="button"
+            onClick={clearFilter}
+            className="text-xs text-gray-600 underline"
+          >
+            Clear filters
+          </button>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
-

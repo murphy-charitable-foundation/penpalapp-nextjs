@@ -85,12 +85,12 @@ export default function SendMessage({ kid }) {
             });
 
             console.log("Letterbox created");
-
+            
             await addDoc(collection(letterboxRef, "letters"), {
               sent_by: userRef,
               content: "Please complete your first letter here...",
               status: "draft",
-              created_at: new Date(),
+              updated_at: new Date(),
               deleted: null
             });
 
@@ -131,7 +131,6 @@ export default function SendMessage({ kid }) {
     <div>
       <Button
         btnText="Send a message"
-        color="bg-[#034792]"
         textColor="text-white"
         font="font-bold"
         rounded="rounded-3xl"

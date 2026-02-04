@@ -1,55 +1,84 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import SendMessage from "./SendMessage";
 
+const BRAND = {
+  primary: "#034792",
+  primarySoft: "#E6F0FF",
+  chipBg: "#EEF4FF",
+  text: "#262626",
+  subtext: "#515151",
+};
 
-//Card for kid
-export default async function KidCard({ kid, calculateAge }) {
+export default function KidCard({ kid, calculateAge }) {
+  const imgSrc = kid?.photoURL || "/usericon.png";
+
+  const hobbies = Array.isArray(kid?.hobby)
+    ? kid.hobby
+    : typeof kid?.hobby === "string" && kid.hobby.trim()
+    ? [kid.hobby.trim()]
+    : [];
+
   return (
     <div
-      key={kid?.id}
-      className="w-full max-w-sm my-4 p-4 rounded-lg shadow-md flex flex-col items-start"
-      style={{ flexGrow: 1 }}
+      className="w-full mx-auto my-2 p-4 rounded-2xl shadow-md bg-white ring-1 ring-gray-100"
+      style={{ maxWidth: "22rem" }}
     >
-      <div className="w-48 h-48 overflow-hidden rounded-full mx-auto">
+      <div
+        className="w-32 h-32 mx-auto rounded-full overflow-hidden ring-2"
+        style={{ borderColor: BRAND.primarySoft }}
+      >
         <Image
-          src={downloaded || "/usericon.png"}
+          src={imgSrc}
           alt="Kid picture"
-          width={220}
-          height={220}
-          className="object-cover"
+          width={128}
+          height={128}
+          className="object-cover w-full h-full"
         />
       </div>
 
       <h2
-        className="text-xl mt-3 mb-1 text-left text-bold"
-        style={{ color: "#262626" }}
+        className="text-lg mt-4 mb-1 font-semibold text-center"
+        style={{ color: BRAND.text }}
       >
         {kid?.first_name} {kid?.last_name}
       </h2>
 
-      <p className="text-xs mb-1 text-left text-black">
-        {calculateAge(kid?.date_of_birth)} years old
+      <p className="text-xs mb-2 text-center" style={{ color: BRAND.subtext }}>
+        {calculateAge(kid?.birthday)} years old
       </p>
-      <p
-        className="text-left mb-2 text-gray-900 text-xs break-words"
-        style={{ color: "#515151" }}
-      >
-        {kid?.bio}
-      </p>
-      <div className="flex justify-start flex-wrap gap-2 mb-4">
-        {kid.hobby?.map((hobby, idx) => (
-          <span
-            key={idx}
-            className="px-3 py-1 text-xs rounded-full"
-            style={{ backgroundColor: "#f8fcec", color: "black" }}
-          >
-            {hobby}
-          </span>
-        ))}
-      </div>
-      <div className="self-end mt-auto">
-        <SendMessage kid={kid}/>
+
+      {kid?.bio && (
+        <p
+          className="text-xs text-center mb-3 px-2 leading-relaxed break-words"
+          style={{ color: BRAND.subtext }}
+        >
+          {kid.bio}
+        </p>
+      )}
+
+      {hobbies.length > 0 && (
+        <div className="flex justify-center flex-wrap gap-2 mb-4">
+          {hobbies.map((hobby, idx) => (
+            <span
+              key={idx}
+              className="px-3 py-1 text-[11px] rounded-full border"
+              style={{
+                backgroundColor: BRAND.chipBg,
+                borderColor: BRAND.primarySoft,
+                color: BRAND.text,
+              }}
+            >
+              {hobby}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex justify-center mt-2">
+        <SendMessage kid={kid} />
       </div>
     </div>
   );
