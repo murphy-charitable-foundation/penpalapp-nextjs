@@ -1,16 +1,34 @@
 "use client";
 
-// pages/donate.js
-import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import BottomNavBar from "../../components/bottom-nav-bar";
+
 import Button from "../../components/general/Button";
-import { BackButton } from "../../components/general/BackButton";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { PageBackground } from "../../components/general/PageBackground";
+import { PageContainer } from "../../components/general/PageContainer";
+import { PageHeader } from "../../components/general/PageHeader";
+import NavBar from "../../components/bottom-nav-bar";
+
+import { auth } from "../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function Donate() {
+  /* ================= AUTH ================= */
+  const [user, setUser] = useState(null);
+  const isLoggedIn = !!user;
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u || null);
+    });
+    return () => unsub();
+  }, []);
+
+  /* ================= ANALYTICS ================= */
+  usePageAnalytics("/donate");
+
+  /* ================= PAYMENT DETAILS ================= */
   const details = [
     { label: "Account Name", value: "Murphy Charitable Foundation" },
     { label: "Account Number", value: "01113657970966" },
@@ -18,69 +36,88 @@ export default function Donate() {
     { label: "Swift Code", value: "DFCUUGKA" },
   ];
 
-  /**
-   * Firebase Analytics Documentation Example:
-   * usePageAnalytics("/donate") from useAnalytics.js logs a dead clicks and load times for the /donate page
-   */
-
-  usePageAnalytics("/donate");
-
+  /* ================= RENDER ================= */
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="max-w-2xl w-full mb-8">
-        <Link href="letterhome">
-          <BackButton />
-        </Link>
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-center text-4xl text-blue-600 font-bold mb-6">
-              Donate
-            </h2>
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <PageHeader title="Sponsor a child" image={false} />
 
-            <p className="text-gray-700 text-lg leading-relaxed">
-              Your generosity makes our work possible. Whether you contribute
-              financially or as advocate for good, you make a real difference.
-            </p>
+          {/* ===== SINGLE SCROLLER ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
+            <div className="space-y-2">
+              <p className="text-black dark:text-black">
+               Your generosity makes our work possible. Whether you contribute
+               financially or as an advocate for good, you make a real
+               difference.
+              </p>
 
-            <div className="mt-6 text-center">
-              <Link href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card">
-            {/* logButtonEvent from analytics.js logs a button click event to Firebase 
-                Analytics when the "Make a Donation" button is clicked. The event is labeled 
-                as "make donation button clicked" and is associated with the "/donate" page. */ }
-                <Button
-                  btnText="Make a Donation"
-                  color="bg-blue-600"
-                  textColor="text-white"
-                  hoverColor="hover:bg-blue-700"
-                  rounded="rounded-md"
-                  font="font-semibold"
-                  onClick={() =>
-                    logButtonEvent("make donation button clicked", "/donate")
-                  }
-                />
+              <p className="text-xs italic text-slate-600 dark:text-slate-300">
+                You may include a note to indicate your preferred category:
+              </p>
+
+               <p className="text-xs italic text-slate-600 dark:text-slate-300">
+               Education, Beddings &amp; Clothing, Medical Care, or Scholastic
+               Materials.
+              </p>
+            </div>
+
+
+            {/* DONATE BUTTON */}
+            <div className="mt-4 text-center">
+              <Link
+                href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card"
+                target="_blank"
+              >
+                <Button btnText="Sponsor Now" />
               </Link>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Payment Details Section */}
-      <div className="bg-blue-600 rounded-xl shadow-lg p-6 max-w-2xl w-full">
-        <h2 className="text-center text-3xl text-white font-bold mb-6">
-          Payment Details
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {details.map((detail, index) => (
-            <div key={index} className="bg-white rounded-lg p-6 shadow-lg">
-              <h3 className="text-lg text-blue-600 font-bold">
-                {detail.label}
-              </h3>
-              <p className="text-md mt-2 text-gray-800">{detail.value}</p>
+            {/* PAYMENT DETAILS */}
+            <section className="mt-6">
+              <div className="bg-secondary rounded-lg shadow-lg p-4">
+                <h2 className="text-center text-2xl md:text-3xl text-white font-bold mb-6">
+                  Payment Details
+                </h2>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {details.map((detail, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-white rounded-lg p-4 shadow"
+                    >
+                      <h3 className="text-sm font-bold text-secondary">
+                        {detail.label}
+                      </h3>
+                      <p className="text-gray-800 mt-1">
+                        {detail.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-white/90 text-xs mt-4 text-center">
+                  Please include your email in the transfer note so we can send a
+                  receipt.
+                </p>
+              </div>
+            </section>
+          </div>
+
+          {/* ===== NAVBAR (ONLY WHEN LOGGED IN) ===== */}
+          {isLoggedIn && (
+            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+              <NavBar />
             </div>
-          ))}
-        </div>
+          )}
+        </PageContainer>
       </div>
-      <BottomNavBar />
-    </div>
+    </PageBackground>
   );
 }

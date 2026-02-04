@@ -35,7 +35,7 @@ export default function Input({
           ${error ? "border-red-500" : "border-gray-300"}
           w-full
           px-4 py-2
-          font-bold
+          font-semibold
           outline-none
           text-gray-900 
           placeholder:text-gray-400 focus:border-black

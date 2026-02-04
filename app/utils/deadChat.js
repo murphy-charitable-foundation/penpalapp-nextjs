@@ -2,6 +2,7 @@ import { db } from "../firebaseConfig";
 import { collection, collectionGroup, getDocs, getDoc, doc, query, orderBy, limit, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp } from "./dateHelpers";
+import { logError } from "../utils/analytics";
 
 
 const apiRequest = async (letterbox, emailId, reason) => {
@@ -49,7 +50,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
       }
        
   } catch (error) {
-      Sentry.captureException("Could not send request to SendGrid" + error);
+    logError(error, { description: "Could not send request to email client:", error});
   }
 }
 

@@ -4,23 +4,14 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
-import Link from "next/link";
-import Image from "next/image";
-import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
+
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
-import { usePageAnalytics } from "../useAnalytics";
-import { useEffect } from "react";
-import {
-  logInEvent,
-  logButtonEvent,
-  logLoadingTime,
-} from "../utils/analytics";
+import { PageBackground } from "../../components/general/PageBackground";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -28,14 +19,11 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  
-  usePageAnalytics(`/login`);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    logButtonEvent("login button clicked", "/login");
 
     try {
       if (!email) throw new Error("Please enter your email.");
@@ -46,6 +34,7 @@ export default function Login() {
         email,
         password
       );
+
       const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
@@ -55,10 +44,10 @@ export default function Login() {
       } else {
         router.push("/create-acc");
       }
-    } catch (error) {
+    } catch (err) {
       setLoading(false);
-      console.error("Authentication error:", error.message);
-      switch (error.code) {
+      console.error("Authentication error:", err.message);
+      switch (err.code) {
         case "auth/user-not-found":
           setError("No user found with this email.");
           break;
@@ -69,99 +58,96 @@ export default function Login() {
           setError("Too many attempts. Try again later.");
           break;
         default: {
-          if (!error.code) setError(error.message);
+          if (!err.code) setError(err.message);
           else setError("Failed to log in.");
         }
       }
-    } finally {
     }
   };
 
-  const handleInputChange = () => {
-    setError("");
+  const handleInputChange = () => setError("");
+
+  const handleForgotPassword = () => {
+    router.push("/reset-password");
   };
 
   return (
-    <PageContainer maxWidth="md" padding="p-8">
-      {loading && <LoadingSpinner />}
-      <PageHeader title="Login" />
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <div>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              handleInputChange();
-            }}
-            placeholder="Ex. user@gmail.com"
-            id="email"
-            name="email"
-            label="Email"
-            error={error && error.toLowerCase().includes("email") ? error : ""}
-          />
-        </div>
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      <div className="flex-1 flex justify-center items-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="w-full max-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <div className="pb-4">
+            <PageHeader title="Login" image showBackButton showBorder={false} />
+          </div>
 
-        <div>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              handleInputChange();
-            }}
-            placeholder="******"
-            id="password"
-            name="password"
-            label="Password"
-            error={
-              error && error.toLowerCase().includes("password") ? error : ""
-            }
-          />
-        </div>
+          {/* ===== CONTENT (ONLY SCROLLER) ===== */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-8">
+            {loading && <LoadingSpinner />}
 
-        <div className="text-sm text-center">
-          <Link
-            href="/reset-password"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Forgot your password?
-          </Link>
-        </div>
+            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  handleInputChange();
+                }}
+                placeholder="Ex. user@gmail.com"
+                id="email"
+                name="email"
+                label="Email"
+                error={error && error.toLowerCase().includes("email") ? error : ""}
+              />
 
-        <div className="flex justify-center space-x-4"></div>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  handleInputChange();
+                }}
+                placeholder="******"
+                id="password"
+                name="password"
+                label="Password"
+                error={error && error.toLowerCase().includes("password") ? error : ""}
+              />
 
-        <div className="flex items-center justify-center">
-          <Input
-            id="remember-me"
-            name="remember-me"
-            type="checkbox"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label
-            htmlFor="remember-me"
-            className="ml-2 block text-sm text-gray-900"
-          >
-            Remember me
-          </label>
-        </div>
+              {/* ===== FORGOT PASSWORD BUTTON ===== */}
+              <div className="block text-md text-center">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Forgot your password?
+                </button>
+              </div>
 
-        {error &&
-          !error.toLowerCase().includes("email") &&
-          !error.toLowerCase().includes("password") && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
+              {/* ===== OTHER ERRORS ===== */}
+              {error &&
+                !error.toLowerCase().includes("email") &&
+                !error.toLowerCase().includes("password") && (
+                  <p className="text-red-500 text-sm text-center">{error}</p>
+                )}
 
-        <div className="flex justify-center">
-          <Button
-            btnType="submit"
-            btnText="Log in"
-            color="green"
-            textColor="text-white"
-            disabled={loading}
-          />
-        </div>
-      </form>
-    </PageContainer>
+              <div className="flex justify-center pt-2">
+                <Button
+                  btnType="submit"
+                  btnText="Log in"
+                  color="green"
+                  disabled={loading}
+                />
+              </div>
+            </form>
+          </div>
+        </PageContainer>
+      </div>
+    </PageBackground>
   );
 }

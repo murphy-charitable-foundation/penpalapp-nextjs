@@ -16,7 +16,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent, logError, logLoadingTime } from "../utils/analytics";
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 
@@ -48,7 +48,7 @@ export default function ResetPassword() {
           console.error(error);
         });
     } catch (error) {
-      Sentry.captureException("Error resetting password:", error);
+      logError(error, { description: "Error resetting password:", error});
     }
 
     logButtonEvent("Reset Password clicked!", "/reset-password");
@@ -71,26 +71,42 @@ export default function ResetPassword() {
     </div>
   );
 
-  return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        <div className="p-0 bg-white">
-          <PageHeader title="Reset Your Password" />
-          <div className="mt-10">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ex: user@gmail.com"
-              name="email"
-              id="email"
-              required
-              label="Registered Email"
-              error={errors.email ? errors.email : ""}
-            />
-          </div>
+return (
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    {/* ===== MAIN AREA ===== */}
+    <div className="flex-1 min-h-0 flex justify-center">
 
-          <div className="mt-6 flex justify-center">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="
+          min-h-[100dvh]
+          flex flex-col
+          bg-white
+          rounded-2xl
+          shadow-lg
+          overflow-hidden
+        "
+      >
+        {/* ===== HEADER ===== */}
+        <PageHeader title="Reset Your Password" image></PageHeader>
+
+        {/* ===== CONTENT (SCROLLABLE – CONSISTENT) ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Ex: user@gmail.com"
+            name="email"
+            id="email"
+            required
+            label="Registered Email"
+            error={errors.email || ""}
+          />
+
+          <div className="mt-8 flex justify-center">
             <Button
               btnType="button"
               btnText="Reset"
@@ -98,19 +114,22 @@ export default function ResetPassword() {
               textColor="text-gray-400"
               size="default"
               onClick={resetPassword}
+              rounded="rounded-full"
             />
           </div>
         </div>
       </PageContainer>
-      <Dialog
-        isOpen={showModal}
-        width="large"
-        onClose={() => {
-          setShowModal(false);
-        }}
-        title="Please Check Your Email"
-        content={modalContent}
-      />
-    </PageBackground>
-  );
+    </div>
+
+    {/* ===== DIALOG ===== */}
+    <Dialog
+      isOpen={showModal}
+      width="large"
+      onClose={() => setShowModal(false)}
+      title="Please Check Your Email"
+      content={modalContent}
+    />
+  </PageBackground>
+);
+
 }

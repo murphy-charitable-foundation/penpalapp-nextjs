@@ -1,14 +1,13 @@
 "use client";
-
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
-import NavBar from "../../components/bottom-nav-bar";
+import  NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
@@ -25,7 +24,6 @@ import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logButtonEvent, logError } from "../utils/analytics";
@@ -117,6 +115,7 @@ export default function Home() {
       } else {
         try {
           const uid = user.uid;
+          setUserId(uid)
 
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
@@ -202,74 +201,49 @@ export default function Home() {
   //   fetchUserData();
   // }, []);
 
-  return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        <>
-          {isLoading ? (
-            <LetterHomeSkeleton />
-          ) : (
-            <>
-              <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
-                <BackButton />
-                <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-                  <ProfileHeader
-                    userName={userName}
-                    country={country}
-                    profileImage={profileImage}
-                    id={userId}
-                  />
-                  <main className="p-6 bg-white">
-                    <section className="mt-8">
-                      {conversations.length > 0 ? (
-                        <ConversationList conversations={conversations} />
-                      ) : (
-                        <EmptyState
-                          title="New friends are coming!"
-                          description="Many friends are coming hang tight!"
-                        />
-                      )}
-                    </section>
-                  </main>
 
-                  <NavBar />
-                </div>
-              </div>
-              {userType === "admin" && (
-                <Button
-                  btnText="Check For Inactive Chats"
-                  color="bg-black"
-                  textColor="text-white"
-                  rounded="rounded-md"
-                  onClick={() => {
-                    logButtonEvent(
-                      "check for inactive chats button clicked",
-                      "/letterhome"
-                    );
-                    iterateLetterBoxes();
-                  }}
-                />
-              )}
-            </>
-          )}
-        </>
-        {/* Add animation keyframes */}
-        <style jsx global>{`
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateX(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          .animate-slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-          }
-        `}</style>
+return (
+  <>
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {isLoading && <LetterHomeSkeleton />}
+        {!isLoading && (
+          <>
+          {/* ===== HEADER (FIXED) ===== */}
+          <div className="shrink-0 border-b">
+            <ProfileHeader
+              userName={userName}
+              profileImage={profileImage}
+              id={userId}
+              showCountry={false}
+            />
+          </div>
+
+          {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3">
+            {conversations.length > 0 ? (
+              <ConversationList conversations={conversations} />
+            ) : (
+              <EmptyState
+                title="New friends are coming!"
+                description="Many friends are coming — hang tight!"
+              />
+            )}
+          </div>
+
+          {/* ===== NAVBAR (FIXED) ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
+          </>
+        )}
       </PageContainer>
     </PageBackground>
-  );
+  </>
+);
 }
