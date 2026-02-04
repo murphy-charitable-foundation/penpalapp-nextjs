@@ -14,7 +14,7 @@ export function PageHeader({
 }) {
   return (
     <>
-      <div className="flex flex-row items-center justify-between mb-4">
+      <div className="mb-4">
         {showBackButton ? <BackButton /> : <span className="w-10" />}
         {heading ? (
           <h2
