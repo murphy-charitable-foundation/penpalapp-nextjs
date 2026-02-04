@@ -128,7 +128,7 @@ export default function ChooseAccountPage() {
   return (
     <PageBackground>
       <PageContainer maxWidth="md">
-        <PageHeader title="Choose account" showBackButton={false} />
+        <PageHeader title="Choose Account" showBackButton={false} />
         <p className="text-gray-600 text-sm text-center -mt-2 mb-6">
           Choose an account to continue
         </p>
