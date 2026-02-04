@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -70,6 +70,9 @@ export default function EditProfile() {
   const [isOrphanModalOpen, setIsOrphanModalOpen] = useState(false);
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const pendingNavRef = useRef(null);
+
 
   const router = useRouter();
   usePageAnalytics("/profile");
@@ -263,42 +266,72 @@ export default function EditProfile() {
     setIsBioModalOpen(true);
   };
 
+  const attemptNavigate = (navigate) => {
+
+  if (!hasUnsavedChanges) {
+    navigate();
+    return;
+  }
+
+  pendingNavRef.current = navigate;
+  setShowLeaveDialog(true);
+};
+
+
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Dialog
-        isOpen={isDialogOpen}
-        onClose={() => {
-        setIsDialogOpen(false);
+  <Dialog
+    isOpen={isDialogOpen}
+    onClose={() => {
+      setIsDialogOpen(false);
 
-        if (
-          isSaved &&
-          (!hasUnsavedChanges ||
-            window.confirm(
-              "You have unsaved changes. Are you sure you want to leave?"
-            ))
-        ) {
-          router.push("/letterhome");
-        }
+      if (isSaved) {
+        attemptNavigate(() => router.push("/letterhome"));
+      }
+    }}
+    title={dialogTitle}
+    content={dialogMessage}
+  />
+
+    <Dialog
+      isOpen={showLeaveDialog}
+      onClose={() => {
+        setShowLeaveDialog(false);
+        pendingNavRef.current = null;
       }}
-        title={dialogTitle}
-        content={dialogMessage}
-      ></Dialog>
+      variant="confirmation"
+      title="Unsaved changes"
+      content="You have unsaved changes. Are you sure you want to leave?"
+      buttons={[
+        {
+          text: "Cancel",
+          variant: "secondary",
+          onClick: () => {
+            setShowLeaveDialog(false);
+            pendingNavRef.current = null;
+          },
+        },
+        {
+          text: "Leave",
+          variant: "primary",
+          onClick: () => {
+            setShowLeaveDialog(false);
+            pendingNavRef.current?.();
+            pendingNavRef.current = null;
+          },
+        },
+      ]}
+    />
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
       <PageHeader
           title="Profile"
           image={false}
           heading={false}
-          onBack={() => {
-            if (
-              hasUnsavedChanges &&
-              !window.confirm(
-                "You have unsaved changes. Are you sure you want to leave?"
-              )
-            ) {
-              return false; // block navigation
-            }
-            return true; // allow navigation
+         onBack={() => {
+            attemptNavigate(() => router.push("/letterhome"));
+            return false;
           }}
+
         />
       
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
@@ -324,14 +357,8 @@ export default function EditProfile() {
               <button
                 type="button"
                 onClick={() => {
-                  if (
-                    hasUnsavedChanges &&
-                    !window.confirm("You have unsaved changes. Are you sure you want to leave?")
-                  ) {
-                    return;
-                  }
-                  router.push("/edit-profile-user-image");
-                }}
+                    attemptNavigate(() => router.push("/edit-profile-user-image"));
+                  }}
                 className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
               >
                 Edit Photo

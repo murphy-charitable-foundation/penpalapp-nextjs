@@ -11,6 +11,8 @@ import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import Dialog from "../../components/general/Dialog";
+
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -21,6 +23,10 @@ export default function EditProfileUserImage() {
   const [user, setUser] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [objectUrl, setObjectUrl] = useState(null);
+  const [hasUnsavedImage, setHasUnsavedImage] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const pendingNavRef = useRef(null);
+
 
 
   const [isSaving, setIsSaving] = useState(false);
@@ -29,6 +35,11 @@ export default function EditProfileUserImage() {
   const router = useRouter();
 
   usePageAnalytics("/edit-profile-user-image");
+
+  useEffect(() => {
+  console.log("hasUnsavedImage:", hasUnsavedImage);
+}, [hasUnsavedImage]);
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -72,6 +83,17 @@ export default function EditProfileUserImage() {
     setStorageUrl(url);
   };
 
+  const attemptNavigateWithGuard = (navigate) => {
+  if (!hasUnsavedImage) {
+    navigate();
+    return;
+  }
+
+  pendingNavRef.current = navigate;
+  setShowLeaveDialog(true);
+};
+
+
   const handleCrop = () => {
     if (
       cropperRef.current &&
@@ -80,6 +102,7 @@ export default function EditProfileUserImage() {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
         setCroppedImage(blob);
+        setHasUnsavedImage(true); 
       });
     }
   };
@@ -87,6 +110,8 @@ export default function EditProfileUserImage() {
   const handleDrop = (acceptedFiles) => {
   const file = acceptedFiles[0];
   if (!file) return;
+
+    setHasUnsavedImage(true);
 
   if (objectUrl) {
     URL.revokeObjectURL(objectUrl);
@@ -128,6 +153,7 @@ useEffect(() => {
         console.log("Image Url:" + url);
         if (url) {
           await updateDoc(doc(db, "users", uid), { photo_uri: url });
+          setHasUnsavedImage(false);
           router.push("/profile");
         }
       }
@@ -144,8 +170,12 @@ useEffect(() => {
           <div className="max-w-lg mx-auto p-6">
             <div className="flex flex-col justify-between items-center">
               <div className="block">
-                <BackButton />
-
+                <BackButton
+                    onBack={() => {
+                      attemptNavigateWithGuard(() => router.push("/profile-view"));
+                      return false;
+                    }}
+                  />
                 <h1 className="ml-4 text-xl text-center font-bold text-gray-800">
                   Edit image
                 </h1>
@@ -171,6 +201,37 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      <Dialog
+  isOpen={showLeaveDialog}
+  onClose={() => {
+    setShowLeaveDialog(false);
+    pendingNavRef.current = null;
+  }}
+  variant="confirmation"
+  title="Unsaved photo changes"
+  content="You have unsaved changes to your profile photo. Are you sure you want to leave?"
+  buttons={[
+    {
+      text: "Cancel",
+      variant: "secondary",
+      onClick: () => {
+        setShowLeaveDialog(false);
+        pendingNavRef.current = null;
+      },
+    },
+    {
+      text: "Leave",
+      variant: "primary",
+      onClick: () => {
+        setShowLeaveDialog(false);
+        pendingNavRef.current?.();
+        pendingNavRef.current = null;
+      },
+    },
+  ]}
+/>
+
     </div>
   );
 }

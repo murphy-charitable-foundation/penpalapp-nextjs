@@ -8,8 +8,10 @@ export function BackButton({ onBack }) {
   const router = useRouter();
 
   const handleClick = () => {
-
-    if (onBack && onBack() === false) return;
+    if (onBack) {
+      onBack();
+      return;
+    }
 
     router.back();
   };
