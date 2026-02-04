@@ -16,7 +16,7 @@ import Dropdown from "../../components/general/Dropdown";
 
 import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 
 export default function UserDataImport() {
@@ -93,8 +93,7 @@ export default function UserDataImport() {
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
     } catch (error) {
-      Sentry.captureException?.(error);
-
+      logError(error, { description: "Error importing user data:", error});
       setIsDialogOpen(true);
       setDialogTitle("Oops");
       setDialogMessage("Error importing user data.");

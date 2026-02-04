@@ -14,7 +14,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import * as Sentry from "@sentry/nextjs";
 
 export default function ResetPassword() {
@@ -45,7 +45,7 @@ export default function ResetPassword() {
           console.error(error);
         });
     } catch (error) {
-      Sentry.captureException("Error resetting password:", error);
+      logError(error, { description: "Error resetting password:", error});
     }
 
     logButtonEvent("Reset Password clicked!", "/reset-password");

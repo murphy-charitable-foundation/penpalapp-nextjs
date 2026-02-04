@@ -14,7 +14,7 @@ const AGE_BRACKETS = [
 ];
 
 export default function KidFilter({ filter }) {
-  const genderOptions = ["Male", "Female", "Non-binary"];
+  const genderOptions = ["He/Him", "She/Her", "Other"];
 
   const [hobbies, setHobbies] = useState([]);
   const [gender, setGender] = useState(null);
