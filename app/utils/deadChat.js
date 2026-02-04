@@ -49,7 +49,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
       }
        
   } catch (error) {
-      Sentry.captureException("Could not send request to SendGrid" + error);
+    logError(error, { description: "Could not send request to email client:", error});
   }
 }
 

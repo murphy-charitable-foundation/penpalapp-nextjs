@@ -189,7 +189,6 @@ export default function EditProfile() {
       setDialogTitle("Oops!");
       setDialogMessage("Error saving profile.");
       logError(error, { description: "Error saving profile" });
-      Sentry.captureException?.(error);
     } finally {
       setIsSaving(false);
     }

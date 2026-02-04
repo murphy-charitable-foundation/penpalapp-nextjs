@@ -93,8 +93,7 @@ export default function UserDataImport() {
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
     } catch (error) {
-      Sentry.captureException?.(error);
-
+      logError(error, { description: "Error importing user data:", error});
       setIsDialogOpen(true);
       setDialogTitle("Oops");
       setDialogMessage("Error importing user data.");

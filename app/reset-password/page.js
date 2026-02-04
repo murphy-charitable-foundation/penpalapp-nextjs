@@ -48,7 +48,7 @@ export default function ResetPassword() {
           console.error(error);
         });
     } catch (error) {
-      Sentry.captureException("Error resetting password:", error);
+      logError(error, { description: "Error resetting password:", error});
     }
 
     logButtonEvent("Reset Password clicked!", "/reset-password");
