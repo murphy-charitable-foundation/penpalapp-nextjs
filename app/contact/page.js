@@ -11,7 +11,6 @@ import {
 } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
-import ContactButtons from "./ContactButtons";
 
 export default function Contact() {
   const socialLinks = [
@@ -43,7 +42,12 @@ export default function Contact() {
         <BackButton />
 
         <div className="my-4 flex justify-center">
-          <Image src={logo} alt="Foundation Logo" width={100} height={100} />
+          <Image
+            src={logo}
+            alt="Murphy Charitable Foundation logo"
+            width={100}
+            height={100}
+          />
         </div>
 
         <h1 className="text-3xl font-bold text-center mb-1 text-white">
