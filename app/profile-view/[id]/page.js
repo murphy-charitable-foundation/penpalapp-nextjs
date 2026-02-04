@@ -47,7 +47,7 @@ export default function Page({ params }) {
   const [isOrphan, setIsOrphan] = useState(false);
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
-  //const [gender, setGender] = useState("");
+  //const [pronouns, setPronouns] = useState("");
   const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
