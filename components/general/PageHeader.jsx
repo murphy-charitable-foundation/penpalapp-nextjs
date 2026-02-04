@@ -10,11 +10,12 @@ export function PageHeader({
   titleColor = "text-gray-800",
   image = true,
   heading = true,
+  showBackButton = true,
 }) {
   return (
     <>
       <div className="flex flex-row items-center justify-between mb-4">
-        <BackButton />
+        {showBackButton ? <BackButton /> : <span className="w-10" />}
         {heading ? (
           <h2
             className={`flex-grow text-center text-2xl font-bold ${titleColor}`}

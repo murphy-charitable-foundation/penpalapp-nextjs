@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { BackButton } from "../../components/general/BackButton";
@@ -29,18 +29,18 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { hydrated } = useCachedUsers();
-  
+  const searchParams = useSearchParams();
+  const { hydrated, addCachedUser, cachedUsers } = useCachedUsers();
+
   usePageAnalytics(`/login`);
 
   useEffect(() => {
-    const checkCached = () => {
-      if (!hydrated) { 
-        router.push("/children-gallery");
-      }
+    if (!hydrated) return;
+    if (searchParams.get("force")) return;
+    if (cachedUsers?.length > 0) {
+      router.replace("/choose-account");
     }
-    checkCached();
-  }, [])
+  }, [hydrated, cachedUsers, router, searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,11 +65,12 @@ export default function Login() {
 
       if (userSnap.exists()) {
         addCachedUser({
-          "id": uid,
-          "name": data.first_name,
-          "email": email,
-          "photoURL":  data?.photo_uri || ""
-        })
+          id: uid,
+          email,
+          first_name: data.first_name ?? "",
+          last_name: data.last_name ?? "",
+          photo_uri: data?.photo_uri ?? "",
+        });
         router.push("/letterhome");
       } else {
         router.push("/create-acc");

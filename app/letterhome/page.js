@@ -51,7 +51,7 @@ export default function Home() {
 
     function clearStoredData() {
       localStorage.removeItem("child");
-      router.push("/children-gallery");
+      router.push("/choose-account");
       console.log("Removed 'child' from localStorage due to inactivity");
     }
 
