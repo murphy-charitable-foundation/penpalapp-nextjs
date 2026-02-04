@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
+import ContactButtons from "./ContactButtons";
 
 export default function Contact() {
   const socialLinks = [
