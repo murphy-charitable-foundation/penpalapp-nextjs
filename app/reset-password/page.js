@@ -1,12 +1,8 @@
 "use client";
 
-{
-  /* pages/reset-password.js */
-}
 import { db, auth } from "../firebaseConfig";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import logo from "/public/murphylogo.png";
 import Image from "next/image";
 import { sendPasswordResetEmail } from "firebase/auth";
 import Button from "../../components/general/Button";
@@ -16,9 +12,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logError, logLoadingTime } from "../utils/analytics";
-import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -30,26 +24,21 @@ export default function ResetPassword() {
 
   function resetPassword() {
     const newErrors = {};
+
     if (!email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = "Invalid email format";
     }
-    try {
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        throw new Error("Form validation error(s)");
-      }
-      sendPasswordResetEmail(auth, email)
-        .then(() => {
-          setShowModal(true);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    } catch (error) {
-      logError(error, { description: "Error resetting password:", error});
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
+
+    sendPasswordResetEmail(auth, email)
+      .then(() => setShowModal(true))
+      .catch((error) => logError(error));
 
     logButtonEvent("reset_password_submit", "/reset-password");
   }
@@ -61,9 +50,9 @@ export default function ResetPassword() {
 
   const modalContent = (
     <div>
-      <p style={{ color: "black", marginTop: "20px", fontSize: "0.9rem" }}>
-        Please check your email inbox and spam folder for a verification email
-        to reset your password.
+      <p className="text-black mt-5 text-sm">
+        Please check your email inbox and spam folder for a verification email to
+        reset your password.
       </p>
       <div className="flex justify-center mt-4">
         <Button onClick={closeModal} btnText="Understood" color="green" />
@@ -71,59 +60,12 @@ export default function ResetPassword() {
     </div>
   );
 
-<<<<<<< HEAD
-return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-    {/* ===== MAIN AREA ===== */}
-    <div className="flex-1 min-h-0 flex justify-center">
-
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="
-          min-h-[100dvh]
-          flex flex-col
-          bg-white
-          rounded-2xl
-          shadow-lg
-          overflow-hidden
-        "
-      >
-        {/* ===== HEADER ===== */}
-        <PageHeader title="Reset Your Password" image></PageHeader>
-
-        {/* ===== CONTENT (SCROLLABLE – CONSISTENT) ===== */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Ex: user@gmail.com"
-            name="email"
-            id="email"
-            required
-            label="Registered Email"
-            error={errors.email || ""}
-          />
-
-          <div className="mt-8 flex justify-center">
-            <Button
-              btnType="button"
-              btnText="Reset"
-              color="gray"
-              textColor="text-gray-400"
-              size="default"
-              onClick={resetPassword}
-              rounded="rounded-full"
-            />
-          </div>
-=======
   return (
     <PageBackground>
       <PageContainer maxWidth="lg">
         <div className="p-0 bg-white">
           <PageHeader title="Reset Your Password" />
+
           <form
             method="post"
             onSubmit={(e) => {
@@ -140,32 +82,23 @@ return (
               id="email"
               required
               label="Registered Email"
-              error={errors.email ? errors.email : ""}
+              error={errors.email || ""}
             />
 
             <div className="mt-6 flex justify-center">
-              <Button
-                btnType="submit"
-                btnText="Reset"
-                color="gray"
-                size="default"
-              />
+              <Button btnType="submit" btnText="Reset" color="gray" />
             </div>
           </form>
->>>>>>> 5e79c75 (Use POST for login and reset-password forms to prevent credentials in URL)
         </div>
       </PageContainer>
-    </div>
 
-    {/* ===== DIALOG ===== */}
-    <Dialog
-      isOpen={showModal}
-      width="large"
-      onClose={() => setShowModal(false)}
-      title="Please Check Your Email"
-      content={modalContent}
-    />
-  </PageBackground>
-);
-
+      <Dialog
+        isOpen={showModal}
+        width="large"
+        onClose={() => setShowModal(false)}
+        title="Please Check Your Email"
+        content={modalContent}
+      />
+    </PageBackground>
+  );
 }
