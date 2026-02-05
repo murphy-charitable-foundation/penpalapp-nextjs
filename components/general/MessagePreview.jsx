@@ -1,6 +1,7 @@
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
 
 
@@ -21,7 +22,7 @@ const MessagePreview = ({
   const imageSrc = profileImage || "/usericon.png";
 
   const getStatusIcon = () => {
-    if (status === "rejected") {
+    if (status === "Rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
     if (status === "sent") {
@@ -42,7 +43,7 @@ const MessagePreview = ({
     <a
       href={`/letters/${letterboxId}`}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
-        status === "rejected"
+        status === "Rejected"
           ? "bg-red-50"
           : isRecipient && unread
           ? "bg-green-50"
@@ -87,7 +88,7 @@ const MessagePreview = ({
               <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
             )}
             <div className="flex-1">
-              {status === "rejected" && (
+              {status === "Rejected" && (
                 <div className="font-normal text-red-500">
                   Your letter was rejected
                 </div>
@@ -98,7 +99,7 @@ const MessagePreview = ({
         ) : (
           <div className="flex">
             <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            {status === "rejected" && (
+            {status === "Rejected" && (
               <div className="flex-1 font-normal text-red-500">
                 Your letter was rejected
               </div>

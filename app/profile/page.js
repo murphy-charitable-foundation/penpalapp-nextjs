@@ -131,7 +131,6 @@ export default function EditProfile() {
         dream_job: dreamJob,
         hobby: hobby,
         favorite_color: favoriteColor,
-        pronouns: pronouns,
         profession: profession,
         favorite_animal: favoriteAnimal,
         pronouns: pronouns,
