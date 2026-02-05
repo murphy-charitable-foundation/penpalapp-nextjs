@@ -9,7 +9,6 @@ export function PageHeader({
   titleColor = "text-secondary",
   image = true,
   heading = true,
-  showBackButton = true,
   imageSize = "md",
   showBorder = true,
   showBackButton = true,
