@@ -24,6 +24,8 @@ export default function About() {
             width={640}
             height={360}
             className="rounded-lg mb-6"
+
+            priority
           />
 
           <p className="text-gray-700 text-lg leading-relaxed mb-4">
