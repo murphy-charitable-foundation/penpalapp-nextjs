@@ -52,6 +52,7 @@ export default function EditProfile() {
   const [isOrphan, setIsOrphan] = useState(false);
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
+  const [gender, setGender] = useState("");
   const [hobby, setHobby] = useState("");
   const [profession, setProfession] = useState("");
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
@@ -131,6 +132,7 @@ export default function EditProfile() {
         dream_job: dreamJob,
         hobby: hobby,
         favorite_color: favoriteColor,
+        gender: gender,
         profession: profession,
         favorite_animal: favoriteAnimal,
         pronouns: pronouns,

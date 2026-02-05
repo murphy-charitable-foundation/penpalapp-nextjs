@@ -28,7 +28,7 @@ export default function UserDataImport() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
-  const [pronouns, setPronouns] = useState("");
+  const [gender, setGender] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
@@ -336,15 +336,15 @@ export default function UserDataImport() {
             {/* 
             <div>
               <label className="block text-sm font-medium text-gray-500">
-                Pronouns
+                Gender
               </label>
               <Dropdown
                 options={["Male", "Female", "Other"]}
                 valueChange={(option) => {
-                  setPronouns(option);
+                  setGender(option);
                 }}
-                currentValue={pronouns}
-                text="Pronouns"
+                currentValue={gender}
+                text="Gender"
               />
             </div>
             */}

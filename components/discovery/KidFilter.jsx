@@ -13,25 +13,25 @@ export default function KidFilter({
   hobbies,
   setAge,
   age,
-  setPronouns,
-  pronouns,
+  setGender,
+  gender,
   filter,
 }) {
   const [hobbyFilter, setHobbiesFilter] = useState(hobbies || []);
   const [ageFilter, setAgeFilter] = useState(age !== 0 ? age : "");
-  const [pronounsFilter, setPronounsFilter] = useState(pronouns || "");
+  const [genderFilter, setGenderFilter] = useState(gender || "");
 
   useEffect(() => {
     setHobbiesFilter(hobbies || []);
     setAgeFilter(age !== 0 && age !== null ? age : "");
-    setPronounsFilter(pronouns || "");
-  }, [age, pronouns, hobbies]);
+    setGenderFilter(gender || "");
+  }, [age, gender, hobbies]);
 
 
 
   const applyFilter = (e) => {
     e.preventDefault();
-    filter(ageFilter, hobbyFilter, pronounsFilter);
+    filter(ageFilter, hobbyFilter, genderFilter);
   };
 
 
@@ -39,13 +39,13 @@ export default function KidFilter({
   const clearFilter = () => {
     setHobbies(null);
     setAge(null);
-    setPronouns(null);
+    setGender(null);
     setHobbiesFilter([]);
     setAgeFilter("");
-    setPronounsFilter("");
+    setGenderFilter("");
   };
 
-  const pronounsOptions = ["Male", "Female", "Non-binary", "Other"];
+  const genderOptions = ["Male", "Female", "Non-binary", "Other"];
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -62,17 +62,17 @@ export default function KidFilter({
         </div>
         <div>
           <label
-            htmlFor="pronouns"
+            htmlFor="gender"
             className="text-sm font-medium text-gray-700 block mb-2"
           >
-            Pronouns
+            Gender
           </label>
           
           <Dropdown
-          options={pronounsOptions}
-          valueChange={setPronounsFilter}
-          currentValue={pronounsFilter}
-          text="Pronouns"
+          options={genderOptions}
+          valueChange={setGenderFilter}
+          currentValue={genderFilter}
+          text="Gender"
           />
         </div>
         <div>
