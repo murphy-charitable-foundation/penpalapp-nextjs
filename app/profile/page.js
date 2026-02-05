@@ -50,7 +50,7 @@ export default function EditProfile() {
 
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
-  const gender = "";
+  const [gender, setGender] = useState("");
   const [hobby, setHobby] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
@@ -59,6 +59,7 @@ export default function EditProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
