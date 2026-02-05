@@ -8,9 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { uploadFile } from "../lib/uploadFile";
 import Button from "../../components/general/Button";
 import BottomNavBar from "../../components/bottom-nav-bar";
-import { BackButton } from "../../components/general/BackButton";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
-import * as Sentry from "@sentry/nextjs";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -22,9 +20,6 @@ export default function EditProfileUserImage() {
   const [newProfileImage, setNewProfileImage] = useState(null);
   const [previewURL, setPreviewURL] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
-  const [storageUrl, setStorageUrl] = useState(null);
-  const [user, setUser] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -56,11 +51,7 @@ export default function EditProfileUserImage() {
     setIsSaving(false);
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        // User is signed out
-        setUser(null);
+      if (!currentUser) {
         router.push("/login"); // Redirect to login page
       }
     });
@@ -68,11 +59,6 @@ export default function EditProfileUserImage() {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
-
-  const onUploadComplete = (url) => {
-    console.log("Upload complete. File available at:", url);
-    setStorageUrl(url);
-  };
 
   const handleCrop = () => {
     if (
@@ -108,7 +94,6 @@ export default function EditProfileUserImage() {
         setIsSaving(false);
       },
       async (url) => {
-        setStorageUrl(url);
         console.log("Image Url:" + url);
         if (url) {
           await updateDoc(doc(db, "users", uid), { photo_uri: url });

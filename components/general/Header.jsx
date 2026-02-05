@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { BackButton } from "./BackButton";
 
 const DIVIDER = "#E5E7EB";
 

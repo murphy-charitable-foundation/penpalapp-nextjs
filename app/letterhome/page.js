@@ -1,12 +1,8 @@
 "use client";
-import { useLayoutEffect, useRef, useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-
-import { storage } from "../firebaseConfig.js";
 import  NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
@@ -17,27 +13,24 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
+import LettersSkeleton from "../../components/loading/LettersSkeleton";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
-import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { logButtonEvent, logError } from "../utils/analytics";
+import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
-  const [userType, setUserType] = useState("");
-  const [country, setCountry] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
-  const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
@@ -119,8 +112,6 @@ export default function Home() {
 
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
-          setCountry(userData.country || "Unknown Country");
-          setUserType(userData.user_type || "Unknown Type");
           const downloaded = await getUserPfp(uid);
           setProfileImage(downloaded || "");
 
@@ -151,18 +142,8 @@ export default function Home() {
           if (docSnap.exists()) {
             const userData = docSnap.data();
             setUserName(userData.first_name || "Unknown User");
-            setCountry(userData.country || "Unknown Country");
-            setUserType(userData.user_type || "Unknown Type");
             const downloaded = await getUserPfp(uid);
             setProfileImage(downloaded || "");
-
-            // Show welcome message
-            setShowWelcome(true);
-
-            // Hide welcome message after 5 seconds
-            setTimeout(() => {
-              setShowWelcome(false);
-            }, 5000);
           } else {
             console.log("No such document!");
           }

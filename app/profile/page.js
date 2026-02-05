@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import List from "../../components/general/List";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
@@ -52,26 +51,21 @@ export default function EditProfile() {
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
   const [gender, setGender] = useState("");
-
-  // legacy
   const [hobby, setHobby] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
-  const [user, setUser] = useState(null);
-
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [userType, setUserType] = useState("international_buddy");
 
-  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
-  const [isGuardianModalOpen, setIsGuardianModalOpen] = useState(false);
-  const [isOrphanModalOpen, setIsOrphanModalOpen] = useState(false);
+  // Modal state
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
 
