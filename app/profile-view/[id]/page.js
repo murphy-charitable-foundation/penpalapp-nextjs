@@ -47,7 +47,7 @@ export default function Page({ params }) {
   const [isOrphan, setIsOrphan] = useState(false);
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
-  //const [gender, setGender] = useState("");
+  //const [pronouns, setPronouns] = useState("");
   const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
@@ -74,7 +74,7 @@ export default function Page({ params }) {
           setFirstName(userData.first_name || "");
           setLastName(userData.last_name || "");
           setEmail(userData.email || "");
-          setBirthday(userData.birthday || "");
+          setBirthday(userData.birthday ? new Date(userData.birthday.seconds * 1000 + userData.birthday.nanoseconds / 1000000).toLocaleDateString() : "");
           setCountry(userData.country || "");
           setVillage(userData.village || "");
           setBio(userData.bio || "");

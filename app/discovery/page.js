@@ -34,7 +34,7 @@ export default function ChooseKid() {
   const [userId, setUserId] = useState("");
 
   const [age, setAge] = useState(0);
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [hobbies, setHobbies] = useState([]);
   usePageAnalytics("/discovery");
 
@@ -58,7 +58,7 @@ export default function ChooseKid() {
       }
     });
     return () => unsubscribe();
-  }, [age, gender, hobbies]);
+  }, [age, pronouns, hobbies]);
 
   useEffect(() => {
     console.log("Age:", age);
@@ -92,8 +92,8 @@ export default function ChooseKid() {
         q = query(q, where("birthday", "<=", maxBirthDate));
       }
 
-      if (gender && gender.length > 0) {
-        q = query(q, where("gender", "==", gender));
+      if (pronouns && pronouns.length > 0) {
+        q = query(q, where("pronouns", "==", pronouns));
       }
 
       if (hobbies && hobbies.length > 0) {
@@ -222,13 +222,13 @@ export default function ChooseKid() {
     }
   }
 
-  const filter = async (age, hobby, gender) => {
+  const filter = async (age, hobby, pronouns) => {
     setKids([]);
     setLastKidDoc(null);
     setInitialLoad(true);
     setAge(age);
     setHobbies(hobby);
-    setGender(gender);
+    setPronouns(pronouns);
     setActiveFilter(false);
   };
 
@@ -251,11 +251,11 @@ export default function ChooseKid() {
             <div className="h-auto">
               <KidFilter
                 setAge={setAge}
-                setGender={setGender}
+                setPronouns={setPronouns}
                 setHobbies={setHobbies}
                 hobbies={hobbies}
                 age={age}
-                gender={gender}
+                pronouns={pronouns}
                 filter={filter}
               />
             </div>

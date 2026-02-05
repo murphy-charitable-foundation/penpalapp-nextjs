@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion } from "firebase/firestore"
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig"
@@ -294,3 +294,82 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     return false;
   }
 };
+
+export   const createConnection = async (userDocRef, kid) => {
+    try {
+      console.log("Kid:", kid);
+      console.log("User:", userDocRef);
+
+      if (kid != null && userDocRef != null) {
+        if (kid.connected_penpals_count < 3) {
+          // Define references for user and kid
+          //const userDocRef = doc(db, "users", auth.currentUser.uid);
+          const kidDocRef = doc(db, "users", kid.id);
+
+          // query DB to check for existing letterbox
+          let letterboxQuery = query(
+            collection(db, "letterbox"),
+            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
+          );
+
+          let querySnapshot = await getDocs(letterboxQuery);
+          
+          if (querySnapshot.empty) {
+            letterboxQuery = query(
+              collection(db, "letterbox"),
+              where("members", "==", [kidDocRef, userDocRef])
+            );
+            querySnapshot = await getDocs(letterboxQuery);
+          }
+
+          let letterboxRef;
+
+          if (querySnapshot.empty) { // if there's no letterbox, create one.
+            letterboxRef = await addDoc(collection(db, "letterbox"), {
+              members: [
+                userDocRef, 
+                kidDocRef   
+              ],
+              created_at: new Date(),
+              archived_at: null,
+            });
+
+            console.log("Letterbox created");
+
+            await addDoc(collection(letterboxRef, "letters"), {
+              sent_by: userDocRef,
+              content: "Please complete your first letter here...",
+              status: "draft",
+              updated_at: new Date(),
+              deleted: null
+            });
+
+            // Update User and Kid documents
+            await updateDoc(userDocRef, {
+              connected_penpals: arrayUnion(kidDocRef),
+            });
+
+            await updateDoc(kidDocRef, {
+              connected_penpals: arrayUnion(userDocRef),
+              connected_penpals_count: kid.connected_penpals_count + 1,
+            });
+
+            return letterboxRef;
+          } else {
+            //router.push("/letters/" + querySnapshot.docs[0].id);
+            console.log("Letterbox already exists");
+            logError("Penpal filter error -- Letterbox already exists.", {
+              description: "debug",
+            });
+            return querySnapshot.docs[0];
+          }
+        } else {
+          console.log("Kid has exceeded penpal limit");
+        }
+      } else {
+        console.log("No kid or user data");
+      }
+    } catch (error) {
+      console.log("There has been a error creating the connection: ", error);
+    }
+  };

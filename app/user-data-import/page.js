@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../../app/firebaseConfig";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
@@ -15,6 +16,11 @@ import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
+import { createConnection } from "../utils/letterboxFunctions";
+import Image from "next/image";
+import logo from "../../public/murphylogo.png";
+import EditProfileImage from "../../components/edit-profile-image";
+import { uploadFile } from "../lib/uploadFile";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,14 +28,46 @@ export default function UserDataImport() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [croppedImage, setCroppedImage] = useState(null);
+  const [croppedBlob, setCroppedBlob] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   const router = useRouter();
-
+  const auth = getAuth();
+  const fileInputRef = useRef(null);
+  const cropperRef = useRef(null);
   usePageAnalytics("/user-data-import");
+
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setShowCropper(true);
+      // Reset the input value to allow selecting the same file again
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCrop = () => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      const canvas = cropperRef.current.cropper.getCroppedCanvas();
+      canvas.toBlob((blob) => {
+        setCroppedBlob(blob);
+        setCroppedImage(URL.createObjectURL(blob));
+        setShowCropper(false);
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,11 +77,14 @@ export default function UserDataImport() {
     try {
       const newErrors = {};
       const formData = new FormData(e.currentTarget);
+      const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
+      const email = formData.get("email");
+      const password = formData.get("password");
       const userData = {
-        first_name: formData.get("firstName"),
-        last_name: formData.get("lastName"),
-        email: formData.get("email"),
-        birthday: formData.get("birthday"),
+        first_name: (() => { const s = formData.get("firstName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        last_name: (() => { const s = formData.get("lastName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        email: "",
+        birthday: formData.get("birthday") ? Timestamp.fromDate(new Date(formData.get("birthday"))) : null,
         country: formData.get("country"),
         village: formData.get("village"),
         bio: formData.get("bio"),
@@ -69,20 +110,93 @@ export default function UserDataImport() {
         newErrors.email = "Invalid email format";
       }
 
+       if (!/\S+@\S+\.\S+/.test(internationalBuddyEmail) && internationalBuddyEmail !== "") {
+        newErrors.internationalbuddyemail = "Invalid email format";
+      }
+
+
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         return;
       }
-      console.log("no errors");
-      // Generate a unique ID for the user
-      const userId = crypto.randomUUID().replace(/-/g, "");
-      await setDoc(doc(db, "users", userId), userData);
+      try {
+        // Fetch UID of international buddy
+        const token = await auth.currentUser.getIdToken();
+        const uidRes = await fetch("/api/getUidByEmail", {
+          method: "POST",
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json" },
+          body: JSON.stringify({ email: internationalBuddyEmail }),
+        });
+
+        const internationalBuddyUid = await uidRes.json();
+        if (!uidRes.ok) {
+          newErrors.internationalbuddyemail = internationalBuddyUid.error || "No user found with this email";
+          setErrors(newErrors);
+          throw new Error (internationalBuddyUid.error || "No user found with this email");
+        }
+
+        // Create user via server-side Admin API so current user stays signed in
+        const createRes = await fetch("/api/createUser", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, userData }),
+        });
+
+        const createJson = await createRes.json();
+        if (!createRes.ok) {
+          newErrors.email = createJson.error || "Failed to create user";
+          setErrors(newErrors);
+          throw new Error(createJson.error || "Failed to create user");
+        }
+
+        const kidId = createJson.uid;
+
+        const kidRef = doc(db, "users", kidId);
+        const docSnap = await getDoc(kidRef);
+        if (docSnap.exists()) {
+          const kid = { id: kidId, ...docSnap.data(), photoURL: "/usericon.png" };
+          const internationalBuddyUID = internationalBuddyUid.uid;
+          const buddyRef = doc(db, "users", internationalBuddyUID);
+          const letterboxRef = await createConnection(buddyRef, kid);
+        } else {
+          throw new Error("Error linking user");
+        }
+
+        // Upload profile image if available
+        if (croppedBlob) {
+          uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
+            (progress) => console.log('Upload progress:', progress),
+            (error) => {
+              logError(error, { description: "Error uploading profile image" });
+              throw error;
+            },
+            async (url) => {
+              // Update user photo_uri
+              const userRef = doc(db, "users", kidId);
+              await updateDoc(userRef, { photo_uri: url });
+            }
+          );
+        }
+
+      } catch (error) {
+        logError(error, {
+          description: "Error creating user or linking international buddy: ",    
+        })
+        throw error;
+      }
 
       // Reset form
+      setCroppedBlob(null);
+      setCroppedImage(null);
       e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
+      setErrors({});
     } catch (error) {
       logError(error, {
         description: "Error importing user data: ",
@@ -106,7 +220,50 @@ export default function UserDataImport() {
         content={dialogMessage}
       ></Dialog>
       <PageContainer maxWidth="lg">
-        <PageHeader title="Import User Data" />
+        <PageHeader title="Import User Data" image={false}/>
+
+        <div className="flex justify-center">
+          {croppedImage ? (
+            <img src={croppedImage} alt="Profile" width={200} className="rounded-full" />
+          ) : (
+            <Image src={logo} alt="Foundation Logo" width={200} margin={0} />
+          )}
+        </div>
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={handleImageClick}
+            className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+          >
+            Upload Photo
+          </button>
+        </div>
+        {showCropper && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
+            <div
+              className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
+              onClick={() => handleCrop()}
+            />
+      
+            <div
+              className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
+              
+              <div className="flex justify-center">
+                <EditProfileImage
+                  image={URL.createObjectURL(selectedFile)}
+                  newProfileImage={null}
+                  previewURL={null}
+                  handleDrop={() => {}}
+                  handleCrop={() => {}}
+                  cropperRef={cropperRef}
+                  onDone={handleCrop}
+                />
+              </div>
+      
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6  p-6 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -116,7 +273,7 @@ export default function UserDataImport() {
                 type="text"
                 id="first-name"
                 name="firstName"
-                label="First Name"
+                label="Child's First Name"
                 placeholder="e.g., Jane"
                 error={errors.first_name ? errors.first_name : ""}
               />
@@ -127,7 +284,7 @@ export default function UserDataImport() {
                 type="text"
                 id="last-name"
                 name="lastName"
-                label="Last Name"
+                label="Child's Last Name"
                 placeholder="e.g., Smith"
                 error={errors.last_name ? errors.last_name : ""}
               />
@@ -138,11 +295,24 @@ export default function UserDataImport() {
                 type="text"
                 name="email"
                 id="email"
-                label="Email"
+                label="Child's Email"
                 placeholder="me@example.com"
                 error={errors.email ? errors.email : ""}
               />
             </div>
+
+            <div>
+              <Input
+                type="text"
+                name="internationalbuddyemail"
+                id="internationalbuddyemail"
+                label="International Buddy's Email"
+                placeholder="buddy@example.com"
+                error={errors.internationalbuddyemail ? errors.internationalbuddyemail : ""}
+              />
+            </div>
+
+            <div className="col-span-full py-2 px-0 border-b border-gray-300 text-sm font-medium mb-1 text-gray-500">Child&apos;s Information</div>
 
             <div>
               <Input
@@ -166,15 +336,15 @@ export default function UserDataImport() {
             {/* 
             <div>
               <label className="block text-sm font-medium text-gray-500">
-                Gender
+                Pronouns
               </label>
               <Dropdown
                 options={["Male", "Female", "Other"]}
                 valueChange={(option) => {
-                  setGender(option);
+                  setPronouns(option);
                 }}
-                currentValue={gender}
-                text="Gender"
+                currentValue={pronouns}
+                text="Pronouns"
               />
             </div>
             */}
@@ -303,6 +473,16 @@ export default function UserDataImport() {
               maxLength={50}
               label="Bio/Challenges Faced"
               placeholder="Write a short bio or mention any challenges you face."
+            />
+          </div>
+          <div>
+            <Input
+              type="password"
+              name="password"
+              id="password"
+              label="Password"
+              placeholder="Enter a secure password"
+              error={errors.password ? errors.password : ""}
             />
           </div>
 
