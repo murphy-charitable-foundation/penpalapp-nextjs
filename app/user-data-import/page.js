@@ -60,7 +60,7 @@ export default function UserDataImport() {
   const handleCrop = () => {
     const cropper = cropperRef.current?.cropper;
     if (cropper) {
-      const canvas = cropperRef.current.cropper.getCroppedCanvas();
+      const canvas = cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
         setCroppedBlob(blob);
         setCroppedImage(URL.createObjectURL(blob));
