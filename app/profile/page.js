@@ -4,30 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { updateDoc } from "firebase/firestore";
-import * as Sentry from "@sentry/nextjs";
-import {
-  User,
-  MapPin,
-  Home,
-  FileText,
-  Calendar,
-  GraduationCap,
-  Users,
-  Heart,
-  Briefcase,
-  Square,
-  Palette,
-} from "lucide-react";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import List from "../../components/general/List";
-import { BackButton } from "../../components/general/BackButton";
+
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
@@ -57,6 +41,7 @@ export default function EditProfile() {
   const [profession, setProfession] = useState("");
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
+  const [hobbies, setHobbies] = useState([]);
   const [photoUri, setPhotoUri] = useState("");
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -68,9 +53,6 @@ export default function EditProfile() {
   const [userType, setUserType] = useState("international_buddy");
 
   // Modal state
-  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
-  const [isGuardianModalOpen, setIsGuardianModalOpen] = useState(false);
-  const [isOrphanModalOpen, setIsOrphanModalOpen] = useState(false);
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
 
@@ -127,10 +109,11 @@ export default function EditProfile() {
         village: village,
         bio: bio,
         education_level: educationLevel,
-        is_orphan: isOrphan.toLowerCase() === "yes" ? true : false,
+        is_orphan: String(isOrphan).toLowerCase() === "yes",
         guardian: guardian,
         dream_job: dreamJob,
         hobby: hobby,
+        hobbies: hobbies.map((h) => h.id),
         favorite_color: favoriteColor,
         gender: gender,
         profession: profession,
@@ -261,376 +244,389 @@ export default function EditProfile() {
         }}
         title={dialogTitle}
         content={dialogMessage}
-      ></Dialog>
-      <PageContainer maxWidth="lg" padding="p-6 pt-20">
-        <PageHeader title="Profile" image={false} heading={false} />
-        <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
-          {/* Bio Modal */}
-          <Dialog
-            isOpen={isBioModalOpen}
-            onClose={() => setIsBioModalOpen(false)}
-            title="Bio/Challenges"
-            content={bioModalContent}
-            width="large"
-          />
-          {/* Profile Image */}
-            <div className="my-6">
-              <div className="relative w-40 h-40 mx-auto">
-                <Image
-                  src={photoUri ? photoUri : "/murphylogo.png"}
-                  layout="fill"
-                  className="rounded-full"
-                  alt="Profile picture"
-                />
-              </div>
-              <div className="mt-4 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => router.push("/edit-profile-user-image")}
-                  className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
-                >
-                  Edit Photo
-                </button>
-              </div>
+      />
+      <Dialog
+        isOpen={isBioModalOpen}
+        onClose={() => setIsBioModalOpen(false)}
+        title="Bio / Challenges"
+        content={
+          <div className="space-y-4">
+            <textarea
+              value={tempBio}
+              onChange={(e) => setTempBio(e.target.value)}
+              className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none"
+              maxLength={200}
+            />
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-500">
+                {tempBio.length}/200 characters
+              </span>
+              <Button
+                btnText="Save"
+                onClick={() => {
+                  setBio(tempBio);
+                  setIsBioModalOpen(false);
+                }}
+              />
             </div>
-          
-
-          {/* Form Fields */}
-          <div className="space-y-6 mb-[120px]">
-            {/* Personal Information Section */}
-            <ProfileSection title="Personal Information">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      label="First name"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
-                      error={errors.first_name ? errors.first_name : ""}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      label="Last name"
-                      borderColor="border-gray-300"
-                      focusBorderColor="focus:border-green-800"
-                      bgColor="bg-transparent"
-                      error={errors.last_name ? errors.last_name : ""}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="email"
-                    name="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    label="Email"
-                    placeholder="Ex: Email"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
+          </div>
+        }
+        width="large"
+      />
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          <PageHeader title="Profile" image={false} showBackButton />
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+            {/* Profile Image */}
+            <div className="rounded-2xl p-4">
+              <div className="relative w-40 h-40 mx-auto">
+                  <Image
+                    src={photoUri ? photoUri : "/murphylogo.png"}
+                    layout="fill"
+                    className="rounded-full"
+                    alt="Profile picture"
                   />
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="pronouns"
-                    name="pronouns"
-                    value={pronouns}
-                    onChange={(e) => setPronouns(e.target.value)}
-                    label="Pronouns"
-                    placeholder="Ex: Pronouns"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    id="country"
-                    name="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    label="Country"
-                    placeholder="Ex: Country"
-                    borderColor="border-gray-300"
-                    focusBorderColor="focus:border-green-800"
-                    bgColor="bg-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">Bio/Challenges faced</p>
+                <div className="mt-4 flex justify-center">
                   <button
-                    onClick={handleOpenBioModal}
-                    className="w-full font-medium text-gray-900 bg-transparent border-b border-gray-300 p-2 text-left flex justify-between items-center"
+                    type="button"
+                    onClick={() => router.push("/edit-profile-user-image")}
+                    className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
                   >
-                    <span className="truncate">
-                      {bio ? bio : "Add your bio or challenges..."}
-                    </span>
-                    <svg
-                      className="h-5 w-5 text-gray-400 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
+                    Edit Photo
                   </button>
                 </div>
               </div>
-              {(userType == "international_buddy") && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="profession"
-                        name="profession"
-                        value={profession}
-                        onChange={(e) => setProfession(e.target.value)}
-                        label="Profession"
-                        placeholder="Ex: Profession"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="favoriteAnimal"
-                        name="favoriteAnimal"
-                        value={favoriteAnimal}
-                        onChange={(e) => setFavoriteAnimal(e.target.value)}
-                        label="Favorite Animal"
-                        placeholder="Ex: Favorite Animal"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="hobby"
-                        name="hobby"
-                        value={hobby}
-                        onChange={(e) => setHobby(e.target.value)}
-                        label="Hobby"
-                        placeholder="Dancing"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                </>)}
-              {(userType == "child" || userType == "local_volunteer") && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="village"
-                        name="village"
-                        value={village}
-                        onChange={(e) => setVillage(e.target.value)}
-                        label="Village"
-                        placeholder="Ex: Village"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="date"
-                        id="birthday"
-                        name="birthday"
-                        value={birthday}
-                        onChange={(e) => setBirthday(e.target.value)}
-                        label="Birthday"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">Is orphan</p>
+            
 
-                      <Dropdown
-                        options={orphanOptions}
-                        valueChange={(option) => {
-                          setIsOrphan(option);
-                        }}
-                        currentValue={isOrphan}
-                        text="Orphan Status"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">Guardian</p>
-                      <Dropdown
-                        options={guardianOptions}
-                        valueChange={(option) => {
-                          setGuardian(option);
-                        }}
-                        currentValue={guardian}
-                        text="Guardian"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">Education level</p>
-                      <Dropdown
-                        options={educationOptions}
-                        valueChange={(option) => {
-                          setEducationLevel(option);
-                        }}
-                        currentValue={educationLevel}
-                        text="Education Level"
-                      />
-                    </div>
-                  </div>
+            {/* Form Fields */}
+            <div className="space-y-6 mt-6">
+              {/* Personal Information Section */}
+              <ProfileSection title="Personal Information">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <Input
                         type="text"
-                        id="dreamjob"
-                        name="dreamjob"
-                        value={dreamJob}
-                        onChange={(e) => setDreamJob(e.target.value)}
-                        label="Dream job"
-                        placeholder="Airplane pilot"
+                        id="firstName"
+                        name="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        label="First name"
                         borderColor="border-gray-300"
                         focusBorderColor="focus:border-green-800"
                         bgColor="bg-transparent"
+                        error={errors.first_name ? errors.first_name : ""}
                       />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="hobby"
-                        name="hobby"
-                        value={hobby}
-                        onChange={(e) => setHobby(e.target.value)}
-                        label="Hobby"
-                        placeholder="Dancing"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="favoriteAnimal"
-                        name="favoriteAnimal"
-                        value={favoriteAnimal}
-                        onChange={(e) => setFavoriteAnimal(e.target.value)}
-                        label="Favorite Animal"
-                        placeholder="Ex: Favorite Animal"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        type="text"
-                        id="favoriteColor"
-                        name="favoriteColor"
-                        value={favoriteColor}
-                        onChange={(e) => setFavoriteColor(e.target.value)}
-                        label="Favorite Color"
-                        placeholder="Ex: Blue"
-                        borderColor="border-gray-300"
-                        focusBorderColor="focus:border-green-800"
-                        bgColor="bg-transparent"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </ProfileSection>
 
-            <div className="flex justify-center">
-              <Link
-                href="/letterhome"
-                className="transition-transform hover:scale-105 focus:outline-none"
-                onClick={(e) => {
-                  e.preventDefault();
-                  saveProfileData();
-                  logButtonEvent("save profile button clicked", "/profile");
-                }}
-              >
-                <Button
-                  btnType="button"
-                  btnText={isSaving ? <LoadingSpinner /> : "Save"}
-                  color="green"
-                  hoverColor="hover:bg-[#48801c]"
-                  textColor="text-gray-200"
-                  disabled={isSaving}
-                  rounded="rounded-full"
-                />
-              </Link>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        label="Last name"
+                        borderColor="border-gray-300"
+                        focusBorderColor="focus:border-green-800"
+                        bgColor="bg-transparent"
+                        error={errors.last_name ? errors.last_name : ""}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      id="email"
+                      name="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      label="Email"
+                      placeholder="Ex: Email"
+                      borderColor="border-gray-300"
+                      focusBorderColor="focus:border-green-800"
+                      bgColor="bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      id="pronouns"
+                      name="pronouns"
+                      value={pronouns}
+                      onChange={(e) => setPronouns(e.target.value)}
+                      label="Pronouns"
+                      placeholder="Ex: Pronouns"
+                      borderColor="border-gray-300"
+                      focusBorderColor="focus:border-green-800"
+                      bgColor="bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      id="country"
+                      name="country"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      label="Country"
+                      placeholder="Ex: Country"
+                      borderColor="border-gray-300"
+                      focusBorderColor="focus:border-green-800"
+                      bgColor="bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">
+                      Bio / Challenges
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenBioModal}
+                      className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
+                    >
+                      <span className="truncate">
+                        {bio || "Add your bio or challenges..."}
+                      </span>
+                    </button>
+                  </div>
+                  </div>
+                </div>
+                {(userType == "international_buddy") && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="profession"
+                          name="profession"
+                          value={profession}
+                          onChange={(e) => setProfession(e.target.value)}
+                          label="Profession"
+                          placeholder="Ex: Profession"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="favoriteAnimal"
+                          name="favoriteAnimal"
+                          value={favoriteAnimal}
+                          onChange={(e) => setFavoriteAnimal(e.target.value)}
+                          label="Favorite Animal"
+                          placeholder="Ex: Favorite Animal"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="hobby"
+                          name="hobby"
+                          value={hobby}
+                          onChange={(e) => setHobby(e.target.value)}
+                          label="Hobby"
+                          placeholder="Dancing"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                  </>)}
+                {(userType == "child" || userType == "local_volunteer") && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="village"
+                          name="village"
+                          value={village}
+                          onChange={(e) => setVillage(e.target.value)}
+                          label="Village"
+                          placeholder="Ex: Village"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                  
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="date"
+                          id="birthday"
+                          name="birthday"
+                          value={birthday}
+                          onChange={(e) => setBirthday(e.target.value)}
+                          label="Birthday"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Is orphan</p>
+
+                        <Dropdown
+                          options={orphanOptions}
+                          valueChange={(option) => {
+                            setIsOrphan(option);
+                          }}
+                          currentValue={isOrphan}
+                          text="Orphan Status"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Guardian</p>
+                        <Dropdown
+                          options={guardianOptions}
+                          valueChange={(option) => {
+                            setGuardian(option);
+                          }}
+                          currentValue={guardian}
+                          text="Guardian"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Education level</p>
+                        <Dropdown
+                          options={educationOptions}
+                          valueChange={(option) => {
+                            setEducationLevel(option);
+                          }}
+                          currentValue={educationLevel}
+                          text="Education Level"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="dreamjob"
+                          name="dreamjob"
+                          value={dreamJob}
+                          onChange={(e) => setDreamJob(e.target.value)}
+                          label="Dream job"
+                          placeholder="Airplane pilot"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="hobby"
+                          name="hobby"
+                          value={hobby}
+                          onChange={(e) => setHobby(e.target.value)}
+                          label="Hobby"
+                          placeholder="Dancing"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="favoriteAnimal"
+                          name="favoriteAnimal"
+                          value={favoriteAnimal}
+                          onChange={(e) => setFavoriteAnimal(e.target.value)}
+                          label="Favorite Animal"
+                          placeholder="Ex: Favorite Animal"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          id="favoriteColor"
+                          name="favoriteColor"
+                          value={favoriteColor}
+                          onChange={(e) => setFavoriteColor(e.target.value)}
+                          label="Favorite Color"
+                          placeholder="Ex: Blue"
+                          borderColor="border-gray-300"
+                          focusBorderColor="focus:border-green-800"
+                          bgColor="bg-transparent"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </ProfileSection>
+
+              <div className="flex justify-center">
+                <Link
+                  href="/letterhome"
+                  className="transition-transform hover:scale-105 focus:outline-none"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    saveProfileData();
+                    logButtonEvent("save profile button clicked", "/profile");
+                  }}
+                >
+                  <Button
+                    btnType="button"
+                    btnText={isSaving ? <LoadingSpinner /> : "Save"}
+                    color="green"
+                    hoverColor="hover:bg-[#48801c]"
+                    textColor="text-gray-200"
+                    disabled={isSaving}
+                    rounded="rounded-full"
+                  />
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </PageContainer>
+        </PageContainer>
+      </div>
     </div>
   );
 }
