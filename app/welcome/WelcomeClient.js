@@ -42,7 +42,7 @@ export default function Welcome() {
               btnText="Continue"
               color="white"
               onClick={() => {
-                logButtonEvent("/welcome", "Continue button clicked!");
+                logButtonEvent("Continue button clicked!", "/welcome");
               }}
             />
           </Link>
