@@ -1,5 +1,9 @@
 export const dynamic = "force-static";
 
+export const metadata = {
+  title: "About Us - Murphy Charitable Foundation Uganda",
+};
+
 import Image from "next/image";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
