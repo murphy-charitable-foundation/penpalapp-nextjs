@@ -84,12 +84,13 @@ export default function SendMessage({ kid }) {
             });
 
             console.log("Letterbox created");
-            
+            const dateNow = new Date();
             await addDoc(collection(letterboxRef, "letters"), {
+              
               sent_by: userRef,
               content: "Please complete your first letter here...",
               status: "draft",
-              updated_at: new Date(),
+              drafted_at: dateNow,
               deleted: null
             });
 
