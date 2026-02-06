@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
+import { useRouter } from "next/navigation";
 
 import Image from "next/image";
-import Link from "next/link";
 import Button from "../../components/general/Button";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logButtonEvent } from "../utils/analytics";
 
 export default function Welcome() {
   const [firstName, setFirstName] = useState("");
+  const router = useRouter();
+
   usePageAnalytics("/welcome");
 
   useEffect(() => {
@@ -37,15 +39,14 @@ export default function Welcome() {
         </div>
 
         <div className="text-center w-full pt-10 pb-20">
-          <Link href="/edit-profile-user-image">
-            <Button
-              btnText="Continue"
-              color="white"
-              onClick={() => {
-                logButtonEvent("Continue button clicked!", "/welcome");
-              }}
-            />
-          </Link>
+          <Button
+            btnText="Continue"
+            color="white"
+            onClick={() => {
+              logButtonEvent("Continue button clicked!", "/welcome");
+              router.push("/edit-profile-user-image");
+            }}
+          />
         </div>
       </PageContainer>
     </PageBackground>
