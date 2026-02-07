@@ -1,25 +1,15 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { uploadFile } from "../lib/uploadFile";
 
 import Image from "next/image";
-//import { useConfirm } from '@/components/ConfirmProvider';
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import CountrySelect from "@/components/boarding-profile/CountrySelect";
 import { BackButton } from "@/components/general/BackButton";
-
-import EditProfileImage from "@/components/edit-profile-image";
-import compressImage from "@/components/general/compress-image";
-
-import {
-  saveAvatar,
-  base64ToBlob,
-  confirmDeleteAvatar,
-} from "@/app/utils/avatarUtils";
+import { saveAvatar, confirmDeleteAvatar } from "@/app/utils/avatarUtils";
 import AvatarCropper from "@/components/general/AvatarCropper";
 import AvatarMenu from "@/components/avatar/AvatarMenu";
 import Modal from "@/components/general/Dialog";
@@ -30,19 +20,12 @@ export default function OnboardingProfile() {
   const [user, setUser] = useState(null);
   const router = useRouter();
 
-  ///////////////////////
   const [showMenu, setShowMenu] = useState(false);
-  //const { confirm } = useConfirm();
-
   const [avatar, setAvatar] = useState(null);
   const [country, setCountry] = useState(null);
-  const [mode, setMode] = useState(null); // 'camera' | 'gallery'
+  const [mode, setMode] = useState(null);
   const avatarRef = useRef();
   const [step, setStep] = useState(0);
-  const [image, setImage] = useState("");
-  const [newProfileImage, setNewProfileImage] = useState(null);
-  const [previewURL, setPreviewURL] = useState(null);
-  const [croppedImage, setCroppedImage] = useState(null);
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertInfo, setAlertInfo] = useState("");
@@ -50,135 +33,164 @@ export default function OnboardingProfile() {
   const [confirmInfo, setConfirmInfo] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const cropperRef = useRef();
 
-  const handleCrop = () => {
-    if (
-      cropperRef.current &&
-      typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
-    ) {
-      const canvas = cropperRef.current.cropper.getCroppedCanvas();
+  // 添加组件挂载状态
+  const isMountedRef = useRef(true);
 
-      canvas.toBlob(
-        async (originalBlob) => {
-          console.log("Original size:", originalBlob.size, "bytes");
-          const compressedBlob = await compressImage(originalBlob, {
-            quality: 0.8,
-          });
-
-          console.log("Compressed size:", compressedBlob.size, "bytes");
-
-          setCroppedImage(compressedBlob);
-        },
-        "image/jpeg",
-        0.95,
-      );
-    }
-  };
-
-  const handleDrop = (acceptedFiles) => {
-    setImage(URL.createObjectURL(acceptedFiles[0]));
-  };
-
+  // 认证状态监听
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!isMountedRef.current) return;
+
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [router]);
+
+  // 获取用户数据
+  useEffect(() => {
+    let cancelled = false;
+
     const fetchUserData = async () => {
-      console.log(auth);
-      if (auth.currentUser) {
+      if (!auth.currentUser) return;
+
+      try {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
+        if (cancelled) return;
+
         if (docSnap.exists()) {
           const userData = docSnap.data();
+          // 如果需要使用 userData，在这里处理
+          if (userData.avatar) {
+            setAvatar(userData.avatar);
+          }
+          if (userData.country) {
+            setCountry(userData.country);
+          }
         }
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
       }
     };
-    fetchUserData();
-  }, [auth.currentUser]);
 
+    if (user) {
+      fetchUserData();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  // 组件卸载时清理
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        // User is signed out
-        setUser(null);
-        router.push("/login"); // Redirect to login page
-      }
-    });
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleGetAvatar = (type) => {
+  const handleGetAvatar = useCallback((type) => {
     setMode(type);
     setTimeout(() => {
       avatarRef.current?.pickPicture();
     }, 50);
-  };
-  const handleSaveAvatar = async () => {
+  }, []);
+
+  const handleSaveAvatar = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
     await saveAvatar({
       avatar,
       setLoading,
       setStorageUrl,
       onSuccess: (url) => {
-        setStep(1);
-        // showAlert("Your avatar has been saved!");
+        if (isMountedRef.current) {
+          setStep(1);
+        }
       },
       onError: (error) => {
-        console.log("Custom error handler:", error);
+        console.error("Avatar save error:", error);
+        if (isMountedRef.current) {
+          setAlertInfo("Failed to save avatar. Please try again.");
+          setAlertOpen(true);
+        }
       },
     });
-  };
+  }, [avatar]);
 
-  const onImageDelete = () => {
+  const onImageDelete = useCallback(() => {
     confirmDeleteAvatar({
       setConfirmOpen,
       setConfirmInfo,
     });
-  };
+  }, []);
 
-  const handleSaveCountry = async () => {
+  const handleSaveCountry = useCallback(async () => {
     if (!country) {
       setAlertInfo("Please select your country!");
       setAlertOpen(true);
       return;
     }
-    const uid = auth.currentUser?.uid;
 
-    if (!uid) return; // Make sure uid is available
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
     setLoading(true);
     try {
       await updateDoc(doc(db, "users", uid), { country: country });
-      setLoading(false);
-      setAlertInfo("Your location has been saved!");
-      setAlertOpen(true);
-      router.push("/discovery");
-      //go next page
+
+      if (isMountedRef.current) {
+        setAlertInfo("Your location has been saved!");
+        setAlertOpen(true);
+        router.push("/discovery");
+      }
     } catch (e) {
-      setAlertInfo(`Failed to save location: ${e?.message || "Unknown error"}`);
-      setAlertOpen(true);
+      if (isMountedRef.current) {
+        setAlertInfo(
+          `Failed to save location: ${e?.message || "Unknown error"}`,
+        );
+        setAlertOpen(true);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [country, router]);
 
-  const handleToList = () => {
+  const handleToList = useCallback(() => {
     router.push("/discovery");
-  };
+  }, [router]);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     setConfirmOpen(false);
     setAvatar(null);
     setShowMenu(false);
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setConfirmOpen(false);
-  };
+  }, []);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
       <Modal
@@ -191,6 +203,7 @@ export default function OnboardingProfile() {
           </div>
         }
       />
+
       <Modal
         isOpen={confirmOpen}
         onClose={handleCancel}
@@ -207,117 +220,119 @@ export default function OnboardingProfile() {
           </div>
         }
       />
-      {
-        <div className="p-6 h-full flex flex-col flex-1">
-          <div className="flex justify-between items-center">
-            <BackButton />
-          </div>
 
-          <h3 className="text-[#034792] font-[700] text-3xl w-full text-center pt-12 pb-5 ">
-            {step === 0 ? "Add a profile avatar" : "Where are you located?"}
-          </h3>
-          <div className="flex-1 flex flex-col items-center justify-center ">
-            {step === 0 ? (
-              <div
-                className="w-48 h-48 rounded-full bg-[#4E802A] flex items-center justify-center relative overflow-hidden" // 增加 overflow-hidden 确保图片不超出圆圈
-                onClick={() => setShowMenu(true)}
-              >
-                {!avatar ? (
-                  <Image
-                    src="/blackcameraicon.svg"
-                    alt="camera"
-                    width={35}
-                    height={35}
-                  />
-                ) : (
-                  <>
-                    <Image
-                      src={avatar}
-                      alt="avatar"
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="w-10 h-10 rounded-full bg-blue-900 absolute bottom-1 right-2 text-white flex items-center justify-center z-10">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="size-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
-                        />
-                      </svg>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="m-auto p-5 text-gray-900">
-                <div className="py-3 text-sm">Country</div>
-                <CountrySelect onChange={(value) => setCountry(value)} />
-              </div>
-            )}
-          </div>
+      <div className="p-6 h-full flex flex-col flex-1">
+        <div className="flex justify-between items-center">
+          <BackButton />
+        </div>
 
-          <div className="flex flex-col items-center justify-center w-full py-6">
-            {step === 0 ? (
-              <button
-                className={`w-[60%] p-2  font-semibold rounded-2xl ${
-                  !!avatar
-                    ? "bg-blue-900 text-white"
-                    : "bg-gray-300 text-gray-500"
-                }`}
-                disabled={!avatar}
-                onClick={handleSaveAvatar}
-              >
-                Continue
-              </button>
-            ) : (
-              <button
-                className={`w-[60%] p-2  font-semibold rounded-2xl ${
-                  !!country
-                    ? "bg-blue-900 text-white"
-                    : "bg-gray-300 text-gray-500"
-                }`}
-                onClick={handleSaveCountry}
-                disabled={!country}
-              >
-                Continue
-              </button>
-            )}
-            <span
-              className="py-6 font-semibold text-gray-900 cursor-pointer"
-              onClick={handleToList}
+        <h3 className="text-[#034792] font-[700] text-3xl w-full text-center pt-12 pb-5">
+          {step === 0 ? "Add a profile avatar" : "Where are you located?"}
+        </h3>
+
+        <div className="flex-1 flex flex-col items-center justify-center">
+          {step === 0 ? (
+            <div
+              className="w-48 h-48 rounded-full bg-[#4E802A] flex items-center justify-center relative overflow-hidden cursor-pointer"
+              onClick={() => setShowMenu(true)}
             >
-              Skip for now
-            </span>
-          </div>
-          <AvatarMenu
-            show={showMenu}
-            onClose={() => setShowMenu(false)}
-            onCamera={() => handleGetAvatar("camera")}
-            onGallery={() => handleGetAvatar("gallery")}
-            onDelete={onImageDelete}
-            avatar={avatar}
-          />
-          {mode && (
-            <AvatarCropper
-              type={mode}
-              ref={avatarRef}
-              onComplete={(croppedImage) => {
-                setAvatar(croppedImage);
-                setMode(null);
-                setShowMenu(false);
-              }}
-            />
+              {!avatar ? (
+                <Image
+                  src="/blackcameraicon.svg"
+                  alt="camera"
+                  width={35}
+                  height={35}
+                />
+              ) : (
+                <>
+                  <Image
+                    src={avatar}
+                    alt="avatar"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="w-10 h-10 rounded-full bg-blue-900 absolute bottom-1 right-2 text-white flex items-center justify-center z-10">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
+                      />
+                    </svg>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="m-auto p-5 text-gray-900 w-full">
+              <div className="py-3 text-sm">Country</div>
+              <CountrySelect onChange={(value) => setCountry(value)} />
+            </div>
           )}
         </div>
-      }
+
+        <div className="flex flex-col items-center justify-center w-full py-6">
+          {step === 0 ? (
+            <button
+              className={`w-[60%] p-2 font-semibold rounded-2xl transition-colors ${
+                !!avatar
+                  ? "bg-blue-900 text-white hover:bg-blue-800"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+              disabled={!avatar}
+              onClick={handleSaveAvatar}
+            >
+              Continue
+            </button>
+          ) : (
+            <button
+              className={`w-[60%] p-2 font-semibold rounded-2xl transition-colors ${
+                !!country
+                  ? "bg-blue-900 text-white hover:bg-blue-800"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+              onClick={handleSaveCountry}
+              disabled={!country}
+            >
+              Continue
+            </button>
+          )}
+          <span
+            className="py-6 font-semibold text-gray-900 cursor-pointer hover:text-blue-900 transition-colors"
+            onClick={handleToList}
+          >
+            Skip for now
+          </span>
+        </div>
+
+        <AvatarMenu
+          show={showMenu}
+          onClose={() => setShowMenu(false)}
+          onCamera={() => handleGetAvatar("camera")}
+          onGallery={() => handleGetAvatar("gallery")}
+          onDelete={onImageDelete}
+          avatar={avatar}
+        />
+
+        {mode && (
+          <AvatarCropper
+            type={mode}
+            ref={avatarRef}
+            onComplete={(croppedImage) => {
+              setAvatar(croppedImage);
+              setMode(null);
+              setShowMenu(false);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
