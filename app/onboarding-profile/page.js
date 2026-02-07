@@ -34,10 +34,8 @@ export default function OnboardingProfile() {
 
   const [loading, setLoading] = useState(false);
 
-  // 添加组件挂载状态
   const isMountedRef = useRef(true);
 
-  // 认证状态监听
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!isMountedRef.current) return;
@@ -55,7 +53,6 @@ export default function OnboardingProfile() {
     };
   }, [router]);
 
-  // 获取用户数据
   useEffect(() => {
     let cancelled = false;
 
@@ -71,7 +68,7 @@ export default function OnboardingProfile() {
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          // 如果需要使用 userData，在这里处理
+
           if (userData.avatar) {
             setAvatar(userData.avatar);
           }
@@ -93,7 +90,6 @@ export default function OnboardingProfile() {
     };
   }, [user]);
 
-  // 组件卸载时清理
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
