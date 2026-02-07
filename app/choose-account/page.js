@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -34,12 +34,14 @@ export default function ChooseAccountPage() {
 
   const router = useRouter();
   const { cachedUsers, hydrated } = useCachedUsers();
-
+  const hasRedirected = useRef(false);
   const users = (cachedUsers ?? []).map(normalizeUser);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!users.length) {
+    if (users.length === 0) {
+      if (hasRedirected.current) return;
+      hasRedirected.current = true;
       router.replace("/login");
       return;
     }
@@ -133,7 +135,7 @@ export default function ChooseAccountPage() {
           Choose an account to continue
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 px-6">
           {users.map((user) => (
             <button
               key={user.id}

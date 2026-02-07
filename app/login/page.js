@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 
 import Button from "../../components/general/Button";
@@ -16,7 +16,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   logInEvent,
   logButtonEvent,
@@ -24,25 +24,28 @@ import {
 } from "../utils/analytics";
 import { useCachedUsers } from "../contexts/CachedUserContext";
 import { PageBackground } from "../../components/general/PageBackground";
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { hydrated, addCachedUser, cachedUsers } = useCachedUsers();
+  const hasRedirected = useRef(false);
 
   usePageAnalytics(`/login`);
 
+  // Only depend on [hydrated]. Do NOT add searchParams or cachedUsers - searchParams
+  // gets a new reference every render and causes this effect to run 20+ times/sec.
   useEffect(() => {
-    if (!hydrated) return;
-    if (searchParams.get("force")) return;
+    if (!hydrated || hasRedirected.current) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("force")) return;
     if (cachedUsers?.length > 0) {
+      hasRedirected.current = true;
       router.replace("/choose-account");
     }
-  }, [hydrated, cachedUsers, router, searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
