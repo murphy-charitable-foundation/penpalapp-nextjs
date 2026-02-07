@@ -9,9 +9,9 @@ export function PageHeader({
   titleColor = "text-secondary",
   image = true,
   heading = true,
-  showBackButton = true,
   imageSize = "md",
   showBorder = true,
+  showBackButton = true,
 }) {
   const imageWidth =
     imageSize === "sm" ? 96 : imageSize === "lg" ? 200 : 160; // md default
