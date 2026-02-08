@@ -281,12 +281,7 @@ const currentLetter =
           />
         ) : (
           <div className="bg-white border border-gray-200 rounded-xl flex flex-col flex-1 min-h-0">
-            {activeView === "inbox" && (
-              <div className="px-6 py-3 text-sm text-gray-500">
-                Showing {documents.length}{" "}
-                {selectedStatus.replace("_", " ")} letters
-              </div>
-            )}
+            
 
             <div className="flex-1 min-h-0">
 
