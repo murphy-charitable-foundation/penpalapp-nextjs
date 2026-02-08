@@ -39,14 +39,8 @@ export default async function handler(req, res) {
     const uid = userRecord.uid;
 
     // Save Firestore user document
-    // Allowlist permitted fields to prevent arbitrary data injection
-    const allowedFields = ["first_name", "last_name", "user_type", "email", /* ...other expected fields */];
-    const sanitizedData = Object.fromEntries(
-      Object.entries(userData).filter(([key]) => allowedFields.includes(key))
-    );
-    // Save Firestore user document
-    await db.collection("users").doc(uid).set(sanitizedData);
-    
+    await db.collection("users").doc(uid).set(userData);
+
     return res.status(200).json({ uid });
   } catch (error) {
     if (error.code === "auth/argument-error" || error.message?.includes("Decoding")) {
