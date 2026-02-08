@@ -38,9 +38,15 @@ export default async function handler(req, res) {
 
     const uid = userRecord.uid;
 
+    // Allowlist permitted fields to prevent arbitrary data injection
+    const allowedFields = ["first_name", "last_name", "user_type", "email", /* ...other expected fields */];
+    const sanitizedData = Object.fromEntries(
+      Object.entries(userData).filter(([key]) => allowedFields.includes(key))
+    );
+    
     // Save Firestore user document; roll back auth user on failure
     try {
-      await db.collection("users").doc(uid).set(userData);
+      await db.collection("users").doc(uid).set(sanitizedData);
     } catch (firestoreError) {
       await auth.deleteUser(uid).catch(() => {}); // best-effort cleanup
       throw firestoreError;
