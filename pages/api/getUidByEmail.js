@@ -35,7 +35,10 @@ export default async function handler(req, res) {
     const userRecord = await auth.getUserByEmail(email);
     res.status(200).json({ uid: userRecord.uid });
   } catch (error) {
+    if (error.code === "auth/argument-error" || error.message?.includes("Decoding")) {
+      return res.status(401).json({ error: "Invalid authentication token" });
+    }
     console.error("Error fetching UID:", error);
-    res.status(404).json({ error: "User not found" });
+    return res.status(404).json({ error: "User not found" });
   }
 }
