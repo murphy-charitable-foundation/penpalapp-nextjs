@@ -52,6 +52,6 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Invalid authentication token" });
     }
     logError(error, { description: "Failed to create user via admin API" });
-    return res.status(500).json({ error: error.message || "Server error" });
+    return res.status(500).json({ error: "Server error" });
   }
 }
