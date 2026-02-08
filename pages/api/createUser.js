@@ -38,8 +38,13 @@ export default async function handler(req, res) {
 
     const uid = userRecord.uid;
 
-    // Save Firestore user document
-    await db.collection("users").doc(uid).set(userData);
+    // Save Firestore user document; roll back auth user on failure
+    try {
+      await db.collection("users").doc(uid).set(userData);
+    } catch (firestoreError) {
+      await auth.deleteUser(uid).catch(() => {}); // best-effort cleanup
+      throw firestoreError;
+    }
 
     return res.status(200).json({ uid });
   } catch (error) {
