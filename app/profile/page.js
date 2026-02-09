@@ -91,7 +91,11 @@ export default function EditProfile() {
       setGender(d.gender || "");
       setFavoriteColor(d.favorite_color || "");
       setPhotoUri(d.photo_uri || "");
-      setHobbies(Array.isArray(d.hobbies) ? d.hobbies.map(h => ({ id: h, label: h })) : []);
+      setHobbies(
+        Array.isArray(d.hobbies)
+          ? d.hobbies.map((h) => ({ id: h, label: h }))
+          : []
+      );
     };
 
     fetchProfile();
@@ -133,7 +137,7 @@ export default function EditProfile() {
       guardian,
       dream_job: dreamJob,
       gender,
-      hobbies: hobbies.map(h => h.id),
+      hobbies: hobbies.map((h) => h.id),
       favorite_color: favoriteColor,
     };
 
@@ -179,6 +183,7 @@ export default function EditProfile() {
             onClick: () => {
               setShowLeaveDialog(false);
               pendingNavRef.current?.();
+              pendingNavRef.current = null;
             },
           },
         ]}
@@ -200,3 +205,112 @@ export default function EditProfile() {
               alt="Profile"
             />
           </div>
+
+          <div className="space-y-6">
+            <Input
+              label="First name"
+              value={firstName}
+              onChange={(e) => {
+                setFirstName(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+              error={errors.first_name}
+            />
+
+            <Input
+              label="Last name"
+              value={lastName}
+              onChange={(e) => {
+                setLastName(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+              error={errors.last_name}
+            />
+
+            <Input
+              label="Country"
+              value={country}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+            />
+
+            <Input
+              label="Village"
+              value={village}
+              onChange={(e) => {
+                setVillage(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+            />
+
+            <Input
+              type="date"
+              label="Birthday"
+              value={birthday}
+              onChange={(e) => {
+                setBirthday(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+            />
+
+            <Dropdown
+              options={[
+                "Elementary",
+                "Middle",
+                "High School",
+                "College/University",
+                "No Grade",
+              ]}
+              currentValue={educationLevel}
+              valueChange={(v) => {
+                setEducationLevel(v);
+                setHasUnsavedChanges(true);
+              }}
+              text="Education level"
+            />
+
+            <Input
+              label="Dream job"
+              value={dreamJob}
+              onChange={(e) => {
+                setDreamJob(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+            />
+
+            <HobbySelect
+              value={hobbies}
+              onChange={(arr) => {
+                setHobbies(arr);
+                setHasUnsavedChanges(true);
+              }}
+              allowCustom
+              editable
+            />
+
+            <Input
+              label="Favorite color"
+              value={favoriteColor}
+              onChange={(e) => {
+                setFavoriteColor(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
+            />
+
+            <Button
+              btnText={isSaving ? <LoadingSpinner /> : "Save"}
+              onClick={saveProfileData}
+              disabled={isSaving}
+            />
+          </div>
+        </div>
+
+        <div className="shrink-0 border-t bg-blue-100">
+          <NavBar />
+        </div>
+      </PageContainer>
+    </PageBackground>
+  );
+}
