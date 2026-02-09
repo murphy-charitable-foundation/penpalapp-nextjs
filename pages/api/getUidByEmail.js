@@ -38,7 +38,10 @@ export default async function handler(req, res) {
     if (error.code === "auth/argument-error" || error.message?.includes("Decoding")) {
       return res.status(401).json({ error: "Invalid authentication token" });
     }
+    if (error.code === "auth/user-not-found") {
+      return res.status(404).json({ error: "User not found" });
+    }
     console.error("Error fetching UID:", error);
-    return res.status(404).json({ error: "User not found" });
+    return res.status(500).json({ error: "Server error" });
   }
 }
