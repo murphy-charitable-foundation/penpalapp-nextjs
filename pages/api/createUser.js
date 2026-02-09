@@ -29,6 +29,12 @@ export default async function handler(req, res) {
     if (!email || !password || !userData) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+    if (typeof password !== "string" || password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+    if (typeof email !== "string") {
+      return res.status(400).json({ error: "Invalid email" });
+    }
 
     // Create the Firebase Authentication user
     const userRecord = await auth.createUser({
