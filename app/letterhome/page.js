@@ -68,9 +68,6 @@ export default function Home() {
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
-              name: `${recipient.first_name ?? "Unknown"} ${
-                recipient.last_name ?? ""
-              }`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
               lastMessageDate: letter.created_at || "",
@@ -79,7 +76,7 @@ export default function Home() {
               isRecipient: letter?.sent_by?.id !== uid,
               unread: letter?.unread || false,
               isRecipient: letter?.sent_by?.id !== uid,
-              unread: letter?.unread || false,
+              recipientId: recipient.id || "",
             };
           })
         );

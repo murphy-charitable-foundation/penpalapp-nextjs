@@ -2,7 +2,7 @@ import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
-
+import Link from "next/link";
 
 
 const MessagePreview = ({
@@ -15,6 +15,7 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  id
 }) => {
   const imageSrc = profileImage || "/usericon.png";
 
@@ -49,13 +50,15 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        <Image
-          src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
-          width={36}
-          height={36}
-        />
+        <Link href={"/profile-view/" + id}>
+          <Image
+            src={imageSrc}
+            alt={`${name}'s profile`}
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            width={36}
+            height={36}
+          />
+        </Link>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
