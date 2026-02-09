@@ -3,8 +3,11 @@
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
-
-export function BackButton({ onBack }) {
+export function BackButton({
+  onBack,
+  size = "sm",
+  className = "",
+}) {
   const router = useRouter();
 
   const handleClick = () => {
@@ -18,10 +21,21 @@ export function BackButton({ onBack }) {
 
   return (
     <button
+      type="button"
       onClick={handleClick}
-      className="fixed top-6 left-6 inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors z-50 rounded-full p-2"
+      className={`inline-flex items-center justify-center rounded-full p-2
+        hover:bg-black/5 transition ${className}`}
+      aria-label="Go back"
     >
-      <ChevronLeft className="h-8 w-8 text-black stroke-[2]" />
+      <ChevronLeft
+        className={
+          size === "xs"
+            ? "h-4 w-4"
+            : size === "sm"
+            ? "h-5 w-5"
+            : "h-6 w-6"
+        }
+      />
     </button>
   );
 }
