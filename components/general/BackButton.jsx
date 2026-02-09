@@ -15,7 +15,6 @@ export function BackButton({
       onBack();
       return;
     }
-
     router.back();
   };
 

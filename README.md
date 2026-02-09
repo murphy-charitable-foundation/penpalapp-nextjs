@@ -34,3 +34,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Note / Request:
+We’re planning to update PageBackground and PageContainer soon. To avoid unintended layout or styling changes across pages, please do not modify or override these shared components for now.
+
+Until the update is completed, pages should simply import and use them as-is, without applying page-specific styling to these layout primitives.

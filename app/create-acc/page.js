@@ -2,23 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
-import { handleLogout } from "../profile/page";
-import EditProfileImage from "../../components/edit-profile";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
-import { BackButton } from "../../components/general/BackButton";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import Dialog from "../../components/general/Dialog";
 import { onAuthStateChanged } from "firebase/auth";
 import InfoDisplay from "../../components/general/profile/InfoDisplay";
+import { PageHeader } from "../../components/general/PageHeader";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
@@ -30,7 +27,6 @@ export default function CreateAccount() {
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [showPasswordChecklist, setShowPasswordChecklist] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
   const [errors, setErrors] = useState({});
   const [isValidPassword, setisValidPassword] = useState(false);
   const [termsCheck, setTermsCheck] = useState(false);
@@ -122,7 +118,6 @@ export default function CreateAccount() {
         connected_penpals_count: 0,
       });
 
-      setShowCreate(false);
       localStorage.setItem("userFirstName", firstName);
       logButtonEvent("Create Account Button Clicked!", "/create-acc");
 
@@ -138,58 +133,64 @@ export default function CreateAccount() {
     }
   };
 
-  return (
-    <PageBackground className="flex flex-col items-center justify-center px-4">
-      <Dialog
-        isOpen={isDialogOpen}
-        onClose={() => {
-          setIsDialogOpen(false);
-        }}
-        title={dialogTitle}
-        content={dialogMessage}
-      ></Dialog>
-      <PageContainer>
-        <div className="flex items-center justify-between mb-4">
-          <BackButton />
-          <h2 className="flex-grow text-center text-2xl font-bold text-gray-800">
-            Create account
-          </h2>
-        </div>
-        <div className="flex justify-center mb-6">
-          <Image
-            src="/murphylogo.png"
-            alt="Your Logo"
-            width={150}
-            height={150}
-          />
-        </div>
+return (
+  <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+    {/* ===== DIALOG ===== */}
+    <Dialog
+      isOpen={isDialogOpen}
+      onClose={() => setIsDialogOpen(false)}
+      title={dialogTitle}
+      content={dialogMessage}
+    />
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="flex gap-4">
-            <div className="w-1/2">
-              <Input
-                label="First name"
-                id="first-name"
-                placeholder="Ex: Jane"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                error={errors.firstName ? errors.firstName : ""}
-              />
-            </div>
-            <div className="w-1/2">
-              <Input
-                label="Last Name"
-                id="last-name"
-                placeholder="Ex: Doe"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                error={errors.lastName ? errors.lastName : ""}
-              />
-            </div>
+    <div className="flex-1 min-h-0 flex justify-center py-2">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {/* ===== HEADER ===== */}
+        <PageHeader title="Create account" image={false} />
+
+        {/* ===== SINGLE SCROLLER ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-4">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/murphylogo.png"
+              alt="Your Logo"
+              width={150}
+              height={150}
+            />
           </div>
-          <div>
+
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <Input
+                  label="First name"
+                  id="first-name"
+                  placeholder="Ex: Jane"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  error={errors.firstName || ""}
+                />
+              </div>
+              <div className="w-1/2">
+                <Input
+                  label="Last Name"
+                  id="last-name"
+                  placeholder="Ex: Doe"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  error={errors.lastName || ""}
+                />
+              </div>
+            </div>
+
             <Input
               id="birthday"
               type="date"
@@ -197,12 +198,9 @@ export default function CreateAccount() {
               value={birthday}
               onChange={(e) => setBirthday(e.target.value)}
             />
-          </div>
 
-          <div>
-            <InfoDisplay title="Email" info={email}></InfoDisplay>
-          </div>
-          <div>
+            <InfoDisplay title="Email" info={email} />
+
             <Input
               id="password"
               name="password"
@@ -214,25 +212,28 @@ export default function CreateAccount() {
                 setPassword(e.target.value);
                 setShowPasswordChecklist(e.target.value.length > 0);
               }}
-              error={errors.isValidPassword ? errors.isValidPassword : ""}
+              error={errors.isValidPassword || ""}
             />
-          </div>
-          {showPasswordChecklist && (
-            <PasswordChecklist
-              rules={["minLength", "specialChar", "number", "capital", "match"]}
-              minLength={8}
-              value={password}
-              valueAgain={repeatPassword}
-              onChange={(isValid, failedRules) => {
-                setisValidPassword(isValid);
-                if (failedRules.length === 1 && failedRules.includes("match")) {
-                  setisValidPassword(true);
-                }
-              }}
-              className="text-black"
-            />
-          )}
-          <div>
+
+            {showPasswordChecklist && (
+              <PasswordChecklist
+                rules={["minLength", "specialChar", "number", "capital", "match"]}
+                minLength={8}
+                value={password}
+                valueAgain={repeatPassword}
+                onChange={(isValid, failedRules) => {
+                  setisValidPassword(isValid);
+                  if (
+                    failedRules.length === 1 &&
+                    failedRules.includes("match")
+                  ) {
+                    setisValidPassword(true);
+                  }
+                }}
+                className="text-sm"
+              />
+            )}
+
             <Input
               id="repeat-password"
               name="repeatPassword"
@@ -240,45 +241,46 @@ export default function CreateAccount() {
               label="Repeat Password"
               value={repeatPassword}
               onChange={(e) => setRepeatPassword(e.target.value)}
-              error={errors.repeatPassword ? errors.repeatPassword : ""}
+              error={errors.repeatPassword || ""}
             />
-          </div>
-          {/*onClick={() => router.push('/terms-conditions')}  */}
-          <div className="justify-center">
-            <div className="flex items-center">
-              <Input
-                id="terms-check"
-                name="terms-check"
-                type="checkbox"
-                onChange={(e) => setTermsCheck(e.target.value)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="terms-check"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                See the{" "}
-                <Link href="/terms-conditions" className="underline">
-                  terms and conditions
-                </Link>{" "}
-                and{" "}
-                <Link className="underline" href="privacy-policy">
-                  privacy policy
-                </Link>
-              </label>
+
+            <div>
+              <div className="flex items-start gap-2">
+                <Input
+                  id="terms-check"
+                  name="terms-check"
+                  type="checkbox"
+                  onChange={(e) => setTermsCheck(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label className="text-sm text-gray-900">
+                  See the{" "}
+                  <Link href="/terms-conditions" className="underline">
+                    terms and conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy-policy" className="underline">
+                    privacy policy
+                  </Link>
+                </label>
+              </div>
+
+              {errors.termsCheck && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.termsCheck}
+                </p>
+              )}
             </div>
-            {errors.termsCheck && (
-              <p className="mt-1 text-sm text-red-500">{errors.termsCheck}</p>
-            )}
-          </div>
 
-          <div className="flex justify-center">
-            <Button btnType="submit" btnText="Create Account" color="green" />
-          </div>
-        </form>
-
-        {/* <EditProfileImage router={router} /> */}
+            <div className="pt-4 flex justify-center">
+              <Button btnType="submit" btnText="Create Account" color="green" />
+            </div>
+          </form>
+        </div>
       </PageContainer>
-    </PageBackground>
-  );
+    </div>
+  </PageBackground>
+);
+
+
 }

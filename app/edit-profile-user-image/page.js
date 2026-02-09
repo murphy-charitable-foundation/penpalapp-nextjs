@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { auth, db } from "../firebaseConfig";
-import EditProfileImage from "../../components/edit-profile-image";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { auth, db } from "../firebaseConfig";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { uploadFile } from "../lib/uploadFile";
+
+import EditProfileImage from "../../components/edit-profile-image";
 import Button from "../../components/general/Button";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { PageHeader } from "../../components/general/PageHeader";
+import Dialog from "../../components/general/Dialog";
+
+import { uploadFile } from "../lib/uploadFile";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import Dialog from "../../components/general/Dialog";
-import { PageHeader } from "../../components/general/PageHeader";
 
 export default function EditProfileUserImage() {
   const [image, setImage] = useState("");
@@ -44,8 +46,9 @@ export default function EditProfileUserImage() {
         }
       }
     };
+
     fetchUserData();
-  }, [auth.currentUser]);
+  }, []);
 
   useEffect(() => {
     setIsSaving(false);
@@ -72,7 +75,7 @@ export default function EditProfileUserImage() {
   const handleCrop = () => {
     if (
       cropperRef.current &&
-      typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
+      typeof cropperRef.current.cropper?.getCroppedCanvas === "function"
     ) {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
@@ -116,9 +119,7 @@ export default function EditProfileUserImage() {
       `profile/${uid}/profile-image`,
       () => {},
       (error) => {
-        logError(error, {
-          description: "Upload error: ",
-        });
+        logError(error, { description: "Upload error" });
         setIsSaving(false);
       },
       async (url) => {
@@ -148,8 +149,8 @@ export default function EditProfileUserImage() {
               image={false}
               onBack={() =>
                 attemptNavigateWithGuard(() =>
-                router.push(`/profile-view/${auth.currentUser?.uid}`)
-              )
+                  router.push(`/profile-view/${auth.currentUser?.uid}`)
+                )
               }
             />
 
