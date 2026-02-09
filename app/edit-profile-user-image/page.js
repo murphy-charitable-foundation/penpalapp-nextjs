@@ -145,14 +145,14 @@ export default function EditProfileUserImage() {
         <div className="bg-gray-50 min-h-screen">
           <div className="max-w-lg mx-auto p-6">
             <PageHeader
-              title="Edit image"
-              image={false}
-              onBack={() =>
-                attemptNavigateWithGuard(() =>
-                  router.push(`/profile-view/${auth.currentUser?.uid}`)
-                )
-              }
-            />
+                title="Edit image"
+                image={false}
+                onBack={() =>
+                  attemptNavigateWithGuard(() =>
+                    router.push("/profile")
+                  )
+                }
+              />
 
             <div className="flex flex-col items-center gap-6 mt-6">
               <EditProfileImage

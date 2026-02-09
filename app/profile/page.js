@@ -206,6 +206,20 @@ export default function EditProfile() {
             />
           </div>
 
+             <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() =>
+                  attemptNavigate(() =>
+                    router.push("/edit-profile-user-image")
+                  )
+                }
+                className="px-4 py-2 border border-gray-400 text-green-700 rounded-full hover:bg-gray-100 transition"
+              >
+                Edit Photo
+              </button>
+            </div>
+
           <div className="space-y-6">
             <Input
               label="First name"
