@@ -37,13 +37,11 @@ export default function EditProfileUserImage() {
   usePageAnalytics("/edit-profile-user-image");
 
   useEffect(() => {
-  console.log("hasUnsavedImage:", hasUnsavedImage);
 }, [hasUnsavedImage]);
 
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log(auth);
       if (auth.currentUser) {
         const uid = auth.currentUser.uid;
         const docRef = doc(db, "users", uid);
@@ -79,7 +77,6 @@ export default function EditProfileUserImage() {
   }, [router]);
 
   const onUploadComplete = (url) => {
-    console.log("Upload complete. File available at:", url);
     setStorageUrl(url);
   };
 
@@ -150,7 +147,6 @@ useEffect(() => {
       },
       async (url) => {
         setStorageUrl(url);
-        console.log("Image Url:" + url);
         if (url) {
           await updateDoc(doc(db, "users", uid), { photo_uri: url });
           setHasUnsavedImage(false);
