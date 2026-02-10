@@ -137,7 +137,10 @@ const handleSubmit = async (e) => {
       }
       try {
         // Fetch UID of international buddy
-        const token = await auth.currentUser.getIdToken();
+      if (!auth.currentUser) {
+        throw new Error("You must be logged in to import user data");
+      }
+      const token = await auth.currentUser.getIdToken();
         const uidRes = await fetch("/api/getUidByEmail", {
           method: "POST",
           headers: { 
