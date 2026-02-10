@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig"
@@ -351,7 +351,7 @@ export   const createConnection = async (userDocRef, kid) => {
 
             await updateDoc(kidDocRef, {
               connected_penpals: arrayUnion(userDocRef),
-              connected_penpals_count: kid.connected_penpals_count + 1,
+              connected_penpals_count: increment(1),
             });
 
             return letterboxRef;
@@ -370,6 +370,7 @@ export   const createConnection = async (userDocRef, kid) => {
         console.log("No kid or user data");
       }
     } catch (error) {
-      console.log("There has been a error creating the connection: ", error);
+      logError("There has been a error creating the connection: " + error.message, { error });
+      throw error; // rethrow so callers can handle it
     }
   };

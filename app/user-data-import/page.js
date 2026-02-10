@@ -75,6 +75,12 @@ export default function UserDataImport() {
       });
     }
   };
+
+  const handleCancelCrop = () => {
+    setSelectedFile(null);
+    setShowCropper(false);
+  };
+
 const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -89,7 +95,6 @@ const handleSubmit = async (e) => {
       const userData = {
         first_name: (() => { const s = formData.get("firstName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
         last_name: (() => { const s = formData.get("lastName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
-        email: "",
         birthday: formData.get("birthday") ? Timestamp.fromDate(new Date(formData.get("birthday"))) : null,
         country: (formData.get("country") || "").toString(),
         village: (formData.get("village") || "").toString(),
@@ -117,7 +122,7 @@ const handleSubmit = async (e) => {
         newErrors.last_name = "Name is required";
       }
 
-      if (!/\S+@\S+\.\S+/.test(userData.email) && userData.email !== "") {
+      if (!/\S+@\S+\.\S+/.test(email) && email !== "") {
         newErrors.email = "Invalid email format";
       }
 
@@ -183,7 +188,6 @@ const handleSubmit = async (e) => {
             (progress) => console.log('Upload progress:', progress),
             (error) => {
               logError(error, { description: "Error uploading profile image" });
-              throw error;
             },
             async (url) => {
               // Update user photo_uri
@@ -263,8 +267,8 @@ const handleSubmit = async (e) => {
               <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
                 <div
                   className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
-                  onClick={() => handleCrop()}
-                />
+                  onClick={() => handleCancelCrop()}                
+                  />
                 <div className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
                   <div className="flex justify-center">
                     <EditProfileImage
@@ -303,12 +307,38 @@ const handleSubmit = async (e) => {
                     error={errors.last_name}
                   />
 
-                  <Input
-                    type="text"
-                    name="email"
-                    label="Email"
-                    error={errors.email}
-                  />
+                  <div className="md:col-span-2">
+                    <Input
+                      type="text"
+                      name="email"
+                      id="email"
+                      label="Child's Email"
+                      placeholder="me@example.com"
+                      error={errors.email ? errors.email : ""}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Input
+                      type="password"
+                      name="password"
+                      id="password"
+                      label="Password"
+                      placeholder="Enter a secure password"
+                      error={errors.password ? errors.password : ""}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Input
+                      type="text"
+                      name="internationalbuddyemail"
+                      id="internationalbuddyemail"
+                      label="International Buddy's Email"
+                      placeholder="buddy@example.com"
+                      error={errors.internationalbuddyemail ? errors.internationalbuddyemail : ""}
+                    />
+                  </div>
 
                   <Input type="date" name="birthday" label="Birthday" />
 
@@ -321,6 +351,16 @@ const handleSubmit = async (e) => {
                       valueChange={setGender}
                       currentValue={gender}
                       text="Gender"
+                    />
+                  </div>
+                
+                  <div className="md:col-span-2">
+                    <Input 
+                      type="text" 
+                      name="pronouns" 
+                      id="pronouns" 
+                      label="Pronouns"
+                      placeholder="e.g., she/her"
                     />
                   </div>
                 </div>
@@ -397,7 +437,7 @@ const handleSubmit = async (e) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input name="dreamJob" label="Dream Job" />
                   <Input name="favoriteColor" label="Favorite Color" />
-
+                  <Input name="favoriteAnimal" label="Favorite Animal" />
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-500">
                       Hobby
