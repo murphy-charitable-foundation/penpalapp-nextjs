@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../../app/firebaseConfig";
 
 import { PageContainer } from "../../components/general/PageContainer";
@@ -18,6 +19,11 @@ import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
+import { createConnection } from "../utils/letterboxFunctions";
+import Image from "next/image";
+import logo from "../../public/murphylogo.png";
+import EditProfileImage from "../../components/edit-profile-image";
+import { uploadFile } from "../lib/uploadFile";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,10 +39,43 @@ export default function UserDataImport() {
 
   const [hobbies, setHobbies] = useState([]); // [{id,label}]
 
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [croppedImage, setCroppedImage] = useState(null);
+  const [croppedBlob, setCroppedBlob] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+
   const router = useRouter();
+  const auth = getAuth();
+  const fileInputRef = useRef(null);
+  const cropperRef = useRef(null);
   usePageAnalytics("/user-data-import");
 
-  const handleSubmit = async (e) => {
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setShowCropper(true);
+      // Reset the input value to allow selecting the same file again
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCrop = () => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      const canvas = cropper.getCroppedCanvas();
+      canvas.toBlob((blob) => {
+        setCroppedBlob(blob);
+        setCroppedImage(URL.createObjectURL(blob));
+        setShowCropper(false);
+      });
+    }
+  };
+const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     logButtonEvent("/user-data-import", "Import User Data button clicked!");
@@ -44,12 +83,14 @@ export default function UserDataImport() {
     try {
       const newErrors = {};
       const formData = new FormData(e.currentTarget);
-
+      const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
+      const email = formData.get("email");
+      const password = formData.get("password");
       const userData = {
-        first_name: (formData.get("firstName") || "").toString(),
-        last_name: (formData.get("lastName") || "").toString(),
-        email: (formData.get("email") || "").toString(),
-        birthday: (formData.get("birthday") || "").toString(),
+        first_name: (() => { const s = formData.get("firstName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        last_name: (() => { const s = formData.get("lastName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        email: "",
+        birthday: formData.get("birthday") ? Timestamp.fromDate(new Date(formData.get("birthday"))) : null,
         country: (formData.get("country") || "").toString(),
         village: (formData.get("village") || "").toString(),
         bio: (formData.get("bio") || "").toString(),
@@ -60,10 +101,14 @@ export default function UserDataImport() {
 
         // Backward compatible + new schema
         hobby: hobbies[0]?.label || "",
-        hobbies: hobbies.map((h) => h.id),
+        hobbies: hobbies.map((h) => h.id), 
 
         favorite_color: (formData.get("favoriteColor") || "").toString(),
         gender: gender,
+        user_type: "child",
+        connected_penpals_count: 0,
+        pronouns: formData.get("pronouns"),
+        favorite_animal: formData.get("favoriteAnimal"),
       };
 
       // Custom validation
@@ -72,28 +117,102 @@ export default function UserDataImport() {
         newErrors.last_name = "Name is required";
       }
 
-      if (!userData.email.trim()) {
-        newErrors.email = "Email is required";
-      } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
+      if (!/\S+@\S+\.\S+/.test(userData.email) && userData.email !== "") {
         newErrors.email = "Invalid email format";
       }
+
+       if (!/\S+@\S+\.\S+/.test(internationalBuddyEmail) && internationalBuddyEmail !== "") {
+        newErrors.internationalbuddyemail = "Invalid email format";
+      }
+
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         return;
       }
+      try {
+        // Fetch UID of international buddy
+        const token = await auth.currentUser.getIdToken();
+        const uidRes = await fetch("/api/getUidByEmail", {
+          method: "POST",
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json" },
+          body: JSON.stringify({ email: internationalBuddyEmail }),
+        });
 
-      const userId = crypto.randomUUID();
-      await setDoc(doc(db, "users", userId), userData);
+        const internationalBuddyUid = await uidRes.json();
+        if (!uidRes.ok) {
+          newErrors.internationalbuddyemail = internationalBuddyUid.error || "No user found with this email";
+          setErrors(newErrors);
+          throw new Error (internationalBuddyUid.error || "No user found with this email");
+        }
 
-      e.currentTarget.reset();
+        // Create user via server-side Admin API so current user stays signed in
+        const createRes = await fetch("/api/createUser", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, userData }),
+        });
+
+        const createJson = await createRes.json();
+        if (!createRes.ok) {
+          newErrors.email = createJson.error || "Failed to create user";
+          setErrors(newErrors);
+          throw new Error(createJson.error || "Failed to create user");
+        }
+
+        const kidId = createJson.uid;
+
+        const kidRef = doc(db, "users", kidId);
+        const docSnap = await getDoc(kidRef);
+        if (docSnap.exists()) {
+          const kid = { id: kidId, ...docSnap.data(), photoURL: "/usericon.png" };
+          const internationalBuddyUID = internationalBuddyUid.uid;
+          const buddyRef = doc(db, "users", internationalBuddyUID);
+          const letterboxRef = await createConnection(buddyRef, kid);
+        } else {
+          throw new Error("Error linking user");
+        }
+
+        // Upload profile image if available
+        if (croppedBlob) {
+          uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
+            (progress) => console.log('Upload progress:', progress),
+            (error) => {
+              logError(error, { description: "Error uploading profile image" });
+              throw error;
+            },
+            async (url) => {
+              // Update user photo_uri
+              const userRef = doc(db, "users", kidId);
+              await updateDoc(userRef, { photo_uri: url });
+            }
+          );
+        }
+
+      } catch (error) {
+        logError(error, {
+          description: "Error creating user or linking international buddy: ",    
+        })
+        throw error;
+      }
+
+      // Reset form
       setHobbies([]);
-
+      setCroppedBlob(null);
+      setCroppedImage(null);
+      e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
+      setErrors({});
     } catch (error) {
-      logError(error, { description: "Error importing user data:", error});
+      logError(error, {
+        description: "Error importing user data: ",
+      });
       setIsDialogOpen(true);
       setDialogTitle("Oops");
       setDialogMessage("Error importing user data.");
@@ -118,10 +237,50 @@ export default function UserDataImport() {
           center={false}
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
-          <PageHeader title="Import User Data" imageSize="sm" />
+          <PageHeader title="Import User Data" image={false} />
 
           {/* Single scroller */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+            {/* Upload profile image */}
+            <div className="flex justify-center">
+              {croppedImage ? (
+                <img src={croppedImage} alt="Profile" width={200} className="rounded-full" />
+              ) : (
+                <Image src={logo} alt="Foundation Logo" width={200} margin={0} />
+              )}
+            </div>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={handleImageClick}
+                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+              >
+                Upload Photo
+              </button>
+            </div>
+            {showCropper && (
+              <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
+                <div
+                  className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
+                  onClick={() => handleCrop()}
+                />
+                <div className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
+                  <div className="flex justify-center">
+                    <EditProfileImage
+                      image={URL.createObjectURL(selectedFile)}
+                      newProfileImage={null}
+                      previewURL={null}
+                      handleDrop={() => {}}
+                      handleCrop={() => {}}
+                      cropperRef={cropperRef}
+                      onDone={handleCrop}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
               <div className="rounded-2xl bg-white p-4">
