@@ -149,7 +149,7 @@ const handleSubmit = async (e) => {
         }
 
         // Create user via server-side Admin API so current user stays signed in
-        const createRes = await fetch("/api/createUser", {
+        const createRes = await fetch("/api/createChild", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,

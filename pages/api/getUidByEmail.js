@@ -1,4 +1,5 @@
 import { auth, db } from "../../app/firebaseAdmin";
+import { requireAdmin } from "../../app/utils/requireAdmin";
 
 export default async function handler(req, res) {
   
@@ -9,22 +10,8 @@ export default async function handler(req, res) {
 
   try {
     
-    // Verify admin authorization
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Missing or invalid authorization header" });
-    }
-
-    const idToken = authHeader.substring(7);
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const callerUid = decodedToken.uid;
-
-    // Check if caller is an admin by looking up their user_type in Firestore
-    const callerDoc = await db.collection("users").doc(callerUid).get();
-    if (!callerDoc.exists || callerDoc.data().user_type !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
+    // Verify admin authorization (delegated to util)
+    const callerUid = await requireAdmin(req);
     
     const { email } = req.body;
 
@@ -35,6 +22,9 @@ export default async function handler(req, res) {
     const userRecord = await auth.getUserByEmail(email);
     res.status(200).json({ uid: userRecord.uid });
   } catch (error) {
+    if (error?.status && error.message) {
+      return res.status(error.status).json({ error: error.message });
+    }
     if (error.code === "auth/argument-error" || error.message?.includes("Decoding")) {
       return res.status(401).json({ error: "Invalid authentication token" });
     }
