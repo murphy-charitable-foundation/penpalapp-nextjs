@@ -364,10 +364,10 @@ export   const createConnection = async (userDocRef, kid) => {
             return querySnapshot.docs[0];
           }
         } else {
-          console.log("Kid has exceeded penpal limit");
+          throw new Error("Kid has exceeded penpal limit");
         }
       } else {
-        console.log("No kid or user data");
+        throw new Error("No kid or user data");
       }
     } catch (error) {
       logError("There has been a error creating the connection: " + error.message, { error });

@@ -253,7 +253,7 @@ const handleSubmit = async (e) => {
               {croppedImage ? (
                 <img src={croppedImage} alt="Profile" width={200} className="rounded-full" />
               ) : (
-                <Image src={logo} alt="Foundation Logo" width={200} margin={0} />
+               <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} />
               )}
             </div>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
