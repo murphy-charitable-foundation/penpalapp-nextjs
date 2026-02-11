@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
@@ -35,6 +35,12 @@ export default function CreateAccount() {
   const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
 
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track if there are unsaved changes
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const pendingNavRef = useRef(null);
+
+
   usePageAnalytics("/create-acc");
 
   // Pre-populate email from auth.currentUser
@@ -47,6 +53,18 @@ export default function CreateAccount() {
     });
     return () => getEmail();
   }, []);
+
+  useEffect(() => {
+  const handleBeforeUnload = (e) => {
+    if (!hasUnsavedChanges) return;
+    e.preventDefault();
+    e.returnValue = "";
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+}, [hasUnsavedChanges]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,14 +119,14 @@ export default function CreateAccount() {
         }
       }
 
-      // Create a document in Firestore in "users" collection with UID as the document key
-      await setDoc(doc(db, "users", uid), {
-        created_at: new Date(),
-        first_name: firstName,
-        last_name: lastName,
-        birthday,
-        connected_penpals_count: 0,
-      });
+      // // Create a document in Firestore in "users" collection with UID as the document key
+      // await setDoc(doc(db, "users", uid), {
+      //   created_at: new Date(),
+      //   first_name: firstName,
+      //   last_name: lastName,
+      //   birthday,
+      //   connected_penpals_count: 0,
+      // });
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {
         created_at: new Date(),
@@ -122,6 +140,7 @@ export default function CreateAccount() {
       logButtonEvent("Create Account Button Clicked!", "/create-acc");
 
       // Redirect to profile page or any other page as needed
+      setHasUnsavedChanges(false);
       router.push("/welcome/");
     } catch (error) {
       logError(error, {
@@ -133,6 +152,18 @@ export default function CreateAccount() {
     }
   };
 
+
+  const attemptNavigateWithGuard = (navigate) => {
+  if (!hasUnsavedChanges) {
+    navigate();
+    return;
+  }
+
+  pendingNavRef.current = navigate;
+  setShowLeaveDialog(true);
+};
+
+
 return (
   <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
     {/* ===== DIALOG ===== */}
@@ -143,6 +174,41 @@ return (
       content={dialogMessage}
     />
 
+    <Dialog
+  isOpen={showLeaveDialog}
+  onClose={() => {
+    setShowLeaveDialog(false);
+    pendingNavRef.current = null;
+  }}
+  variant="confirmation"
+  title="Unsaved changes"
+  content={
+    <p className="text-base leading-relaxed">
+      You have unsaved changes. Are you sure you want to leave this page?
+    </p>
+  }
+  buttons={[
+    {
+      text: "Cancel",
+      variant: "secondary",
+      onClick: () => {
+        setShowLeaveDialog(false);
+        pendingNavRef.current = null;
+      },
+    },
+    {
+      text: "Leave",
+      variant: "primary",
+      onClick: () => {
+        setShowLeaveDialog(false);
+        pendingNavRef.current?.();
+        pendingNavRef.current = null;
+      },
+    },
+  ]}
+/>
+
+
     <div className="flex-1 min-h-0 flex justify-center py-2">
       <PageContainer
         width="compactXS"
@@ -151,8 +217,13 @@ return (
         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
         {/* ===== HEADER ===== */}
-        <PageHeader title="Create account" image={false} />
-
+       <PageHeader
+            title="Create account"
+            image={false}
+            onBack={() =>
+              attemptNavigateWithGuard(() => router.push("/login"))
+            }
+          />
         {/* ===== SINGLE SCROLLER ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-4">
           {/* Logo */}
@@ -165,7 +236,11 @@ return (
             />
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form
+                className="space-y-6"
+                onSubmit={handleSubmit}
+                onChange={() => setHasUnsavedChanges(true)}
+              >
             <div className="flex gap-4">
               <div className="w-1/2">
                 <Input
@@ -174,7 +249,9 @@ return (
                   placeholder="Ex: Jane"
                   type="text"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                  }}
                   error={errors.firstName || ""}
                 />
               </div>
@@ -185,7 +262,9 @@ return (
                   placeholder="Ex: Doe"
                   type="text"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                  }}
                   error={errors.lastName || ""}
                 />
               </div>
@@ -196,7 +275,10 @@ return (
               type="date"
               label="Birthday"
               value={birthday}
-              onChange={(e) => setBirthday(e.target.value)}
+              onChange={(e) => {
+                setBirthday(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
             />
 
             <InfoDisplay title="Email" info={email} />
@@ -240,7 +322,9 @@ return (
               type="password"
               label="Repeat Password"
               value={repeatPassword}
-              onChange={(e) => setRepeatPassword(e.target.value)}
+              onChange={(e) => {
+                setRepeatPassword(e.target.value);
+              }}
               error={errors.repeatPassword || ""}
             />
 
@@ -250,7 +334,9 @@ return (
                   id="terms-check"
                   name="terms-check"
                   type="checkbox"
-                  onChange={(e) => setTermsCheck(e.target.checked)}
+                  onChange={(e) => {
+                    setTermsCheck(e.target.checked);
+                  }}
                   className="h-4 w-4"
                 />
                 <label className="text-sm text-gray-900">
