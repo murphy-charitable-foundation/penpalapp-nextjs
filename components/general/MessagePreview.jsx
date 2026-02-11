@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
@@ -17,7 +18,13 @@ const MessagePreview = ({
   unread = false,
   id
 }) => {
+  const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
+
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    router.push(`/profile-view/${id}`);
+  };
 
   const getStatusIcon = () => {
     if (status === "rejected") {
@@ -50,7 +57,12 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        <Link href={"/profile-view/" + id}>
+        <div
+          onClick={handleProfileClick}
+          className="cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
           <Image
             src={imageSrc}
             alt={`${name}'s profile`}
@@ -58,7 +70,7 @@ const MessagePreview = ({
             width={36}
             height={36}
           />
-        </Link>
+        </div>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
