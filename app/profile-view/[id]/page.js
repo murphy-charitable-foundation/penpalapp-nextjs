@@ -49,7 +49,7 @@ export default function Page({ params }) {
         const u = docSnap.data();
         setFirstName(u.first_name || "");
         setLastName(u.last_name || "");
-        setBirthday(u.birthday ? new Date(u.birthday.seconds * 1000 + u.birthday.nanoseconds / 1000000).toLocaleDateString() : "");        
+        setBirthday(u.birthday || "");        
         setCountry(u.country || "");
         setVillage(u.village || "");
         setBio(u.bio || "");
@@ -64,7 +64,7 @@ export default function Page({ params }) {
         setFavoriteAnimal(u.favorite_animal || "");
         setProfession(u.profession || "");
         setPronouns(u.pronouns || "");
-        setLastOnline(u.last_online ? new Date(u.last_online.seconds * 1000 + u.last_online.nanoseconds / 1000000).toLocaleDateString() : "");
+        setLastOnline(u.last_online || "");
         
       }
     };
