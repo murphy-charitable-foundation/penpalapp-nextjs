@@ -185,7 +185,11 @@ export default function EditProfileUserImage() {
         }}
         variant="confirmation"
         title="Unsaved photo changes"
-        content="You have unsaved changes to your profile photo. Are you sure you want to leave?"
+        content={
+          <p className="text-base leading-relaxed">
+            You have unsaved changes to your profile photo. Are you sure you want to leave?
+          </p>
+        }
         buttons={[
           {
             text: "Cancel",
