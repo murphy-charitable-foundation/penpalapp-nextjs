@@ -295,7 +295,7 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
   }
 };
 
-export   const createConnection = async (userDocRef, kid) => {
+export const createConnection = async (userDocRef, kid) => {
     try {
       console.log("Kid:", kid);
       console.log("User:", userDocRef);
