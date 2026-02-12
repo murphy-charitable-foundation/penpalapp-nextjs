@@ -93,12 +93,14 @@ const handleSubmit = async (e) => {
       const newErrors = {};
       const formData = new FormData(e.currentTarget);
       const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
-      const email = formData.get("email");
+      let email = formData.get("email");
       const password = formData.get("password");
+      const birthday = formData.get("birthday");
+      
       const userData = {
         first_name: (() => { const s = formData.get("firstName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
         last_name: (() => { const s = formData.get("lastName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
-        birthday: formData.get("birthday") ? Timestamp.fromDate(new Date(formData.get("birthday"))) : null,
+        birthday: (formData.get("birthday") || "").toString(),
         country: (formData.get("country") || "").toString(),
         village: (formData.get("village") || "").toString(),
         bio: (formData.get("bio") || "").toString(),
@@ -119,6 +121,18 @@ const handleSubmit = async (e) => {
         favorite_animal: formData.get("favoriteAnimal"),
       };
 
+      // Generate default email if not provided
+      if (!email || !email.trim()) {
+        if (!birthday) {
+          newErrors.birthday = "Birthday is required to generate email";
+        } else {
+          const firstNameLetter = userData.first_name.charAt(0).toLowerCase();
+          const lastName = userData.last_name.toLowerCase();
+          const yearLastTwoDigits = birthday.toString().slice(2,4);
+          email = `rez+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
+        }
+      }
+
       // Custom validation
       if (!userData.first_name.trim() && !userData.last_name.trim()) {
         newErrors.first_name = "Name is required";
@@ -138,6 +152,7 @@ const handleSubmit = async (e) => {
         setErrors(newErrors);
         return;
       }
+
       try {
         if (!auth.currentUser) {
           throw new Error("You must be logged in to import user data");
@@ -333,7 +348,7 @@ const handleSubmit = async (e) => {
                       name="email"
                       id="email"
                       label="Child's Email"
-                      placeholder="me@example.com"
+                      placeholder="rez+JDoe92@murphycharity.org"
                       error={errors.email ? errors.email : ""}
                     />
                   </div>
@@ -360,7 +375,7 @@ const handleSubmit = async (e) => {
                     />
                   </div>
 
-                  <Input type="date" name="birthday" label="Birthday" />
+                  <Input type="date" name="birthday" label="Birthday" error={errors.birthday} />
 
                   <div>
                     <label className="block text-sm font-medium text-gray-500">
