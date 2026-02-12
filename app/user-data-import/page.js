@@ -199,7 +199,12 @@ const handleSubmit = async (e) => {
         if (croppedBlob) {
           setLoading(true);
           uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
-            (progress) => console.log('Upload progress:', progress),
+            (progress) => {
+              console.log('Upload progress:', progress);
+              if (progress === 100) {
+                setLoading(false);
+              }
+            },
             (error) => {
               logError(error, { description: "Error uploading profile image" });
             },
@@ -207,7 +212,6 @@ const handleSubmit = async (e) => {
               // Update user photo_uri
               const userRef = doc(db, "users", kidId);
               await updateDoc(userRef, { photo_uri: url });
-              setLoading(false);
             }
           );
         }
