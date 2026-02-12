@@ -1,5 +1,6 @@
 import { auth, db } from "../../app/firebaseAdmin";
 import { requireAdmin } from "../../app/utils/requireAdmin";
+import { doc, getDoc } from "firebase/firestore";
 
 export default async function handler(req, res) {
   
@@ -20,6 +21,15 @@ export default async function handler(req, res) {
     }
     
     const userRecord = await auth.getUserByEmail(email);
+
+    // Check if user exists in the users collection
+    const userRef = doc(db, "users", userRecord.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return res.status(404).json({ error: "User not found in database" });
+    }
+
     res.status(200).json({ uid: userRecord.uid });
   } catch (error) {
     if (error?.status && error.message) {
