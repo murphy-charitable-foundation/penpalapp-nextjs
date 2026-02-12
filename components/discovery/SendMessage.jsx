@@ -6,6 +6,7 @@ import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,wher
 import { useRouter } from "next/navigation";
 import Button from "../general/Button";
 import { logError } from "../../app/utils/analytics";
+import { createConnection } from "../../app/utils/letterboxFunctions";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
@@ -44,86 +45,10 @@ export default function SendMessage({ kid }) {
     fetchUserData();
   }, [auth.currentUser]);
 
-  const createConnection = async () => {
-    try {
-      console.log("Kid:", kid);
-      console.log("User:", user);
-
-      if (kid != null && user != null) {
-        if (kid.connected_penpals_count < 3) {
-          // Define references for user and kid
-          const userDocRef = doc(db, "users", auth.currentUser.uid);
-          const kidDocRef = doc(db, "users", kid.id);
-
-          // query DB to check for existing letterbox
-          let letterboxQuery = query(
-            collection(db, "letterbox"),
-            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
-          );
-
-          let querySnapshot = await getDocs(letterboxQuery);
-          
-          if (querySnapshot.empty) {
-            letterboxQuery = query(
-              collection(db, "letterbox"),
-              where("members", "==", [kidDocRef, userDocRef])
-            );
-            querySnapshot = await getDocs(letterboxQuery);
-          }
-
-          let letterboxRef;
-
-          if (querySnapshot.empty) { // if there's no letterbox, create one.
-            letterboxRef = await addDoc(collection(db, "letterbox"), {
-              members: [
-                userDocRef, 
-                kidDocRef   
-              ],
-              created_at: new Date(),
-              archived_at: null,
-            });
-
-            console.log("Letterbox created");
-            
-            await addDoc(collection(letterboxRef, "letters"), {
-              sent_by: userRef,
-              content: "Please complete your first letter here...",
-              status: "draft",
-              updated_at: new Date(),
-              deleted: null
-            });
-
-            // Update User and Kid documents
-            await updateDoc(userDocRef, {
-              connected_penpals: arrayUnion(kidDocRef),
-            });
-
-            await updateDoc(kidDocRef, {
-              connected_penpals: arrayUnion(userDocRef),
-              connected_penpals_count: kid.connected_penpals_count + 1,
-            });
-
-            router.push("/letters/" + letterboxRef.id);
-          } else {
-            router.push("/letters/" + querySnapshot.docs[0].id);
-            console.log("Letterbox already exists");
-            logError("Penpal filter error -- Letterbox already exists.", {
-              description: "debug",
-            });
-          }
-        } else {
-          console.log("Kid has exceeded penpal limit");
-        }
-      } else {
-        console.log("No kid or user data");
-      }
-    } catch (error) {
-      console.log("There has been a error creating the connection: ", error);
-    }
-  };
-
   const handleClick = async () => {
-    createConnection();
+    createConnection(userRef, kid).then((letterboxRef) => {
+      router.push("/letters/" + letterboxRef.id);
+    });
   };
 
   return (
