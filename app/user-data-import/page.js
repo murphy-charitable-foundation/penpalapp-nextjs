@@ -24,6 +24,7 @@ import Image from "next/image";
 import logo from "../../public/murphylogo.png";
 import EditProfileImage from "../../components/edit-profile-image";
 import { uploadFile } from "../lib/uploadFile";
+import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function UserDataImport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +44,8 @@ export default function UserDataImport() {
   const [croppedImage, setCroppedImage] = useState(null);
   const [croppedBlob, setCroppedBlob] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
   const auth = getAuth();
@@ -136,24 +139,28 @@ const handleSubmit = async (e) => {
         return;
       }
       try {
-        // Fetch UID of international buddy
-      if (!auth.currentUser) {
-        throw new Error("You must be logged in to import user data");
-      }
-      const token = await auth.currentUser.getIdToken();
-        const uidRes = await fetch("/api/getUidByEmail", {
-          method: "POST",
-          headers: { 
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json" },
-          body: JSON.stringify({ email: internationalBuddyEmail }),
-        });
+        if (!auth.currentUser) {
+          throw new Error("You must be logged in to import user data");
+        }
+        const token = await auth.currentUser.getIdToken();
+        
+        // Fetch UID of international buddy only if email is provided
+        let internationalBuddyUid = null;
+        if (internationalBuddyEmail.trim()) {
+          const uidRes = await fetch("/api/getUidByEmail", {
+            method: "POST",
+            headers: { 
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json" },
+            body: JSON.stringify({ email: internationalBuddyEmail }),
+          });
 
-        const internationalBuddyUid = await uidRes.json();
-        if (!uidRes.ok) {
-          newErrors.internationalbuddyemail = internationalBuddyUid.error || "No user found with this email";
-          setErrors(newErrors);
-          throw new Error (internationalBuddyUid.error || "No user found with this email");
+          internationalBuddyUid = await uidRes.json();
+          if (!uidRes.ok) {
+            newErrors.internationalbuddyemail = internationalBuddyUid.error || "No user found with this email";
+            setErrors(newErrors);
+            throw new Error (internationalBuddyUid.error || "No user found with this email");
+          }
         }
 
         // Create user via server-side Admin API so current user stays signed in
@@ -178,15 +185,19 @@ const handleSubmit = async (e) => {
         const docSnap = await getDoc(kidRef);
         if (docSnap.exists()) {
           const kid = { id: kidId, ...docSnap.data(), photoURL: "/usericon.png" };
-          const internationalBuddyUID = internationalBuddyUid.uid;
-          const buddyRef = doc(db, "users", internationalBuddyUID);
-          const letterboxRef = await createConnection(buddyRef, kid);
+
+          if (internationalBuddyUid) {
+            const internationalBuddyUID = internationalBuddyUid.uid;
+            const buddyRef = doc(db, "users", internationalBuddyUID);
+            const letterboxRef = await createConnection(buddyRef, kid);
+          }
         } else {
           throw new Error("Error linking user");
         }
 
         // Upload profile image if available
         if (croppedBlob) {
+          setLoading(true);
           uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
             (progress) => console.log('Upload progress:', progress),
             (error) => {
@@ -196,6 +207,7 @@ const handleSubmit = async (e) => {
               // Update user photo_uri
               const userRef = doc(db, "users", kidId);
               await updateDoc(userRef, { photo_uri: url });
+              setLoading(false);
             }
           );
         }
@@ -230,6 +242,7 @@ const handleSubmit = async (e) => {
 
   return (
     <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {loading && <LoadingSpinner />}
       <Dialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
