@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { db } from "../../app/firebaseConfig";
+import { db } from "../firebaseConfig";
 
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
@@ -26,7 +26,7 @@ import EditProfileImage from "../../components/edit-profile-image";
 import { uploadFile } from "../lib/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
-export default function UserDataImport() {
+export default function CreateChildProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
