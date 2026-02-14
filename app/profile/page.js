@@ -83,6 +83,7 @@ export default function EditProfile() {
 
         setFirstName(userData.first_name || "");
         setLastName(userData.last_name || "");
+        setGender(userData.gender || "");
         setEmail(userData.email || "");
         setBirthday(userData.birthday || "");
         setCountry(userData.country || "");

@@ -65,7 +65,7 @@ export default function Home() {
 
         return {
           id: letter?.id || letterbox.id,
-          profileImage: recipient?.photo_uri || "",
+          profileImage: recipient?.pfp || "",
           name: `${recipient.first_name ?? "Unknown"} ${
             recipient.last_name ?? ""
           }`,
@@ -150,7 +150,13 @@ export default function Home() {
       >
         {isLoading && <LetterHomeSkeleton />}
 
-        {!isLoading && (
+          {!isLoading && error && (
+            <div className="flex-1 flex items-center justify-center p-6 text-center text-red-600">
+              {error}
+            </div>
+          )}
+
+          {!isLoading && !error && (
           <>
             {/* Header */}
             <div className="shrink-0 border-b">
