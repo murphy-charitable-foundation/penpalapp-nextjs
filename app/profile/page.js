@@ -222,10 +222,10 @@ export default function EditProfile() {
         >
           <PageHeader title="Profile" image={false} showBackButton />
 
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
-            {/* content unchanged below */}
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-gray-500">Profile editing temporarily unavailable.</p>
           </div>
-
+          
           <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
             <NavBar />
           </div>
