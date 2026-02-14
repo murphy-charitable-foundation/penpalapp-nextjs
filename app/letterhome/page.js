@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -17,21 +15,20 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { iterateLetterBoxes } from "../utils/deadChat";
+import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { logButtonEvent, logError } from "../utils/analytics";
+import { BackButton } from "../../components/general/BackButton";
+import { logError, logButtonEvent } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 import Button from "../../components/general/Button";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
   const [userType, setUserType] = useState("");
-  const [country, setCountry] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -48,148 +45,159 @@ export default function Home() {
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      setError("User data not found.");
       throw new Error("No user document found.");
     }
   };
 
   const getConversations = async (uid) => {
-    try {
-      const letterboxes = await fetchLetterboxes();
+    const letterboxes = await fetchLetterboxes();
 
-      if (!letterboxes?.length) {
-        setError("No conversations found.");
-        throw new Error("No letterboxes found.");
-      }
+    if (!letterboxes?.length) return [];
 
-      const fetchedConversations = await Promise.all(
-        letterboxes.map(async (letterbox) => {
-          const userRef = doc(db, "users", uid);
-          const letter =
-            (await fetchLatestLetterFromLetterbox(letterbox.id, userRef)) || {};
-          const rec = await fetchRecipients(letterbox.id);
-          const recipient = rec?.[0] ?? {};
+    const fetchedConversations = await Promise.all(
+      letterboxes.map(async (letterbox) => {
+        const userRef = doc(db, "users", uid);
+        const letter =
+          (await fetchLatestLetterFromLetterbox(letterbox.id, userRef)) || null;
 
-          return {
-            id: letter?.id,
-            profileImage: recipient?.photo_uri || "",
-            name: `${recipient.first_name ?? "Unknown"} ${
-              recipient.last_name ?? ""
-            }`,
-            country: recipient.country ?? "Unknown",
-            lastMessage: letter.content || "",
-            lastMessageDate: letter.created_at || "",
-            status: letter.status || "",
-            letterboxId: letterbox.id || "",
-            isRecipient: letter?.sent_by?.id !== uid,
-            unread: letter?.unread || false,
-          };
-        })
-      );
+        const rec = await fetchRecipients(letterbox.id);
+        const recipient = rec?.[0] ?? {};
 
-      return fetchedConversations;
-    } catch (err) {
-      logError(err, { description: "Error fetching conversations" });
-      setError("Failed to load data.");
-      throw err;
-    }
+        return {
+          id: letter?.id || letterbox.id,
+          profileImage: recipient?.photo_uri || "",
+          name: `${recipient.first_name ?? "Unknown"} ${
+            recipient.last_name ?? ""
+          }`,
+          country: recipient.country ?? "Unknown",
+          lastMessage: letter?.content || "",
+          lastMessageDate: letter?.created_at || "",
+          status: letter?.status || "",
+          letterboxId: letterbox.id,
+          isRecipient: letter?.sent_by
+            ? letter.sent_by.id !== uid
+            : false,
+          unread: letter?.unread || false,
+        };
+      })
+    );
+
+    return fetchedConversations;
   };
 
-  // Firebase Auth Redirect Guard
   useEffect(() => {
+    let cancelled = false;
     setIsLoading(true);
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push("/login");
         return;
       }
 
-    try {
-      const uid = user.uid;
-      setUserId(uid);
+      try {
+        const uid = user.uid;
+        if (cancelled) return;
 
-      const userData = await getUserData(uid);
+        setUserId(uid);
 
-      const profileComplete =
-        userData.first_name &&
-        userData.last_name &&
-        userData.country;
+        const userData = await getUserData(uid);
+        if (cancelled) return;
 
-      if (!profileComplete) {
-        router.push("/profile");
-        return;
+        const profileComplete =
+          userData.first_name &&
+          userData.last_name &&
+          userData.country;
+
+        if (!profileComplete) {
+          router.push("/profile");
+          return;
+        }
+
+        setUserName(userData.first_name || "Unknown User");
+        setUserType(userData.user_type || "");
+
+        const downloaded = await getUserPfp(uid);
+        if (!cancelled) setProfileImage(downloaded || "");
+
+        const userConversations = await getConversations(uid);
+        if (!cancelled) setConversations(userConversations);
+
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setError("Error loading data.");
+          logError(err, { description: "Letterhome load failure" });
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
+    });
 
-      setUserName(userData.first_name || "Unknown User");
-      setCountry(userData.country || "Unknown Country");
-      setUserType(userData.user_type || "Unknown Type");
-
-      const downloaded = await getUserPfp(uid);
-      setProfileImage(downloaded || "");
-
-      const userConversations = await getConversations(uid);
-      setConversations(userConversations);
-    } catch (err) {
-      console.error(err);
-      setError("Error fetching user data or conversations.");
-    } finally {
-      setIsLoading(false);
-    }
-  });
-
-  return () => unsubscribe();
-}, [router]);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [router]);
 
   return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        {isLoading ? (
-          <LetterHomeSkeleton />
-        ) : (
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {isLoading && <LetterHomeSkeleton />}
+
+        {!isLoading && (
           <>
-            <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
+            {/* Header */}
+            <div className="shrink-0 border-b">
               <BackButton />
-
-              <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-                <ProfileHeader
-                  userName={userName}
-                  country={country}
-                  profileImage={profileImage}
-                  id={userId}
-                />
-
-                <main className="p-6 bg-white">
-                  <section className="mt-8">
-                    {conversations.length > 0 ? (
-                      <ConversationList conversations={conversations} />
-                    ) : (
-                      <EmptyState
-                        title="New friends are coming!"
-                        description="Many friends are coming — hang tight!"
-                      />
-                    )}
-                  </section>
-                </main>
-
-                <NavBar />
-              </div>
+              <ProfileHeader
+                userName={userName}
+                profileImage={profileImage}
+                id={userId}
+                showCountry={false}
+              />
             </div>
 
+            {/* Scrollable Conversations */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-3">
+              {conversations.length > 0 ? (
+                <ConversationList conversations={conversations} />
+              ) : (
+                <EmptyState
+                  title="New friends are coming!"
+                  description="Many friends are coming — hang tight!"
+                />
+              )}
+            </div>
+
+            {/* Admin Button */}
             {userType === "admin" && (
-              <Button
-                btnText="Check For Inactive Chats"
-                color="bg-black"
-                textColor="text-white"
-                rounded="rounded-md"
-                onClick={() => {
-                  logButtonEvent(
-                    "check for inactive chats button clicked",
-                    "/letterhome"
-                  );
-                  iterateLetterBoxes();
-                }}
-              />
+              <div className="px-3 py-2">
+                <Button
+                  btnText="Check For Inactive Chats"
+                  color="bg-black"
+                  textColor="text-white"
+                  rounded="rounded-md"
+                  onClick={() => {
+                    logButtonEvent(
+                      "check for inactive chats button clicked",
+                      "/letterhome"
+                    );
+                    iterateLetterBoxes();
+                  }}
+                />
+              </div>
             )}
+
+            {/* Nav */}
+            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+              <NavBar />
+            </div>
           </>
         )}
       </PageContainer>
