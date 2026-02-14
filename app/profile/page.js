@@ -81,6 +81,17 @@ export default function EditProfile() {
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
+
+          const profileComplete = // determine if profile is complete based on required fields
+            userData.first_name &&
+            userData.last_name &&
+            userData.country;
+
+           if (profileComplete) {
+              router.push("/letterhome");
+              return; // Redirect to letterhome if profile is complete
+            }
+
           setFirstName(userData.first_name || "");
           setLastName(userData.last_name || "");
           setEmail(userData.email || "");
