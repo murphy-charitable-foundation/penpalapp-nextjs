@@ -97,7 +97,14 @@ export default function EditProfile() {
         setFavoriteColor(userData.favorite_color || "");
         setPhotoUri(userData.photo_uri || "");
         setUserType(userData.user_type || "");
-        setHobbies(userData.hobbies || []);
+        const raw = userData.hobbies || [];
+          setHobbies(
+            raw.map((h) =>
+              typeof h === "string"
+                ? { id: h, label: h }
+                : h
+            )
+          );
       } else {
         setHobbies([]);
       }
