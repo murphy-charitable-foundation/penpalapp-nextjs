@@ -1,133 +1,33 @@
-# API Routes
+# API Routes (short)
 
-## Overview
-
-API routes are located in `app/api/`. Each file is an HTTP endpoint for handling requests from the frontend.
+Routes live in `app/api/*/route.js`.
 
 ## POST /api/deadchat
-
-**What it does**: Sends an email notification about an inactive chat
-
-**When it's called**: When users haven't exchanged messages for more than a month
-
-**Request**:
-```json
-{
-  "sender": { "first_name": "John", "last_name": "Doe" },
-  "id": "letterbox_id",
-  "emailId": {...},
-  "reason": "admin"
-}
-```
-
-If `reason === "admin"`, then `sender` is an array of 2 users:
-```json
-{
-  "sender": [
-    { "first_name": "John", "last_name": "Doe" },
-    { "first_name": "Jane", "last_name": "Smith" }
-  ],
-  ...
-}
-```
-
-**Response** (success):
-```json
-{ "message": "Email sent successfully!" }
-```
-
-**Response** (error):
-```json
-{ "message": "Failed to send email.", "error": "..." }
-```
-
-**Sends email to**:
-- If `reason === "admin"` → admin (penpal@murphycharity.org)
-- Otherwise → user (gets email from Firebase Auth by uid)
-
----
+Sends email about inactive chat (30+ days). Payload has `sender`, `id`, `emailId`, `reason`.
+If `reason === "admin"`, `sender` is an array of two users. Email goes to admin (penpal@murphycharity.org); otherwise to the user from Firebase Auth by uid.
 
 ## POST /api/report
+Sends report email to admin when user reports a message.
+Payload includes `receiver_email` (uid), `currentUrl`, `sender` (uid), `excerpt`.
 
-**What it does**: Sends a report about inappropriate message content
+## Add a new route (minimal)
+1. Create `app/api/<name>/route.js`.
+2. Export a handler:
 
-**When it's called**: User clicks "Report" button on a message
-
-**Request**:
-```json
-{
-  "receiver_email": "user_uid",
-  "currentUrl": "/letters/123",
-  "sender": "user_uid_who_reported",
-  "excerpt": "message text"
-}
-```
-
-**Response** (success):
-```json
-{ "message": "Email sent successfully!" }
-```
-
-**Response** (error):
-```json
-{ "message": "Failed to send email.", "error": "..." }
-```
-
-**Sends email to**: admin (penpal@murphycharity.org)
-
----
-
-## How to Add a New API Route
-
-1. Create folder in `app/api/[name]/`
-2. Create file `route.js`:
-
-```javascript
+```js
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    
-    // Your logic here
-    
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 ```
 
-3. Call from frontend:
-```javascript
-'use client';
+Client calls must be in `'use client'` components.
 
-const response = await fetch('/api/[name]', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ /* data */ })
-});
-```
-
-> **Note**: API routes run on the server (`use server` by default in Next.js App Router). Frontend components that call these routes should use `'use client'` directive.
-
-## Error Logging
-
-All API routes use `logError` from `app/utils/analytics.js`:
-
-```javascript
-import { logError } from "../../utils/analytics";
-
-try {
-  // code
-} catch (error) {
-  logError(error, {
-    description: "Something went wrong"
-  });
-}
-```
-
-This sends the error to Sentry for monitoring.
+## Error logging
+Use `logError` from `app/utils/analytics.js` so errors go to Sentry.
