@@ -1,28 +1,38 @@
 // pages/terms-conditions.js
 "use client"
-import Link from "next/link";
-import Image from "next/image";
-import logo from "/public/murphylogo.png";
-import { BackButton } from "../../components/general/BackButton";
 import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
-import { useEffect } from "react";
 import { usePageAnalytics } from "../useAnalytics";
-import { logLoadingTime } from "../utils/analytics";
 
 export default function TermsCondition() {
   usePageAnalytics("/terms-conditions");
 
-  return (
-    //<div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        <PageHeader title="Terms and Conditions" />
+return (
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex justify-center">
 
-        <div className="flex flex-col gap-10 mt-16">
-          <div className="container flex items-center justify-between  word-break:break-all">
-            <p className="font-medium font-inter text-black leading-[1.8rem] margin-20px">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="
+          min-h-[100dvh]
+          flex flex-col
+          bg-white
+          rounded-2xl
+          shadow-lg
+          overflow-hidden
+        "
+      >
+        {/* ===== HEADER ===== */}
+        <PageHeader title="Terms and Conditions" imageSize="sm"/>
+
+        {/* ===== SCROLLABLE CONTENT ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+          <div className="space-y-8 text-gray-800 leading-relaxed text-sm">
+
+            <p>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
               eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
               enim ad minim veniam, quis nostrud exercitation ullamco laboris
@@ -31,10 +41,8 @@ export default function TermsCondition() {
               nulla pariatur. Excepteur sint occaecat cupidatat non proident,
               sunt in culpa qui officia deserunt mollit anim id est laborum.
             </p>
-          </div>
 
-          <div className="container flex items-center justify-between  word-break:break-all">
-            <p className="font-medium font-inter text-black leading-[1.8rem]">
+            <p>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
               eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
               enim ad minim veniam, quis nostrud exercitation ullamco laboris
@@ -43,10 +51,13 @@ export default function TermsCondition() {
               nulla pariatur. Excepteur sint occaecat cupidatat non proident,
               sunt in culpa qui officia deserunt mollit anim id est laborum.
             </p>
+
           </div>
         </div>
+
       </PageContainer>
-    </PageBackground>
-    //</div>
-  );
+    </div>
+  </PageBackground>
+);
+
 }

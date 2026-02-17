@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Dialog from "../Dialog";
+import { getAuth } from "firebase/auth";
 import { logError } from "../../../app/utils/analytics";
-import { PageContainer } from "../../general/PageContainer";
 
 const ReportPopup = ({
   setShowPopup,
@@ -38,13 +35,10 @@ const ReportPopup = ({
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-      <PageContainer
-        maxWidth="sm"
-        padding="p-4"
-        bgColor="bg-transparent"
-        className="!min-h-0 "
-      >
+      <div
+        className={"fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm"}>
+        <div className={"bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto"}>
+        
         <div className="bg-white space-y-4 shadow-md w-full rounded-md p-4 flex flex-col items-center">
           <h1 className="font-semibold text-sm text-red-500">
             Are you sure that you want to report this letter?
@@ -73,7 +67,7 @@ const ReportPopup = ({
             </button>
           </div>
         </div>
-      </PageContainer>
+        </div>
     </div>
   );
 };

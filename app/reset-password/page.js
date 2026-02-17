@@ -1,13 +1,8 @@
 "use client";
 
-{
-  /* pages/reset-password.js */
-}
-import { db, auth } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import logo from "/public/murphylogo.png";
-import Image from "next/image";
 import { sendPasswordResetEmail } from "firebase/auth";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
@@ -16,9 +11,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent, logLoadingTime } from "../utils/analytics";
-import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -30,28 +23,23 @@ export default function ResetPassword() {
 
   function resetPassword() {
     const newErrors = {};
+
     if (!email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = "Invalid email format";
     }
-    try {
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        throw new Error("Form validation error(s)");
-      }
-      sendPasswordResetEmail(auth, email)
-        .then(() => {
-          setShowModal(true);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    } catch (error) {
-      Sentry.captureException("Error resetting password:", error);
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
 
-    logButtonEvent("Reset Password clicked!", "/reset-password");
+    sendPasswordResetEmail(auth, email)
+      .then(() => setShowModal(true))
+      .catch((error) => logError(error));
+
+    logButtonEvent("reset_password_submit", "/reset-password");
   }
 
   function closeModal() {
@@ -61,9 +49,9 @@ export default function ResetPassword() {
 
   const modalContent = (
     <div>
-      <p style={{ color: "black", marginTop: "20px", fontSize: "0.9rem" }}>
-        Please check your email inbox and spam folder for a verification email
-        to reset your password.
+      <p className="text-black mt-5 text-sm">
+        Please check your email inbox and spam folder for a verification email to
+        reset your password.
       </p>
       <div className="flex justify-center mt-4">
         <Button onClick={closeModal} btnText="Understood" color="green" />
@@ -76,7 +64,14 @@ export default function ResetPassword() {
       <PageContainer maxWidth="lg">
         <div className="p-0 bg-white">
           <PageHeader title="Reset Your Password" />
-          <div className="mt-10">
+
+          <form
+            method="post"
+            onSubmit={(e) => {
+              e.preventDefault();
+              resetPassword();
+            }}
+          >
             <Input
               type="email"
               value={email}
@@ -86,28 +81,20 @@ export default function ResetPassword() {
               id="email"
               required
               label="Registered Email"
-              error={errors.email ? errors.email : ""}
+              error={errors.email || ""}
             />
-          </div>
 
-          <div className="mt-6 flex justify-center">
-            <Button
-              btnType="button"
-              btnText="Reset"
-              color="gray"
-              textColor="text-gray-400"
-              size="default"
-              onClick={resetPassword}
-            />
-          </div>
+            <div className="mt-6 flex justify-center">
+              <Button btnType="submit" btnText="Reset" color="gray" />
+            </div>
+          </form>
         </div>
       </PageContainer>
+
       <Dialog
         isOpen={showModal}
         width="large"
-        onClose={() => {
-          setShowModal(false);
-        }}
+        onClose={() => setShowModal(false)}
         title="Please Check Your Email"
         content={modalContent}
       />
