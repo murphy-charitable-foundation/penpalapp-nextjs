@@ -333,8 +333,6 @@ export const createConnection = async (userDocRef, kid) => {
               archived_at: null,
             });
 
-            console.log("Letterbox created");
-
             await addDoc(collection(letterboxRef, "letters"), {
               sent_by: userDocRef,
               content: "Please complete your first letter here...",
