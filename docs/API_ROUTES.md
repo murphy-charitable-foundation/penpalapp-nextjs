@@ -6,7 +6,7 @@ Routes live in `app/api/*/route.js`.
 Sends email notifications for inactive chats.
 
 ## POST /api/report
-Sends a report email when a user reports a message.
+Sends a report email when a user reports inappropriate message content.
 
 ## Add a new route
 Create `app/api/<name>/route.js` and export the handler (e.g. `POST`).
