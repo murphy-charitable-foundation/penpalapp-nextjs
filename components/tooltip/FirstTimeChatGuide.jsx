@@ -10,7 +10,6 @@ export default function FirstTimeChatGuide({
 }) {
   const [showGuide, setShowGuide] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const tooltipRef = useRef(null);
   const [buttonHighlight, setButtonHighlight] = useState(false);
   const defaultTemplate = `Dear ${recipient?.[0]?.first_name} ${recipient?.[0]?.last_name},
@@ -102,13 +101,6 @@ export default function FirstTimeChatGuide({
     positionTooltip(targetElement, currentStepData.position);
 
     let cleanupFn = () => {};
-
-    // Handle template options in step 3
-    if (currentStepData.showTemplateOptions) {
-      setShowTemplateModal(true);
-    } else {
-      setShowTemplateModal(false);
-    }
 
     if (currentStepData.advanceOn) {
       console.log("test");
