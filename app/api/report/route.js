@@ -12,7 +12,7 @@
  * }
  * 
  * Response (success):
- * { message: "Email sent successfully!" }
+ * { message: "Message reported successfully!" }
  * 
  * Response (error):
  * { message: "Failed to send email.", error: "..." }
