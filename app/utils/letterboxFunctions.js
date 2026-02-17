@@ -303,7 +303,6 @@ export const createConnection = async (userDocRef, kid) => {
       if (kid != null && userDocRef != null) {
         if (kid.connected_penpals_count < 3) {
           // Define references for user and kid
-          //const userDocRef = doc(db, "users", auth.currentUser.uid);
           const kidDocRef = doc(db, "users", kid.id);
 
           // query DB to check for existing letterbox
