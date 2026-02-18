@@ -353,12 +353,8 @@ export const createConnection = async (userDocRef, kid) => {
 
             return letterboxRef;
           } else {
-            //router.push("/letters/" + querySnapshot.docs[0].id);
-            console.log("Letterbox already exists");
-            logError("Penpal filter error -- Letterbox already exists.", {
-              description: "debug",
-            });
-            return querySnapshot.docs[0];
+            // Penpal and kid are already connected, do nothing
+            return;
           }
         } else {
           throw new Error("Kid has exceeded penpal limit");
