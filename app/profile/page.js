@@ -464,6 +464,13 @@ export default function EditProfile() {
                             value={favoriteColor}
                             onChange={(e) => setFavoriteColor(e.target.value)}
                           />
+
+                          <Input
+                            id="favoriteAnimal"
+                            label="Favorite animal"
+                            value={favoriteAnimal}
+                            onChange={(e) => setFavoriteAnimal(e.target.value)}
+                          />
                         </>
                       )}
                       <div className="md:col-span-2">
