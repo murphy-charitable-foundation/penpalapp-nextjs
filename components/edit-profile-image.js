@@ -2,8 +2,9 @@ import { Cropper } from "react-cropper"
 import Dropzone from "react-dropzone"
 import 'cropperjs/dist/cropper.css';
 import Image from "next/image";
+import Button from "./general/Button";
 
-const EditProfileImage = ({ image, newProfileImage, previewURL, handleDrop, handleCrop, cropperRef }) => {
+const EditProfileImage = ({ image, newProfileImage, previewURL, handleDrop, handleCrop, cropperRef, onDone }) => {
 	return (
 		<>
 			{!image ? (
@@ -30,11 +31,21 @@ const EditProfileImage = ({ image, newProfileImage, previewURL, handleDrop, hand
 						style={{ height: 400, width: '100%' }}
 						aspectRatio={1}
 						guides={true}
-						crop={handleCrop}
+						crop={handleCrop ? handleCrop : null}
 						ref={cropperRef}
 						viewMode={1}
 					/>
-					<br />
+					{onDone &&
+						<div className="flex justify-center p-4">
+							<br />
+							<Button
+								btnType="button"
+								btnText="Save Profile Picture"
+								color="green"
+								onClick={onDone}
+							/>
+						</div>
+					}
 				</div>
 			)}
 		</>
