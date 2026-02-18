@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     const uid = userRecord.uid;
 
     // Allowlist permitted fields to prevent arbitrary data injection
-    const allowedFields = ["first_name", "last_name", "user_type", "email", "phone", "address", "country", "village", "bio", "education_level", "is_orphan", "guardian", "dream_job", "hobby", "hobbies", "favorite_color", "gender", "photo_uri", "birthday", "connected_penpals", "connected_penpals_count"];
+    const allowedFields = ["first_name", "last_name", "user_type", "country", "village", "bio", "education_level", "is_orphan", "guardian", "dream_job", "hobbies", "favorite_color", "favorite_animal","pronouns", "birthday", "connected_penpals", "connected_penpals_count"];
     const sanitizedData = Object.fromEntries(
       Object.entries(userData).filter(([key]) => allowedFields.includes(key))
     );
