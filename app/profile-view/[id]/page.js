@@ -11,8 +11,10 @@ import { PageContainer } from "../../../components/general/PageContainer";
 import { PageHeader } from "../../../components/general/PageHeader";
 import ProfileSection from "../../../components/general/profile/ProfileSection";
 import InfoDisplay from "../../../components/general/profile/InfoDisplay";
+import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
+import { set } from "nprogress";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and user-data-import page */
 
@@ -37,7 +39,7 @@ export default function Page({ params }) {
   const [profession, setProfession] = useState("");
   const [pronouns, setPronouns] = useState("");
   const [lastOnline, setLastOnline] = useState("");
-
+  const [hobbies, setHobbies] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function Page({ params }) {
         setGuardian(u.guardian || "");
         setDreamJob(u.dream_job || "");
         setHobby(u.hobby || "");
+        setHobbies(u.hobbies || []);
         setFavoriteColor(u.favorite_color || "");
         setPhotoUri(u.photo_uri || "");
         setUserType(u.user_type || "");
@@ -161,11 +164,11 @@ return (
 
                 <ProfileSection title="Interests">
 
-                  <InfoDisplay title="Hobby" info={hobby} />
+                  <ArrayDisplay title="Hobbies" info={hobbies} />
+                  <InfoDisplay title="Favorite Animal" info={favoriteAnimal} />
                   {userType == "international_buddy" && (
                     <>
                       <InfoDisplay title="Profession" info={profession} />
-                      <InfoDisplay title="Favorite Animal" info={favoriteAnimal} />
                       <InfoDisplay title="Last Online" info={lastOnline} />
                     </>
                   )}

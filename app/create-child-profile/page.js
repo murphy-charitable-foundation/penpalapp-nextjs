@@ -33,11 +33,13 @@ export default function CreateChildProfile() {
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
 
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
-
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [hobbies, setHobbies] = useState([]); // [{id,label}]
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -113,10 +115,9 @@ const handleSubmit = async (e) => {
         hobbies: hobbies.map((h) => h.id), 
 
         favorite_color: (formData.get("favoriteColor") || "").toString(),
-        gender: gender,
         user_type: "child",
         connected_penpals_count: 0,
-        pronouns: formData.get("pronouns"),
+        pronouns: pronouns,
         favorite_animal: formData.get("favoriteAnimal"),
       };
 
@@ -332,6 +333,7 @@ const handleSubmit = async (e) => {
                     name="firstName"
                     label="First Name"
                     error={errors.first_name}
+                    onChange={(e) => setFirstName(e.target.value)}
                   />
 
                   <Input
@@ -339,7 +341,26 @@ const handleSubmit = async (e) => {
                     name="lastName"
                     label="Last Name"
                     error={errors.last_name}
+                    onChange={(e) => setLastName(e.target.value)}
                   />
+
+                  <Input type="date" name="birthday" label="Birthday" error={errors.birthday} onChange={(e) => setBirthday(e.target.value)}/>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Pronouns
+                    </label>
+                    <Dropdown
+                      options={[                       
+                        "He/Him",
+                        "She/Her",
+                        "Other"
+                      ]}
+                      valueChange={setPronouns}
+                      currentValue={pronouns}
+                      text="Pronouns"
+                    />
+                  </div>
 
                   <div className="md:col-span-2">
                     <Input
@@ -347,7 +368,7 @@ const handleSubmit = async (e) => {
                       name="email"
                       id="email"
                       label="Child's Email"
-                      placeholder="rez+JDoe92@murphycharity.org"
+                      placeholder={`rez+${firstName?.slice(0, 1) || ""}${lastName || ""}${birthday?.slice(2, 4) || ""}@murphycharity.org`}
                       error={errors.email ? errors.email : ""}
                     />
                   </div>
@@ -373,30 +394,7 @@ const handleSubmit = async (e) => {
                       error={errors.internationalbuddyemail ? errors.internationalbuddyemail : ""}
                     />
                   </div>
-
-                  <Input type="date" name="birthday" label="Birthday" error={errors.birthday} />
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500">
-                      Gender
-                    </label>
-                    <Dropdown
-                      options={["Male", "Female", "Other"]}
-                      valueChange={setGender}
-                      currentValue={gender}
-                      text="Gender"
-                    />
-                  </div>
                 
-                  <div className="md:col-span-2">
-                    <Input 
-                      type="text" 
-                      name="pronouns" 
-                      id="pronouns" 
-                      label="Pronouns"
-                      placeholder="e.g., she/her"
-                    />
-                  </div>
                 </div>
               </div>
 
