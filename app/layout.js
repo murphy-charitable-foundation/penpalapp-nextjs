@@ -1,17 +1,16 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-import NavigationStateManager from '../components/loading/NavigationStateManager'
-import { Suspense } from 'react'
-import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { UserProvider } from '../contexts/UserContext'
-import { NavigationProvider } from '../contexts/NavigationContext'
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] })
+import NavigationStateManager from "../components/loading/NavigationStateManager";
+import { UserProvider } from "../contexts/UserContext";
+import { NavigationProvider } from "../contexts/NavigationContext";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'Pen Pal Magic App',
-  description: 'To connect 2000 rural Ugandan Children to the World',
-}
+  title: "Pen Pal Magic App",
+  description: "To connect 2000 rural Ugandan Children to the World",
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -22,13 +21,11 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <UserProvider>
           <NavigationProvider>
-            <Suspense fallback={<LoadingSpinner />}>
-              <NavigationStateManager />
-              {children}
-            </Suspense>
+            <NavigationStateManager />
+            {children}
           </NavigationProvider>
-        </UserProvider>       
+        </UserProvider>
       </body>
     </html>
-  )
+  );
 }
