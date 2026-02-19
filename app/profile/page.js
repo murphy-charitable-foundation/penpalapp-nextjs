@@ -7,6 +7,7 @@ import Link from "next/link";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
+import { PageBackground } from "../../components/general/PageBackground";
 import * as Sentry from "@sentry/nextjs";
 import {
   User,
