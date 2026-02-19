@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { updateDoc } from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import {
   User,
@@ -22,12 +21,11 @@ import {
   Square,
   Palette,
 } from "lucide-react";
+
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
-import List from "../../components/general/List";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
@@ -37,7 +35,12 @@ import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 
 export default function EditProfile() {
-  // State initializations
+  const router = useRouter();
+  usePageAnalytics("/profile");
+
+  // -------------------------
+  // State
+  // -------------------------
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,7 +49,7 @@ export default function EditProfile() {
   const [village, setVillage] = useState("");
   const [bio, setBio] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
-  const [isOrphan, setIsOrphan] = useState(false);
+  const [isOrphan, setIsOrphan] = useState("No");
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
   const [gender, setGender] = useState("");
@@ -62,124 +65,127 @@ export default function EditProfile() {
   const [isSaved, setIsSaved] = useState(false);
   const [userType, setUserType] = useState("international_buddy");
 
-  // Modal state
-  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
-  const [isGuardianModalOpen, setIsGuardianModalOpen] = useState(false);
-  const [isOrphanModalOpen, setIsOrphanModalOpen] = useState(false);
+  // Modal State
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
 
-  const router = useRouter();
-  usePageAnalytics("/profile");
-
+  // -------------------------
+  // Fetch User Data
+  // -------------------------
   useEffect(() => {
     const fetchUserData = async () => {
-      if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
+      if (!auth.currentUser) return;
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setFirstName(userData.first_name || "");
-          setLastName(userData.last_name || "");
-          setEmail(userData.email || "");
-          setBirthday(userData.birthday || "");
-          setCountry(userData.country || "");
-          setVillage(userData.village || "");
-          setBio(userData.bio || "");
-          setEducationLevel(userData.education_level || "");
-          setIsOrphan(userData.is_orphan ? "Yes" : "No");
-          setGuardian(userData.guardian || "");
-          setDreamJob(userData.dream_job || "");
-          setHobby(userData.hobby || "");
-          setFavoriteColor(userData.favorite_color || "");
-          setPhotoUri(userData.photo_uri || "");
-          setUserType(userData.user_type || "");
-        } else {
-          console.log("No such document!");
-        }
-      }
-    };
-    fetchUserData();
-  }, [auth.currentUser]);
-
-  // Save profile data to Firestore
-  const saveProfileData = async () => {
-    if (auth.currentUser) {
       const uid = auth.currentUser.uid;
-      const userProfileRef = doc(db, "users", uid);
+      const docRef = doc(db, "users", uid);
+      const docSnap = await getDoc(docRef);
 
-      const userProfile = {
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        birthday,
-        country,
-        village,
-        bio,
-        education_level: educationLevel,
-        is_orphan: isOrphan.toLowerCase() === "yes" ? true : false,
-        guardian: guardian,
-        dream_job: dreamJob,
-        hobby,
-        favorite_color: favoriteColor,
-        gender,
-      };
-
-      // Custom validation
-      const newErrors = {};
-      if (!userProfile.first_name.trim() && !userProfile.last_name.trim()) {
-        newErrors.first_name = "Name is required";
-        newErrors.last_name = "Name is required";
+      if (!docSnap.exists()) {
+        console.log("No such document!");
+        return;
       }
 
-      try {
-        if (Object.keys(newErrors).length > 0) {
-          setErrors(newErrors);
-          throw new Error("Form validation error(s)");
-        }
-        await updateDoc(userProfileRef, userProfile);
-        setIsSaved(true);
-        setIsDialogOpen(true);
-        setDialogTitle("Congratulations!");
-        setDialogMessage("Profile saved successfully!");
-      } catch (error) {
-        setIsDialogOpen(true);
-        setDialogTitle("Oops!");
-        setDialogMessage("Error saving profile.");
-        logError(error, {
-          description: "Error saving profile ",
-        });
-      }
+      const userData = docSnap.data();
+
+      setFirstName(userData.first_name || "");
+      setLastName(userData.last_name || "");
+      setEmail(userData.email || "");
+      setBirthday(userData.birthday || "");
+      setCountry(userData.country || "");
+      setVillage(userData.village || "");
+      setBio(userData.bio || "");
+      setEducationLevel(userData.education_level || "");
+      setIsOrphan(userData.is_orphan ? "Yes" : "No");
+      setGuardian(userData.guardian || "");
+      setDreamJob(userData.dream_job || "");
+      setHobby(userData.hobby || "");
+      setFavoriteColor(userData.favorite_color || "");
+      setPhotoUri(userData.photo_uri || "");
+      setUserType(userData.user_type || "international_buddy");
+    };
+
+    fetchUserData();
+  }, []);
+
+//save profile function
+  const saveProfileData = async () => {
+    if (!auth.currentUser) return;
+
+    const uid = auth.currentUser.uid;
+    const userProfileRef = doc(db, "users", uid);
+
+    const userProfile = {
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      birthday,
+      country,
+      village,
+      bio,
+      education_level: educationLevel,
+      is_orphan: isOrphan === "Yes",
+      guardian,
+      dream_job: dreamJob,
+      hobby,
+      favorite_color: favoriteColor,
+      gender,
+    };
+
+    const newErrors = {};
+    if (!firstName.trim() && !lastName.trim()) {
+      newErrors.first_name = "Name is required";
+      newErrors.last_name = "Name is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await updateDoc(userProfileRef, userProfile);
+
+      setIsSaved(true);
+      setDialogTitle("Congratulations!");
+      setDialogMessage("Profile saved successfully!");
+      setIsDialogOpen(true);
+    } catch (error) {
+      setDialogTitle("Oops!");
+      setDialogMessage("Error saving profile.");
+      setIsDialogOpen(true);
+
+      logError(error, {
+        description: "Error saving profile",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
+//auth guard
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
+      if (!currentUser) {
+        router.push("/login");
       } else {
-        setUser(null);
-        router.push("/login"); // Redirect to login page
+        setUser(currentUser);
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
-
+//logout function
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // User is signed out
       router.push("/login");
     } catch (error) {
-      console.error("Error signing out: ", error);
+      console.error("Error signing out:", error);
     }
   };
 
-  // Education options
+//dropdown options
   const educationOptions = [
     "Elementary",
     "Middle",
@@ -188,7 +194,6 @@ export default function EditProfile() {
     "No Grade",
   ];
 
-  // Guardian options
   const guardianOptions = [
     "Parents",
     "Adoptive Parents",
@@ -200,28 +205,33 @@ export default function EditProfile() {
   ];
 
   const orphanOptions = ["Yes", "No"];
+//bio modal
+  const handleOpenBioModal = () => {
+    setTempBio(bio);
+    setIsBioModalOpen(true);
+  };
 
-  // Bio Modal content
   const bioModalContent = (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 mb-2">
         Share your challenges or a brief bio:
       </p>
+
       <textarea
         value={tempBio}
         onChange={(e) => setTempBio(e.target.value)}
         className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-        placeholder="Write about yourself or challenges you've faced..."
         maxLength={200}
       />
+
       <div className="flex justify-between items-center">
         <span className="text-xs text-gray-500">
           {tempBio.length}/200 characters
         </span>
+
         <Button
           btnText="Save"
           color="bg-green-800"
-          hoverColor="hover:bg-[#48801c]"
           textColor="text-white"
           rounded="rounded-lg"
           size="w-24"
@@ -234,12 +244,7 @@ export default function EditProfile() {
     </div>
   );
 
-  // Open bio Modal and set temp bio
-  const handleOpenBioModal = () => {
-    setTempBio(bio);
-    setIsBioModalOpen(true);
-  };
-
+//ui
   return (
     <div className="bg-gray-50 min-h-screen">
       <Dialog
@@ -250,11 +255,12 @@ export default function EditProfile() {
         }}
         title={dialogTitle}
         content={dialogMessage}
-      ></Dialog>
+      />
+
       <PageContainer maxWidth="lg" padding="p-6 pt-20">
         <PageHeader title="Profile" image={false} heading={false} />
+
         <div className="max-w-lg mx-auto pl-6 pr-6 pb-6">
-          {/* Bio Modal */}
           <Dialog
             isOpen={isBioModalOpen}
             onClose={() => setIsBioModalOpen(false)}
@@ -262,27 +268,28 @@ export default function EditProfile() {
             content={bioModalContent}
             width="large"
           />
+
           {/* Profile Image */}
           <div className="my-6">
             <div className="relative w-40 h-40 mx-auto">
               <Image
-                src={photoUri ? photoUri : "/murphylogo.png"}
-                layout="fill"
+                src={photoUri || "/murphylogo.png"}
+                fill
                 className="rounded-full"
                 alt="Profile picture"
               />
             </div>
+
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
                 onClick={() => router.push("/edit-profile-user-image")}
-                className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                className="px-4 py-2 border border-gray-400 text-green-700 rounded-full hover:bg-gray-100 transition"
               >
                 Edit Photo
               </button>
             </div>
           </div>
-
           {/* Form Fields */}
           <div className="space-y-6 mb-[120px]">
             {/* Personal Information Section */}
