@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Suspense } from "react";
 
 import NavigationStateManager from "../components/loading/NavigationStateManager";
 import { UserProvider } from "../contexts/UserContext";
@@ -21,7 +22,9 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <UserProvider>
           <NavigationProvider>
-            <NavigationStateManager />
+            <Suspense fallback={null}>
+              <NavigationStateManager />
+            </Suspense>
             {children}
           </NavigationProvider>
         </UserProvider>
