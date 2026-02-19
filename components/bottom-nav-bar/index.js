@@ -1,114 +1,118 @@
 "use client";
 
+import { useState, useTransition, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
 import {
   FaUserAlt,
-  FaPen,
   FaCompass,
   FaHandHoldingHeart,
   FaInfo,
   FaEnvelopeOpenText,
-  FaHome,
   FaInbox,
   FaBars,
   FaSignOutAlt,
 } from "react-icons/fa";
-import Link from "next/link";
-import { signOut } from "firebase/auth";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import { auth } from "../../app/firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
+import { useNavigation } from "../../contexts/NavigationContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { userType } = useUser();
+  const { setIsNavigating } = useNavigation();
+
+  const containerRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  if (userType === null) return null;
+
+  const handleNavigation = (href) => {
+    setIsMenuOpen(false);
+    startTransition(() => router.push(href));
+  };
 
   const handleLogout = async () => {
+    setIsMenuOpen(false);
+    setIsNavigating(true);
     try {
       await signOut(auth);
       router.push("/login");
-    } catch (error) {
-      console.error("Error signing out: ", error);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsNavigating(false);
     }
   };
 
   const navLinks = [
-    {
-      href: "/profile",
-      icon: <FaUserAlt className="h-4 w-4" />,
-      label: "Profile",
-    },
-    {
-      href: "/letterhome",
-      icon: <FaHome className="h-4 w-4" />,
-      label: "Home",
-    },
-    {
-      href: "/discovery",
-      icon: <FaCompass className="h-4 w-4" />,
-      label: "Discover",
-    },
-    { 
-      href: "/about", 
-      icon: <FaInfo className="h-4 w-4" />, 
-      label: "About" 
-    },
-    {
-      href: "/contact",
-      icon: <FaEnvelopeOpenText className="h-4 w-4" />,
-      label: "Contact",
-    },
-    {
-      onClick: handleLogout,
-      icon: <FaSignOutAlt className="h-4 w-4" />,
-      label: "Logout",
-    },
-  ];
+    { href: "/profile", icon: <FaUserAlt />, label: "Profile" },
+    userType !== "child" && { href: "/discovery", icon: <FaCompass />, label: "Discover" },
+    { href: "/about", icon: <FaInfo />, label: "About" },
+    { href: "/contact", icon: <FaEnvelopeOpenText />, label: "Contact" },
+    { onClick: handleLogout, icon: <FaSignOutAlt />, label: "Logout" },
+  ].filter(Boolean);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 bg-blue-100 p-3 flex justify-around items-center text-zinc-900 border-t border-[#E6E6E6] shadow-md">
-      <Link href="/letterhome">
-        <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
-          <FaInbox className="h-4 w-4" />
-          <span className="text-xs">Letterhome</span>
-        </button>
-      </Link>
-      <Link href="/donate">
-        <button className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2">
+    <nav
+      ref={containerRef}
+      className="w-full bg-blue-100 px-4 py-3 flex justify-around items-center text-zinc-900 border-t rounded-b-2xl shadow-md"
+    >
+      {/* Letterhome */}
+      <button
+        onClick={() => handleNavigation("/letterhome")}
+        className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
+      >
+        <FaInbox className="h-4 w-4" />
+        <span className="text-sm">Letterhome</span>
+      </button>
+
+      {/* Sponsor */}
+      {userType !== "child" && (
+        <button
+          onClick={() => handleNavigation("/donate")}
+          className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
+        >
           <FaHandHoldingHeart className="h-4 w-4" />
-          <span className="text-xs">Donate</span>
+          <span className="text-sm">Sponsor</span>
         </button>
-      </Link>
+      )}
+
+      {/* Menu */}
       <div className="relative">
-        <button 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg p-2"
+        <button
+          onClick={() => setIsMenuOpen((v) => !v)}
+          className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
         >
           <FaBars className="h-4 w-4" />
-          <span className="text-xs">Menu</span>
+          <span className="text-sm">Menu</span>
         </button>
+
         {isMenuOpen && (
-          <div className="absolute bottom-full right-0 mb-2 w-48 bg-blue-200 rounded-lg shadow-lg p-2">
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) =>
-                link.onClick ? (
-                  <button
-                    key={link.label}
-                    onClick={link.onClick}
-                    className="flex items-center gap-2 p-2 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg w-full"
-                  >
-                    {link.icon}
-                    <span className="text-xs">{link.label}</span>
-                  </button>
-                ) : (
-                  <Link key={link.href} href={link.href}>
-                    <button className="flex items-center gap-2 p-2 hover:bg-blue-400/50 hover:text-blue-900 rounded-lg w-full">
-                      {link.icon}
-                      <span className="text-xs">{link.label}</span>
-                    </button>
-                  </Link>
-                )
-              )}
-            </div>
+          <div className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2">
+            {navLinks.map((link) => (
+              <button
+                key={link.label || link.href}
+                onClick={link.onClick ? link.onClick : () => handleNavigation(link.href)}
+                className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
+              >
+                {link.icon}
+                <span className="text-sm">{link.label}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>

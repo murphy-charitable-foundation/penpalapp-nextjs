@@ -1,12 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-
 import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
@@ -17,27 +14,26 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import { iterateLetterBoxes } from "../utils/deadChat";
+import LettersSkeleton from "../../components/loading/LettersSkeleton";
+import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
-import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { logButtonEvent, logError } from "../utils/analytics";
+import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
-  const [userType, setUserType] = useState("");
-  const [country, setCountry] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
-  const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
+
   const router = useRouter();
 
   usePageAnalytics("/letterhome");
@@ -112,11 +108,10 @@ export default function Home() {
 
       try {
         const uid = user.uid;
+        setUserId(uid);
 
         const userData = await getUserData(uid);
         setUserName(userData.first_name || "Unknown User");
-        setCountry(userData.country || "Unknown Country");
-        setUserType(userData.user_type || "Unknown Type");
 
         const downloaded = await getUserPfp(uid);
         setProfileImage(downloaded || "");
@@ -145,21 +140,15 @@ export default function Home() {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
-        if (!docSnap.exists()) {
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setUserName(userData.first_name || "Unknown User");
+
+          const downloaded = await getUserPfp(uid);
+          setProfileImage(downloaded || "");
+        } else {
           console.log("No such document!");
-          return;
         }
-
-        const userData = docSnap.data();
-        setUserName(userData.first_name || "Unknown User");
-        setCountry(userData.country || "Unknown Country");
-        setUserType(userData.user_type || "Unknown Type");
-
-        const downloaded = await getUserPfp(uid);
-        setProfileImage(downloaded || "");
-
-        setShowWelcome(true);
-        setTimeout(() => setShowWelcome(false), 5000);
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("Failed to load user data");
@@ -170,73 +159,48 @@ export default function Home() {
   }, []);
 
   return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        {isLoading ? (
-          <LetterHomeSkeleton />
-        ) : (
-          <>
-            <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
-              <BackButton />
-              <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+    <>
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {isLoading && <LetterHomeSkeleton />}
+
+          {!isLoading && (
+            <>
+              {/* HEADER */}
+              <div className="shrink-0 border-b">
                 <ProfileHeader
                   userName={userName}
-                  country={country}
                   profileImage={profileImage}
                   id={userId}
+                  showCountry={false}
                 />
+              </div>
 
-                <main className="p-6 bg-white">
-                  <section className="mt-8">
-                    {conversations.length > 0 ? (
-                      <ConversationList conversations={conversations} />
-                    ) : (
-                      <EmptyState
-                        title="New friends are coming!"
-                        description="Many friends are coming hang tight!"
-                      />
-                    )}
-                  </section>
-                </main>
+              {/* SCROLLABLE LIST */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-3">
+                {conversations.length > 0 ? (
+                  <ConversationList conversations={conversations} />
+                ) : (
+                  <EmptyState
+                    title="New friends are coming!"
+                    description="Many friends are coming — hang tight!"
+                  />
+                )}
+              </div>
 
+              {/* NAVBAR */}
+              <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
                 <NavBar />
               </div>
-            </div>
-
-            {userType === "admin" && (
-              <Button
-                btnText="Check For Inactive Chats"
-                color="bg-black"
-                textColor="text-white"
-                rounded="rounded-md"
-                onClick={() => {
-                  logButtonEvent(
-                    "check for inactive chats button clicked",
-                    "/letterhome"
-                  );
-                  iterateLetterBoxes();
-                }}
-              />
-            )}
-          </>
-        )}
-
-        <style jsx global>{`
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateX(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          .animate-slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-          }
-        `}</style>
-      </PageContainer>
-    </PageBackground>
+            </>
+          )}
+        </PageContainer>
+      </PageBackground>
+    </>
   );
 }
