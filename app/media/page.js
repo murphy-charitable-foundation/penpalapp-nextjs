@@ -22,34 +22,58 @@ export default function LocalDownload() {
   async function handleFileChange(e) {
     const input = e.target;
     const file = input.files?.[0];
+
     if (!file) {
       input.value = "";
       return;
     }
 
+    const MAX_SIZE = 500 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert("文件过大，请选择小于 500MB 的文件");
+      input.value = "";
+      return;
+    }
+
+    if (isCompressing) return;
+    setIsCompressing(true);
+    setProgress(0);
+
     console.log("Start compressing:", file.name);
 
-    const compressedBlob = await compressMedia(file, (p) =>
-      setProgress(Math.round(p * 100))
-    );
+    let compressedBlob;
+    try {
+      compressedBlob = await compressMedia(file, (p) =>
+        setProgress(Math.round(p * 100)),
+      );
+    } catch (error) {
+      console.error("压缩失败:", error);
+      alert("压缩失败，请重试");
+      setProgress(0);
+      setIsCompressing(false);
+      input.value = "";
+      return;
+    }
 
     console.log("compressed: ready for downloading");
 
-    // create a temporary URL for the compressed file
     const url = URL.createObjectURL(compressedBlob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `compressed_${file.name}`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
 
-    // cleanup
     URL.revokeObjectURL(url);
     input.value = "";
+    setProgress(0);
+    setIsCompressing(false);
   }
 
   const handleRequireLogin = () => {
     const shouldLogin = confirm(
-      "You are not logged in. Would you like to log in?"
+      "You are not logged in. Would you like to log in?",
     );
     if (shouldLogin) {
       console.log("Navigating to login...");

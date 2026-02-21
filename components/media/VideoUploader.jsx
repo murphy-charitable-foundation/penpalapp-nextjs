@@ -4,8 +4,23 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { storage, auth } from "../../app/firebaseConfig";
 
-// Removed FFmpeg imports
-// import { compressMedia } from "../../app/utils/compressMedia";
+// Fix: Detect supported mimeType at runtime instead of hardcoding
+const getSupportedMimeType = () => {
+  const types = [
+    "video/mp4;codecs=h264,aac",
+    "video/mp4",
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+  ];
+  return types.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
+};
+
+// Fix: Derive file extension from actual mimeType
+const getExtFromMimeType = (mimeType) => {
+  const base = mimeType.split(";")[0]; // strip codecs
+  return base.split("/")[1] || "webm"; // "video/mp4" → "mp4"
+};
 
 const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   const [file, setFile] = useState(null);
@@ -27,7 +42,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
       if (onRequireLogin) onRequireLogin();
       return;
     }
-    // Prevent clicking if already uploading
     if (status === "uploading") return;
     fileInputRef.current?.click();
   };
@@ -36,7 +50,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    // 1. Size Check
     if (selectedFile.size > 500 * 1024 * 1024) {
       alert("Video file cannot exceed 500MB");
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -44,25 +57,19 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     }
 
     const url = URL.createObjectURL(selectedFile);
-
-    // 2. Duration Check
     const tempVideo = document.createElement("video");
     tempVideo.preload = "metadata";
 
     tempVideo.onloadedmetadata = () => {
       const duration = tempVideo.duration;
-
-      // Limit to 60 seconds
       if (duration > 60) {
         alert(
-          `Video duration (${Math.round(duration)}s) exceeds the 60s limit.`
+          `Video duration (${Math.round(duration)}s) exceeds the 60s limit.`,
         );
         URL.revokeObjectURL(url);
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
-
-      // Valid: Set state
       setFile(selectedFile);
       setPreviewUrl(url);
     };
@@ -85,7 +92,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // --- Compression Implementation: Safari / General Fallback ---
   const compressWithMediaRecorder = async (file, onProgress) => {
     console.log("Using MediaRecorder compression...");
     return new Promise((resolve, reject) => {
@@ -100,7 +106,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
-        // Resize logic: 720p
         const TARGET_WIDTH = 1280;
         let width = video.videoWidth;
         let height = video.videoHeight;
@@ -113,10 +118,8 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         canvas.width = width;
         canvas.height = height;
 
-        // 24fps
         const stream = canvas.captureStream(24);
 
-        // Try to keep audio
         if (video.captureStream || video.mozCaptureStream) {
           const videoStream = video.captureStream
             ? video.captureStream()
@@ -125,10 +128,33 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           if (audioTrack) stream.addTrack(audioTrack);
         }
 
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "video/mp4", // Attempt MP4 first
-          videoBitsPerSecond: 1500000, // 1.5 Mbps
-        });
+        // Fix: Detect supported mimeType instead of hardcoding "video/mp4"
+        const mimeType = getSupportedMimeType();
+        let mediaRecorder;
+        try {
+          mediaRecorder = new MediaRecorder(stream, {
+            mimeType,
+            videoBitsPerSecond: 1500000,
+          });
+        } catch (e) {
+          // Fix: Graceful fallback — let the browser choose its own format
+          console.warn(
+            "Specified mimeType not supported, falling back to browser default.",
+            e,
+          );
+          try {
+            mediaRecorder = new MediaRecorder(stream, {
+              videoBitsPerSecond: 1500000,
+            });
+          } catch (e2) {
+            URL.revokeObjectURL(videoUrl);
+            reject(new Error("MediaRecorder not supported on this browser"));
+            return;
+          }
+        }
+
+        // Fix: Read the actual mimeType the browser chose, not what we requested
+        const actualMimeType = mediaRecorder.mimeType || "video/webm";
 
         const chunks = [];
         mediaRecorder.ondataavailable = (e) => {
@@ -136,7 +162,8 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         };
 
         mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: "video/mp4" });
+          // Fix: Use actualMimeType so blob type matches real content
+          const blob = new Blob(chunks, { type: actualMimeType });
           URL.revokeObjectURL(videoUrl);
           resolve(blob);
         };
@@ -162,8 +189,9 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         };
         drawFrame();
       };
+
       video.onerror = () => {
-        URL.revokeObjectURL(videoUrl); // 释放内存
+        URL.revokeObjectURL(videoUrl);
         reject(new Error("Video load error"));
       };
     });
@@ -173,32 +201,29 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     if (!("VideoEncoder" in window)) {
       throw new Error("WebCodecs not supported");
     }
-    // Fallback to MediaRecorder for now as raw WebCodecs needs muxer
     return compressWithMediaRecorder(file, onProgress);
   };
 
   const handleSend = async () => {
     if (!file || !user) return;
     try {
-      // 1. Compression Phase
       setStatus("compressing");
       setProgress(0);
 
       let compressedBlob = file;
 
-      // Logic: If > 20MB -> Compress
       if (file.size > 20 * 1024 * 1024) {
         const isSafari = /^((?!chrome|android).)*safari/i.test(
-          navigator.userAgent
+          navigator.userAgent,
         );
         try {
           if (!isSafari) {
             compressedBlob = await compressWithWebCodecs(file, (p) =>
-              setProgress(Math.round(p * 100))
+              setProgress(Math.round(p * 100)),
             );
           } else {
             compressedBlob = await compressWithMediaRecorder(file, (p) =>
-              setProgress(Math.round(p * 100))
+              setProgress(Math.round(p * 100)),
             );
           }
         } catch (error) {
@@ -207,20 +232,17 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         }
       } else {
         console.log("File < 20MB, skipping compression.");
-        // Fake progress for direct upload UX
         setProgress(100);
       }
 
-      // 2. Upload Phase
       setStatus("uploading");
       setProgress(0);
 
-      const ext = compressedBlob.type.includes("mp4") ? "mp4" : "webm";
+      // Fix: Derive extension from actual blob mimeType, not hardcoded assumption
+      const ext = getExtFromMimeType(compressedBlob.type);
       const fileName = `video_${Date.now()}.${ext}`;
       const storagePath = `users/${user.uid}/video_messages/${fileName}`;
       const storageRef = ref(storage, storagePath);
-
-      // Note: uploadBytesResumable IS the direct upload method
       const uploadTask = uploadBytesResumable(storageRef, compressedBlob);
 
       uploadTask.on(
@@ -235,22 +257,23 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           setStatus("idle");
         },
         async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          onUploadSuccess(downloadURL);
-          // Don't call handleCancel() here, we want to reset status manually
-          // but handleCancel clears file, which is good.
-          handleCancel();
-        }
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            onUploadSuccess(downloadURL);
+            handleCancel();
+          } catch (error) {
+            console.error("Failed to get download URL:", error);
+            alert("Upload failed, please try again");
+            setStatus("idle");
+          }
+        },
       );
     } catch (error) {
       console.error("Error processing video", error);
-      //setStatus("idle");
       alert("Error processing video.");
       handleCancel();
     }
   };
-
-  // --- Render Logic ---
 
   return (
     <>
@@ -262,15 +285,12 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         onChange={handleFileChange}
       />
 
-      {/* 1. Trigger Button (Handles Idle & Uploading states) */}
-      {/* If uploading, we show a mini progress circle instead of the icon, creating an 'Async' feel */}
       <div
         onClick={handlePickVideo}
         className="cursor-pointer flex items-center justify-center"
       >
         {status === "uploading" ? (
           <div className="relative w-6 h-6 flex items-center justify-center">
-            {/* Simple circular progress using CSS conic-gradient */}
             <div
               className="absolute inset-0 rounded-full border-2 border-indigo-100"
               style={{
@@ -279,7 +299,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
                 WebkitMaskImage: "radial-gradient(transparent 55%, black 56%)",
               }}
             />
-            {/* Spinner for compression phase or just active state */}
             {progress === 0 ? (
               <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
             ) : (
@@ -288,8 +307,7 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
               </span>
             )}
           </div>
-        ) : // Normal State
-        trigger ? (
+        ) : trigger ? (
           trigger
         ) : (
           <button className="p-2 bg-gray-100 rounded-full">
@@ -298,7 +316,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         )}
       </div>
 
-      {/* 2. Preview Modal (Only shown when file selected AND NOT uploading) */}
       {file && status !== "uploading" && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white rounded-2xl p-4 w-full max-w-sm shadow-2xl overflow-hidden relative">
@@ -324,7 +341,6 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
               </div>
             </div>
 
-            {/* Compression Progress (Blocking Phase) */}
             {status === "compressing" && (
               <div className="mb-4 space-y-2">
                 <div className="flex justify-between text-xs font-medium text-indigo-600">
@@ -368,4 +384,5 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     </>
   );
 };
+
 export default VideoUploader;

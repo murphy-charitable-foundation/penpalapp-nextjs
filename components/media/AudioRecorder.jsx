@@ -22,11 +22,11 @@ import { storage, auth } from "../../app/firebaseConfig";
 const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
   // --- State Management ---
   const [status, setStatus] = useState("idle"); // 'idle' | 'recording' | 'review' | 'uploading'
-  const [time, setTime] = useState(0); // Recording duration or playback time
-  const [duration, setDuration] = useState(0); // Total duration
-  const [audioUrl, setAudioUrl] = useState(null); // Local preview URL after recording
-  const [audioBlob, setAudioBlob] = useState(null); // File Blob after recording
-  const [isPlaying, setIsPlaying] = useState(false); // Preview playback status
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // User State
   const [user, setUser] = useState(null);
@@ -36,9 +36,12 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
-  const audioPlayerRef = useRef(null); // Used for playing the preview audio
-  const sendAfterStopRef = useRef(false); // Flag if 'Send' was clicked during recording
-  const cancelNextRecordingRef = useRef(false); // True when Delete cancels an in-progress recording
+  const audioPlayerRef = useRef(null);
+  const sendAfterStopRef = useRef(false);
+  const cancelNextRecordingRef = useRef(false);
+
+  // Fix 1: Use ref to track current time to avoid stale closure in onstop
+  const timeRef = useRef(0);
 
   // --- 1. Listen for Login Status ---
   useEffect(() => {
@@ -57,9 +60,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Progress bar percentage
   const getProgressPercent = () => {
-    const maxTime = status === "recording" ? 900 : duration; // Max recording is 15 minutes (900s)
+    const maxTime = status === "recording" ? 900 : duration;
     if (maxTime === 0) return 0;
     return Math.min((time / maxTime) * 100, 100);
   };
@@ -68,8 +70,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
   const startRecording = async () => {
     if (authLoading) return;
     if (!user) {
-      alert("Please log in to use voice features");
       if (onRequireLogin) onRequireLogin();
+      else alert("Please log in to use voice features");
       return;
     }
 
@@ -83,6 +85,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       sendAfterStopRef.current = false;
+      cancelNextRecordingRef.current = false; // Fix 2: Reset cancel flag on new recording
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
@@ -93,8 +96,10 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
           cancelNextRecordingRef.current = false;
           stream.getTracks().forEach((track) => track.stop());
           audioChunksRef.current = [];
+          setStatus("idle"); // Fix 3: Explicitly reset status after cancel
           return;
         }
+
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
 
@@ -102,31 +107,31 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
 
         setAudioBlob(blob);
         setAudioUrl(url);
-        setDuration(time); // Save total duration
+        setDuration(timeRef.current);
 
-        // If the user clicked 'Send' directly while recording
         if (sendAfterStopRef.current) {
           handleUploadToFirebase(blob, user.uid);
         } else {
-          setStatus("review"); // Otherwise, enter preview mode
-          setTime(0); // Reset time for playback progress
+          setStatus("review");
+          setTime(0);
         }
       };
 
       mediaRecorder.start();
       setStatus("recording");
       setTime(0);
+      timeRef.current = 0;
 
-      // Start timer
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setTime((t) => {
-          if (t >= 900) {
-            // Auto stop after 15 minutes
+          const next = t + 1;
+          timeRef.current = next;
+          if (next >= 900) {
             stopRecording();
-            return t;
+            return next;
           }
-          return t + 1;
+          return next;
         });
       }, 1000);
     } catch (error) {
@@ -136,35 +141,42 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && status === "recording") {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
       if (timerRef.current) clearInterval(timerRef.current);
     }
   };
 
   const handleDelete = () => {
-    // Reset all states
     if (status === "recording") {
       cancelNextRecordingRef.current = true;
       stopRecording();
     }
+
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.src = "";
+    }
+
     if (audioUrl) URL.revokeObjectURL(audioUrl);
 
     setStatus("idle");
     setAudioBlob(null);
     setAudioUrl(null);
     setTime(0);
+    timeRef.current = 0;
     setDuration(0);
     setIsPlaying(false);
   };
 
-  // Click Send while recording -> Stop and Upload
   const handleSendWhileRecording = () => {
     sendAfterStopRef.current = true;
     stopRecording();
   };
 
-  // Click Send in preview -> Direct Upload
   const handleSendInReview = () => {
     if (audioBlob && user) {
       handleUploadToFirebase(audioBlob, user.uid);
@@ -179,7 +191,10 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
       audioPlayerRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioPlayerRef.current.play();
+      audioPlayerRef.current.play().catch((error) => {
+        console.error("Playback failed:", error);
+        setIsPlaying(false);
+      });
       setIsPlaying(true);
     }
   };
@@ -209,17 +224,21 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
         null,
         (error) => {
           console.error("Upload failed:", error);
-          setStatus("review"); // Fallback to preview
+          setStatus("review");
           alert("Upload failed, please try again");
         },
         async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          console.log("Upload successful:", downloadURL);
-
-          // Cleanup and reset
-          if (onUploadSuccess) onUploadSuccess(downloadURL);
-          handleDelete();
-        }
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            console.log("Upload successful:", downloadURL);
+            if (onUploadSuccess) onUploadSuccess(downloadURL);
+            handleDelete();
+          } catch (error) {
+            console.error("Failed to get download URL:", error);
+            setStatus("review");
+            alert("Upload failed, please try again");
+          }
+        },
       );
     } catch (error) {
       console.error("Processing error:", error);
@@ -227,17 +246,26 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
     }
   };
 
-  // Cleanup side effects
+  // Cleanup on unmount
+  // prematurely revoke URLs. Use a ref to track the latest URL for cleanup.
+  const audioUrlRef = useRef(null);
+  useEffect(() => {
+    audioUrlRef.current = audioUrl;
+  }, [audioUrl]);
+
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.src = "";
+      }
     };
-  }, [audioUrl]);
+  }, []);
 
   // --- Render Section ---
 
-  // 1. Uploading/Loading State
   if (status === "uploading") {
     return (
       <div className="flex items-center justify-center p-6">
@@ -249,18 +277,15 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
     );
   }
 
-  // 2. Idle State (Image 1 UI)
   if (status === "idle") {
     const isLoggedOut = !user && !authLoading;
     return (
       <div className="flex flex-col items-center gap-4">
-        {/* Tooltip Bubble */}
         <div className="relative bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs text-center max-w-[200px] shadow-sm">
           Tap to record a voice message. The maximum length is 15 minutes.
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-green-100"></div>
         </div>
 
-        {/* Record Button */}
         <button
           onClick={startRecording}
           disabled={authLoading}
@@ -271,7 +296,6 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
           {isLoggedOut ? (
             <Lock className="text-gray-400" size={24} />
           ) : (
-            // Red dot icon
             <div className="w-8 h-8 bg-red-500 rounded-full shadow-sm" />
           )}
         </button>
@@ -279,16 +303,13 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
     );
   }
 
-  // 3. Recording (Image 2 UI) & 4. Review State (Image 3 UI)
   const isReviewing = status === "review";
   const maxDurationText = "15:00";
   const currentFormattedTime = formatTime(time);
 
   return (
     <div className="w-full max-w-xs mx-auto flex flex-col gap-4">
-      {/* Top Progress Bar and Time */}
       <div className="flex flex-col gap-1">
-        {/* Tooltip for Review Mode */}
         {isReviewing && (
           <div className="relative self-center bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs text-center mb-2 shadow-sm">
             Listen back what you recorded, before you send it.
@@ -313,9 +334,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
         </div>
       </div>
 
-      {/* Control Buttons Row */}
       <div className="flex items-center justify-between px-4">
-        {/* Left: Delete Button */}
         <button
           onClick={handleDelete}
           className="p-3 bg-gray-100 text-red-800/70 rounded-xl hover:bg-red-100 transition-colors"
@@ -323,9 +342,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
           <Trash2 size={20} />
         </button>
 
-        {/* Center: Main Action Button */}
         {isReviewing ? (
-          // Review Mode: Play/Pause (Green border, white background, green icon)
           <button
             onClick={togglePlayPreview}
             className="w-20 h-20 bg-white border-2 border-green-500 rounded-3xl flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-95"
@@ -337,7 +354,6 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
             )}
           </button>
         ) : (
-          // Recording Mode: Stop (Solid green background, white icon)
           <button
             onClick={stopRecording}
             className="w-20 h-20 bg-green-500 rounded-3xl flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-95"
@@ -346,7 +362,6 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
           </button>
         )}
 
-        {/* Right: Send Button */}
         <button
           onClick={isReviewing ? handleSendInReview : handleSendWhileRecording}
           className="p-3 bg-gray-100 text-blue-800/80 rounded-xl hover:bg-blue-100 transition-colors"
@@ -355,7 +370,6 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
         </button>
       </div>
 
-      {/* Hidden audio player for preview */}
       {isReviewing && audioUrl && (
         <audio
           ref={audioPlayerRef}
