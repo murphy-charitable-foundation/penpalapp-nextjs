@@ -318,7 +318,7 @@ export const sendNotification = async (letterboxRef, message) => {
     // Build payload.
     const payload = {
       conversationId: conversationId,
-      message: message || "You have a notification.",
+      message: message,
     };
 
     // Send to notify API with auth header.
