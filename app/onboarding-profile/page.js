@@ -9,8 +9,11 @@ import Image from "next/image";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import CountrySelect from "@/components/boarding-profile/CountrySelect";
 import { BackButton } from "@/components/general/BackButton";
-import { saveAvatar, confirmDeleteAvatar } from "@/app/utils/avatarUtils";
-import AvatarCropper from "@/components/general/AvatarCropper";
+import {
+  saveAvatar,
+  confirmDeleteAvatar,
+} from "@/components/avatar/avatarUtils";
+import AvatarCropper from "@/components/avatar/AvatarCropper";
 import AvatarMenu from "@/components/avatar/AvatarMenu";
 import Modal from "@/components/general/Dialog";
 import Button from "@/components/general/Button";
