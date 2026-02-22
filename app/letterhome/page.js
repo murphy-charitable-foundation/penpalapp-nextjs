@@ -23,6 +23,7 @@ import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import Dialog from "../../components/general/Dialog";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
@@ -33,6 +34,8 @@ export default function Home() {
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
 
   const router = useRouter();
 
@@ -98,19 +101,25 @@ export default function Home() {
 
   useEffect(() => {
     setIsLoading(true);
-
+    // Listen for auth state changes and redirect if not logged in
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setError("No user logged in.");
-        router.push("/login");
+        setShowLoginPopup(true);
+        setIsLoading(false);
         return;
       }
-
       try {
         const uid = user.uid;
         setUserId(uid);
 
         const userData = await getUserData(uid);
+        // If essential user data is missing, redirect to profile setup
+        if (!userData.first_name || !userData.country) {
+          setShowProfilePopup(true);
+          setIsLoading(false);
+          return;
+        }
         setUserName(userData.first_name || "Unknown User");
 
         const downloaded = await getUserPfp(uid);
@@ -129,38 +138,47 @@ export default function Home() {
     return () => unsubscribe();
   }, [router]);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!auth.currentUser) return;
-
-      try {
-        const uid = auth.currentUser.uid;
-        setUserId(uid);
-
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setUserName(userData.first_name || "Unknown User");
-
-          const downloaded = await getUserPfp(uid);
-          setProfileImage(downloaded || "");
-        } else {
-          console.log("No such document!");
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setError("Failed to load user data");
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
   return (
     <>
       <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+        <Dialog
+          isOpen={showLoginPopup}
+          width="large"
+          onClose={() => {
+            setShowLoginPopup(false);
+            router.push("/login");
+          }}
+          title="Login Required"
+          content="Please log in to view your letters."
+          buttons={[
+            {
+              text: "Go to Login",
+              onClick: () => {
+                setShowLoginPopup(false);
+                router.push("/login");
+              },
+            },
+          ]}
+        />
+        <Dialog
+          isOpen={showProfilePopup}
+          width="large"
+          onClose={() => {
+            setShowProfilePopup(false);
+            router.push("/profile");
+          }}
+          title="Complete Your Profile"
+          content="Please complete your profile before accessing your letters."
+          buttons={[
+            {
+              text: "Go to Profile",
+              onClick: () => {
+                setShowProfilePopup(false);
+                router.push("/profile");
+              },
+            },
+          ]}
+        />
         <PageContainer
           width="compactXS"
           padding="none"
