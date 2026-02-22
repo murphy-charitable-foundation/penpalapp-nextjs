@@ -7,6 +7,7 @@ import Link from "next/link";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
+import { PageBackground } from "../../components/general/PageBackground";
 import * as Sentry from "@sentry/nextjs";
 import {
   User,
@@ -21,10 +22,10 @@ import {
   Square,
   Palette,
 } from "lucide-react";
+
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
