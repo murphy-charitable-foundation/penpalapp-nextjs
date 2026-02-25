@@ -2,51 +2,40 @@
 
 import { useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { messaging, auth } from '../app/firebaseConfig';
 import { onMessage } from 'firebase/messaging';
+import { messaging, auth } from '../app/firebaseConfig';
 
 export function NotificationHandler({ children }) {
-  const messageListenerRef = useRef(null);
-  const lastMessageIdRef = useRef(null);
+  const unsubscribeMessageRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
+    if (!('Notification' in window)) return;
+    if (!messaging) return;
 
-    const hasNotificationSupport = "Notification" in window;
-    const hasMessagingSupport = !!messaging;
-
-    if (hasNotificationSupport && Notification.permission === "default") {
-      Notification.requestPermission().catch((err) => {
-        console.warn("Notification permission request failed:", err);
-      });
+    // Ask permission once
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
     }
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (messageListenerRef.current) {
-        messageListenerRef.current();
-        messageListenerRef.current = null;
+      // Clean up old listener
+      if (unsubscribeMessageRef.current) {
+        unsubscribeMessageRef.current();
+        unsubscribeMessageRef.current = null;
       }
 
-      if (user && hasMessagingSupport) {
-        messageListenerRef.current = onMessage(messaging, (payload) => {
-          if (payload?.messageId === lastMessageIdRef.current) return;
-          lastMessageIdRef.current = payload?.messageId;
+      if (!user) return;
 
-          const { title, body } = payload.notification || {};
-          if (!title && !body) return;
-
-          if (hasNotificationSupport && Notification.permission === "granted") {
-            new Notification(title, { body });
-          } else {
-            alert(`${title || "Notification"}\n${body || ""}`);
-          }
-        });
-      }
+      unsubscribeMessageRef.current = onMessage(messaging, (payload) => {
+        console.log('Foreground message received:', payload);
+        // Firebase already shows notification automatically
+      });
     });
 
     return () => {
-      if (messageListenerRef.current) {
-        messageListenerRef.current();
+      if (unsubscribeMessageRef.current) {
+        unsubscribeMessageRef.current();
       }
       unsubscribeAuth();
     };
