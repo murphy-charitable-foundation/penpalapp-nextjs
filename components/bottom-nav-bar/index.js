@@ -39,14 +39,25 @@ export default function NavBar() {
 
   if (userType === null) return null;
 
+  const startGlobalNavSpinner = () => {
+    window.dispatchEvent(new Event("pp:navigation:start"));
+  };
+
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
-    router.push(href); //don't wrap in startTransition
+    startGlobalNavSpinner(); // start spinner immediately
+    router.push(href); // don't wrap in startTransition
   };
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
+
+    // Keep your existing local navigation spinner if you want
     setIsNavigating(true);
+
+    // Start global spinner immediately
+    startGlobalNavSpinner();
+
     try {
       await signOut(auth);
       router.push("/login");
@@ -59,7 +70,11 @@ export default function NavBar() {
 
   const navLinks = [
     { href: "/profile", icon: <FaUserAlt />, label: "Profile" },
-    userType !== "child" && { href: "/discovery", icon: <FaCompass />, label: "Discover" },
+    userType !== "child" && {
+      href: "/discovery",
+      icon: <FaCompass />,
+      label: "Discover",
+    },
     { href: "/about", icon: <FaInfo />, label: "About" },
     { href: "/contact", icon: <FaEnvelopeOpenText />, label: "Contact" },
     { onClick: handleLogout, icon: <FaSignOutAlt />, label: "Logout" },
@@ -105,7 +120,9 @@ export default function NavBar() {
             {navLinks.map((link) => (
               <button
                 key={link.label || link.href}
-                onClick={link.onClick ? link.onClick : () => handleNavigation(link.href)}
+                onClick={
+                  link.onClick ? link.onClick : () => handleNavigation(link.href)
+                }
                 className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
               >
                 {link.icon}

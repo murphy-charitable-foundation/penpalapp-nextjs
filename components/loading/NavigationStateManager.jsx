@@ -9,13 +9,26 @@ export default function NavigationStateManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [isNavigating, setIsNavigating] = useState(false);
+  // UI states
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
-  // Refs to avoid stale closures + prevent duplicate starts
+  // Refs
   const currentUrlRef = useRef("");
-  const navigationStartTimeRef = useRef(null);
+  const navStartRef = useRef(null);
   const isNavigatingRef = useRef(false);
+
   const safetyTimerRef = useRef(null);
+  const finishTimerRef = useRef(null);
+  const exitTimerRef = useRef(null);
+
+  // Prevent stale timers from older navigations
+  const runIdRef = useRef(0);
+
+  // Tunables
+  const minDisplayTime = 400;     // ✅ X ms (300–500 feels good)
+  const fadeOutDuration = 200;    // ✅ smooth hide duration
+  const maxHangTime = 8000;       // safety
 
   // Keep current URL updated
   useEffect(() => {
@@ -23,49 +36,71 @@ export default function NavigationStateManager() {
     currentUrlRef.current = pathname + (qs ? `?${qs}` : "");
   }, [pathname, searchParams]);
 
-  const startNavigation = useCallback((nextUrl = "") => {
-    // Prevent multiple simultaneous navigations
+  const clearAllTimers = () => {
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+
+    safetyTimerRef.current = null;
+    finishTimerRef.current = null;
+    exitTimerRef.current = null;
+  };
+
+  const hardStop = useCallback(() => {
+    clearAllTimers();
+    setIsExiting(false);
+    setShowSpinner(false);
+    isNavigatingRef.current = false;
+    navStartRef.current = null;
+  }, []);
+
+  const startNavigation = useCallback(() => {
+    // Prevent duplicate starts
     if (isNavigatingRef.current) return;
 
     isNavigatingRef.current = true;
-    navigationStartTimeRef.current = Date.now();
+    navStartRef.current = Date.now();
+    const runId = ++runIdRef.current;
 
-    // Show spinner next tick
-    setTimeout(() => setIsNavigating(true), 0);
+    clearAllTimers();
 
-    // Safety: never let spinner hang forever
-    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    // ✅ show immediately (same tick / next paint)
+    setIsExiting(false);
+    setShowSpinner(true);
+
+    // Safety: never hang forever
     safetyTimerRef.current = setTimeout(() => {
-      setIsNavigating(false);
-      isNavigatingRef.current = false;
-      navigationStartTimeRef.current = null;
-    }, 8000);
-  }, []);
+      // only if still same run
+      if (runIdRef.current === runId) hardStop();
+    }, maxHangTime);
+  }, [hardStop]);
 
-  // When route changes, navigation is complete (with min display time)
-  useEffect(() => {
-    if (!isNavigatingRef.current || !navigationStartTimeRef.current) return;
+  const finishNavigation = useCallback(() => {
+    if (!isNavigatingRef.current || !navStartRef.current) return;
 
-    const elapsed = Date.now() - navigationStartTimeRef.current;
-    const minDisplayTime = 1000;
+    const runId = runIdRef.current;
+    const elapsed = Date.now() - navStartRef.current;
     const remaining = Math.max(0, minDisplayTime - elapsed);
 
-    const timer = setTimeout(() => {
-      setIsNavigating(false);
-      isNavigatingRef.current = false;
-      navigationStartTimeRef.current = null;
+    // Wait until minDisplayTime passes, then fade out, then unmount
+    finishTimerRef.current = setTimeout(() => {
+      if (runIdRef.current !== runId) return;
 
-      if (safetyTimerRef.current) {
-        clearTimeout(safetyTimerRef.current);
-        safetyTimerRef.current = null;
-      }
+      setIsExiting(true);
+
+      exitTimerRef.current = setTimeout(() => {
+        if (runIdRef.current !== runId) return;
+        hardStop();
+      }, fadeOutDuration);
     }, remaining);
+  }, [hardStop]);
 
-    return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
+  // Route change => navigation done
+  useEffect(() => {
+    finishNavigation();
+  }, [pathname, searchParams, finishNavigation]);
 
   useEffect(() => {
-    // Capture link clicks (same-origin, normal left click)
     const handleLinkClick = (e) => {
       const a = e.target.closest?.("a");
       if (!a) return;
@@ -90,7 +125,7 @@ export default function NavigationStateManager() {
       if (url.origin !== window.location.origin) return;
 
       const next = url.pathname + url.search;
-      if (next !== currentUrlRef.current) startNavigation(next);
+      if (next !== currentUrlRef.current) startNavigation();
     };
 
     // Intercept programmatic navigation
@@ -98,21 +133,24 @@ export default function NavigationStateManager() {
     const originalReplaceState = window.history.replaceState;
 
     window.history.pushState = function (state, unused, url) {
-      if (typeof url === "string" && url !== currentUrlRef.current) {
-        startNavigation(url);
+      if (typeof url === "string") {
+        const next = new URL(url, window.location.origin);
+        const nextPath = next.pathname + next.search;
+        if (nextPath !== currentUrlRef.current) startNavigation();
       }
       return originalPushState.apply(this, arguments);
     };
 
     window.history.replaceState = function (state, unused, url) {
-      if (typeof url === "string" && url !== currentUrlRef.current) {
-        startNavigation(url);
+      if (typeof url === "string") {
+        const next = new URL(url, window.location.origin);
+        const nextPath = next.pathname + next.search;
+        if (nextPath !== currentUrlRef.current) startNavigation();
       }
       return originalReplaceState.apply(this, arguments);
     };
 
-    // Back/forward handler (THIS is the important fix)
-    const handlePopState = () => startNavigation("popstate");
+    const handlePopState = () => startNavigation();
 
     document.addEventListener("click", handleLinkClick);
     window.addEventListener("popstate", handlePopState);
@@ -124,12 +162,13 @@ export default function NavigationStateManager() {
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
 
-      if (safetyTimerRef.current) {
-        clearTimeout(safetyTimerRef.current);
-        safetyTimerRef.current = null;
-      }
+      clearAllTimers();
     };
   }, [startNavigation]);
 
-  return <>{isNavigating && <LoadingSpinner />}</>;
+  return (
+    <>
+      {showSpinner && <LoadingSpinner exiting={isExiting} />}
+    </>
+  );
 }
