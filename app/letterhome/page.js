@@ -26,6 +26,7 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Dialog from "../../components/general/Dialog";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import AuthGuard from "../../components/AuthGuard";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -34,8 +35,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
-  const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [showProfilePopup, setShowProfilePopup] = useState(false);
 
   const router = useRouter();
 
@@ -99,86 +98,39 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
+  const fetchData = async () => {
     setIsLoading(true);
-    // Listen for auth state changes and redirect if not logged in
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setError("No user logged in.");
-        setShowLoginPopup(true);
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const uid = user.uid;
-        setUserId(uid);
 
-        const userData = await getUserData(uid);
-        // If essential user data is missing, redirect to profile setup
-        if (!userData.first_name || !userData.country) {
-          setShowProfilePopup(true);
-          setIsLoading(false);
-          return;
-        }
-        setUserName(userData.first_name || "Unknown User");
+    const user = auth.currentUser;
+    if (!user) return; // AuthGuard handles blocking
 
-        const downloaded = await getUserPfp(uid);
-        setProfileImage(downloaded || "");
+    const uid = user.uid;
+    setUserId(uid);
 
-        const userConversations = await getConversations(uid);
-        setConversations(userConversations);
-      } catch (err) {
-        setError("Error fetching user data or conversations.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    });
+    try {
+      const userData = await getUserData(uid);
+      setUserName(userData.first_name || "Unknown User");
 
-    return () => unsubscribe();
-  }, [router]);
+      const downloaded = await getUserPfp(uid);
+      setProfileImage(downloaded || "");
+
+      const userConversations = await getConversations(uid);
+      setConversations(userConversations);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
 
   return (
-    <>
-      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-        <Dialog
-          isOpen={showLoginPopup}
-          width="large"
-          onClose={() => {
-            setShowLoginPopup(false);
-            router.push("/login");
-          }}
-          title="Login Required"
-          content="Please log in to view your letters."
-          buttons={[
-            {
-              text: "Go to Login",
-              onClick: () => {
-                setShowLoginPopup(false);
-                router.push("/login");
-              },
-            },
-          ]}
-        />
-        <Dialog
-          isOpen={showProfilePopup}
-          width="large"
-          onClose={() => {
-            setShowProfilePopup(false);
-            router.push("/profile");
-          }}
-          title="Complete Your Profile"
-          content="Please complete your profile before accessing your letters."
-          buttons={[
-            {
-              text: "Go to Profile",
-              onClick: () => {
-                setShowProfilePopup(false);
-                router.push("/profile");
-              },
-            },
-          ]}
-        />
+      <AuthGuard>
+        <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
         <PageContainer
           width="compactXS"
           padding="none"
@@ -186,7 +138,6 @@ export default function Home() {
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {isLoading && <LetterHomeSkeleton />}
-
           {!isLoading && (
             <>
               {/* HEADER */}
@@ -219,6 +170,5 @@ export default function Home() {
           )}
         </PageContainer>
       </PageBackground>
-    </>
-  );
+    </AuthGuard>);
 }

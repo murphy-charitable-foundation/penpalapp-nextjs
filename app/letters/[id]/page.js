@@ -32,6 +32,7 @@ import { AlertTriangle } from "lucide-react";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
+import AuthGuard from "../../../components/AuthGuard";
 
 
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -808,7 +809,8 @@ export default function Page({ params }) {
   };
 
 return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+  <AuthGuard>
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <PageContainer
       width="compactXS"
       padding="none"
@@ -1141,5 +1143,6 @@ return (
       )}
     </PageContainer>
   </PageBackground>
+  </AuthGuard>
 );
 }
