@@ -90,7 +90,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 export default function Page({ params }) {
   const { id } = params;
 
-  const auth = getAuth();
   const router = useRouter();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
@@ -138,35 +137,32 @@ export default function Page({ params }) {
 
   const saveDraft = useCallback(
     async (content) => {
-      if (!user || !lettersRef || isSending) {
+      if (!user?.uid || !lettersRef || isSending) {
         return Promise.resolve();
       }
 
       setIsUpdatingFirebase(true);
 
-      try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
-        const trimmedContent = content.trim();
-        const currentTime = new Date();
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const trimmedContent = (content ?? "").trim();
+      const currentTime = new Date();
 
+      const baseDraftData = {
+        sent_by: letterUserRef,
+        content: trimmedContent,
+        status: "draft",
+        updated_at: currentTime,
+        deleted: null,
+        unread: true,
+      };
+
+      try {
         let existingDraft = draft;
 
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, letterUserRef, false);
-
-          if (existingDraft) {
-            setDraft(existingDraft);
-          }
+          if (existingDraft) setDraft(existingDraft);
         }
-
-        const baseDraftData = {
-          sent_by: letterUserRef,
-          content: trimmedContent,
-          status: "draft",
-          updated_at: currentTime,
-          deleted: null,
-          unread: true,
-        };
 
         if (existingDraft?.id) {
           const draftDocRef = doc(lettersRef, existingDraft.id);
@@ -177,17 +173,16 @@ export default function Page({ params }) {
           };
 
           await updateDoc(draftDocRef, updateData);
-
           setDraft({ ...updateData, id: existingDraft.id });
         } else {
+          const newDraftRef = doc(lettersRef);
+
           const newDraftData = {
             ...baseDraftData,
             created_at: currentTime,
           };
 
-          const newDraftRef = doc(lettersRef);
           await setDoc(newDraftRef, newDraftData);
-
           setDraft({ ...newDraftData, id: newDraftRef.id });
         }
 
@@ -202,21 +197,17 @@ export default function Page({ params }) {
       } catch (error) {
         console.error("❌ saveDraft error:", error);
 
-        if (error.code === "permission-denied") {
-          console.error("🔒 Permission denied error");
+        if (error?.code === "permission-denied") {
           alert("Permission denied. Please check your access rights.");
-        } else if (error.code === "not-found") {
-          console.error("🔍 Document not found, attempting retry...");
+        } else if (error?.code === "not-found") {
           setDraft(null);
+
           if (trimmedContent) {
             try {
-              const newDraftData = {
-                ...baseDraftData,
-                created_at: currentTime,
-              };
               const newDraftRef = doc(lettersRef);
-              await setDoc(newDraftRef, newDraftData);
+              const newDraftData = { ...baseDraftData, created_at: currentTime };
 
+              await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
             } catch (retryError) {
               logError(retryError, {
@@ -231,7 +222,7 @@ export default function Page({ params }) {
         setIsUpdatingFirebase(false);
       }
     },
-    [user, lettersRef, isSending, draft, userRef, isEditing, id]
+    [user?.uid, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
   const handleMessageChange = async (e) => {
@@ -270,7 +261,6 @@ export default function Page({ params }) {
 
         try {
           await saveDraft(newContent);
-
           setIsSendButtonDisabled(false);
         } catch (error) {
           console.error("❌ Failed to save empty draft:", error);
@@ -300,7 +290,7 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
+      if (!user?.uid || !lettersRef) {
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -353,11 +343,11 @@ export default function Page({ params }) {
     } catch (error) {
       console.error("❌ handleUpdateMessage error:", error);
 
-      if (error.code === "permission-denied") {
+      if (error?.code === "permission-denied") {
         alert(
           "Permission denied. Please check your access rights to this conversation."
         );
-      } else if (error.code === "unauthenticated") {
+      } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
       } else {
         alert("Failed to update message. Please try again.");
@@ -386,7 +376,7 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
+      if (!user?.uid || !lettersRef) {
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -432,7 +422,6 @@ export default function Page({ params }) {
 
       setAllMessages((prev) => {
         const newMessages = [...prev, messageWithId];
-
         return newMessages;
       });
 
@@ -440,11 +429,11 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      if (error.code === "permission-denied") {
+      if (error?.code === "permission-denied") {
         alert(
           "Permission denied. Please check your access rights to this conversation."
         );
-      } else if (error.code === "unauthenticated") {
+      } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
       } else {
         alert("Failed to send message. Please try again.");
@@ -518,7 +507,10 @@ export default function Page({ params }) {
   };
 
   const handleEditMessage = async (message) => {
-    if (message.status !== "pending_review" || message.sent_by?.id !== user?.uid) {
+    if (
+      message.status !== "pending_review" ||
+      message.sent_by?.id !== user?.uid
+    ) {
       return;
     }
 
@@ -557,7 +549,7 @@ export default function Page({ params }) {
 
     if (!draft?.id) {
       try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
+        const letterUserRef = userRef || doc(db, "users", user?.uid);
         const existingDraft = await fetchDraft(id, letterUserRef, false);
 
         if (existingDraft) {
@@ -590,14 +582,48 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
+    const auth = getAuth();
     let redirectTimer = null;
+
+    const clearSensitiveState = () => {
+      setUser(null);
+      setUserRef(null);
+      setUserLocation("");
+      setProfileImage("");
+
+      setAllMessages([]);
+      setRecipients([]);
+      setRecipientName("");
+      setLettersRef(null);
+
+      setMessageContent("");
+      setDraft(null);
+      setHasDraftContent(false);
+
+      setEditingMessageId(null);
+      setEditingMessageOriginalContent("");
+
+      setShowCloseDialog(false);
+      setSelectedMessageId(null);
+      setIsEditing(false);
+
+      setIsSending(false);
+      setIsSendButtonDisabled(true);
+      setIsUpdatingFirebase(false);
+
+      setShowReportPopup(false);
+      setShowConfirmReportPopup(false);
+      setReportContent(null);
+      setReportSender(null);
+    };
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
 
-      // FIX: avoid initial auth "bounce" (temporary null user)
       if (!currentUser) {
         if (redirectTimer) clearTimeout(redirectTimer);
+
+        clearSensitiveState();
 
         redirectTimer = setTimeout(() => {
           if (!auth.currentUser) {
@@ -605,7 +631,6 @@ export default function Page({ params }) {
           }
         }, 400);
 
-        setIsLoading(false);
         return;
       }
 
@@ -622,7 +647,6 @@ export default function Page({ params }) {
 
         if (!letterboxDoc.exists()) {
           console.error("❌ Letterbox does not exist:", id);
-          setIsLoading(false);
           return;
         }
 
@@ -633,8 +657,7 @@ export default function Page({ params }) {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           if (userData.location) {
-            const location = userData.location;
-            setUserLocation(location);
+            setUserLocation(userData.location);
           }
           setProfileImage(userData?.photo_uri || "");
         }
@@ -643,12 +666,13 @@ export default function Page({ params }) {
         setRecipients(fetchedRecipients || []);
 
         if (fetchedRecipients?.length > 0) {
-          const recipientName = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
-          setRecipientName(recipientName);
+          const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
+          setRecipientName(rn);
         }
 
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
+
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
@@ -700,9 +724,7 @@ export default function Page({ params }) {
 
           const pushDocs = (snap) => {
             snap.forEach((docSnap) => {
-              if (docSnap.data().status === "draft") {
-                return;
-              }
+              if (docSnap.data().status === "draft") return;
 
               const msg = {
                 id: docSnap.id,
@@ -753,6 +775,7 @@ export default function Page({ params }) {
         });
       } finally {
         setIsLoading(false);
+        setIsSendButtonDisabled(false);
       }
     });
 
@@ -760,13 +783,11 @@ export default function Page({ params }) {
       unsubscribe();
       if (redirectTimer) clearTimeout(redirectTimer);
     };
-  }, [id, router, auth]);
+  }, [id, router]);
 
   useEffect(() => {
     return () => {
-      if (draftTimer) {
-        clearTimeout(draftTimer);
-      }
+      if (draftTimer) clearTimeout(draftTimer);
     };
   }, [draftTimer]);
 
@@ -800,8 +821,7 @@ export default function Page({ params }) {
   };
 
   const canSendMessage = () => {
-    const canSend = messageContent.trim().length > 0 && !isSending;
-    return canSend;
+    return messageContent.trim().length > 0 && !isSending;
   };
 
   return (
@@ -812,7 +832,6 @@ export default function Page({ params }) {
         center={false}
         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
-        {/* ===== HEADER ===== */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
           <button
             onClick={handleCloseMessage}
@@ -851,7 +870,6 @@ export default function Page({ params }) {
           </div>
         </div>
 
-        {/* ===== EDITING BANNER ===== */}
         {editingMessageId && (
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
             <div className="flex items-center text-amber-800 text-sm min-w-0">
@@ -863,7 +881,7 @@ export default function Page({ params }) {
 
             <button
               onClick={async () => {
-                const letterUserRef = userRef || doc(db, "users", user.uid);
+                const letterUserRef = userRef || doc(db, "users", user?.uid);
 
                 try {
                   const existingDraft = await fetchDraft(id, letterUserRef, false);
@@ -897,7 +915,6 @@ export default function Page({ params }) {
           </div>
         )}
 
-        {/* ===== MESSAGES ===== */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
           {allMessages.map((message, index) => {
             const messageId = message.id;
@@ -1039,11 +1056,16 @@ export default function Page({ params }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ===== REPLY ===== */}
         <div className="bg-white">
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center">
-              <Image src="/arrow-left.png" alt="Back" width={20} height={20} className="mr-2" />
+              <Image
+                src="/arrow-left.png"
+                alt="Back"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
               <span className="text-gray-700">To {recipientName}</span>
             </div>
           </div>
@@ -1062,7 +1084,9 @@ export default function Page({ params }) {
               <textarea
                 ref={textAreaRef}
                 className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-                placeholder={editingMessageId ? "Edit your message..." : "Write your message..."}
+                placeholder={
+                  editingMessageId ? "Edit your message..." : "Write your message..."
+                }
                 value={messageContent}
                 onChange={handleMessageChange}
               />
@@ -1070,7 +1094,6 @@ export default function Page({ params }) {
           )}
         </div>
 
-        {/* ===== POPUPS ===== */}
         {showCloseDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
             <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
