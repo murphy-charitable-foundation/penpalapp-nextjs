@@ -26,8 +26,8 @@ export default function NavigationStateManager() {
   const runIdRef = useRef(0);
 
   // Tunables
-  const minDisplayTime = 400;     // ✅ X ms (300–500 feels good)
-  const fadeOutDuration = 200;    // ✅ smooth hide duration
+  const minDisplayTime = 400;     // X ms (300–500 feels good)
+  const fadeOutDuration = 200;    // smooth hide duration
   const maxHangTime = 8000;       // safety
 
   // Keep current URL updated
@@ -64,7 +64,7 @@ export default function NavigationStateManager() {
 
     clearAllTimers();
 
-    // ✅ show immediately (same tick / next paint)
+    // show immediately (same tick / next paint)
     setIsExiting(false);
     setShowSpinner(true);
 

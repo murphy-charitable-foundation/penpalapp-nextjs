@@ -595,7 +595,7 @@ export default function Page({ params }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setIsLoading(true);
 
-      // ✅ FIX: avoid initial auth "bounce" (temporary null user)
+      // FIX: avoid initial auth "bounce" (temporary null user)
       if (!currentUser) {
         if (redirectTimer) clearTimeout(redirectTimer);
 
