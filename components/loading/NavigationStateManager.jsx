@@ -1,116 +1,174 @@
 // components/NavigationStateManager.jsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import LoadingSpinner from '../loading/LoadingSpinner';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import LoadingSpinner from "../loading/LoadingSpinner";
 
 export default function NavigationStateManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Use refs to avoid stale closures in event handlers
-  const currentUrlRef = useRef();
-  const navigationStartTimeRef = useRef(null);
+  // UI states
+  const [showSpinner, setShowSpinner] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
-  // Update current URL ref when pathname/searchParams change
+  // Refs
+  const currentUrlRef = useRef("");
+  const navStartRef = useRef(null);
+  const isNavigatingRef = useRef(false);
+
+  const safetyTimerRef = useRef(null);
+  const finishTimerRef = useRef(null);
+  const exitTimerRef = useRef(null);
+
+  // Prevent stale timers from older navigations
+  const runIdRef = useRef(0);
+
+  // Tunables
+  const minDisplayTime = 400;     // X ms (300–500 feels good)
+  const fadeOutDuration = 200;    // smooth hide duration
+  const maxHangTime = 8000;       // safety
+
+  // Keep current URL updated
   useEffect(() => {
-    currentUrlRef.current = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+    const qs = searchParams?.toString?.() || "";
+    currentUrlRef.current = pathname + (qs ? `?${qs}` : "");
   }, [pathname, searchParams]);
 
-  // Memoized navigation handler to prevent recreating on every render
-  const handleNavigationStart = useCallback((url) => {
-    // Prevent multiple simultaneous navigations
-    if (isNavigating) return;
-    
-    // Record navigation start time
-    navigationStartTimeRef.current = Date.now();
-    
-    // Use setTimeout to defer state update to next tick
-    setTimeout(() => {
-      setIsNavigating(true);
-    }, 0);
-  }, [isNavigating]);
+  const clearAllTimers = () => {
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
 
-    
+    safetyTimerRef.current = null;
+    finishTimerRef.current = null;
+    exitTimerRef.current = null;
+  };
+
+  const hardStop = useCallback(() => {
+    clearAllTimers();
+    setIsExiting(false);
+    setShowSpinner(false);
+    isNavigatingRef.current = false;
+    navStartRef.current = null;
+  }, []);
+
+  const startNavigation = useCallback(() => {
+    // Prevent duplicate starts
+    if (isNavigatingRef.current) return;
+
+    isNavigatingRef.current = true;
+    navStartRef.current = Date.now();
+    const runId = ++runIdRef.current;
+
+    clearAllTimers();
+
+    // show immediately (same tick / next paint)
+    setIsExiting(false);
+    setShowSpinner(true);
+
+    // Safety: never hang forever
+    safetyTimerRef.current = setTimeout(() => {
+      // only if still same run
+      if (runIdRef.current === runId) hardStop();
+    }, maxHangTime);
+  }, [hardStop]);
+
+  const finishNavigation = useCallback(() => {
+    if (!isNavigatingRef.current || !navStartRef.current) return;
+
+    const runId = runIdRef.current;
+    const elapsed = Date.now() - navStartRef.current;
+    const remaining = Math.max(0, minDisplayTime - elapsed);
+
+    // Wait until minDisplayTime passes, then fade out, then unmount
+    finishTimerRef.current = setTimeout(() => {
+      if (runIdRef.current !== runId) return;
+
+      setIsExiting(true);
+
+      exitTimerRef.current = setTimeout(() => {
+        if (runIdRef.current !== runId) return;
+        hardStop();
+      }, fadeOutDuration);
+    }, remaining);
+  }, [hardStop]);
+
+  // Route change => navigation done
   useEffect(() => {
-    // Add event listeners for link clicks
-    const handleLinkClick = (e) => {
-      const target = e.target.closest('a');
-      if (
-        target && 
-        target.href && 
-        target.href.startsWith(window.location.origin) && 
-        !target.target && 
-        !e.ctrlKey && 
-        !e.metaKey && 
-        !e.shiftKey
-      ) {
-        const url = new URL(target.href);
-        const targetPath = url.pathname + url.search;
+    finishNavigation();
+  }, [pathname, searchParams, finishNavigation]);
 
-        if (targetPath !== currentUrlRef.current) {
-          handleNavigationStart();
-        }
+  useEffect(() => {
+    const handleLinkClick = (e) => {
+      const a = e.target.closest?.("a");
+      if (!a) return;
+
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        a.target ||
+        a.hasAttribute("download") ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.shiftKey ||
+        e.altKey
+      ) {
+        return;
       }
+
+      const href = a.getAttribute("href");
+      if (!href) return;
+
+      const url = new URL(a.href, window.location.origin);
+      if (url.origin !== window.location.origin) return;
+
+      const next = url.pathname + url.search;
+      if (next !== currentUrlRef.current) startNavigation();
     };
 
     // Intercept programmatic navigation
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
-    window.history.pushState = function(state, unused, url) {
-      if (url && url !== currentUrlRef.current) {
-        handleNavigationStart(url);
+    window.history.pushState = function (state, unused, url) {
+      if (typeof url === "string") {
+        const next = new URL(url, window.location.origin);
+        const nextPath = next.pathname + next.search;
+        if (nextPath !== currentUrlRef.current) startNavigation();
       }
       return originalPushState.apply(this, arguments);
     };
 
-    window.history.replaceState = function(state, unused, url) {
-      if (url && url !== currentUrlRef.current) {
-        handleNavigationStart(url);
+    window.history.replaceState = function (state, unused, url) {
+      if (typeof url === "string") {
+        const next = new URL(url, window.location.origin);
+        const nextPath = next.pathname + next.search;
+        if (nextPath !== currentUrlRef.current) startNavigation();
       }
       return originalReplaceState.apply(this, arguments);
     };
 
-    // Handle browser back/forward
-    const handlePopState = () => handleNavigationStart();
+    const handlePopState = () => startNavigation();
 
-    // Handle browser back/forward
-    window.addEventListener('popstate', () => handlePopState);
-    // Add click listener for all links
-    document.addEventListener('click', handleLinkClick);
+    document.addEventListener("click", handleLinkClick);
+    window.addEventListener("popstate", handlePopState);
 
-    // Clean up function
     return () => {
-      document.removeEventListener('click', handleLinkClick);
-      window.removeEventListener('popstate', handleNavigationStart);
+      document.removeEventListener("click", handleLinkClick);
+      window.removeEventListener("popstate", handlePopState);
+
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
-    };
-  }, [handleNavigationStart]);
 
-  // When pathname or searchParams change, navigation is complete
-  useEffect(() => {
-    if (isNavigating && navigationStartTimeRef.current) {
-      const elapsedTime = Date.now() - navigationStartTimeRef.current;
-      const minDisplayTime = 1000; // 1 second minimum
-      const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
-      
-      const timer = setTimeout(() => {
-        setIsNavigating(false);
-        navigationStartTimeRef.current = null;
-      }, remainingTime);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [pathname, searchParams, isNavigating]);
-   
+      clearAllTimers();
+    };
+  }, [startNavigation]);
+
   return (
     <>
-      {isNavigating && <LoadingSpinner />}
+      {showSpinner && <LoadingSpinner exiting={isExiting} />}
     </>
   );
-
 }

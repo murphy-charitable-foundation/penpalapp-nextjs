@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
@@ -20,34 +20,44 @@ import { useNavigation } from "../../contexts/NavigationContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { userType } = useUser();
   const { setIsNavigating } = useNavigation();
 
   const containerRef = useRef(null);
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside (use pointerdown for less jank)
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+    function handleOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsMenuOpen(false);
       }
     }
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    document.addEventListener("pointerdown", handleOutside);
+    return () => document.removeEventListener("pointerdown", handleOutside);
   }, []);
 
   if (userType === null) return null;
 
+  const startGlobalNavSpinner = () => {
+    window.dispatchEvent(new Event("pp:navigation:start"));
+  };
+
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
-    startTransition(() => router.push(href));
+    startGlobalNavSpinner(); // start spinner immediately
+    router.push(href); // don't wrap in startTransition
   };
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
+
+    // Keep your existing local navigation spinner if you want
     setIsNavigating(true);
+
+    // Start global spinner immediately
+    startGlobalNavSpinner();
+
     try {
       await signOut(auth);
       router.push("/login");
@@ -60,7 +70,11 @@ export default function NavBar() {
 
   const navLinks = [
     { href: "/profile", icon: <FaUserAlt />, label: "Profile" },
-    userType !== "child" && { href: "/discovery", icon: <FaCompass />, label: "Discover" },
+    userType !== "child" && {
+      href: "/discovery",
+      icon: <FaCompass />,
+      label: "Discover",
+    },
     { href: "/about", icon: <FaInfo />, label: "About" },
     { href: "/contact", icon: <FaEnvelopeOpenText />, label: "Contact" },
     { onClick: handleLogout, icon: <FaSignOutAlt />, label: "Logout" },
@@ -71,7 +85,6 @@ export default function NavBar() {
       ref={containerRef}
       className="w-full bg-blue-100 px-4 py-3 flex justify-around items-center text-zinc-900 border-t rounded-b-2xl shadow-md"
     >
-      {/* Letterhome */}
       <button
         onClick={() => handleNavigation("/letterhome")}
         className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
@@ -80,7 +93,6 @@ export default function NavBar() {
         <span className="text-sm">Letterhome</span>
       </button>
 
-      {/* Sponsor */}
       {userType !== "child" && (
         <button
           onClick={() => handleNavigation("/donate")}
@@ -91,7 +103,6 @@ export default function NavBar() {
         </button>
       )}
 
-      {/* Menu */}
       <div className="relative">
         <button
           onClick={() => setIsMenuOpen((v) => !v)}
@@ -102,11 +113,16 @@ export default function NavBar() {
         </button>
 
         {isMenuOpen && (
-          <div className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2">
+          <div
+            className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2"
+            onClick={(e) => e.stopPropagation()} // prevent bubbling to document handler
+          >
             {navLinks.map((link) => (
               <button
                 key={link.label || link.href}
-                onClick={link.onClick ? link.onClick : () => handleNavigation(link.href)}
+                onClick={
+                  link.onClick ? link.onClick : () => handleNavigation(link.href)
+                }
                 className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
               >
                 {link.icon}
