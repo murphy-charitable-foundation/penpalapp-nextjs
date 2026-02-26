@@ -20,14 +20,19 @@ export default function AdminFilter({
   loading,
   setLoading,
 }) {
+  const statusOptions = new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
+  const statusLabels = new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
+
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
   const [endFilter, setEndFilter] = useState(end || "2025-01-01");
+  const [currentFilter, setCurrentFilter] = useState(status ? statusLabels.get(status) : "");
 
   useEffect(() => {
     setStatusFilter(status || "");
     setStartFilter(start !== 0 && start !== null ? start : "");
     setEndFilter(end || "");
+    setCurrentFilter(status ? statusLabels.get(status) : "");
   }, [status, start, end]);
 
 
@@ -44,10 +49,6 @@ export default function AdminFilter({
   e.preventDefault();
   clearFilters();
 };
-
-
-  const statusOptions =  new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
-  const statusLabels =  new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
 
 
   return (
@@ -82,8 +83,8 @@ export default function AdminFilter({
           </label>
           
           <Dropdown
-          options={statusOptions.keys().toArray()}
-          valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
+          options={Array.from(statusOptions.keys())}
+          valueChange={(optionValue) => { setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue); }}
           currentValue={currentFilter || statusLabels.get(status)}
           text="Status"
           />
