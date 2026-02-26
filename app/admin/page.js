@@ -312,14 +312,14 @@ const currentLetter =
 
         const { id, letterboxId } = currentLetter;
 
-
         updateLocalLetter(id, {
           status: "approved",
           moderator_id: userId,
         });
 
-        setReviewAction("approved");
-
+        setReviewAction(null);
+        setSelectedLetter(null);
+        setActiveView("inbox");
 
         try {
           const ref = doc(db, "letterboxes", letterboxId, "letters", id);
@@ -331,7 +331,6 @@ const currentLetter =
         } catch (err) {
           console.warn("Approve blocked", err);
         }
-
       }}
             onReject={() => setActiveView("reject")}
             onRevert={revertToPending}
@@ -391,9 +390,9 @@ const currentLetter =
           />
         )}
 
-        {reviewAction && (
+        {reviewAction === "rejected" && (
           <SuccessModal
-            type={reviewAction} // "approved" | "rejected"
+            type="rejected"
             onClose={() => {
               setReviewAction(null);
               setSelectedLetter(null);
