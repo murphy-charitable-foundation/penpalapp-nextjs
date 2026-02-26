@@ -16,8 +16,9 @@ export default function AdminFilter({
   setEnd,
   end,
   filter,
+  clearFilters,
   loading,
-  setLoading
+  setLoading,
 }) {
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(start || "2025-01-01");
@@ -39,17 +40,15 @@ export default function AdminFilter({
 
 
 
-  const clearFilter = async(e) => {
-    e.preventDefault()
-    setStatusFilter("Sent");
-    setStartFilter("");
-    setEndFilter("");
-    await filter("Sent", null, null);
-  
-  };
+  const clearFilter = (e) => {
+  e.preventDefault();
+  clearFilters();
+};
 
 
-  const statusOptions = ["Sent", "Pending", "Rejected"];
+  const statusOptions =  new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
+  const statusLabels =  new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
+
 
   return (
     <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
@@ -58,7 +57,7 @@ export default function AdminFilter({
           <label className="text-black mt-[auto] mb-[auto]">Start date:</label>
 
           <DatePicker selected={startFilter}
-          placeHolder={"Select A Date"}
+          placeholderText={"Select a date"}
           maxDate={endFilter} 
           onChange={(date) => setStartFilter(date)} 
           className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
@@ -68,7 +67,7 @@ export default function AdminFilter({
           <label className="text-black  mt-[auto] mb-[auto]" >End date:</label>
 
           <DatePicker selected={endFilter}
-           placeHolder={"Select A Date"}
+           placeholderText={"Select a date"} 
            minDate={startFilter} 
            onChange={(date) => setEndFilter(date)} 
            className="w-full px-4 py-2 text-black border rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300"
@@ -83,9 +82,9 @@ export default function AdminFilter({
           </label>
           
           <Dropdown
-          options={statusOptions}
-          valueChange={setStatusFilter}
-          currentValue={statusFilter}
+          options={statusOptions.keys().toArray()}
+          valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
+          currentValue={currentFilter || statusLabels.get(status)}
           text="Status"
           />
         </div>

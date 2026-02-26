@@ -5,7 +5,7 @@ import Image from "next/image";
 export default function LetterCard({ letter }) {
   return (
     <a 
-      href={`/letters/${letter.id}`} 
+      href={`/admin/letters/${letter.id}`}
       className="flex items-center p-4 mb-3 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
     >
       <div className="flex-grow">
