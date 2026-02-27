@@ -60,34 +60,20 @@ export async function POST(req) {
     const uid = decoded.uid;
 
     const userDocRef = db.collection("users").doc(uid);
-    const tokenDocRef = db.collection("fcmTokens").doc(fcmToken);
 
-    // Check if token already exists
-    const tokenSnap = await tokenDocRef.get();
-
-    const userGroup = fcmToken;
-
+    const userSnap = await userDocRef.get();
     // Case 1: Device already registered
-    if (tokenSnap.exists) {
+    if (userSnap.exists && userSnap.data().fcmToken) {
       // Ensure user is attached to same device-group
-      await userDocRef.set({ userGroup }, { merge: true });
-
+      await userDocRef.set({ fcmToken }, { merge: true });
       return Response.json({
         success: true,
       });
+    } else {
+      return new Response(JSON.stringify({
+        error: "User not registered for notifications. Please log in on the client first.",
+      }), { status: 400 });
     }
-
-    // Case 2: New device registration
-    await tokenDocRef.set({
-      fcmToken,
-      createdAt: new Date(),
-    });
-
-    await userDocRef.set({ userGroup }, { merge: true });
-
-    return Response.json({
-      success: true,
-    });
   } catch (err) {
     console.error("Error in setupNotifications:", err);
     return new Response(JSON.stringify({ error: "Failed to setup notifications." }), {

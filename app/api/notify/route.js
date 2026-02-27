@@ -63,18 +63,12 @@ async function getConversationTokens(conversationId, senderUid) {
     if (!userSnap.exists) continue;
 
     const user = userSnap.data();
-    if (!user.userGroup) continue;
+    if (!user.fcmToken) continue;
 
-    const tokenSnap = await db.collection("fcmTokens").doc(user.userGroup).get();
-
-    if (tokenSnap.exists) {
-      const tokenData = tokenSnap.data();
-      if (!tokenData.fcmToken) continue;
-      tokens.push({
-        token: tokenData.fcmToken,
-        name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-      });
-    }
+    tokens.push({
+      token: user.fcmToken,
+      name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+    });
   }
 
   return tokens;

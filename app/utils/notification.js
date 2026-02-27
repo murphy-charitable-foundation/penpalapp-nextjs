@@ -3,8 +3,6 @@ import { handleNotificationSetup } from '../firebaseConfig';
 export const initializeNotifications = async () => {
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('Service Worker registered with scope:', registration.scope);
       await handleNotificationSetup();
     } catch (err) {
       console.error('Service Worker registration failed: ', err);
