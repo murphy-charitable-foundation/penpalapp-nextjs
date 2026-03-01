@@ -24,6 +24,7 @@ import { FaExclamationCircle } from "react-icons/fa";
 import ReportPopup from "../../../components/general/letter/ReportPopup";
 import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
@@ -912,28 +913,43 @@ return (
                 >
                   <div className="flex items-center">
                     <div className="shrink-0">
-                      <ProfileImage
-                        photo_uri={
-                          isSenderUser ? profileImage : recipients[0]?.photo_uri
-                        }
-                        first_name={
-                          isSenderUser ? "Me" : recipients[0]?.first_name
-                        }
-                        size={12}
-                      />
+                      {!isSenderUser ? (
+                        <Link
+                          href={`/profile-view/${recipients[0]?.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ProfileImage
+                            photo_uri={recipients[0]?.photo_uri}
+                            first_name={recipients[0]?.first_name}
+                            size={12}
+                            className="hover:opacity-80 transition cursor-pointer"
+                          />
+                        </Link>
+                      ) : (
+                        <ProfileImage
+                          photo_uri={profileImage}
+                          first_name="Me"
+                          size={12}
+                        />
+                      )}
                     </div>
 
-                    <div className="flex-1">
+                    <div className="flex-1 ml-3">
                       <div className="flex items-center">
-                        <span className="font-bold text-black">
-                          {isSenderUser
-                            ? "Me"
-                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                        </span>
+                        {!isSenderUser ? (
+                          <Link
+                            href={`/profile-view/${recipients[0]?.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="font-bold text-black hover:underline decoration-blue-500 cursor-pointer"
+                          >
+                            {recipients[0]?.first_name} {recipients[0]?.last_name}
+                          </Link>
+                        ) : (
+                          <span className="font-bold text-black">Me</span>
+                        )}
+
                         {location && (
-                          <span className="text-black ml-2 text-sm">
-                            {location}
-                          </span>
+                          <span className="text-black ml-2 text-sm">{location}</span>
                         )}
                       </div>
                       <div className="text-gray-800">
