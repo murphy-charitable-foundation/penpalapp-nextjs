@@ -11,6 +11,7 @@ const ConversationList = ({ conversations }) => {
             country={c.country}
             lastMessage={c.lastMessage}
             lastMessageDate={c.lastMessageDate}
+            penpalId={c.penpalId}
             letterboxId={c.letterboxId}
             status={c.status}
             isRecipient={c.isRecipient}
