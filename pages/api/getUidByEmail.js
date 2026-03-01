@@ -22,12 +22,14 @@ export default async function handler(req, res) {
     
     const userRecord = await auth.getUserByEmail(email);
 
+    /*
     // Check if user exists in the users collection
     const userSnap = await db.collection("users").doc(userRecord.uid).get();
 
     if (!userSnap.exists) {
       return res.status(404).json({ error: "User not found in database" });
     }
+    */
 
     res.status(200).json({ uid: userRecord.uid });
   } catch (error) {

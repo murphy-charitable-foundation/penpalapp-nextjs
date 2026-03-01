@@ -342,9 +342,11 @@ export const createConnection = async (userDocRef, kid) => {
             });
 
             // Update User and Kid documents
-            await updateDoc(userDocRef, {
-              connected_penpals: arrayUnion(kidDocRef),
-            });
+            if ((await getDoc(userDocRef)).exists()){
+              await updateDoc(userDocRef, {
+                connected_penpals: arrayUnion(kidDocRef),
+              });
+            }
 
             await updateDoc(kidDocRef, {
               connected_penpals: arrayUnion(userDocRef),
