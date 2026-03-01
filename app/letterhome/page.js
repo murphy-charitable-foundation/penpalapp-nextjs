@@ -132,6 +132,7 @@ export default function Home() {
         {isLoading && <LetterHomeSkeleton />}
         {!isLoading && (
           <>
+            {/* HEADER */}
             <div className="shrink-0 border-b">
               <ProfileHeader
                 userName={userName}
