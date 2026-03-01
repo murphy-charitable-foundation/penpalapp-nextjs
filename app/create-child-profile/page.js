@@ -153,6 +153,8 @@ const handleSubmit = async (e) => {
         return;
       }
 
+      let internationalBuddyUid = null;
+      let createJson = null;
       try {
         if (!auth.currentUser) {
           throw new Error("You must be logged in to import user data");
@@ -160,7 +162,6 @@ const handleSubmit = async (e) => {
         const token = await auth.currentUser.getIdToken();
         
         // Fetch UID of international buddy only if email is provided
-        let internationalBuddyUid = null;
         if (internationalBuddyEmail.trim()) {
           const uidRes = await fetch("/api/getUidByEmail", {
             method: "POST",
@@ -187,28 +188,24 @@ const handleSubmit = async (e) => {
           body: JSON.stringify({ email, password, userData }),
         });
 
-        const createJson = await createRes.json();
+        createJson = await createRes.json();
         if (!createRes.ok) {
-          newErrors.email = createJson.error || "Failed to create user";
+          newErrors.email = createJson.error || "Failed to create child";
           setErrors(newErrors);
-          throw new Error(createJson.error || "Failed to create user");
+          throw new Error(createJson.error || "Failed to create child");
         }
+      } catch (error) {
+        logError(error, {
+          description: "Error creating child or finding the international buddy: ",    
+        })
+        throw error;
+      }
 
         const kidId = createJson.uid;
-
         const kidRef = doc(db, "users", kidId);
-        const docSnap = await getDoc(kidRef);
-        if (docSnap.exists()) {
-          const kid = { id: kidId, ...docSnap.data(), photoURL: "/usericon.png" };
 
-          if (internationalBuddyUid) {
-            const internationalBuddyUID = internationalBuddyUid.uid;
-            const buddyRef = doc(db, "users", internationalBuddyUID);
-            const letterboxRef = await createConnection(buddyRef, kid);
-          }
-        } else {
-          throw new Error("Error linking user");
-        }
+        const buddyRef = doc(db, "users", internationalBuddyUid.uid);
+        await createConnection(buddyRef, kidRef);
 
         // Upload profile image if available
         if (croppedBlob) {
@@ -230,13 +227,6 @@ const handleSubmit = async (e) => {
             }
           );
         }
-
-      } catch (error) {
-        logError(error, {
-          description: "Error creating user or linking international buddy: ",    
-        })
-        throw error;
-      }
 
       // Reset form
       setHobbies([]);

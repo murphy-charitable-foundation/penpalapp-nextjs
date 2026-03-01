@@ -46,7 +46,7 @@ export default function SendMessage({ kid }) {
   }, [auth.currentUser]);
 
   const handleClick = async () => {
-    createConnection(userRef, kid).then((letterboxRef) => {
+    createConnection(userRef, kid.ref).then((letterboxRef) => {
       router.push("/letters/" + letterboxRef.id);
     });
   };
