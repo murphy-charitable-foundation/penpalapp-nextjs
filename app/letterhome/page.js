@@ -122,7 +122,7 @@ export default function Home() {
 }, [user]);
 
   return (
-        <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
         <PageContainer
           width="compactXS"
           padding="none"
