@@ -26,7 +26,6 @@ import { PageBackground } from "../../components/general/PageBackground";
 import Dialog from "../../components/general/Dialog";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import AuthGuard from "../../components/AuthGuard";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -130,8 +129,7 @@ export default function Home() {
 }, []);
 
   return (
-      <AuthGuard>
-        <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
         <PageContainer
           width="compactXS"
           padding="none"
@@ -171,5 +169,5 @@ export default function Home() {
           )}
         </PageContainer>
       </PageBackground>
-    </AuthGuard>);
+    );
 }
