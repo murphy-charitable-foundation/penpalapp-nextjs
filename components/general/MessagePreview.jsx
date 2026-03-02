@@ -1,13 +1,18 @@
+"use client";
+
 import React from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 
 
 const MessagePreview = ({
   profileImage,
   name,
+  penpalId,
   country,
   lastMessage,
   lastMessageDate,
@@ -16,6 +21,7 @@ const MessagePreview = ({
   isRecipient,
   unread = false,
 }) => {
+  const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
 
   const getStatusIcon = () => {
@@ -37,8 +43,8 @@ const MessagePreview = ({
   };
 
   return (
-    <a
-      href={`/letters/${letterboxId}`}
+    <div
+      onClick={() => router.push(`/letters/${letterboxId}`)}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
@@ -49,13 +55,31 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        <Image
-          src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
-          width={36}
-          height={36}
-        />
+        {penpalId ? (
+          <Link
+            href={`/profile-view/${penpalId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0 hover:opacity-80 transition cursor-pointer"
+          >
+            <Image
+              src={imageSrc}
+              alt={`${name}'s profile`}
+              className="w-12 h-12 rounded-full object-cover mr-4"
+              width={36}
+              height={36}
+            />
+          </Link>
+        ) : (
+          <div className="shrink-0">
+            <Image
+              src={imageSrc}
+              alt={`${name}'s profile`}
+              className="w-12 h-12 rounded-full object-cover mr-4"
+              width={36}
+              height={36}
+            />
+          </div>
+        )}
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
@@ -63,7 +87,17 @@ const MessagePreview = ({
                 {status === "draft" && lastMessage !== "" && (
                   <span className="text-red-500 mr-1">[Draft]</span>
                 )}
-                {name}
+                {penpalId ? (
+                  <Link
+                    href={`/profile-view/${penpalId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:underline decoration-blue-500 cursor-pointer"
+                  >
+                    {name}
+                  </Link>
+                ) : (
+                  <span>{name}</span>
+                )}
               </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
@@ -102,7 +136,7 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </div>
   );
 };
 
