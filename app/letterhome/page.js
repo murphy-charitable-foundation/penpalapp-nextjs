@@ -100,6 +100,7 @@ export default function Home() {
 
     const uid = user.uid;
     setUserId(uid);
+    setIsLoading(true);
 
     try {
       const userData = await getUserData(uid);
