@@ -72,7 +72,7 @@ export default function Home() {
 
           return {
             id: letter?.id,
-            profileImage: recipient?.photo_uri || "",
+            profileImage: recipient?.pfp || recipient?.photo_uri || "",
             penpalId: recipient?.id || "", 
             name: `${recipient.first_name ?? "Unknown"} ${
               recipient.last_name ?? ""
