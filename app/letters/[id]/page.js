@@ -924,9 +924,10 @@ return (
                 >
                   <div className="flex items-center">
                     <div className="shrink-0">
-                      {!isSenderUser ? (
+                      {/* Only show the link if recipients[0]?.id actually exists */}
+                      {!isSenderUser && recipients[0]?.id ? (
                         <Link
-                          href={`/profile-view/${recipients[0]?.id}`}
+                          href={`/profile-view/${recipients[0].id}`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ProfileImage
@@ -938,16 +939,15 @@ return (
                         </Link>
                       ) : (
                         <ProfileImage
-                          photo_uri={profileImage}
-                          first_name="Me"
+                          photo_uri={isSenderUser ? profileImage : recipients[0]?.photo_uri}
+                          first_name={isSenderUser ? "Me" : recipients[0]?.first_name}
                           size={12}
                         />
                       )}
                     </div>
-
                     <div className="flex-1 ml-3">
                       <div className="flex items-center">
-                        {!isSenderUser ? (
+                        {!isSenderUser && recipients[0]?.id ? (
                           <Link
                             href={`/profile-view/${recipients[0]?.id}`}
                             onClick={(e) => e.stopPropagation()}

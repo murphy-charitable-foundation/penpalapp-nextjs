@@ -100,13 +100,15 @@ export default function Home() {
 
  useEffect(() => {
   const fetchData = async () => {
-    setIsLoading(true);
-
     const user = auth.currentUser;
-    if (!user) return; // AuthGuard handles blocking
+    if (!user){
+      setIsLoading(false);
+      return;
+    }
 
     const uid = user.uid;
     setUserId(uid);
+    setIsLoading(true);
 
     try {
       const userData = await getUserData(uid);
