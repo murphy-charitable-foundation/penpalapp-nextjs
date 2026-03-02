@@ -96,7 +96,6 @@ export default function Home() {
       setIsLoading(true);
 
       if (!user) return; // UserContext handles route protection
-
       const uid = user.uid;
       setUserId(uid);
 
