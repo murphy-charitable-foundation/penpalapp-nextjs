@@ -16,7 +16,7 @@ import {
 
 import LettersSkeleton from "../../components/loading/LettersSkeleton";
 import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "/components/general/ProfileImage";
+import ProfileImage from "../../components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
@@ -98,17 +98,18 @@ export default function Home() {
     }
   };
 
- useEffect(() => {
-  const fetchData = async () => {
-    const user = auth.currentUser;
-    if (!user){
+useEffect(() => {
+  // 1. Listen for auth state changes
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) {
       setIsLoading(false);
       return;
     }
 
+    // 2. We have a user! Start loading data
+    setIsLoading(true);
     const uid = user.uid;
     setUserId(uid);
-    setIsLoading(true);
 
     try {
       const userData = await getUserData(uid);
@@ -125,9 +126,10 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  });
 
-  fetchData();
+  // 3. Clean up the listener when the page closes
+  return () => unsubscribe();
 }, []);
 
   return (
