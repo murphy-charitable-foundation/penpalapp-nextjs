@@ -12,13 +12,6 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-
-<<<<<<< HEAD
-=======
-import LettersSkeleton from "../../components/loading/LettersSkeleton";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "../../components/general/ProfileImage";
->>>>>>> d25b27f (fix: resolve auth race condition using onAuthStateChanged and fix import path)
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
@@ -32,6 +25,9 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [userId, setUserId] = useState("");
 
   const { user } = useUser();
   usePageAnalytics("/letterhome");
@@ -95,52 +91,34 @@ export default function Home() {
     }
   };
 
-<<<<<<< HEAD
   useEffect(() => {
-  const fetchData = async () => {
-    setIsLoading(true);
+    const fetchData = async () => {
+      setIsLoading(true);
 
-    if (!user) return; // UserContext handles route protection
-=======
-useEffect(() => {
-  // 1. Listen for auth state changes
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
->>>>>>> d25b27f (fix: resolve auth race condition using onAuthStateChanged and fix import path)
+      if (!user) return;
 
-    // 2. We have a user! Start loading data
-    setIsLoading(true);
-    const uid = user.uid;
-    setUserId(uid);
+      const uid = user.uid;
+      setUserId(uid);
 
-    try {
-      const userData = await getUserData(uid);
-      setUserName(userData.first_name || "Unknown User");
+      try {
+        const userData = await getUserData(uid);
+        setUserName(userData.first_name || "Unknown User");
 
-      const downloaded = await getUserPfp(uid);
-      setProfileImage(downloaded || "");
+        const downloaded = await getUserPfp(uid);
+        setProfileImage(downloaded || "");
 
-      const userConversations = await getConversations(uid);
-      setConversations(userConversations);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load data.");
-    } finally {
-      setIsLoading(false);
-    }
-  });
+        const userConversations = await getConversations(uid);
+        setConversations(userConversations);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-<<<<<<< HEAD
-  fetchData();
-}, [user]);
-=======
-  // 3. Clean up the listener when the page closes
-  return () => unsubscribe();
-}, []);
->>>>>>> d25b27f (fix: resolve auth race condition using onAuthStateChanged and fix import path)
+    fetchData();
+  }, [user]);
 
   return (
       <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
