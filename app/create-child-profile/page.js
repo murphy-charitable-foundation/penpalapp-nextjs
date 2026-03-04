@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { doc, setDoc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
 
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
@@ -53,7 +54,26 @@ export default function CreateChildProfile() {
   const auth = getAuth();
   const fileInputRef = useRef(null);
   const cropperRef = useRef(null);
+  const { userType, loading: userLoading } = useUser();
   usePageAnalytics("/user-data-import");
+
+  // Check if user is admin
+  useEffect(() => {
+    if (!userLoading && userType && userType !== "admin") {
+      setDialogTitle("Access Denied");
+      setDialogMessage("You do not have authorization to access this page. Only admins can create child profiles.");
+      setIsDialogOpen(true);
+      
+      // Redirect to login after dialog closes
+      const timer = setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [userType, userLoading, router]);
+
+
 
   const handleImageClick = () => {
     fileInputRef.current.click();
