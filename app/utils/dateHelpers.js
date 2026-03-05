@@ -2,6 +2,8 @@
  * Date helper utilities for messaging application
  */
 
+import { Timestamp } from "firebase/firestore";
+
 /**
  * Check if two dates are on different days
  * @param {Date|string|number|Object} date1 - First date to compare
@@ -22,63 +24,21 @@ export const isDifferentDay = (date1, date2) => {
 };
 
 /**
- * Format date for separator display
- * @param {Date|string|number|Object} timestamp - Timestamp to format
- * @returns {string} - Formatted date string (Today, Yesterday, or full date)
- */
-export const formatDateSeparator = (timestamp) => {
-  if (!timestamp) return "";
-
-  let date;
-  if (timestamp.toDate && typeof timestamp.toDate === "function") {
-    date = timestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    date = timestamp;
-  } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-    date = new Date(timestamp);
-  } else {
-    return "";
-  }
-
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  // Check if it's today
-  if (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  ) {
-    return "Today";
-  }
-
-  // Check if it's yesterday
-  if (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear()
-  ) {
-    return "Yesterday";
-  }
-
-  // Format as date
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-/**
  * Format time for message display
- * @param {Date|string|number|Object} timestamp - Timestamp to format
+ * @param {Date|string|number|{seconds: number, toDate?: function}} timestamp - Timestamp to format
  * @returns {string} - Formatted time string
+ * Function to convert a timestamp into a readable message time
+ * If the timestamp is from today, it displays the time in 12-hour format (e.g., 3:45 PM).
+ * If the timestamp is from yesterday, it displays “Yesterday”.
+ * If the timestamp is within the current week (from last Monday to today), it displays the day name (e.g., Monday).
+ * For all other cases, it displays the date in the format “Mon DD, YYYY” (e.g., Jan 03, 2024).
  */
-export const formatTime = (timestamp) => {
+export const formatTimestamp = (timestamp) => {
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
   if (!timestamp) return "";
 
+  // ---- Normalize timestamp into a JS Date ----
   let date;
   if (timestamp.toDate && typeof timestamp.toDate === "function") {
     date = timestamp.toDate();
@@ -86,40 +46,63 @@ export const formatTime = (timestamp) => {
     date = timestamp;
   } else if (typeof timestamp === "number" || typeof timestamp === "string") {
     date = new Date(timestamp);
+  } else if (timestamp.seconds) {
+    date = new Date(timestamp.seconds * 1000);
   } else {
     return "";
   }
 
-  // Get today's date and day before yesterday
+  // ---- Define comparison dates ----
   const today = new Date();
-  const dayBeforeYesterday = new Date(today);
-  dayBeforeYesterday.setDate(today.getDate() - 2);
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(todayStart.getDate() - 1);
 
-  // Reset time to start of day for accurate comparison
-  const messageDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-  const dayBeforeYesterdayStart = new Date(
-    dayBeforeYesterday.getFullYear(),
-    dayBeforeYesterday.getMonth(),
-    dayBeforeYesterday.getDate()
-  );
+  // Day before yesterday (used to detect older messages)
+  const dayBeforeYesterdayStart = new Date(todayStart);
+  dayBeforeYesterdayStart.setDate(todayStart.getDate() - 2);
 
-  // If message is older than day before yesterday, show MM/DD/YYYY
-  if (messageDate < dayBeforeYesterdayStart) {
-    return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
+  // Message day (midnight)
+  const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  // ---- Compute current week's Monday ----
+  let weekStart = new Date(todayStart);
+  const currentDayOfWeek = weekStart.getDay();
+  const diff = weekStart.getDate() - currentDayOfWeek + (currentDayOfWeek === 0 ? -6 : 1);
+  weekStart.setDate(diff);
+  const messageTime = date.getTime();
+  const weekStartTime = weekStart.getTime();
+
+  // ---- Return values based on WhatsApp-like rules ----
+
+  // Today → show time
+  if (messageDay.getTime() === todayStart.getTime()) {
+    return date.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   }
 
-  // Otherwise show time as before
-  return date.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
+  // Yesterday → show "Yesterday"
+  if (messageDay.getTime() === yesterdayStart.getTime()) {
+    return "Yesterday";
+  }
+
+  // Within this week → show Day name (Mon, Tue, etc.)
+  if (messageTime >= weekStartTime) {
+    return days[date.getDay()];
+  }
+
+  // Older → show date (e.g., Jan 03, 2024)
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
+};
+
+
+export const dateToTimestamp = (date) => {
+  return Timestamp.fromDate(date); // Convert back to Firestore Timestamp
 };

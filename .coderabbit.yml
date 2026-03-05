@@ -1,0 +1,38 @@
+reviews:
+  tone_instructions: "One-line problem + one-line fix. No fluff, no praise, no repetition. Be surgical."
+
+  profile: chill                          # Use relaxed tone, avoid harsh or overly formal comments.
+  sequence_diagrams: false              # Disable auto-generated sequence diagrams in review.
+  path_instructions:
+    - path: "**/*"
+      instructions: |
+        Focus ONLY on runtime errors, broken imports, incorrect component usage, and security issues.
+        Do NOT comment on style, formatting, naming, or subjective UI unless it causes runtime errors.  # Limit feedback to functional and security issues only.
+  high_level_summary: true                # Include a brief summary of the review at the top.
+  collapse_walkthrough: true             # Collapse detailed walkthroughs by default.
+  changed_files_summary: true            # Show summary of changed files in the review.
+  auto_review:
+    enabled: true                         # Enable automatic code review on pull requests.
+  auto_approve:
+    enabled: true                         # Automatically approve PRs if no issues are found.
+  request_changes_workflow: true         # Allow bot to request changes if critical issues are detected.
+  path_filters:
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!build/**"
+    - "!**/*.lock"
+    - "!**/*.css"
+    - "!**/*.md"
+    - "!app/privacy-policy/**"
+    - "!app/terms-conditions/**"
+    - "!app/globals.css"
+    - "!tailwind.config.js"
+    - "!public/firebase-messaging-sw.js"
+    - "!app/profile-view/**"
+    - "!components/general/**"
+    - "!components/loading/**"
+    - "!components/tooltip/**"
+    - "!components/letter/**"
+    - "!app/utils/dateHelpers.js"
+    - "!app/utils/timestampToDate.js"
+    - "!app/utils/deadChat.js"

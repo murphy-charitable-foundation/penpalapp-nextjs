@@ -1,41 +1,40 @@
-const maxWidthClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  xxl: 'max-w-2xl',
-};
+"use client";
+// TODO: Refactor PageContainer to expose constrained variant/layout props
+// (e.g. size, padding, alignment) instead of accepting arbitrary className overrides.
+// This will keep the component API consistent and easier to maintain.
 
-const colors = {
-    gray: 'bg-gray-300 hover: bg-gray-400 text-white',
-    transparent: 'bg-transparent hover: bg-gray-400 text-black',
-    white: 'bg-gray-100'
-  };
+const WIDTHS = {
+  compactXS: "max-w-[29rem]",
+  compact: "max-w-lg",
+};
 
 export function PageContainer({
   children,
-  className = '',
-  maxWidth = 'md',
-  bgColor = "bg-gray-100",
-  color,
+  width = "compactXS",
+  className = "",
 }) {
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen ${bgColor}`}>
-      <div 
-        className={`
-          w-full 
-          ${maxWidthClasses[maxWidth]}
-          ${colors[color]}
-          p-8
-          space-y-8 
-          bg-white 
-          rounded-lg 
-          shadow-md
-          ${className}
-        `}
-      >
-        {children}
+    <div className="w-full flex justify-center">
+      <div className={`w-full ${WIDTHS[width]}`}>
+        <div
+          className={`
+            h-[100dvh]
+            bg-white
+            rounded-2xl
+            shadow-lg
+            overflow-y-hidden  
+            overscroll-contain
+            scrollbar-gutter-stable
+            flex
+            flex-col
+            ${className}
+          `}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
-} 
+}
+
+export default PageContainer;

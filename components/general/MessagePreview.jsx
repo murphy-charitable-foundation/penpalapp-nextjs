@@ -1,6 +1,10 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import { formatTimestamp } from "@/app/utils/dateHelpers";
+import Link from "next/link";
+
 
 const MessagePreview = ({
   profileImage,
@@ -12,37 +16,14 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  id
 }) => {
+  const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "";
-    const date =
-      typeof timestamp.toDate === "function"
-        ? timestamp.toDate()
-        : new Date(timestamp.seconds * 1000);
-
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    const timeString = date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    if (date.toDateString() === today.toDateString()) {
-      return `Today ${timeString}`;
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday ${timeString}`;
-    }
-
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    router.push(`/profile-view/${id}`);
   };
 
   const getStatusIcon = () => {
@@ -76,13 +57,20 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        <Image
-          src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
-          width={36}
-          height={36}
-        />
+        <div
+          onClick={handleProfileClick}
+          className="cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
+          <Image
+            src={imageSrc}
+            alt={`${name}'s profile`}
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            width={36}
+            height={36}
+          />
+        </div>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
@@ -95,7 +83,7 @@ const MessagePreview = ({
               <div className="text-sm text-gray-500">{country}</div>
             </div>
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
-              {formatDate(lastMessageDate)}
+              {formatTimestamp(lastMessageDate)}
             </div>
           </div>
         </div>
