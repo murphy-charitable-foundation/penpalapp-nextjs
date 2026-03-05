@@ -1,61 +1,41 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-
-import Button from "../../components/general/Button";
-import { PageBackground } from "../../components/general/PageBackground";
-import  PageContainer from "../../components/general/PageContainer";
-import { PageHeader } from "../../components/general/PageHeader";
+import Link from "next/link";
 
 export default function Welcome() {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    const value = localStorage.getItem("userFirstName");
+    if (value) {
+      setFirstName(value);
+    }
+  }, []);
 
   return (
-    <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
-        {/* HEADER */}
-        <PageHeader title="Welcome" image={false} />
+    <div className="min-h-screen !bg-[#034792]">
+      <div className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
+        <div className="relative w-full h-[50vh] bg-[url('/welcome.png')] bg-cover bg-center" />
 
-        {/* CONTENT – NO SCROLL */}
-        <div className="px-6 pb-8 flex flex-col items-center text-center gap-6 pt-6">
-          {/* IMAGE */}
-          <div className="w-full aspect-[4/3] max-h-[45vh] relative overflow-hidden rounded-xl">
-            <Image
-              src="/welcome.png"
-              alt="Picture of kids"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
+        <h3 className="pt-16 text-center w-full font-[700] text-2xl">
+          Welcome, {firstName}
+        </h3>
 
-          {/* TEXT */}
-          <p className="leading-relaxed text-gray-700">
-            We are so happy to be here, thanks for your support.
-            <br />
-            Now you are part of the family.
-          </p>
-
-          {/* CTA */}
-          <Button
-            btnText="Continue"
-            color="blue"
-            onClick={() =>
-              startTransition(() => {
-                router.push("/edit-profile-user-image");
-              })
-            }
-          />
+        <div className="text-center w-full pt-5 flex-1">
+          We are so happy to be here, thanks for your support. Now you are part
+          of the family.
         </div>
-      </PageContainer>
-    </PageBackground>
+
+        <div className="text-center w-full pt-10 pb-20">
+          <Link href="/edit-profile-user-image">
+            <button className="bg-white text-[#111111] px-16 py-2 rounded-full font-semibold">
+              Continue
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -20,7 +20,6 @@ export default function EditProfileUserImage() {
   const [newProfileImage, setNewProfileImage] = useState(null);
   const [previewURL, setPreviewURL] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
-
   const [isSaving, setIsSaving] = useState(false);
 
   const cropperRef = useRef();
@@ -30,43 +29,28 @@ export default function EditProfileUserImage() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log(auth);
-      if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          // setImage(userData.photo_uri || '/murphylogo.png');
-          setNewProfileImage(userData.photo_uri || "/murphylogo.png");
-          setPreviewURL(userData.photo_uri || "/murphylogo.png");
-        }
-      }
+      if (!auth.currentUser) return;
+      const docSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+      if (!docSnap.exists()) return;
+      const userData = docSnap.data();
+      setNewProfileImage(userData.photo_uri || "/murphylogo.png");
+      setPreviewURL(userData.photo_uri || "/murphylogo.png");
     };
     fetchUserData();
   }, [auth.currentUser]);
 
   useEffect(() => {
-    setIsSaving(false);
-
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
         router.push("/login"); // Redirect to login page
       }
     });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
 
   const handleCrop = () => {
-    if (
-      cropperRef.current &&
-      typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
-    ) {
-      const canvas = cropperRef.current.cropper.getCroppedCanvas();
-      canvas.toBlob((blob) => {
+    if (cropperRef.current?.cropper?.getCroppedCanvas) {
+      cropperRef.current.cropper.getCroppedCanvas().toBlob((blob) => {
         setCroppedImage(blob);
       });
     }
@@ -77,11 +61,21 @@ export default function EditProfileUserImage() {
   };
 
   const saveImage = async () => {
-    setIsSaving(true);
-
     const uid = auth.currentUser?.uid;
 
-    if (!uid) return; // Make sure uid is available
+    if (!uid) {
+      logError(new Error("No user uid found"), {
+        description: "Save image error",
+      });
+      return;
+    }
+
+    if (!croppedImage) {
+      alert("请先裁剪图片");
+      return;
+    }
+
+    setIsSaving(true);
 
     uploadFile(
       croppedImage,
@@ -99,7 +93,7 @@ export default function EditProfileUserImage() {
           await updateDoc(doc(db, "users", uid), { photo_uri: url });
           router.push("/profile");
         }
-      }
+      },
     );
     logButtonEvent("Save Profile Picture clicked!", "/edit-profile-user-image");
   };
@@ -117,7 +111,7 @@ export default function EditProfileUserImage() {
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
-          <PageHeader title="Edit image" image={false}/>
+          <PageHeader title="Edit image" image={false} />
 
           {/* ===== SINGLE SCROLLER ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 flex flex-col items-center gap-6">

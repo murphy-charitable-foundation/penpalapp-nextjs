@@ -23,11 +23,9 @@ export default function Dropdown({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  //safety guard
+  // safety guard
   const safeValue =
-    typeof currentValue === "string" && currentValue.trim()
-      ? currentValue
-      : "";
+    typeof currentValue === "string" && currentValue.trim() ? currentValue : "";
 
   const displayText = safeValue || placeholder;
 
@@ -47,12 +45,8 @@ export default function Dropdown({
           ${safeValue ? "border-black" : "border-gray-300"}
         `}
       >
-
-
         <span
-          className={`truncate ${
-            safeValue ? "text-gray-900" : "text-gray-500"
-          }`}
+          className={`truncate ${safeValue ? "text-gray-900" : "text-gray-500"}`}
         >
           {displayText}
         </span>
