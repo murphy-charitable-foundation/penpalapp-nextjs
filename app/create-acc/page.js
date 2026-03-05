@@ -109,14 +109,9 @@ export default function CreateAccount() {
         birthday,
         connected_penpals_count: 0,
       });
-      // Create a document in Firestore in "users" collection with UID as the document key
-      await setDoc(doc(db, "users", uid), {
-        created_at: new Date(),
-        first_name: firstName,
-        last_name: lastName,
-        birthday,
-        connected_penpals_count: 0,
-      });
+
+      // TODO: loop through all the other users that are connected with the current uid and
+      // if they are not connected with the current user, we would connect them
 
       localStorage.setItem("userFirstName", firstName);
       logButtonEvent("Create Account Button Clicked!", "/create-acc");
