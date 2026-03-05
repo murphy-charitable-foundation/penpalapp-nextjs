@@ -61,6 +61,18 @@ export default function Dropdown({
 
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-md">
+          {safeValue && (
+            <button
+              type="button"
+              onClick={() => {
+                valueChange("");
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 border-b"
+            >
+              ✕ Clear Selection
+            </button>
+          )}
           {options.map((opt) => (
             <button
               key={opt}
