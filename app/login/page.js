@@ -4,21 +4,48 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import Link from "next/link";
+import Image from "next/image";
+import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
+
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { usePageAnalytics } from "../useAnalytics";
+import { useEffect, useRef } from "react";
+import {
+  logInEvent,
+  logButtonEvent,
+  logLoadingTime,
+} from "../utils/analytics";
+import { useCachedUsers } from "../contexts/CachedUserContext";
 import { PageBackground } from "../../components/general/PageBackground";
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { hydrated, addCachedUser, cachedUsers } = useCachedUsers();
+  const hasRedirected = useRef(false);
+
+  usePageAnalytics(`/login`);
+
+  // Only depend on [hydrated]. Do NOT add searchParams or cachedUsers - searchParams
+  // gets a new reference every render and causes this effect to run 20+ times/sec.
+  useEffect(() => {
+    if (!hydrated || hasRedirected.current) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("force")) return;
+    if (cachedUsers?.length > 0) {
+      hasRedirected.current = true;
+      router.replace("/choose-account");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,11 +62,20 @@ export default function Login() {
         password
       );
 
+
       const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
+      const data = userSnap.data()
 
       if (userSnap.exists()) {
+        addCachedUser({
+          id: uid,
+          email,
+          first_name: data.first_name ?? "",
+          last_name: data.last_name ?? "",
+          photo_uri: data?.photo_uri ?? "",
+        });
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
