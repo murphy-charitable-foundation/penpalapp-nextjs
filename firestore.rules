@@ -119,17 +119,43 @@ service cloud.firestore {
             (request.resource.data.status == 'draft' || request.resource.data.status == 'pending_review');
         }
 
-        function isUpdatedLetterValid() {
-          return (
+        function isAuthorStatusUpdate() {
+          return isMyLetter() &&
             request.resource.data.sent_by == resource.data.sent_by &&
             request.resource.data.created_at == resource.data.created_at &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status',
+              'content',
+              'updated_at',
+              'drafted_at',
+              'attachments',
+              'unread',
+              'deleted'
+            ]) &&
             (
               request.resource.data.status == 'draft' ||
               (resource.data.status == 'draft' && request.resource.data.status == 'pending_review') ||
               (resource.data.status == 'draft' && request.resource.data.status == 'sent') ||
               (resource.data.status == 'pending_review' && request.resource.data.status == 'pending_review')
-            )
-          ) || isAdmin();
+            );
+        }
+
+        function isAdminModerationUpdate() {
+          return isAdmin() &&
+            request.resource.data.sent_by == resource.data.sent_by &&
+            request.resource.data.created_at == resource.data.created_at &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status',
+              'updated_at',
+              'reviewed_at',
+              'rejection_reason',
+              'unread'
+            ]) &&
+            (
+              request.resource.data.status == 'pending_review' ||
+              request.resource.data.status == 'sent' ||
+              request.resource.data.status == 'rejected'
+            );
         }
 
         function isDraftContentUpdate() {
@@ -163,7 +189,7 @@ service cloud.firestore {
           isLetterSentOrPendingReviewOrSelfOrAdmin();
         allow update: if isSignedIn() &&
           isLetterboxMemberUsingGet() &&
-          ((isMyLetter() && isUpdatedLetterValid()) || isSettingRead() || isDraftContentUpdate());
+          (isAuthorStatusUpdate() || isAdminModerationUpdate() || isSettingRead() || isDraftContentUpdate());
         allow delete: if isSignedIn() && isAdmin();
       }
     }
