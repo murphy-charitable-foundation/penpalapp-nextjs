@@ -109,7 +109,7 @@ service cloud.firestore {
 
         function isLetterSentOrPendingReviewOrSelfOrAdmin() {
           return resource.data.status == 'sent' ||
-            (resource.data.status == 'pending_review' && isLetterboxMemberUsingGet()) ||
+            (resource.data.status == 'pending_review' && isMyLetter()) ||
             isMyLetter() ||
             isAdmin();
         }
