@@ -62,8 +62,7 @@ export async function POST(req) {
     const userDocRef = db.collection("users").doc(uid);
 
     const userSnap = await userDocRef.get();
-    // Case 1: Device already registered
-    if (userSnap.exists && userSnap.data().fcmToken) {
+    if (userSnap.exists) {
       // Ensure user is attached to same device-group
       await userDocRef.set({ fcmToken }, { merge: true });
       return Response.json({
