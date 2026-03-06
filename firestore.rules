@@ -162,9 +162,12 @@ service cloud.firestore {
               'deleted'
             ]) &&
             (
-              request.resource.data.status == 'draft' ||
-              (resource.data.status == 'draft' && request.resource.data.status == 'pending_review') ||
-              (resource.data.status == 'draft' && request.resource.data.status == 'sent') ||
+              (resource.data.status == 'draft' &&
+                (
+                  request.resource.data.status == 'draft' ||
+                  request.resource.data.status == 'pending_review' ||
+                  request.resource.data.status == 'sent'
+                )) ||
               (resource.data.status == 'pending_review' && request.resource.data.status == 'pending_review')
             );
         }
@@ -228,7 +231,15 @@ service cloud.firestore {
     }
 
     match /hobbies/{hobbyId} {
-      allow read, list, create: if true;
+      function isValidHobbyCreate() {
+        return request.resource.data.keys().hasOnly(['hobby']) &&
+          request.resource.data.hobby is string &&
+          request.resource.data.hobby.size() >= 2 &&
+          request.resource.data.hobby.size() <= 40;
+      }
+
+      allow read, list: if true;
+      allow create: if isSignedIn() && isValidHobbyCreate();
     }
 
     match /fcmTokens/{token} {
