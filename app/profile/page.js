@@ -67,6 +67,7 @@ export default function EditProfile() {
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [userType, setUserType] = useState("international_buddy");
+  const [notification, setNotification] = useState(null);
 
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
   const [profession, setProfession] = useState("");
