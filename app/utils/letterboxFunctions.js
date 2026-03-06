@@ -15,8 +15,13 @@ const getUserDoc = async () => {
 export const getUserPfp = async(uid) => {
   const path = `profile/${uid}/profile-image`;
   const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try {
+    const downloaded = await getDownloadURL(photoRef);
+    return downloaded;
+  } catch (e) {
+    if (e?.code === "storage/object-not-found") return null;
+    throw e;
+  }
 }
 
 export const fetchLetterboxes = async () => {
@@ -254,15 +259,13 @@ export const fetchRecipients = async (id) => {
   for (const user of users) {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
-    try {
-      const downloaded = await getUserPfp(user.id);
-      members.push({ ...selUser.data(), id: user.id, pfp: downloaded });
-    } catch (e) {
-      logError(e, {
-        description: "Error fetching user:",
-      });
-      members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
-    }
+    const userData = selUser.data() || {};
+    members.push({
+      ...userData,
+      id: selectedUserDocRef.id,
+      pfp: userData.photo_uri || "",
+      photo_uri: userData.photo_uri || "",
+    });
   }
   return members;
 };

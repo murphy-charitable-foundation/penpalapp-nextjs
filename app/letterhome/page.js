@@ -12,7 +12,6 @@ import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
-  getUserPfp,
   fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
@@ -77,16 +76,11 @@ export default function Home() {
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
-              name: `${recipient.first_name ?? "Unknown"} ${
-                recipient.last_name ?? ""
-              }`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
               lastMessageDate: letter.created_at || "",
               status: letter.status || "",
               letterboxId: id || "",
-              isRecipient: letter?.sent_by?.id !== uid,
-              unread: letter?.unread || false,
               isRecipient: letter?.sent_by?.id !== uid,
               unread: letter?.unread || false,
             };
@@ -122,8 +116,7 @@ export default function Home() {
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
-          const downloaded = await getUserPfp(uid);
-          setProfileImage(downloaded || "");
+          setProfileImage(userData.photo_uri || "");
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
@@ -154,8 +147,7 @@ export default function Home() {
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
-            const downloaded = await getUserPfp(uid);
-            setProfileImage(downloaded || "");
+            setProfileImage(userData.photo_uri || "");
 
             // Show welcome message
             setShowWelcome(true);

@@ -113,14 +113,6 @@ export default function CreateAccount() {
         birthday,
         connected_penpals_count: 0,
       });
-      // Create a document in Firestore in "users" collection with UID as the document key
-      await setDoc(doc(db, "users", uid), {
-        created_at: new Date(),
-        first_name: firstName,
-        last_name: lastName,
-        birthday,
-        connected_penpals_count: 0,
-      });
 
       setShowCreate(false);
       localStorage.setItem("userFirstName", firstName);

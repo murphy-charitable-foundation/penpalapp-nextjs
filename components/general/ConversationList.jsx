@@ -4,7 +4,7 @@ const ConversationList = ({ conversations }) => {
   return (
     <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
       {conversations.map((conversation, i) => (
-        <div key={conversation.id}>
+        <div key={conversation.letterboxId ?? `${conversation.name}-${i}`}>
           <MessagePreview
             className={ i === 0 && 'first-letter relative'}
             profileImage={conversation.profileImage}
