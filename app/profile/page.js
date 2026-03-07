@@ -21,6 +21,8 @@ import NavBar from "../../components/bottom-nav-bar";
 import { usePageAnalytics } from "../useAnalytics";
 import { logError } from "../utils/analytics";
 
+/* ❗ If you add new fields to the user profile, update this file as well as the view profile page, pages/createChild API, and user-data-import page */
+
 export default function EditProfile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -36,6 +38,7 @@ export default function EditProfile() {
   const [hobbies, setHobbies] = useState([]);
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
+  const [userType, setUserType] = useState("");
 
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,12 +48,17 @@ export default function EditProfile() {
   const [dialogMessage, setDialogMessage] = useState("");
   const [isSaved, setIsSaved] = useState(false);
 
-  // Unsaved changes guard
+  // New fields from main
+  const [favoriteAnimal, setFavoriteAnimal] = useState("");
+  const [profession, setProfession] = useState("");
+  const [pronouns, setPronouns] = useState("");
+
+  // Unsaved changes guard (from HEAD)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const pendingNavRef = useRef(null);
 
-  // Bio modal
+  // Bio modal state
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
   const [tempBio, setTempBio] = useState("");
 
@@ -77,31 +85,41 @@ export default function EditProfile() {
       const snap = await getDoc(doc(db, "users", user.uid));
       if (!snap.exists()) return;
 
-      const d = snap.data();
-      setFirstName(d.first_name || "");
-      setLastName(d.last_name || "");
-      setBirthday(d.birthday || "");
-      setCountry(d.country || "");
-      setVillage(d.village || "");
-      setBio(d.bio || "");
-      setEducationLevel(d.education_level || "");
-      setIsOrphan(d.is_orphan ? "Yes" : "No");
-      setGuardian(d.guardian || "");
-      setDreamJob(d.dream_job || "");
-      setGender(d.gender || "");
-      setFavoriteColor(d.favorite_color || "");
-      setPhotoUri(d.photo_uri || "");
-      setHobbies(
-        Array.isArray(d.hobbies)
-          ? d.hobbies.map((h) => ({ id: h, label: h }))
-          : []
-      );
+      const userData = snap.data();
+
+      setFirstName(userData.first_name || "");
+      setLastName(userData.last_name || "");
+      setBirthday(userData.birthday || "");
+      setCountry(userData.country || "");
+      setVillage(userData.village || "");
+      setGender(userData.gender || "");
+      setBio(userData.bio || "");
+      setEducationLevel(userData.education_level || "");
+      setIsOrphan(userData.is_orphan ? "Yes" : "No");
+      setGuardian(userData.guardian || "");
+      setDreamJob(userData.dream_job || "");
+      setFavoriteColor(userData.favorite_color || "");
+      setPhotoUri(userData.photo_uri || "");
+      setUserType(userData.user_type || "");
+      setFavoriteAnimal(userData.favorite_animal || "");
+      setProfession(userData.profession || "");
+      setPronouns(userData.pronouns || "");
+
+      if (Array.isArray(userData.hobbies)) {
+        setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
+      } else if (userData.hobby) {
+        setHobbies([
+          { id: userData.hobby.toLowerCase(), label: userData.hobby },
+        ]);
+      } else {
+        setHobbies([]);
+      }
     };
 
     fetchProfile();
   }, [user]);
 
-  // Browser close / refresh guard
+  // Browser close / refresh guard (from HEAD)
   useEffect(() => {
     const handler = (e) => {
       if (!hasUnsavedChanges) return;
@@ -112,6 +130,7 @@ export default function EditProfile() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [hasUnsavedChanges]);
 
+  // Navigation guard (from HEAD)
   const attemptNavigate = (fn) => {
     if (!hasUnsavedChanges) {
       fn();
@@ -119,6 +138,12 @@ export default function EditProfile() {
     }
     pendingNavRef.current = fn;
     setShowLeaveDialog(true);
+  };
+
+  // Bio modal handler
+  const handleOpenBioModal = () => {
+    setTempBio(bio);
+    setIsBioModalOpen(true);
   };
 
   const saveProfileData = async () => {
@@ -139,6 +164,9 @@ export default function EditProfile() {
       gender,
       hobbies: hobbies.map((h) => h.id),
       favorite_color: favoriteColor,
+      profession,
+      favorite_animal: favoriteAnimal,
+      pronouns,
     };
 
     try {
@@ -189,6 +217,32 @@ export default function EditProfile() {
         ]}
       />
 
+      {/* Bio Modal */}
+      <Dialog
+        isOpen={isBioModalOpen}
+        onClose={() => setIsBioModalOpen(false)}
+        title="Edit Bio / Challenges"
+        content={
+          <textarea
+            className="w-full border border-gray-300 rounded-lg p-3 min-h-[150px] resize-none"
+            value={tempBio}
+            onChange={(e) => setTempBio(e.target.value)}
+            placeholder="Tell us about yourself or any challenges you face..."
+          />
+        }
+        buttons={[
+          { text: "Cancel", onClick: () => setIsBioModalOpen(false) },
+          {
+            text: "Save",
+            onClick: () => {
+              setBio(tempBio);
+              setHasUnsavedChanges(true);
+              setIsBioModalOpen(false);
+            },
+          },
+        ]}
+      />
+
       <PageContainer className="flex-1 flex flex-col bg-white">
         <PageHeader
           title="Profile"
@@ -196,128 +250,284 @@ export default function EditProfile() {
           onBack={() => attemptNavigate(() => router.push("/letterhome"))}
         />
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          <div className="relative w-40 h-40 mx-auto">
-            <Image
-              src={photoUri || "/murphylogo.png"}
-              fill
-              className="rounded-full object-cover"
-              alt="Profile"
-            />
-          </div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
+          {/* Profile image */}
+          <div className="rounded-2xl p-4">
+            <div className="relative w-40 h-40 mx-auto">
+              <Image
+                src={photoUri || "/murphylogo.png"}
+                fill
+                alt="Profile"
+                className="rounded-full object-cover"
+              />
+            </div>
 
-             <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <button
                 type="button"
-                onClick={() =>
-                  attemptNavigate(() =>
-                    router.push("/edit-profile-user-image")
-                  )
-                }
+                onClick={() => attemptNavigate(() => router.push("/edit-profile-user-image"))}
                 className="px-4 py-2 border border-gray-400 text-green-700 rounded-full hover:bg-gray-100 transition"
               >
                 Edit Photo
               </button>
             </div>
+          </div>
 
-          <div className="space-y-6">
-            <Input
-              label="First name"
-              value={firstName}
-              onChange={(e) => {
-                setFirstName(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-              error={errors.first_name}
-            />
+          <div className="space-y-6 mt-6">
+            {/* Personal Info */}
+            <div className="rounded-2xl bg-white p-4">
+              <h3 className="text-sm font-semibold text-secondary mb-4">
+                Personal Information
+              </h3>
 
-            <Input
-              label="Last name"
-              value={lastName}
-              onChange={(e) => {
-                setLastName(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-              error={errors.last_name}
-            />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  id="firstName"
+                  label="First name"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
+                  error={errors.first_name || ""}
+                />
+                <Input
+                  id="lastName"
+                  label="Last name"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
+                  error={errors.last_name || ""}
+                />
+              </div>
 
-            <Input
-              label="Country"
-              value={country}
-              onChange={(e) => {
-                setCountry(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-            />
+              <div className="mt-6 space-y-6">
+                <Input
+                  id="country"
+                  label="Country"
+                  value={country}
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
+                />
 
-            <Input
-              label="Village"
-              value={village}
-              onChange={(e) => {
-                setVillage(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-            />
+                {/* Pronouns */}
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500 mb-1">Pronouns</p>
+                  <Dropdown
+                    options={["He/Him", "She/Her", "Other"]}
+                    currentValue={pronouns}
+                    valueChange={(v) => {
+                      setPronouns(v);
+                      setHasUnsavedChanges(true);
+                    }}
+                    text="Pronouns"
+                  />
+                </div>
 
-            <Input
-              type="date"
-              label="Birthday"
-              value={birthday}
-              onChange={(e) => {
-                setBirthday(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-            />
+                {(userType === "child" || userType === "local_volunteer") && (
+                  <Input
+                    id="village"
+                    label="Village"
+                    value={village}
+                    onChange={(e) => {
+                      setVillage(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
+                  />
+                )}
 
-            <Dropdown
-              options={[
-                "Elementary",
-                "Middle",
-                "High School",
-                "College/University",
-                "No Grade",
-              ]}
-              currentValue={educationLevel}
-              valueChange={(v) => {
-                setEducationLevel(v);
-                setHasUnsavedChanges(true);
-              }}
-              text="Education level"
-            />
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Bio / Challenges</p>
+                  <button
+                    type="button"
+                    onClick={handleOpenBioModal}
+                    className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
+                  >
+                    <span className="truncate">
+                      {bio || "Add your bio or challenges..."}
+                    </span>
+                  </button>
+                </div>
 
-            <Input
-              label="Dream job"
-              value={dreamJob}
-              onChange={(e) => {
-                setDreamJob(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-            />
+                <Input
+                  type="date"
+                  id="birthday"
+                  label="Birthday"
+                  value={birthday}
+                  onChange={(e) => {
+                    setBirthday(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
+                />
+              </div>
+            </div>
 
-            <HobbySelect
-              value={hobbies}
-              onChange={(arr) => {
-                setHobbies(arr);
-                setHasUnsavedChanges(true);
-              }}
-              allowCustom
-              editable
-            />
+            {userType !== "admin" && (
+              <>
+                {/* Education */}
+                <div className="rounded-2xl bg-white p-4">
+                  <h3 className="text-sm font-semibold text-secondary mb-4">
+                    Education{" "}
+                    {(userType === "child" || userType === "local_volunteer") && (
+                      <>{"& Family"}</>
+                    )}
+                  </h3>
 
-            <Input
-              label="Favorite color"
-              value={favoriteColor}
-              onChange={(e) => {
-                setFavoriteColor(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-            />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500 mb-1">Education Level</p>
+                      <Dropdown
+                        options={[
+                          "Elementary",
+                          "Middle",
+                          "High School",
+                          "College/University",
+                          "No Grade",
+                        ]}
+                        currentValue={educationLevel}
+                        valueChange={(v) => {
+                          setEducationLevel(v);
+                          setHasUnsavedChanges(true);
+                        }}
+                        text="Education Level"
+                      />
 
-            <Button
-              btnText={isSaving ? <LoadingSpinner /> : "Save"}
-              onClick={saveProfileData}
-              disabled={isSaving}
-            />
+                      {(userType === "child" || userType === "local_volunteer") && (
+                        <>
+                          {/* Guardian */}
+                          <div className="md:col-span-2 pt-6">
+                            <p className="text-sm text-gray-500 mb-1">Guardian</p>
+                            <Dropdown
+                              options={[
+                                "Parents",
+                                "Adoptive Parents",
+                                "Aunt/Uncle",
+                                "Grandparents",
+                                "Other Family",
+                                "Friends",
+                                "Other",
+                              ]}
+                              currentValue={guardian}
+                              valueChange={(v) => {
+                                setGuardian(v);
+                                setHasUnsavedChanges(true);
+                              }}
+                              text="Guardian"
+                            />
+                          </div>
+
+                          {/* Orphan */}
+                          <div className="md:col-span-2 pt-6">
+                            <p className="text-sm text-gray-500 mb-1">Is Orphan</p>
+                            <Dropdown
+                              options={["Yes", "No"]}
+                              currentValue={isOrphan}
+                              valueChange={(v) => {
+                                setIsOrphan(v);
+                                setHasUnsavedChanges(true);
+                              }}
+                              text="Is Orphan"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interests */}
+                <div className="rounded-2xl bg-white p-4">
+                  <h3 className="text-sm font-semibold text-secondary mb-4">
+                    Interests
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {userType === "international_buddy" && (
+                      <>
+                        <Input
+                          id="profession"
+                          label="Profession"
+                          value={profession}
+                          onChange={(e) => {
+                            setProfession(e.target.value);
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                        <Input
+                          id="favoriteAnimal"
+                          label="Favorite animal"
+                          value={favoriteAnimal}
+                          onChange={(e) => {
+                            setFavoriteAnimal(e.target.value);
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                      </>
+                    )}
+
+                    {(userType === "child" || userType === "local_volunteer") && (
+                      <>
+                        <Input
+                          id="dreamjob"
+                          label="Dream job"
+                          value={dreamJob}
+                          onChange={(e) => {
+                            setDreamJob(e.target.value);
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                        <Input
+                          id="favoriteColor"
+                          label="Favorite color"
+                          value={favoriteColor}
+                          onChange={(e) => {
+                            setFavoriteColor(e.target.value);
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                        <Input
+                          id="favoriteAnimal"
+                          label="Favorite animal"
+                          value={favoriteAnimal}
+                          onChange={(e) => {
+                            setFavoriteAnimal(e.target.value);
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                      </>
+                    )}
+
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500 mb-1">Hobby</p>
+                      <HobbySelect
+                        value={hobbies}
+                        onChange={(arr) => {
+                          setHobbies(arr);
+                          setHasUnsavedChanges(true);
+                        }}
+                        allowCustom
+                        editable
+                        placeholder="Select or add hobbies"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Save */}
+            <div className="flex justify-center py-4">
+              <Button
+                btnText={isSaving ? <LoadingSpinner /> : "Save"}
+                disabled={isSaving}
+                onClick={saveProfileData}
+                rounded="rounded-full"
+              />
+            </div>
           </div>
         </div>
 
