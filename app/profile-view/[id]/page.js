@@ -14,7 +14,7 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
-import { set } from "nprogress";
+import AuthGuard from "../../../components/AuthGuard";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and user-data-import page */
 
@@ -82,7 +82,8 @@ export default function Page({ params }) {
   }, []);
 
 return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+  <AuthGuard>
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <div className="flex-1 min-h-0 flex justify-center">
 
       <PageContainer
@@ -193,6 +194,7 @@ return (
       </PageContainer>
     </div>
   </PageBackground>
+  </AuthGuard>
 );
 
 
