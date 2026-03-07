@@ -15,6 +15,7 @@ const ConversationList = ({ conversations }) => {
             status={c.status}
             isRecipient={c.isRecipient}
             unread={c.unread}
+            id={c.recipientId}
           />
         </li>
       ))}

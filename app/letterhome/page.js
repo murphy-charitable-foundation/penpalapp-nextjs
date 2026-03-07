@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import NavBar from "../../components/bottom-nav-bar";
-import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
   getUserPfp,
@@ -14,16 +12,11 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import LettersSkeleton from "../../components/loading/LettersSkeleton";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
-import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import Dialog from "../../components/general/Dialog";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 import AuthGuard from "../../components/AuthGuard";
@@ -35,8 +28,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
-
-  const router = useRouter();
 
   usePageAnalytics("/letterhome");
 
