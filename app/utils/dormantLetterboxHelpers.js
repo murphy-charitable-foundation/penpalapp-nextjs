@@ -51,6 +51,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       html: generateDormantLetterboxEmailTemplate({
         baseUrl,
         to: "Richard",
+        recipientName: "Richard",
         message,
         letterboxId,
       }),
@@ -64,6 +65,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       html: generateDormantLetterboxEmailTemplate({
         baseUrl,
         to: formatListWithAnd(membersNames),
+        recipientName: formatListWithAnd(membersNames),
         message,
         letterboxId,
       }),

@@ -2,6 +2,7 @@
 
 import { createContext, useState, useContext, useEffect } from "react";
 import { logError } from "../app/utils/analytics";
+import { auth } from "../app/firebaseConfig";
 
 const DormantLetterboxContext = createContext(undefined);
 
@@ -37,7 +38,7 @@ export const DormantLetterboxProvider = ({ children }) => {
     }
   }, []);
 
-  const handleDormantLetterboxWorker = () => {
+  const handleDormantLetterboxWorker = async () => {
     const dormantLetterboxTimestamp = localStorage.getItem("dormantLetterboxTimestamp");
     if (dormantLetterboxTimestamp) {
       const timestampDate = new Date(dormantLetterboxTimestamp);
@@ -51,10 +52,21 @@ export const DormantLetterboxProvider = ({ children }) => {
       }
     }
 
-    if (worker) {
-      setIsDormantLetterboxLoading(true);
-      worker.postMessage({});
+    if (!worker) return;
+    const user = auth?.currentUser;
+    if (!user) {
+      logError(new Error("Dormant letterbox: not signed in"), { description: "No auth user" });
+      return;
     }
+    let idToken;
+    try {
+      idToken = await user.getIdToken();
+    } catch (err) {
+      logError(err, { description: "Dormant letterbox: failed to get token" });
+      return;
+    }
+    setIsDormantLetterboxLoading(true);
+    worker.postMessage({ idToken });
   };
 
   return (

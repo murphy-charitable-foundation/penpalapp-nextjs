@@ -28,6 +28,13 @@ export default function AdminFilter({
   const [endFilter, setEndFilter] = useState(end || "2025-01-01");
   const [currentFilter, setCurrentFilter] = useState(status ? statusLabels.get(status) : "");
 
+  const toDateOrNull = (value) => {
+    if (value == null || value === "") return null;
+    if (value instanceof Date) return value;
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   useEffect(() => {
     setStatusFilter(status || "");
     setStartFilter(start !== 0 && start !== null ? start : "");
@@ -57,20 +64,20 @@ export default function AdminFilter({
         <div className=" flex flex-row justify-between">
           <label className="text-black mt-[auto] mb-[auto]">Start date:</label>
 
-          <DatePicker selected={startFilter}
+          <DatePicker selected={toDateOrNull(startFilter)}
           placeholderText={"Select a date"}
-          maxDate={endFilter} 
-          onChange={(date) => setStartFilter(date)} 
+          maxDate={toDateOrNull(endFilter)}
+          onChange={(date) => setStartFilter(date ?? "")} 
           className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
           calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
         </div>
         <div className="flex flex-row justify-between">
           <label className="text-black  mt-[auto] mb-[auto]" >End date:</label>
 
-          <DatePicker selected={endFilter}
-           placeholderText={"Select a date"} 
-           minDate={startFilter} 
-           onChange={(date) => setEndFilter(date)} 
+          <DatePicker selected={toDateOrNull(endFilter)}
+           placeholderText={"Select a date"}
+           minDate={toDateOrNull(startFilter)}
+           onChange={(date) => setEndFilter(date ?? "")} 
            className="w-full px-4 py-2 text-black border rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300"
            calendarClassName="rounded-lg shadow-xl bg-white border p-2"/>
         </div>

@@ -1,6 +1,7 @@
 const generateDormantLetterboxEmailTemplate = ({
   baseUrl,
   to,
+  recipientName,
   message,
   letterboxId,
 }) => {
@@ -98,7 +99,7 @@ const generateDormantLetterboxEmailTemplate = ({
 
               <h1>Reminder</h1>
 
-              <p>Hi ${to},</p>
+              <p>Hi ${recipientName || " "},</p>
 
               <p>${message}</p>
 

@@ -4,36 +4,87 @@ import { FieldPath } from "firebase-admin/firestore";
 import { db, auth } from "../../firebaseAdmin";
 import { sendEmail } from "../../utils/dormantLetterboxHelpers";
 
-export async function POST() {
+export async function POST(request) {
   if (auth == null) {
     return NextResponse.json({ message: "Admin is null." }, { status: 500 });
   }
   try {
+    const authHeader = request.headers.get("Authorization");
+    const idToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+    if (!idToken) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Missing or invalid Authorization header" },
+        { status: 401 }
+      );
+    }
+    let decodedToken;
+    try {
+      decodedToken = await auth.verifyIdToken(idToken);
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+    const uid = decodedToken.uid;
     if (!db) {
       return NextResponse.json(
         { error: "Database not initialized" },
         { status: 500 }
       );
     }
+    const userDoc = await db.collection("users").doc(uid).get();
+    const userData = userDoc.data();
+    if (!userDoc.exists || userData?.user_type !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden", message: "Only admin users can use this endpoint" },
+        { status: 403 }
+      );
+    }
 
     const letterboxSnapshot = await db.collection("letterbox").get();
     const letterBoxesPromises = letterboxSnapshot.docs.map(async (doc) => {
       const docData = doc.data();
-      const latestLetterSnapshot = await doc.ref
-        .collection("letters")
-        .orderBy("created_at", "desc")
-        .limit(1)
-        .get();
-
       let latestLetter = null;
-      if (!latestLetterSnapshot.empty) {
-        const letterDoc = latestLetterSnapshot.docs[0];
-        const letterData = letterDoc.data();
+
+      const denormalizedAt = docData.latest_letter_created_at;
+      if (denormalizedAt != null) {
         latestLetter = {
-          id: letterDoc.id,
-          created_at: letterData.created_at?.toDate?.(),
-          sent_by: letterData.sent_by?.id,
+          id: docData.latest_letter_id ?? null,
+          created_at: typeof denormalizedAt.toDate === "function" ? denormalizedAt.toDate() : denormalizedAt,
+          sent_by: docData.latest_letter_sent_by ?? null,
         };
+      }
+
+      if (latestLetter === null) {
+        const latestLetterSnapshot = await doc.ref
+          .collection("letters")
+          .orderBy("created_at", "desc")
+          .limit(1)
+          .get();
+
+        if (!latestLetterSnapshot.empty) {
+          const letterDoc = latestLetterSnapshot.docs[0];
+          const letterData = letterDoc.data();
+          const createdAt = letterData.created_at?.toDate?.();
+          const sentById = letterData.sent_by?.id ?? (typeof letterData.sent_by === "string" ? letterData.sent_by : null);
+          latestLetter = {
+            id: letterDoc.id,
+            created_at: createdAt,
+            sent_by: sentById,
+          };
+          try {
+            await doc.ref.update({
+              latest_letter_created_at: letterData.created_at,
+              latest_letter_id: letterDoc.id,
+              latest_letter_sent_by: sentById,
+            });
+          } catch (err) {
+            // Non-fatal: next run will query again
+          }
+        }
       }
 
       return {

@@ -47,11 +47,13 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full pl-3 pr-10 py-3 border rounded-md mb-6 appearance-none"
+            className="w-full pl-3 pr-10 py-3 border border-gray-300 rounded-md mb-6 appearance-none bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           >
-            <option value="">Select a reason…</option>
+            <option value="" className="bg-white text-gray-900">
+              Select a reason…
+            </option>
             {rejectionReasons.map((r) => (
-              <option key={r.category} value={r.category}>
+              <option key={r.category} value={r.category} className="bg-white text-gray-900">
                 {r.category}
               </option>
             ))}
@@ -72,8 +74,10 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
         {/* STICKY ACTION BAR */}
         <div className="bg-gray-50 border-t px-6 py-4">
           <button
-            className="block w-2/5 mx-auto py-4 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold"
+            type="button"
+            className="block w-2/5 mx-auto py-4 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-500"
             onClick={() => onSubmit(reason, feedback)}
+            disabled={!reason.trim()}
           >
             Reject
           </button>
