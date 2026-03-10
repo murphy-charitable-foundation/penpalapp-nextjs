@@ -260,11 +260,12 @@ export const fetchRecipients = async (id) => {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
     const userData = selUser.data() || {};
+    const downloaded = await getUserPfp(user.id);
     members.push({
       ...userData,
       id: selectedUserDocRef.id,
-      pfp: userData.photo_uri || "",
-      photo_uri: userData.photo_uri || "",
+      pfp: downloaded || "",
+      photo_uri: downloaded || userData.photo_uri || "",
     });
   }
   return members;

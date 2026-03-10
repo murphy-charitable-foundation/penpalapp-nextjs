@@ -12,6 +12,7 @@ import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
+  getUserPfp,
   fetchLatestLetterFromLetterbox,
   fetchLetterboxes,
   fetchRecipients,
@@ -72,7 +73,7 @@ export default function Home() {
 
             return {
               id: letter?.id,
-              profileImage: recipient?.photo_uri || "",
+              profileImage: recipient?.pfp || recipient?.photo_uri || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
@@ -116,7 +117,8 @@ export default function Home() {
           setUserName(userData.first_name || "Unknown User");
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
-          setProfileImage(userData.photo_uri || "");
+          const downloaded = await getUserPfp(uid);
+          setProfileImage(downloaded || "");
 
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
@@ -147,7 +149,8 @@ export default function Home() {
             setUserName(userData.first_name || "Unknown User");
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
-            setProfileImage(userData.photo_uri || "");
+            const downloaded = await getUserPfp(uid);
+            setProfileImage(downloaded || "");
 
             // Show welcome message
             setShowWelcome(true);
