@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
+import { PageBackground } from "../../components/general/PageBackground";
 import * as Sentry from "@sentry/nextjs";
 import {
   User,
@@ -21,10 +23,10 @@ import {
   Square,
   Palette,
 } from "lucide-react";
+
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import Dropdown from "../../components/general/Dropdown";
 import ProfileSection from "../../components/general/profile/ProfileSection";
 import Dialog from "../../components/general/Dialog";
@@ -62,7 +64,6 @@ export default function EditProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const [dialogMessage, setDialogMessage] = useState("");
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
@@ -77,21 +78,8 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  const { user, loading } = useUser();
   usePageAnalytics("/profile");
-
-  //Source of truth for auth state
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-        router.push("/login");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
 
   // Fetch profile data whenever React `user` changes
   useEffect(() => {
@@ -205,6 +193,10 @@ export default function EditProfile() {
     setTempBio(bio);
     setIsBioModalOpen(true);
   };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
