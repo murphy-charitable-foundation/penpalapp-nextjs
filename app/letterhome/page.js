@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, auth } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
 import { doc, getDoc } from "firebase/firestore";
 import NavBar from "../../components/bottom-nav-bar";
 import ConversationList from "../../components/general/ConversationList";
@@ -19,7 +20,6 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import AuthGuard from "../../components/AuthGuard";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -29,6 +29,7 @@ export default function Home() {
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
 
+  const { user } = useUser();
   usePageAnalytics("/letterhome");
 
   const getUserData = async (uid) => {
@@ -89,12 +90,11 @@ export default function Home() {
     }
   };
 
- useEffect(() => {
+  useEffect(() => {
   const fetchData = async () => {
     setIsLoading(true);
 
-    const user = auth.currentUser;
-    if (!user) return; // AuthGuard handles blocking
+    if (!user) return; // UserContext handles route protection
 
     const uid = user.uid;
     setUserId(uid);
@@ -117,10 +117,9 @@ export default function Home() {
   };
 
   fetchData();
-}, []);
+}, [user]);
 
   return (
-      <AuthGuard>
         <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
         <PageContainer
           width="compactXS"
@@ -161,5 +160,5 @@ export default function Home() {
           )}
         </PageContainer>
       </PageBackground>
-    </AuthGuard>);
+    );
 }
