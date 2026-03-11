@@ -59,7 +59,7 @@ export default function AdminFilter({
 
 
   return (
-    <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
+    <div className="bg-white rounded-xl border border-gray-200 mt-4 px-4 py-6">
       <form className="flex flex-col gap-6">
         <div className=" flex flex-row justify-between">
           <label className="text-black mt-[auto] mb-[auto]">Start date:</label>

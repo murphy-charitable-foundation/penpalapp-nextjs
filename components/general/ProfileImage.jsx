@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 
-export default function ProfileImage({ photo_uri, first_name, size = 12 }) {
+export default function ProfileImage({ photo_uri, first_name, size = 16}) {
     const pixelSize = size * 4;
   return (
     <div>

@@ -1,7 +1,10 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
+import { formatTimestamp } from "@/app/utils/dateHelpers";
 import Link from "next/link";
+
 
 const MessagePreview = ({
   profileImage,
@@ -15,8 +18,15 @@ const MessagePreview = ({
   unread = false,
   isAdmin = false,
   onClick,
+  id
 }) => {
+  const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
+
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    router.push(`/profile-view/${id}`);
+  };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "";
@@ -80,14 +90,20 @@ const MessagePreview = ({
       }`}
     >
       <div className="flex items-start">
-        <Image
-          src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
-          width={36}
-          height={36}
-        />
-
+        <div
+          onClick={handleProfileClick}
+          className="cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
+          <Image
+            src={imageSrc}
+            alt={`${name}'s profile`}
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            width={36}
+            height={36}
+          />
+        </div>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>

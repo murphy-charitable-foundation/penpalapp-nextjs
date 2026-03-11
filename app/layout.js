@@ -4,6 +4,8 @@ import NavigationStateManager from '../components/loading/NavigationStateManager
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
 import { DormantLetterboxProvider } from '../context/DormantLetterboxContext';
+import { UserProvider } from '../contexts/UserContext'
+import { NavigationProvider } from '../contexts/NavigationContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,13 +17,21 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={inter.className}>
       <DormantLetterboxProvider>
-        <Suspense fallback={<LoadingSpinner />}>
-          <NavigationStateManager />
-          {children}
-        </Suspense>          
-      </DormantLetterboxProvider>
+        <UserProvider>
+          <NavigationProvider>
+            <Suspense fallback={<LoadingSpinner />}>
+              <NavigationStateManager />
+              {children}
+            </Suspense>
+
+        </NavigationProvider>
+        </UserProvider>       
+        </DormantLetterboxProvider>
       </body>
     </html>
   )

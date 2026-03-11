@@ -55,9 +55,7 @@ function FilterButton({ activeFilter, setActiveFilter, isLoadingMore }) {
               <path d="M5.95 6.95l4 4 4-4 .707.708L10 12.364 5.242 7.657l.707-.707z" />
             </svg>
           ) : (
-            <svg className="w-6 h-7 ml-2 fill-current" viewBox="0 0 20 20">
-              <path d="M14.05 13.05l-4-4-4 4-.707-.708L10 7.636l4.758 4.707-.707.707z" />
-            </svg>
+            <path d="M6 7l4 4 4-4" />
           )}
         </span>
       </Button>
