@@ -165,8 +165,7 @@ service cloud.firestore {
               (resource.data.status == 'draft' &&
                 (
                   request.resource.data.status == 'draft' ||
-                  request.resource.data.status == 'pending_review' ||
-                  request.resource.data.status == 'sent'
+                  request.resource.data.status == 'pending_review'
                 )) ||
               (resource.data.status == 'pending_review' && request.resource.data.status == 'pending_review')
             );
