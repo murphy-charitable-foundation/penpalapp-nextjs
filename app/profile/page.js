@@ -34,6 +34,9 @@ import NavBar from "../../components/bottom-nav-bar";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
+import { set } from "nprogress";
+
+/* ❗ If you add new fields to the user profile, update this file as well as the view profile page, pages/createChild API, and user-data-import page */
 
 export default function EditProfile() {
   const [firstName, setFirstName] = useState("");
@@ -64,6 +67,10 @@ export default function EditProfile() {
   const [dialogTitle, setDialogTitle] = useState("");
   const [isSaved, setIsSaved] = useState(false);
   const [userType, setUserType] = useState("international_buddy");
+
+  const [favoriteAnimal, setFavoriteAnimal] = useState("");
+  const [profession, setProfession] = useState("");
+  const [pronouns, setPronouns] = useState("");
 
   // Modal state
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
@@ -114,6 +121,9 @@ export default function EditProfile() {
         setFavoriteColor(userData.favorite_color || "");
         setPhotoUri(userData.photo_uri || "");
         setUserType(userData.user_type || "");
+        setFavoriteAnimal(userData.favorite_animal || "");
+        setProfession(userData.profession || "");
+        setPronouns(userData.pronouns || "");
 
         if (Array.isArray(userData.hobbies)) {
           setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
@@ -149,13 +159,15 @@ export default function EditProfile() {
       village,
       bio,
       education_level: educationLevel,
-      is_orphan: String(isOrphan).toLowerCase() === "yes",
+      is_orphan: String(isOrphan).toLowerCase() === "Yes",
       guardian,
       dream_job: dreamJob,
       hobby,
       hobbies: hobbies.map((h) => h.id),
       favorite_color: favoriteColor,
-      gender,
+      profession: profession,
+      favorite_animal: favoriteAnimal,
+      pronouns: pronouns,
     };
 
     const newErrors = {};
@@ -271,7 +283,7 @@ export default function EditProfile() {
               {/* Personal Info */}
               <div className="rounded-2xl bg-white p-4">
                 <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Personal Information:
+                  Personal Information
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -300,10 +312,8 @@ export default function EditProfile() {
                   />
 
                   {/* Gender */}
-                  <div className="rounded-2xl bg-white p-4">
-                    <h3 className="text-sm font-semibold text-secondary mb-4">
-                      Pronouns:
-                    </h3>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-500 mb-1">Pronouns</p>
 
                     <Dropdown
                       options={[
@@ -311,19 +321,21 @@ export default function EditProfile() {
                         "She/Her",
                         "Other"
                       ]}
-                      currentValue={gender}
-                      valueChange={setGender}
+                      currentValue={pronouns}
+                      valueChange={setPronouns}
                       text="Pronouns"
                     />
                   </div>
 
-                  {userType !== "international_buddy" && (
-                    <Input
-                      id="village"
-                      label="Village"
-                      value={village}
-                      onChange={(e) => setVillage(e.target.value)}
-                    />
+                  {(userType == "child" || userType == "local_volunteer") && (
+                    <>
+                      <Input
+                        id="village"
+                        label="Village"
+                        value={village}
+                        onChange={(e) => setVillage(e.target.value)}
+                      />
+                    </>
                   )}
 
                   <div>
@@ -350,63 +362,134 @@ export default function EditProfile() {
                   />
                 </div>
               </div>
+              {userType !== 'admin' && (
+                <>
+                  {/* Education */}
+                  <div className="rounded-2xl bg-white p-4">
+                    <h3 className="text-sm font-semibold text-secondary mb-4">
+                      Education {(userType == "child" || userType == "local_volunteer") && (<>{"& Family"}</>)}
+                    </h3>
 
-              {/* Education */}
-              <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Education:
-                </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-gray-500 mb-1">Education Level</p>
 
-                <Dropdown
-                  options={[
-                    "Elementary",
-                    "Middle",
-                    "High School",
-                    "College/University",
-                    "No Grade",
-                  ]}
-                  currentValue={educationLevel}
-                  valueChange={setEducationLevel}
-                  text="Education Level"
-                />
-              </div>
 
-              {/* Interests */}
-              <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Interests:
-                </h3>
+                        <Dropdown
+                          options={[
+                            "Elementary",
+                            "Middle",
+                            "High School",
+                            "College/University",
+                            "No Grade",
+                          ]}
+                          currentValue={educationLevel}
+                          valueChange={setEducationLevel}
+                          text="Education Level"
+                        />
+                        {(userType == "child" || userType == "local_volunteer") && (
+                          <>
+                            {/* Guardian */}
+                            <div className="md:col-span-2 pt-6">
+                              <p className="text-sm text-gray-500 mb-1">Guardian</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    id="dreamjob"
-                    label="Dream job"
-                    value={dreamJob}
-                    onChange={(e) => setDreamJob(e.target.value)}
-                  />
+                              <Dropdown
+                                options={[
+                                  "Parents",
+                                  "Adoptive Parents",
+                                  "Aunt/Uncle",
+                                  "Grandparents",
+                                  "Other Family",
+                                  "Friends",
+                                  "Other",
+                                ]}
+                                currentValue={guardian}
+                                valueChange={setGuardian}
+                                text="Guardian"
+                              />
+                            </div>
+                            {/* Orphan */}
+                            <div className="md:col-span-2 pt-6">
+                              <p className="text-sm text-gray-500 mb-1">Is Orphan</p>
 
-                  <Input
-                    id="favoriteColor"
-                    label="Favorite color"
-                    value={favoriteColor}
-                    onChange={(e) => setFavoriteColor(e.target.value)}
-                  />
-
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-gray-500 mb-1">Hobby</p>
-                    <HobbySelect
-                      value={hobbies}
-                      onChange={(arr) => {
-                        setHobbies(arr);
-                        setHobby(arr[0]?.label || "");
-                      }}
-                      allowCustom
-                      editable
-                      placeholder="Select or add hobbies"
-                    />
+                              <Dropdown
+                                options={["Yes", "No"]}
+                                currentValue={isOrphan}
+                                valueChange={setIsOrphan}
+                                text="Is Orphan"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+
+                  {/* Interests */}
+                  <div className="rounded-2xl bg-white p-4">
+                    <h3 className="text-sm font-semibold text-secondary mb-4">
+                      Interests
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {(userType == "international_buddy") && (
+                        <>
+                          <Input
+                            id="profession"
+                            label="Profession"
+                            value={profession}
+                            onChange={(e) => setProfession(e.target.value)}
+                          />
+
+                          <Input
+                            id="favoriteAnimal"
+                            label="Favorite animal"
+                            value={favoriteAnimal}
+                            onChange={(e) => setFavoriteAnimal(e.target.value)}
+                          />
+                        </>
+                      )}
+                      {(userType == "child" || userType == "local_volunteer") && (
+                        <>
+                          <Input
+                            id="dreamjob"
+                            label="Dream job"
+                            value={dreamJob}
+                            onChange={(e) => setDreamJob(e.target.value)}
+                          />
+
+                          <Input
+                            id="favoriteColor"
+                            label="Favorite color"
+                            value={favoriteColor}
+                            onChange={(e) => setFavoriteColor(e.target.value)}
+                          />
+
+                          <Input
+                            id="favoriteAnimal"
+                            label="Favorite animal"
+                            value={favoriteAnimal}
+                            onChange={(e) => setFavoriteAnimal(e.target.value)}
+                          />
+                        </>
+                      )}
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-gray-500 mb-1">Hobby</p>
+                        <HobbySelect
+                          value={hobbies}
+                          onChange={(arr) => {
+                            setHobbies(arr);
+                            setHobby(arr[0]?.label || "");
+                          }}
+                          allowCustom
+                          editable
+                          placeholder="Select or add hobbies"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Save */}
               <div className="flex justify-center py-4">
