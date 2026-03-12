@@ -326,6 +326,10 @@ const currentLetter =
                     if (!currentLetter) return;
 
                     const { id, letterboxId } = currentLetter;
+                    const previousStatus = currentLetter.status;
+                    const previousModeratorId = currentLetter.moderator_id;
+                    const previousSelectedLetter = selectedLetter;
+                    const previousActiveView = activeView;
 
                     updateLocalLetter(id, {
                       status: "approved",
@@ -345,6 +349,13 @@ const currentLetter =
                       });
                     } catch (err) {
                       console.warn("Approve blocked", err);
+                      updateLocalLetter(id, {
+                        status: previousStatus,
+                        moderator_id: previousModeratorId,
+                      });
+                      setReviewAction(null);
+                      setSelectedLetter(previousSelectedLetter);
+                      setActiveView(previousActiveView);
                     }
                   }}
                   onReject={() => setActiveView("reject")}
@@ -357,8 +368,6 @@ const currentLetter =
                   letter={selectedLetter}
                   onClose={() => setActiveView("review")}
                   onSubmit={async (reason, feedback) => {
-                    setReviewAction("rejected");
-
                     try {
                       const ref = doc(
                         db,
@@ -374,6 +383,7 @@ const currentLetter =
                         rejection_feedback: feedback,
                         updated_at: new Date(),
                       });
+                      setReviewAction("rejected");
                     } catch (err) {
                       console.warn("Reject blocked by Firestore rules", err);
                     }

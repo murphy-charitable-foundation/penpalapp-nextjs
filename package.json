@@ -13,6 +13,7 @@
     "@ffmpeg/util": "^0.12.2",
     "@firebase/storage": "^0.12.3",
     "@radix-ui/react-slider": "^1.2.3",
+    "@sendgrid/mail": "^8.1.6",
     "@sentry/nextjs": "^8.26.0",
     "@sentry/react": "^9.43.0",
     "compressorjs": "^1.2.1",
@@ -36,7 +37,8 @@
     "react-dropzone": "^14.2.3",
     "react-icons": "^5.5.0",
     "react-password-checklist": "^1.8.1",
-    "react-select": "^5.8.0"
+    "react-select": "^5.8.0",
+    "sendgrid": "^5.2.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.17",
