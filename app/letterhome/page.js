@@ -13,11 +13,7 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import LettersSkeleton from "../../components/loading/LettersSkeleton";
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
-import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -76,8 +72,6 @@ export default function Home() {
               letterboxId: id || "",
               isRecipient: letter?.sent_by?.id !== uid,
               unread: letter?.unread || false,
-              isRecipient: letter?.sent_by?.id !== uid,
-              recipientId: recipient.id || "",
             };
           })
         );
@@ -87,7 +81,7 @@ export default function Home() {
         throw new Error("No letterboxes found.");
       }
     } catch (err) {
-      logError(error, {
+      logError(err, {
         description: "Error fetching data:",
       });
       setError("Failed to load data.");
@@ -116,8 +110,11 @@ export default function Home() {
           const userConversations = await getConversations(uid);
           setConversations(userConversations);
         } catch (err) {
-          setError("Error fetching user data or conversations.");
-          console.error(err);
+          logError(err, {
+            description: "Error fetching conversations",
+          });
+          setError("Failed to load data.");
+          throw err;
         } finally {
           setIsLoading(false);
         }
@@ -126,60 +123,6 @@ export default function Home() {
 
     return () => unsubscribe();
   }, [router]);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        try {
-          const uid = auth.currentUser.uid;
-          setUserId(uid);
-
-          const docRef = doc(db, "users", uid);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setUserName(userData.first_name || "Unknown User");
-            const downloaded = await getUserPfp(uid);
-            setProfileImage(downloaded || "");
-          } else {
-            console.log("No such document!");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setError("Failed to load user data");
-        }
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //   setIsLoading(true);
-  //     try {
-  //       const uid = user.uid;
-
-  //       const userData = await getUserData(uid);
-  //       setUserName(userData.first_name || "Unknown User");
-  //       setCountry(userData.country || "Unknown Country");
-  //       setUserType(userData.user_type || "Unknown Type");
-  //       setProfileImage(userData?.photo_uri || "");
-
-  //       const userConversations = await getConversations(uid);
-  //       setConversations(userConversations);
-  //     } catch (err) {
-  //       setError("Error fetching user data or conversations.");
-  //       console.error(err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  // };
-
-  //   fetchUserData();
-  // }, []);
-
 
 return (
   <>

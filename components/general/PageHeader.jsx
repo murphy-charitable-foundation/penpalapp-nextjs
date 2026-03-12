@@ -9,12 +9,13 @@ export function PageHeader({
   titleColor = "text-secondary",
   image = true,
   heading = true,
+  onBack,
   showBackButton = true,
   imageSize = "md",
   showBorder = true,
 }) {
   const imageWidth =
-    imageSize === "sm" ? 96 : imageSize === "lg" ? 200 : 160; // md default
+    imageSize === "sm" ? 96 : imageSize === "lg" ? 200 : 160;
 
   return (
     <>
@@ -27,7 +28,7 @@ export function PageHeader({
       >
         {/* LEFT */}
         <div className="w-8 flex justify-start">
-          {showBackButton && <BackButton size="xs" />}
+          {showBackButton && <BackButton size="xs" onBack={onBack} />}
         </div>
 
         {/* CENTER */}
@@ -58,10 +59,14 @@ export function PageHeader({
       {/* LOGO */}
       {image && (
         <div className="flex justify-center mb-4">
-          <Image src={logo} alt="Foundation Logo" width={imageWidth} priority />
+          <Image
+            src={logo}
+            alt="Foundation Logo"
+            width={imageWidth}
+            priority
+          />
         </div>
       )}
     </>
   );
 }
-
