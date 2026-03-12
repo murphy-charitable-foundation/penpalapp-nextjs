@@ -40,7 +40,11 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
-        router.push("/letterhome");
+        if (userSnap.data().user_type == "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/letterhome");
+        }
       } else {
         router.push("/create-acc");
       }
@@ -72,13 +76,14 @@ export default function Login() {
   };
 
   return (
-  <PageBackground>
-    <PageContainer maxWidth="md" padding="p-8">
-      {loading && <LoadingSpinner />}
+    <PageBackground>
+      <PageContainer>
+        <div className="px-6 py-8">
+          {loading && <LoadingSpinner />}
 
-      <PageHeader title="Login" />
+          <PageHeader title="Login" />
 
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
         <Input
           type="email"
           value={email}
@@ -135,8 +140,9 @@ export default function Login() {
             disabled={loading}
           />
         </div>
-      </form>
-    </PageContainer>
-  </PageBackground>
-);
+          </form>
+        </div>
+      </PageContainer>
+    </PageBackground>
+  );
 }

@@ -3,6 +3,7 @@ import './globals.css'
 import NavigationStateManager from '../components/loading/NavigationStateManager'
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
+import { DormantLetterboxProvider } from '../context/DormantLetterboxContext';
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 
@@ -23,14 +24,17 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
+      <DormantLetterboxProvider>
         <UserProvider>
           <NavigationProvider>
             <Suspense fallback={<LoadingSpinner />}>
               <NavigationStateManager />
               {children}
             </Suspense>
-          </NavigationProvider>
+
+        </NavigationProvider>
         </UserProvider>       
+        </DormantLetterboxProvider>
       </body>
     </html>
   )

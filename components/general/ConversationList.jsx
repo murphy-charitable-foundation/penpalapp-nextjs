@@ -1,25 +1,32 @@
-import MessagePreview from "./MessagePreview";
+import MessagePreview from "./MessagePreview.jsx";
 
-const ConversationList = ({ conversations }) => {
+const ConversationList = ({
+  conversations,
+  isAdmin = false,
+  onSelectConversation,
+}) => {
+
   return (
-    <ul className="w-full space-y-5 px-2 py-2">
-      {conversations.map((c, i) => (
-        <li key={c.letterboxId || c.id || i}>
+    <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1 mb-4">
+      {conversations.map((conversation, i) => (
+        <div key={`${conversation.letterboxId}-${conversation.id}-${i}`}>
           <MessagePreview
-            profileImage={c.profileImage}
-            name={c.name}
-            country={c.country}
-            lastMessage={c.lastMessage}
-            lastMessageDate={c.lastMessageDate}
-            letterboxId={c.letterboxId}
-            status={c.status}
-            isRecipient={c.isRecipient}
-            unread={c.unread}
-            id={c.recipientId}
+            className={i === 0 ? "first-letter relative" : ""}
+            profileImage={conversation.profileImage}
+            name={conversation.name}
+            country={conversation.country}
+            lastMessage={conversation.lastMessage}
+            lastMessageDate={conversation.lastMessageDate}
+            letterboxId={conversation.letterboxId}
+            status={conversation.status}
+            isRecipient={conversation.isRecipient}
+            unread={conversation.unread}
+            isAdmin={isAdmin}
+            onClick={() => onSelectConversation(conversation)}
           />
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 };
 

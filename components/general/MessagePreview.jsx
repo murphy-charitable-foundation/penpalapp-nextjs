@@ -16,6 +16,8 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  isAdmin = false,
+  onClick,
   id
 }) => {
   const router = useRouter();
@@ -24,6 +26,36 @@ const MessagePreview = ({
   const handleProfileClick = (e) => {
     e.preventDefault();
     router.push(`/profile-view/${id}`);
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "";
+    const date =
+      typeof timestamp.toDate === "function"
+        ? timestamp.toDate()
+        : new Date(timestamp.seconds * 1000);
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const timeString = date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    if (date.toDateString() === today.toDateString()) {
+      return `Today ${timeString}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return `Yesterday ${timeString}`;
+    }
+
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const getStatusIcon = () => {
@@ -44,9 +76,9 @@ const MessagePreview = ({
     return null;
   };
 
-  return (
-    <a
-      href={`/letters/${letterboxId}`}
+  // ✅ shared card UI
+  const CardContent = (
+    <div
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
@@ -55,7 +87,8 @@ const MessagePreview = ({
           : status === "pending_review"
           ? "bg-gray-50"
           : "bg-white"
-      }`}>
+      }`}
+    >
       <div className="flex items-start">
         <div
           onClick={handleProfileClick}
@@ -82,16 +115,19 @@ const MessagePreview = ({
               </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
+
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
-              {formatTimestamp(lastMessageDate)}
+              {formatDate(lastMessageDate)}
             </div>
           </div>
         </div>
       </div>
+
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}>
+        }`}
+      >
         {lastMessage ? (
           <div className="flex">
             {getStatusIcon() && (
@@ -117,7 +153,22 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </div>
+  );
+
+  // 🚨 ADMIN: modal-only (NO navigation)
+  if (isAdmin) {
+  return (
+    <div onClick={onClick}>
+      {CardContent}
+    </div>
+  );
+}
+  // 👤 USER: normal navigation
+  return (
+    <Link href={`/letters/${letterboxId}`}>
+      {CardContent}
+    </Link>
   );
 };
 

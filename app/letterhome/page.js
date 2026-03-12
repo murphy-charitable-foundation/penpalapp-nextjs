@@ -23,6 +23,7 @@ import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
