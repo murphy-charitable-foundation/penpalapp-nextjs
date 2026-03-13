@@ -1,12 +1,12 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-import NavigationStateManager from '../components/loading/NavigationStateManager'
-import { Suspense } from 'react'
-import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { UserProvider } from '../contexts/UserContext'
-import { NavigationProvider } from '../contexts/NavigationContext'
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Suspense } from "react";
 
-const inter = Inter({ subsets: ['latin'] })
+import NavigationStateManager from "../components/loading/NavigationStateManager";
+import { UserProvider } from "../contexts/UserContext";
+import { NavigationProvider } from "../contexts/NavigationContext";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: {
@@ -25,13 +25,13 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <UserProvider>
           <NavigationProvider>
-            <Suspense fallback={<LoadingSpinner />}>
+            <Suspense fallback={null}>
               <NavigationStateManager />
-              {children}
             </Suspense>
+            {children}
           </NavigationProvider>
-        </UserProvider>       
+        </UserProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -10,7 +10,6 @@ import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
-import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { PageBackground } from "../../components/general/PageBackground";
 
 export default function Login() {
@@ -74,8 +73,7 @@ export default function Login() {
   return (
   <PageBackground>
     <PageContainer maxWidth="md" padding="p-8">
-      {loading && <LoadingSpinner />}
-
+      
       <PageHeader title="Login" />
 
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

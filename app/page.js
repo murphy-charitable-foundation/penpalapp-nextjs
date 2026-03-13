@@ -7,7 +7,6 @@ import Button from "../components/general/Button";
 import logo from "../public/murphylogo.png";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import LoadingSpinner from "@/components/loading/LoadingSpinner";
 
 export default function Home() {
   const [isPending, startTransition] = useTransition();
@@ -31,13 +30,6 @@ export default function Home() {
 
 return (
   <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
-  {showSpinner && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-     <LoadingSpinner />
-    </div>
-  )}
-
-
   <PageContainer
     width="compactXS"
     padding="none"
@@ -83,8 +75,6 @@ return (
     <div className="text-center w-full pt-20 pb-10 px-10">
       <div className="mx-auto max-w-sm space-y-5">
 
-        {/*TODO: Button is inactive on first app load but works after a page refresh.
-        Likely related to initial state hydration or lifecycle timing.*/}
         <Button
           btnText="Log in"
           color="green"
