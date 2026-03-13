@@ -1,7 +1,7 @@
 // components/NavigationStateManager.jsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import LoadingSpinner from "../loading/LoadingSpinner";
 
@@ -9,166 +9,167 @@ export default function NavigationStateManager() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // UI states
   const [showSpinner, setShowSpinner] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  // Refs
   const currentUrlRef = useRef("");
-  const navStartRef = useRef(null);
-  const isNavigatingRef = useRef(false);
+  const navigationStartedRef = useRef(false);
+  const startTimeRef = useRef(null);
 
   const safetyTimerRef = useRef(null);
-  const finishTimerRef = useRef(null);
-  const exitTimerRef = useRef(null);
+  const hideTimerRef = useRef(null);
+  const fadeTimerRef = useRef(null);
 
-  // Prevent stale timers from older navigations
-  const runIdRef = useRef(0);
+  const MIN_DISPLAY_TIME = 250;
+  const FADE_OUT_TIME = 150;
+  const MAX_WAIT_TIME = 5000;
 
-  // Tunables
-  const minDisplayTime = 400;     // X ms (300–500 feels good)
-  const fadeOutDuration = 200;    // smooth hide duration
-  const maxHangTime = 8000;       // safety
-
-  // Keep current URL updated
+  // Keep the current route so we can avoid showing the spinner for the same page
   useEffect(() => {
     const qs = searchParams?.toString?.() || "";
     currentUrlRef.current = pathname + (qs ? `?${qs}` : "");
   }, [pathname, searchParams]);
 
-  const clearAllTimers = () => {
+  const clearTimers = () => {
     if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
-    if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
-    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
 
     safetyTimerRef.current = null;
-    finishTimerRef.current = null;
-    exitTimerRef.current = null;
+    hideTimerRef.current = null;
+    fadeTimerRef.current = null;
   };
 
-  const hardStop = useCallback(() => {
-    clearAllTimers();
-    setIsExiting(false);
+  const resetSpinner = () => {
+    clearTimers();
     setShowSpinner(false);
-    isNavigatingRef.current = false;
-    navStartRef.current = null;
-  }, []);
+    setIsExiting(false);
+    navigationStartedRef.current = false;
+    startTimeRef.current = null;
+  };
 
-  const startNavigation = useCallback(() => {
-    // Prevent duplicate starts
-    if (isNavigatingRef.current) return;
+  const startNavigation = () => {
+    // Prevent duplicate starts while a navigation is already in progress
+    if (navigationStartedRef.current) return;
 
-    isNavigatingRef.current = true;
-    navStartRef.current = Date.now();
-    const runId = ++runIdRef.current;
-
-    clearAllTimers();
-
-    // show immediately (same tick / next paint)
+    navigationStartedRef.current = true;
+    startTimeRef.current = Date.now();
     setIsExiting(false);
     setShowSpinner(true);
 
-    // Safety: never hang forever
+    // Safety fallback in case navigation gets stuck
     safetyTimerRef.current = setTimeout(() => {
-      // only if still same run
-      if (runIdRef.current === runId) hardStop();
-    }, maxHangTime);
-  }, [hardStop]);
+      resetSpinner();
+    }, MAX_WAIT_TIME);
+  };
 
-  const finishNavigation = useCallback(() => {
-    if (!isNavigatingRef.current || !navStartRef.current) return;
+  const finishNavigation = () => {
+    if (!navigationStartedRef.current || !startTimeRef.current) return;
 
-    const runId = runIdRef.current;
-    const elapsed = Date.now() - navStartRef.current;
-    const remaining = Math.max(0, minDisplayTime - elapsed);
+    const elapsed = Date.now() - startTimeRef.current;
+    const remaining = Math.max(0, MIN_DISPLAY_TIME - elapsed);
 
-    // Wait until minDisplayTime passes, then fade out, then unmount
-    finishTimerRef.current = setTimeout(() => {
-      if (runIdRef.current !== runId) return;
-
+    // Keep the spinner visible briefly, then fade it out
+    hideTimerRef.current = setTimeout(() => {
       setIsExiting(true);
 
-      exitTimerRef.current = setTimeout(() => {
-        if (runIdRef.current !== runId) return;
-        hardStop();
-      }, fadeOutDuration);
+      fadeTimerRef.current = setTimeout(() => {
+        resetSpinner();
+      }, FADE_OUT_TIME);
     }, remaining);
-  }, [hardStop]);
+  };
 
-  // Route change => navigation done
+  // When the route changes, treat navigation as complete
   useEffect(() => {
     finishNavigation();
-  }, [pathname, searchParams, finishNavigation]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
-    const handleLinkClick = (e) => {
-      const a = e.target.closest?.("a");
-      if (!a) return;
+    const handleClick = (e) => {
+      const link = e.target.closest?.("a");
+      if (!link) return;
 
       if (
         e.defaultPrevented ||
         e.button !== 0 ||
-        a.target ||
-        a.hasAttribute("download") ||
-        e.ctrlKey ||
+        link.target ||
+        link.hasAttribute("download") ||
         e.metaKey ||
+        e.ctrlKey ||
         e.shiftKey ||
         e.altKey
       ) {
         return;
       }
 
-      const href = a.getAttribute("href");
+      const href = link.getAttribute("href");
       if (!href) return;
 
-      const url = new URL(a.href, window.location.origin);
-      if (url.origin !== window.location.origin) return;
+      const nextUrl = new URL(link.href, window.location.origin);
 
-      const next = url.pathname + url.search;
-      if (next !== currentUrlRef.current) startNavigation();
+      // Ignore external links
+      if (nextUrl.origin !== window.location.origin) return;
+
+      const nextPath = nextUrl.pathname + nextUrl.search;
+
+      if (nextPath !== currentUrlRef.current) {
+        startNavigation();
+      }
     };
 
-    // Intercept programmatic navigation
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
-    window.history.pushState = function (state, unused, url) {
+    // Handle programmatic navigation
+    window.history.pushState = function (...args) {
+      const url = args[2];
+
       if (typeof url === "string") {
-        const next = new URL(url, window.location.origin);
-        const nextPath = next.pathname + next.search;
-        if (nextPath !== currentUrlRef.current) startNavigation();
+        const nextUrl = new URL(url, window.location.origin);
+        const nextPath = nextUrl.pathname + nextUrl.search;
+
+        if (nextPath !== currentUrlRef.current) {
+          startNavigation();
+        }
       }
-      return originalPushState.apply(this, arguments);
+
+      return originalPushState.apply(this, args);
     };
 
-    window.history.replaceState = function (state, unused, url) {
+    window.history.replaceState = function (...args) {
+      const url = args[2];
+
       if (typeof url === "string") {
-        const next = new URL(url, window.location.origin);
-        const nextPath = next.pathname + next.search;
-        if (nextPath !== currentUrlRef.current) startNavigation();
+        const nextUrl = new URL(url, window.location.origin);
+        const nextPath = nextUrl.pathname + nextUrl.search;
+
+        if (nextPath !== currentUrlRef.current) {
+          startNavigation();
+        }
       }
-      return originalReplaceState.apply(this, arguments);
+
+      return originalReplaceState.apply(this, args);
     };
 
-    const handlePopState = () => startNavigation();
+    const handlePopState = () => {
+      startNavigation();
+    };
 
-    document.addEventListener("click", handleLinkClick);
+    document.addEventListener("click", handleClick);
     window.addEventListener("popstate", handlePopState);
 
     return () => {
-      document.removeEventListener("click", handleLinkClick);
+      document.removeEventListener("click", handleClick);
       window.removeEventListener("popstate", handlePopState);
 
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
 
-      clearAllTimers();
+      clearTimers();
     };
-  }, [startNavigation]);
+  }, []);
 
-  return (
-    <>
-      {showSpinner && <LoadingSpinner exiting={isExiting} />}
-    </>
-  );
+  if (!showSpinner) return null;
+
+  return <LoadingSpinner exiting={isExiting} />;
 }
