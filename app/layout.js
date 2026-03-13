@@ -9,9 +9,12 @@ import { NavigationProvider } from "../contexts/NavigationContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Pen Pal Magic App",
-  description: "To connect 2000 rural Ugandan Children to the World",
-};
+  title: {
+    default: 'Pen Pal Magic App',
+    template: '%s | Pen Pal Magic App',
+  },
+  description: 'To connect 2000 rural Ugandan Children to the World',
+}
 
 export default function RootLayout({ children }) {
   return (

@@ -1,8 +1,9 @@
 import React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
+import Link from "next/link";
 
 const MessagePreview = ({
   profileImage,
@@ -14,10 +15,17 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
+  id
 }) => {
+  const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
 
-  // Returns the appropriate status icon based on letter status
+  
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    router.push(`/profile-view/${id}`);
+  };
+// Returns the appropriate status icon based on letter status
   const getStatusIcon = () => {
     if (status === "rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
@@ -49,13 +57,20 @@ const MessagePreview = ({
   const content = (
     <>
       <div className="flex items-start">
-        <Image
-          src={imageSrc}
-          alt={`${name}'s profile`}
-          className="w-12 h-12 rounded-full object-cover mr-4"
-          width={36}
-          height={36}
-        />
+        <div
+          onClick={handleProfileClick}
+          className="cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
+          <Image
+            src={imageSrc}
+            alt={`${name}'s profile`}
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            width={36}
+            height={36}
+          />
+        </div>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
