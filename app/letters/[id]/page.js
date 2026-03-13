@@ -437,16 +437,9 @@ export default function Page({ params }) {
       };
 
       setAllMessages((prev) => {
-        const existingIndex = prev.findIndex((m) => m.id === messageWithId.id);
-        if (existingIndex >= 0) {
-          const next = [...prev];
-          next[existingIndex] = {
-            ...next[existingIndex],
-            ...messageWithId,
-          };
-          return next;
-        }
-        return [...prev, messageWithId];
+        const newMessages = [...prev, messageWithId];
+
+        return newMessages;
       });
 
       setTimeout(() => {
