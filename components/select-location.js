@@ -5,7 +5,7 @@ const SelectProfileLocation = ({ updateStage, countries, location, setLocation }
 		if (!location) { 
 			return "w-[80%] mx-auto mt-[100px] p-2 bg-[#1C1B1F1F] text-[#1D1D00] font-semibold  rounded-[100px]"
 		}
-		return "w-[80%] mx-auto mt-[100px] p-2 bg-dark-green text-white font-semibold  rounded-[100px]"
+		return "w-[80%] mx-auto mt-[100px] p-2 bg-primary text-white font-semibold  rounded-[100px]"
 	}
 	return (
 		<div className='flex flex-col'>
