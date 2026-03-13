@@ -1,4 +1,8 @@
-"use client";
+export const dynamic = "force-static";
+
+export const metadata = {
+  title: "About Us - Murphy Charitable Foundation Uganda",
+};
 
 import Image from "next/image";
 import { PageBackground } from "../../components/general/PageBackground";
@@ -10,12 +14,11 @@ export default function About() {
   return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col">
       <div className="flex-1 min-h-0 flex justify-center">
-
         <PageContainer
-         width="compactXS"
-         padding="none"
-         center={false}
-         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {/* ===== HEADER ===== */}
           <PageHeader title="About Us" image={false} showBackButton />

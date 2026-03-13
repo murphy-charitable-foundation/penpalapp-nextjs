@@ -1,3 +1,34 @@
+/**
+ * POST /api/deadchat
+ * 
+ * Sends an email notification about an inactive chat
+ * Called when users haven't exchanged messages for more than a month
+ * 
+ * Request body:
+ * {
+ *   sender: object | array,  // Single user object OR array of 2 users (if reason === "admin")
+ *   id: string,              // letterbox_id
+ *   emailId: object,         // Firebase document reference
+ *   reason: string           // "admin" or other value
+ * }
+ * 
+ * sender format (single user):
+ * { first_name: string, last_name: string }
+ * 
+ * sender format (when reason === "admin"):
+ * [{ first_name: string, last_name: string }, { first_name: string, last_name: string }]
+ * 
+ * Response (success):
+ * { message: "Email sent successfully!" }
+ * 
+ * Response (error):
+ * { message: "Failed to send email.", error: "..." }
+ * 
+ * Sends email to:
+ * - If reason === "admin" -> admin (penpal@murphycharity.org)
+ * - Otherwise -> user (gets email from Firebase Auth by uid)
+ */
+
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file

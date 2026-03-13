@@ -91,74 +91,71 @@ export default function Home() {
   };
 
   useEffect(() => {
-  const fetchData = async () => {
-    setIsLoading(true);
+    const fetchData = async () => {
+      setIsLoading(true);
 
-    if (!user) return; // UserContext handles route protection
+      if (!user) return;
 
-    const uid = user.uid;
-    setUserId(uid);
+      const uid = user.uid;
+      setUserId(uid);
 
-    try {
-      const userData = await getUserData(uid);
-      setUserName(userData.first_name || "Unknown User");
+      try {
+        const userData = await getUserData(uid);
+        setUserName(userData.first_name || "Unknown User");
 
-      const downloaded = await getUserPfp(uid);
-      setProfileImage(downloaded || "");
+        const downloaded = await getUserPfp(uid);
+        setProfileImage(downloaded || "");
 
-      const userConversations = await getConversations(uid);
-      setConversations(userConversations);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load data.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        const userConversations = await getConversations(uid);
+        setConversations(userConversations);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  fetchData();
-}, [user]);
+    fetchData();
+  }, [user]);
 
   return (
-        <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-        <PageContainer
-          width="compactXS"
-          padding="none"
-          center={false}
-          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-        >
-          {isLoading && <LetterHomeSkeleton />}
-          {!isLoading && (
-            <>
-              {/* HEADER */}
-              <div className="shrink-0 border-b">
-                <ProfileHeader
-                  userName={userName}
-                  profileImage={profileImage}
-                  id={userId}
-                  showCountry={false}
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {isLoading && <LetterHomeSkeleton />}
+        {!isLoading && (
+          <>
+            <div className="shrink-0 border-b">
+              <ProfileHeader
+                userName={userName}
+                profileImage={profileImage}
+                id={userId}
+                showCountry={false}
+              />
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto px-3">
+              {conversations.length > 0 ? (
+                <ConversationList conversations={conversations} />
+              ) : (
+                <EmptyState
+                  title="New friends are coming!"
+                  description="Many friends are coming — hang tight!"
                 />
-              </div>
+              )}
+            </div>
 
-              {/* SCROLLABLE LIST */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-3">
-                {conversations.length > 0 ? (
-                  <ConversationList conversations={conversations} />
-                ) : (
-                  <EmptyState
-                    title="New friends are coming!"
-                    description="Many friends are coming — hang tight!"
-                  />
-                )}
-              </div>
-
-              {/* NAVBAR */}
-              <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-                <NavBar />
-              </div>
-            </>
-          )}
-        </PageContainer>
-      </PageBackground>
-    );
+            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+              <NavBar />
+            </div>
+          </>
+        )}
+      </PageContainer>
+    </PageBackground>
+  );
 }
