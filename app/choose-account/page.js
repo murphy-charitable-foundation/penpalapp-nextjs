@@ -33,7 +33,7 @@ export default function ChooseAccountPage() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const router = useRouter();
-  const { cachedUsers, hydrated } = useCachedUsers();
+  const { cachedUsers, hydrated, clearCachedUsers } = useCachedUsers();
   const hasRedirected = useRef(false);
   const users = (cachedUsers ?? []).map(normalizeUser);
 
@@ -135,7 +135,7 @@ export default function ChooseAccountPage() {
           Choose an account to continue
         </p>
 
-        <div className="grid grid-cols-2 gap-4 px-6">
+        <div className="mt-4 grid grid-cols-2 gap-4 px-6">
           {users.map((user) => (
             <button
               key={user.id}
@@ -160,13 +160,24 @@ export default function ChooseAccountPage() {
           ))}
         </div>
 
-        <div className="mt-8 text-center">
-          <Link
-            href="/login?force=1"
-            className="font-medium text-blue-600 hover:text-blue-500"
+        <div className="mt-8 text-center space-y-3">
+          <div className="flex justify-center">
+            <Button
+              color="green"
+              btnText="Add a different profile"
+              onClick={() => router.push("/login?force=1")}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              clearCachedUsers();
+              router.replace("/login?force=1");
+            }}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
           >
-            Use a different account
-          </Link>
+            Forget saved logins
+          </button>
         </div>
       </PageContainer>
 

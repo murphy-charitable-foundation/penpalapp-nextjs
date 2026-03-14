@@ -13,7 +13,13 @@ export function CachedUsersProvider({ children }) {
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      setCachedUsers(JSON.parse(raw));
+      try {
+        const parsed = JSON.parse(raw);
+        setCachedUsers(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+        setCachedUsers([]);
+      }
     }
     setHydrated(true);
   }, []);
@@ -36,6 +42,10 @@ export function CachedUsersProvider({ children }) {
     setCachedUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
+  const clearCachedUsers = () => {
+    setCachedUsers([]);
+  };
+
   const getCachedUser = (id) => {
     return cachedUsers.find((u) => u.id === id);
   };
@@ -46,6 +56,7 @@ export function CachedUsersProvider({ children }) {
         cachedUsers,
         addCachedUser,
         removeCachedUser,
+        clearCachedUsers,
         getCachedUser,
         hydrated,
       }}

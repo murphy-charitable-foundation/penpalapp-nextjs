@@ -73,6 +73,13 @@ export default function Home() {
 
   usePageAnalytics("/letterhome");
 
+  useEffect(() => {
+    const stopWatcher = startInactivityWatcher(30);
+    return () => {
+      if (typeof stopWatcher === "function") stopWatcher();
+    };
+  }, [router]);
+
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
@@ -85,7 +92,7 @@ export default function Home() {
     }
   };
 
-  const getConversations = async (uid) => {
+  const getConversations = async (uid, avatarUrl) => {
     try {
       const letterboxes = await fetchLetterboxes();
       if (letterboxes && letterboxes.length > 0) {
@@ -101,7 +108,7 @@ export default function Home() {
 
             return {
               id: letter?.id,
-              profileImage: profileImage || "",
+              profileImage: avatarUrl || profileImage || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
@@ -152,9 +159,10 @@ export default function Home() {
           setCountry(userData.country || "Unknown Country");
           setUserType(userData.user_type || "Unknown Type");
           const downloaded = await getUserPfp(uid);
-          setProfileImage(downloaded || "");
+          const avatarUrl = downloaded || "";
+          setProfileImage(avatarUrl);
 
-          const userConversations = await getConversations(uid);
+          const userConversations = await getConversations(uid, avatarUrl);
           setConversations(userConversations);
         } catch (err) {
           setError("Error fetching user data or conversations.");

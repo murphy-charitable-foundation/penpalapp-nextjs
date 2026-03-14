@@ -5,8 +5,6 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
-import Image from "next/image";
-import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
 
 
@@ -30,7 +28,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { hydrated, addCachedUser, cachedUsers } = useCachedUsers();
+  const { hydrated, addCachedUser, cachedUsers, clearCachedUsers } = useCachedUsers();
   const hasRedirected = useRef(false);
 
   usePageAnalytics(`/login`);
@@ -171,6 +169,18 @@ export default function Login() {
             disabled={loading}
           />
         </div>
+
+        {cachedUsers?.length > 0 && (
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => clearCachedUsers()}
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Forget saved logins
+            </button>
+          </div>
+        )}
       </form>
     </PageContainer>
   </PageBackground>
