@@ -225,10 +225,6 @@ service cloud.firestore {
       }
     }
 
-    match /{path=**}/letters/{letterId} {
-      allow read: if isAdmin();
-    }
-
     match /hobbies/{hobbyId} {
       function isValidHobbyCreate() {
         return request.resource.data.keys().hasOnly(['hobby']) &&
