@@ -13,6 +13,7 @@ export function PageHeader({
   showBackButton = true,
   imageSize = "md",
   showBorder = true,
+  showBackButton = true,
 }) {
   const imageWidth =
     imageSize === "sm" ? 96 : imageSize === "lg" ? 200 : 160;

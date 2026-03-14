@@ -9,7 +9,8 @@ import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();
 const PUBLIC_PATHS = [
-  '/login', 
+  '/login',
+  '/choose-account',
   '/', 
   '/about', 
   '/contact', 

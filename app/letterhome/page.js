@@ -30,6 +30,35 @@ export default function Home() {
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
+  function startInactivityWatcher(timeoutMinutes = 30) {
+    if (typeof window === "undefined") return; // server-side safety
+
+    const INACTIVITY_LIMIT = timeoutMinutes * 60 * 1000;
+    let timer;
+
+    function clearStoredData() {
+      localStorage.removeItem("child");
+      router.push("/choose-account");
+    }
+
+    function resetTimer() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(clearStoredData, INACTIVITY_LIMIT);
+    }
+
+    const activityEvents = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
+
+    // Start timer immediately
+    resetTimer();
+
+    // Return a cleanup function if needed
+    return function stopWatcher() {
+      clearTimeout(timer);
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }
+
   usePageAnalytics("/letterhome");
 
   const getUserData = async (uid) => {
@@ -60,7 +89,7 @@ export default function Home() {
 
             return {
               id: letter?.id,
-              profileImage: recipient?.photo_uri || "",
+              profileImage: profileImage || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
