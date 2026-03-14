@@ -183,7 +183,6 @@ export default function Home() {
             setCountry(userData.country || "Unknown Country");
             setUserType(userData.user_type || "Unknown Type");
             const downloaded = await getUserPfp(uid);
-            console.log("downloaded", downloaded);
             setProfileImage(downloaded || "");
 
             // Show welcome message
