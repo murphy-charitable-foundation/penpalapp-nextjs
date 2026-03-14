@@ -1,9 +1,8 @@
 "use client";
 
-import { db, auth } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { sendPasswordResetEmail } from "firebase/auth";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
