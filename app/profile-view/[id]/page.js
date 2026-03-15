@@ -14,7 +14,6 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
-import { set } from "nprogress";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and user-data-import page */
 
@@ -79,7 +78,7 @@ export default function Page({ params }) {
       if (!currentUser) router.push("/login");
     });
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
 return (
   <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">

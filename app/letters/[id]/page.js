@@ -763,7 +763,7 @@ export default function Page({ params }) {
     return () => {
       unsubscribe();
     };
-  }, [id, router]);
+  }, [id, router, auth]);
 
   useEffect(() => {
     return () => {

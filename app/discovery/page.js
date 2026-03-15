@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   collection,
   getDocs,
@@ -58,18 +58,7 @@ export default function ChooseKid() {
     return () => unsubscribe();
   }, [router]);
 
-  // Refetch when filters change
-  useEffect(() => {
-    if (!userId) return;
-
-    setKids([]);
-    setLastKidDoc(null);
-    setInitialLoad(true);
-
-    fetchKids(userId, true);
-  }, [userId, age, gender, hobbies]);
-
-  const fetchKids = async (uid, reset = false) => {
+  const fetchKids = useCallback(async (uid, reset = false) => {
     setLoading(true);
     setError("");
 
@@ -138,7 +127,18 @@ export default function ChooseKid() {
       setLoading(false);
       setInitialLoad(false);
     }
-  };
+  }, [age, gender, hobbies, lastKidDoc]);
+
+  // Refetch when filters change
+  useEffect(() => {
+    if (!userId) return;
+
+    setKids([]);
+    setLastKidDoc(null);
+    setInitialLoad(true);
+
+    fetchKids(userId, true);
+  }, [userId, fetchKids]);
 
   const calculateAge = (birthdayTimestamp) => {
     if (!birthdayTimestamp) return 0;
