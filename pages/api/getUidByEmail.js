@@ -1,4 +1,4 @@
-import { auth, db } from "../../app/firebaseAdmin";
+import { auth } from "../../app/firebaseAdmin";
 import { requireAdmin } from "../../app/utils/requireAdmin";
 import { logError } from "../../app/utils/analytics";
 
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   try {
     
     // Verify admin authorization (delegated to util)
-    const callerUid = await requireAdmin(req);
+    await requireAdmin(req);
     
     const { email } = req.body;
 
