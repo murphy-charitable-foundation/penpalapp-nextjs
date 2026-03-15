@@ -76,7 +76,7 @@ export default function Page({ params }) {
       if (!currentUser) router.push("/login");
     });
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
 return (
   <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">

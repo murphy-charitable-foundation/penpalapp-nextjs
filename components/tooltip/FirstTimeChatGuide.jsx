@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import styles from "./Tooltip.module.css";
 
 export default function FirstTimeChatGuide({
@@ -12,7 +12,7 @@ export default function FirstTimeChatGuide({
   const [currentStep, setCurrentStep] = useState(0);
   const tooltipRef = useRef(null);
   const [buttonHighlight, setButtonHighlight] = useState(false);
-  const defaultTemplate = `Dear ${recipient?.[0]?.first_name} ${recipient?.[0]?.last_name},
+  const defaultTemplate = useMemo(() => `Dear ${recipient?.[0]?.first_name} ${recipient?.[0]?.last_name},
 
       I hope you find well in this e-mail.
       I'm writing to you today to share a little bit about my life.
@@ -22,9 +22,9 @@ export default function FirstTimeChatGuide({
       ....
 
       Thank you,
-      (enter your name)`;
+      (enter your name)`, [recipient]);
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       target: ".first-letter",
       content: "Tap with your finger to open the letter ",
@@ -60,7 +60,23 @@ export default function FirstTimeChatGuide({
       position: "send-letter",
       arrowDirection: "topRight",
     },
-  ];
+  ], []);
+
+  const completeGuide = useCallback(() => {
+    localStorage.setItem("hasSeenChatGuide", "true");
+    setShowGuide(false);
+    setButtonHighlight(false);
+  }, []);
+
+  const nextStep = useCallback(() => {
+    if (currentStep < steps.length - 1) {
+      setButtonHighlight(false);
+      setCurrentStep(currentStep + 1);
+    } else {
+      setButtonHighlight(true);
+      completeGuide();
+    }
+  }, [currentStep, steps.length, completeGuide]);
 
   useEffect(() => {
     const isGuideCompleted =
@@ -75,7 +91,7 @@ export default function FirstTimeChatGuide({
         setShowGuide(true);
       }
     }
-  }, [page]);
+  }, [page, params]);
 
   useEffect(() => {
     console.log(`show guide: ${showGuide}, current step: ${currentStep}`);
@@ -83,7 +99,7 @@ export default function FirstTimeChatGuide({
       setButtonHighlight(true);
     }
     // Save current step to localStorage whenever it changes
-  }, [currentStep, showGuide]);
+  }, [currentStep, showGuide, steps.length]);
 
   useEffect(() => {
     // Set up event listeners for the current step target
@@ -133,7 +149,7 @@ export default function FirstTimeChatGuide({
 
     // Clean up event listener
     return cleanupFn;
-  }, [currentStep, showGuide]);
+  }, [currentStep, showGuide, defaultTemplate, nextStep, onUseTemplate, steps]);
 
   // Function to position tooltip relative to target element
   const positionTooltip = (targetElement, position) => {
@@ -195,21 +211,13 @@ export default function FirstTimeChatGuide({
     tooltipElement.style.bottom = bottom;
   };
 
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setButtonHighlight(false);
-      setCurrentStep(currentStep + 1);
-    } else {
-      // End of guide
-      setButtonHighlight(true);
-      completeGuide();
+  const handleUseTemplate = () => {
+    console.log("saasada");
+    if (onUseTemplate) {
+      onUseTemplate(defaultTemplate);
     }
-  };
 
-  const completeGuide = () => {
-    localStorage.setItem("hasSeenChatGuide", "true");
-    setShowGuide(false);
-    setButtonHighlight(false);
+    nextStep(); // Move to the next step after using template
   };
 
   // If not showing guide or not a first time user, don't render anything
