@@ -92,10 +92,14 @@ export async function POST(request) {
     const senderEmail = process.env.PENPAL_SENDER_EMAIL || "penpal@murphycharity.org";
     const adminEmail = process.env.PENPAL_ADMIN_EMAIL || "penpal@murphycharity.org";
     const smtpHost = process.env.CPANEL_SMTP_HOST;
-    const smtpPort = parseInt(process.env.CPANEL_SMTP_PORT || "465", 10);
+    const smtpPortRaw = process.env.CPANEL_SMTP_PORT || "465";
+    const smtpPort = Number.parseInt(smtpPortRaw, 10);
     const smtpPass = process.env.PENPAL_EMAIL_PASSWORD;
 
-    if (!smtpHost || !smtpPass) {
+    const validPort =
+      Number.isInteger(smtpPort) && smtpPort > 0 && smtpPort <= 65535;
+
+    if (!smtpHost || !smtpPass || !validPort) {
       return NextResponse.json(
         { message: "Email service is not configured." },
         { status: 500 }
@@ -110,6 +114,10 @@ export async function POST(request) {
         user: senderEmail,
         pass: smtpPass,
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      dnsTimeout: 5000,
     });
 
     const msg = {
