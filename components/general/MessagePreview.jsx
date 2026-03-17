@@ -68,16 +68,6 @@ const MessagePreview = ({
             height={36}
           />
         </Link>
-          <div className="shrink-0">
-            <Image
-              src={imageSrc}
-              alt={`${name}'s profile`}
-              className="w-12 h-12 rounded-full object-cover mr-4"
-              width={36}
-              height={36}
-            />
-          </div>
-
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
