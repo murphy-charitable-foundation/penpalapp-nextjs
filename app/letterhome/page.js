@@ -17,7 +17,6 @@ import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import Dialog from "../../components/general/Dialog";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
