@@ -58,7 +58,7 @@ export default function ChooseKid() {
     return () => unsubscribe();
   }, [router]);
 
-  const fetchKids = useCallback(async (uid, reset = false) => {
+  const fetchKids = useCallback(async (uid, reset = false, cursor = null) => {
     setLoading(true);
     setError("");
 
@@ -88,8 +88,8 @@ export default function ChooseKid() {
         q = query(q, where("hobby", "array-contains-any", hobbies));
       }
 
-      if (!reset && lastKidDoc) {
-        q = query(q, startAfter(lastKidDoc));
+      if (!reset && cursor) {
+        q = query(q, startAfter(cursor));
       }
 
       q = query(q, limit(PAGE_SIZE));
@@ -127,7 +127,7 @@ export default function ChooseKid() {
       setLoading(false);
       setInitialLoad(false);
     }
-  }, [age, gender, hobbies, lastKidDoc]);
+  }, [age, gender, hobbies]);
 
   // Refetch when filters change
   useEffect(() => {
@@ -137,7 +137,7 @@ export default function ChooseKid() {
     setLastKidDoc(null);
     setInitialLoad(true);
 
-    fetchKids(userId, true);
+    fetchKids(userId, true, null);
   }, [userId, fetchKids]);
 
   const calculateAge = (birthdayTimestamp) => {
@@ -165,7 +165,7 @@ export default function ChooseKid() {
 
   const loadMoreKids = () => {
     if (loading || !userId) return;
-    fetchKids(userId);
+    fetchKids(userId, false, lastKidDoc);
     logButtonEvent("Load more kids", "/discovery");
   };
 
