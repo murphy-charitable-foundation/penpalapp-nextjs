@@ -30,7 +30,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import sendgrid from '@sendgrid/mail';
+import nodemailer from "nodemailer";
 import { auth } from '../../firebaseAdmin';  // Import Firebase Admin SDK from the centralized file
 import { logError } from "../../utils/analytics";
 
@@ -42,7 +42,6 @@ export async function POST(request) {
     );
   }
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
     const { sender, id, emailId, reason} = body; 
@@ -112,10 +111,33 @@ export async function POST(request) {
       </html>
     `;
     let msg;
+    const senderEmail = process.env.PENPAL_SENDER_EMAIL || "penpal@murphycharity.org";
+    const adminEmail = process.env.PENPAL_ADMIN_EMAIL || "penpal@murphycharity.org";
+    const smtpHost = process.env.CPANEL_SMTP_HOST;
+    const smtpPort = parseInt(process.env.CPANEL_SMTP_PORT || "465", 10);
+    const smtpPass = process.env.PENPAL_EMAIL_PASSWORD;
+
+    if (!smtpHost || !smtpPass) {
+      return NextResponse.json(
+        { message: "Email service is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: senderEmail,
+        pass: smtpPass,
+      },
+    });
+
     if (reason == "admin") {
       msg = {
-        to: 'penpal@murphycharity.org',
-        from: 'penpal@murphycharity.org', // Your verified sender email
+        to: adminEmail,
+        from: senderEmail,
         subject: "Message Reported",
         text: message || 'No message provided.',
         html:  emailHtml,
@@ -123,7 +145,7 @@ export async function POST(request) {
     } else {
       msg = {
         to: userRecord.email,
-        from: 'penpal@murphycharity.org', // Your verified sender email
+        from: senderEmail,
         subject: "Message Reported",
         text: message || 'No message provided.',
         html:  emailHtml,
@@ -131,7 +153,7 @@ export async function POST(request) {
     }
     
     // Send the email
-    await sendgrid.send(msg);
+    await transporter.sendMail(msg);
     return NextResponse.json({ message: `Email sent successfully!` }, { status: 200 });
     
 
