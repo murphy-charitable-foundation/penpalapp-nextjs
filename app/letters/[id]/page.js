@@ -914,7 +914,7 @@ return (
                   <div className="flex items-center">
                     <div className="shrink-0">
                       {/* Only show the link if recipients[0]?.id actually exists */}
-                      {!isSenderUser && recipients[0]?.id ? (
+                      {!isSenderUser ? (
                         <Link
                           href={`/profile-view/${recipients[0].id}`}
                           onClick={(e) => e.stopPropagation()}
