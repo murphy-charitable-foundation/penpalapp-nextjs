@@ -69,8 +69,8 @@ export function UserProvider({ children }) {
             setUserType('Unknown Type');
             setProfileImage('');
 
-            if (pathname !== '/profile' && !PUBLIC_PATHS.includes(pathname)) {
-              router.push('/profile');
+            if (pathname !== '/create-acc' && !PUBLIC_PATHS.includes(pathname)) {
+              router.push('/create-acc');
             }
           }
         } catch (error) {
