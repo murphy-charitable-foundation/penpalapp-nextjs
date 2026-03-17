@@ -51,10 +51,9 @@ export function UserProvider({ children }) {
 
             if (
               !isProfileComplete(fetchedUserData) &&
-              pathname !== '/profile' &&
-              !PUBLIC_PATHS.includes(pathname)
-            ) {
-              router.push('/profile');
+              pathname !== '/create-acc' &&
+              !PUBLIC_PATHS.includes(pathname)) {
+              router.push('/create-acc');
             }
 
             try {
