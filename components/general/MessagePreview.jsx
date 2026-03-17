@@ -55,21 +55,19 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        {penpalId ? (
-          <Link
-            href={`/profile-view/${penpalId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="shrink-0 hover:opacity-80 transition cursor-pointer"
-          >
-            <Image
-              src={imageSrc}
-              alt={`${name}'s profile`}
-              className="w-12 h-12 rounded-full object-cover mr-4"
-              width={36}
-              height={36}
-            />
-          </Link>
-        ) : (
+        <Link
+          href={`/profile-view/${penpalId}`}
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 hover:opacity-80 transition cursor-pointer"
+        >
+          <Image
+            src={imageSrc}
+            alt={`${name}'s profile`}
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            width={36}
+            height={36}
+          />
+        </Link>
           <div className="shrink-0">
             <Image
               src={imageSrc}
@@ -79,7 +77,7 @@ const MessagePreview = ({
               height={36}
             />
           </div>
-        )}
+
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
@@ -87,17 +85,7 @@ const MessagePreview = ({
                 {status === "draft" && lastMessage !== "" && (
                   <span className="text-red-500 mr-1">[Draft]</span>
                 )}
-                {penpalId ? (
-                  <Link
-                    href={`/profile-view/${penpalId}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="hover:underline decoration-blue-500 cursor-pointer"
-                  >
-                    {name}
-                  </Link>
-                ) : (
                   <span>{name}</span>
-                )}
               </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
