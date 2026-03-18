@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
@@ -119,13 +119,23 @@ export default function CreateAccount() {
         }
       }
 
+      // Find any existing users who already have this user in their connected_penpals list
+      const matchingUsersSnap = await getDocs(
+        query(
+          collection(db, "users"),
+          where("connected_penpals", "array-contains", uid)
+        )
+      );
+      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => userDoc.id);
+
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {
         created_at: new Date(),
         first_name: firstName,
         last_name: lastName,
         birthday,
-        connected_penpals_count: 0,
+        connected_penpals: connectedPenpals,
+        connected_penpals_count: connectedPenpals.length,
       });
 
       localStorage.setItem("userFirstName", firstName);
