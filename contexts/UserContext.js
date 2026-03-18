@@ -69,9 +69,9 @@ export function UserProvider({ children }) {
             setUserType('Unknown Type');
             setProfileImage('');
 
-            if (pathname !== '/profile' && !PUBLIC_PATHS.includes(pathname)) {
-              router.push('/profile');
-            }
+            if (pathname !== '/create-acc' && !PUBLIC_PATHS.includes(pathname)) {
+                router.push('/create-acc');
+              }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -79,7 +79,7 @@ export function UserProvider({ children }) {
           setUserType('Unknown Type');
           setProfileImage('');
         } finally {
-          // CRITICAL FIX: Always set loading to false after processing authenticated user
+          // Always set loading to false after processing authenticated user
           setLoading(false);
         }
       } else {
