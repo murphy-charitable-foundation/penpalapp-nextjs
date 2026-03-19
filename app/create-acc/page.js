@@ -18,6 +18,7 @@ import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../components/general/PageHeader";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import { useUser } from '../../contexts/UserContext';
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -96,7 +97,7 @@ export default function CreateAccount() {
         setErrors(newErrors);
         throw new Error("Form validation error(s)");
       }
-      const user = auth.currentUser;
+      const { user, userData, loading } = useUser();
 
       console.log(`user is :${user}`);
       const uid = user.uid;
