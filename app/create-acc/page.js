@@ -119,14 +119,15 @@ export default function CreateAccount() {
         }
       }
 
+      const currentUserRef = doc(db, "users", uid);
       // Find any existing users who already have this user in their connected_penpals list
       const matchingUsersSnap = await getDocs(
         query(
           collection(db, "users"),
-          where("connected_penpals", "array-contains", uid)
+          where("connected_penpals", "array-contains", currentUserRef)
         )
       );
-      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => userDoc.id);
+      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => doc(db, "users", userDoc.id));
 
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {
