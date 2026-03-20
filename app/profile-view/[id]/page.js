@@ -14,7 +14,6 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
-import { set } from "nprogress";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and user-data-import page */
 
@@ -31,7 +30,6 @@ export default function Page({ params }) {
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
-  const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [userType, setUserType] = useState("international_buddy");
@@ -59,7 +57,6 @@ export default function Page({ params }) {
         setIsOrphan(u.is_orphan ? "Yes" : "No");
         setGuardian(u.guardian || "");
         setDreamJob(u.dream_job || "");
-        setHobby(u.hobby || "");
         setHobbies(u.hobbies || []);
         setFavoriteColor(u.favorite_color || "");
         setPhotoUri(u.photo_uri || "");

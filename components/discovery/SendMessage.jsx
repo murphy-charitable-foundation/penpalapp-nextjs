@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
-import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Button from "../general/Button";
-import { logError } from "../../app/utils/analytics";
 import { createConnection } from "../../app/utils/letterboxFunctions";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
   const router = useRouter();
-  const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
 
   useEffect(() => {
@@ -25,10 +23,7 @@ export default function SendMessage({ kid }) {
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setUser(userData);
             setUserRef(docRef);
-            return userData;
           }
         } else {
           console.error("No user logged in");

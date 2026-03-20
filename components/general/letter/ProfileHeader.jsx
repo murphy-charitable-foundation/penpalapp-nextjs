@@ -5,7 +5,6 @@ export default function ProfileHeader({
   userName,
   country,
   profileImage,
-  id,
   showCountry = true, 
 }) {
   return (
