@@ -50,7 +50,7 @@ export default function Page({ params }) {
         const u = docSnap.data();
         setFirstName(u.first_name || "");
         setLastName(u.last_name || "");
-        setBirthday(u.birthday || "");        
+        setBirthday(u.birthday || "");
         setCountry(u.country || "");
         setVillage(u.village || "");
         setBio(u.bio || "");
@@ -67,7 +67,6 @@ export default function Page({ params }) {
         setProfession(u.profession || "");
         setPronouns(u.pronouns || "");
         setLastOnline(u.last_online || "");
-        
       }
     };
     fetchUserData();
@@ -80,120 +79,105 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, [router]);
 
-return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-    <div className="flex-1 min-h-0 flex justify-center">
+  return (
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <PageHeader title="View Profile" image={false} />
 
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
-        {/* ===== HEADER ===== */}
-        <PageHeader title="View Profile" image={false} />
-
-        {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">
-          
-          {/* PROFILE IMAGE */}
-          <div className="my-6">
-            <div className="relative w-40 h-40 mx-auto">
-              <Image
-                src={photoUri || "/murphylogo.png"}
-                fill
-                alt="Profile photo"
-                className="rounded-full object-cover"
-              />
-            </div>
-            {auth.currentUser?.uid === id && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    logButtonEvent(
-                      "Edit profile button clicked!",
-                      "/profile-view/[id]"
-                    );
-                    router.push("/profile");
-                  }}
-                  className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
-                >
-                  Edit Profile
-                </button>
+          {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">
+            {/* PROFILE IMAGE */}
+            <div className="my-6">
+              <div className="relative w-40 h-40 mx-auto">
+                <Image
+                  src={photoUri || "/murphylogo.png"}
+                  fill
+                  alt="Profile photo"
+                  className="rounded-full object-cover"
+                />
               </div>
-            )}
-          </div>
-
-          {/* NAME / COUNTRY / BIO */}
-          <div className="text-center space-y-2 mb-8">
-            <h2 className="text-2xl font-bold">
-              {firstName} {lastName}
-            </h2>
-            <p className="font-semibold">{country}</p>
-            {bio && (
-              <p className="text-gray-500 italic">“{bio}”</p>
-            )}
-          </div>
-
-          {/* ===== SECTIONS ===== */}
-          <div className="space-y-8 pl-4">
-
-            <ProfileSection title="Personal Information">
-              {(userType == "child" || userType == "local_volunteer") && (
-                <InfoDisplay title="Village" info={village} />
+              {auth.currentUser?.uid === id && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logButtonEvent("Edit profile button clicked!", "/profile-view/[id]");
+                      router.push("/profile");
+                    }}
+                    className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
               )}
-              <InfoDisplay title="Pronouns" info={pronouns} />
-              <InfoDisplay title="Birthday" info={birthday} />
-            </ProfileSection>
-            {userType !== 'admin' && (
-              <>
-                <ProfileSection title={`Education ${(userType == "child" || userType == "local_volunteer") ? "& Family": ""}`}>
-                  <InfoDisplay
-                    title="Education Level"
-                    info={educationLevel}
-                  />
-                  {(userType == "child" || userType == "local_volunteer") && (
-                    <>
-                      <InfoDisplay title="Guardian" info={guardian} />
-                      <InfoDisplay title="Is Orphan" info={isOrphan} />
-                    </>
-                  )}
-                </ProfileSection>
+            </div>
 
-                <ProfileSection title="Interests">
+            {/* NAME / COUNTRY / BIO */}
+            <div className="text-center space-y-2 mb-8">
+              <h2 className="text-2xl font-bold">
+                {firstName} {lastName}
+              </h2>
+              <p className="font-semibold">{country}</p>
+              {bio && <p className="text-gray-500 italic">“{bio}”</p>}
+            </div>
 
-                  <ArrayDisplay title="Hobbies" info={hobbies} />
-                  <InfoDisplay title="Favorite Animal" info={favoriteAnimal} />
-                  {userType == "international_buddy" && (
-                    <>
-                      <InfoDisplay title="Profession" info={profession} />
-                      <InfoDisplay title="Last Online" info={lastOnline} />
-                    </>
-                  )}
-                  {(userType == "child" || userType == "local_volunteer") && (
-                    <>
-                      <InfoDisplay title="Dream Job" info={dreamJob} />
-                      <InfoDisplay title="Favorite Color" info={favoriteColor} />                
-                    </>
-                  )}
+            {/* ===== SECTIONS ===== */}
+            <div className="space-y-8 pl-4">
+              <ProfileSection title="Personal Information">
+                {(userType == "child" || userType == "local_volunteer") && (
+                  <InfoDisplay title="Village" info={village} />
+                )}
+                <InfoDisplay title="Pronouns" info={pronouns} />
+                <InfoDisplay title="Birthday" info={birthday} />
+              </ProfileSection>
+              {userType !== "admin" && (
+                <>
+                  <ProfileSection
+                    title={`Education ${userType == "child" || userType == "local_volunteer" ? "& Family" : ""}`}
+                  >
+                    <InfoDisplay title="Education Level" info={educationLevel} />
+                    {(userType == "child" || userType == "local_volunteer") && (
+                      <>
+                        <InfoDisplay title="Guardian" info={guardian} />
+                        <InfoDisplay title="Is Orphan" info={isOrphan} />
+                      </>
+                    )}
+                  </ProfileSection>
 
-                </ProfileSection>
-              </>
-            )}
+                  <ProfileSection title="Interests">
+                    <ArrayDisplay title="Hobbies" info={hobbies} />
+                    <InfoDisplay title="Favorite Animal" info={favoriteAnimal} />
+                    {userType == "international_buddy" && (
+                      <>
+                        <InfoDisplay title="Profession" info={profession} />
+                        <InfoDisplay title="Last Online" info={lastOnline} />
+                      </>
+                    )}
+                    {(userType == "child" || userType == "local_volunteer") && (
+                      <>
+                        <InfoDisplay title="Dream Job" info={dreamJob} />
+                        <InfoDisplay title="Favorite Color" info={favoriteColor} />
+                      </>
+                    )}
+                  </ProfileSection>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* ===== NAVBAR ===== */}
-        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-          <NavBar />
-        </div>
-
-      </PageContainer>
-    </div>
-  </PageBackground>
-);
-
-
+          {/* ===== NAVBAR ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
+        </PageContainer>
+      </div>
+    </PageBackground>
+  );
 }
-

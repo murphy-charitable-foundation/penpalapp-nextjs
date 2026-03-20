@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  collection,
-  getDocs,
-  doc,
-  query,
-  where,
-  startAfter,
-  limit,
-} from "firebase/firestore";
+import { collection, getDocs, doc, query, where, startAfter, limit } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -58,76 +50,87 @@ export default function ChooseKid() {
     return () => unsubscribe();
   }, [router]);
 
-  const fetchKids = useCallback(async (uid, reset = false, cursor = null) => {
-    setLoading(true);
-    setError("");
+  const fetchKids = useCallback(
+    async (uid, reset = false, cursor = null) => {
+      setLoading(true);
+      setError("");
 
-    try {
-      const userRef = doc(db, "users", uid);
-      const usersRef = collection(db, "users");
+      try {
+        const userRef = doc(db, "users", uid);
+        const usersRef = collection(db, "users");
 
-      let q = query(
-        usersRef,
-        where("user_type", "==", "child"),
-        where("connected_penpals_count", "<", 3) // Server-side filter
-      );
+        let q = query(
+          usersRef,
+          where("user_type", "==", "child"),
+          where("connected_penpals_count", "<", 3) // Server-side filter
+        );
 
-      // Client-side filters
-      if (age?.min != null && age?.max != null) {
-        const now = new Date();
-        const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
-        const minBirthDate = new Date(now.getFullYear() - age.max - 1, now.getMonth(), now.getDate());
-        q = query(q, where("birthday", ">=", minBirthDate), where("birthday", "<=", maxBirthDate));
-      }
+        // Client-side filters
+        if (age?.min != null && age?.max != null) {
+          const now = new Date();
+          const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
+          const minBirthDate = new Date(
+            now.getFullYear() - age.max - 1,
+            now.getMonth(),
+            now.getDate()
+          );
+          q = query(
+            q,
+            where("birthday", ">=", minBirthDate),
+            where("birthday", "<=", maxBirthDate)
+          );
+        }
 
-      if (gender?.trim()) {
-        q = query(q, where("gender", "==", gender.trim()));
-      }
+        if (gender?.trim()) {
+          q = query(q, where("gender", "==", gender.trim()));
+        }
 
-      if (hobbies?.length) {
-        q = query(q, where("hobby", "array-contains-any", hobbies));
-      }
+        if (hobbies?.length) {
+          q = query(q, where("hobby", "array-contains-any", hobbies));
+        }
 
-      if (!reset && cursor) {
-        q = query(q, startAfter(cursor));
-      }
+        if (!reset && cursor) {
+          q = query(q, startAfter(cursor));
+        }
 
-      q = query(q, limit(PAGE_SIZE));
+        q = query(q, limit(PAGE_SIZE));
 
-      const snapshot = await getDocs(q);
+        const snapshot = await getDocs(q);
 
-      const availableDocs = snapshot.docs.filter((d) => {
-        const data = d.data();
-        return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
-      });
-
-      const kidsList = await Promise.all(
-        availableDocs.map(async (d) => {
+        const availableDocs = snapshot.docs.filter((d) => {
           const data = d.data();
-          try {
-            if (data.photo_uri) {
-              const storage = getStorage();
-              const photoRef = ref(storage, data.photo_uri);
-              const photoURL = await getDownloadURL(photoRef);
-              return { id: d.id, ref: d.ref, ...data, photoURL };
-            }
-            return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
-          } catch {
-            return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
-          }
-        })
-      );
+          return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
+        });
 
-      setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
-      setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
-    } catch (e) {
-      setError("Error fetching kids");
-      logError(e, { description: "Error fetching kids" });
-    } finally {
-      setLoading(false);
-      setInitialLoad(false);
-    }
-  }, [age, gender, hobbies]);
+        const kidsList = await Promise.all(
+          availableDocs.map(async (d) => {
+            const data = d.data();
+            try {
+              if (data.photo_uri) {
+                const storage = getStorage();
+                const photoRef = ref(storage, data.photo_uri);
+                const photoURL = await getDownloadURL(photoRef);
+                return { id: d.id, ref: d.ref, ...data, photoURL };
+              }
+              return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
+            } catch {
+              return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
+            }
+          })
+        );
+
+        setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
+        setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+      } catch (e) {
+        setError("Error fetching kids");
+        logError(e, { description: "Error fetching kids" });
+      } finally {
+        setLoading(false);
+        setInitialLoad(false);
+      }
+    },
+    [age, gender, hobbies]
+  );
 
   // Refetch when filters change
   useEffect(() => {
@@ -147,7 +150,7 @@ export default function ChooseKid() {
       const date =
         birthdayTimestamp instanceof Date
           ? birthdayTimestamp
-          : birthdayTimestamp.toDate?.() ?? new Date(birthdayTimestamp._seconds * 1000);
+          : (birthdayTimestamp.toDate?.() ?? new Date(birthdayTimestamp._seconds * 1000));
 
       const now = new Date();
       let years = now.getFullYear() - date.getFullYear();

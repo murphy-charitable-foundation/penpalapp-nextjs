@@ -3,12 +3,7 @@
 import { getAuth } from "firebase/auth";
 import { logError } from "../../../app/utils/analytics";
 
-const ReportPopup = ({
-  setShowPopup,
-  setShowConfirmReportPopup,
-  sender,
-  content,
-}) => {
+const ReportPopup = ({ setShowPopup, setShowConfirmReportPopup, sender, content }) => {
   const auth = getAuth();
 
   async function handleButtonClick(content) {
@@ -35,17 +30,17 @@ const ReportPopup = ({
   }
 
   return (
-      <div
-        className={"fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm"}>
-        <div className={"bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto"}>
-        
+    <div
+      className={
+        "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm"
+      }
+    >
+      <div className={"bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto"}>
         <div className="bg-white space-y-4 shadow-md w-full rounded-md p-4 flex flex-col items-center">
           <h1 className="font-semibold text-sm text-red-500">
             Are you sure that you want to report this letter?
           </h1>
-          <p className="text-gray-700 text-sm">
-            This action will not be undone afterwards.
-          </p>
+          <p className="text-gray-700 text-sm">This action will not be undone afterwards.</p>
           <div className="flex justify-between gap-2 w-full">
             <button
               type="button"
@@ -67,7 +62,7 @@ const ReportPopup = ({
             </button>
           </div>
         </div>
-        </div>
+      </div>
     </div>
   );
 };

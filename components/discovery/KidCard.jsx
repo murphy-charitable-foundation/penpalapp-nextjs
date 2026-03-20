@@ -18,8 +18,8 @@ export default function KidCard({ kid, calculateAge }) {
   const hobbies = Array.isArray(kid?.hobby)
     ? kid.hobby
     : typeof kid?.hobby === "string" && kid.hobby.trim()
-    ? [kid.hobby.trim()]
-    : [];
+      ? [kid.hobby.trim()]
+      : [];
 
   return (
     <div
@@ -39,10 +39,7 @@ export default function KidCard({ kid, calculateAge }) {
         />
       </div>
 
-      <h2
-        className="text-lg mt-4 mb-1 font-semibold text-center"
-        style={{ color: BRAND.text }}
-      >
+      <h2 className="text-lg mt-4 mb-1 font-semibold text-center" style={{ color: BRAND.text }}>
         {kid?.first_name} {kid?.last_name}
       </h2>
 

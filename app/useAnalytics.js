@@ -39,7 +39,7 @@ async function uploadScreenshot(base64Image, fileName) {
   return await getDownloadURL(storageRef);
 }
 
-const captureClickArea = async function(normalizedX, normalizedY, radius = 300) {
+const captureClickArea = async function (normalizedX, normalizedY, radius = 300) {
   if (typeof window !== "undefined") {
     const html2canvas = (await import("html2canvas")).default;
     // Render the full document body
@@ -58,22 +58,28 @@ const captureClickArea = async function(normalizedX, normalizedY, radius = 300) 
     const croppedCtx = croppedCanvas.getContext("2d");
     croppedCtx.drawImage(
       canvas,
-      centerX - radius, centerY - radius, radius * 2, radius * 2, // source area
-      0, 0, radius * 2, radius * 2                                // destination
+      centerX - radius,
+      centerY - radius,
+      radius * 2,
+      radius * 2, // source area
+      0,
+      0,
+      radius * 2,
+      radius * 2 // destination
     );
 
     // Draw a circle around the click point
-    const circleRadius = Math.min(radius / 5, 20);  // e.g. circle radius = 1/5 of crop radius, but max 20px
-    
+    const circleRadius = Math.min(radius / 5, 20); // e.g. circle radius = 1/5 of crop radius, but max 20px
+
     croppedCtx.beginPath();
     croppedCtx.arc(radius, radius, circleRadius, 0, 2 * Math.PI, false);
-    croppedCtx.fillStyle = "rgba(255, 255, 0, 0.8)";  // semi-opaque yellow
+    croppedCtx.fillStyle = "rgba(255, 255, 0, 0.8)"; // semi-opaque yellow
     croppedCtx.fill();
 
     return croppedCanvas.toDataURL("image/png");
   }
   return null;
-}
+};
 
 // Throttle function to limit the rate at which a function can fire
 const throttle = (func, limit) => {
@@ -87,11 +93,11 @@ const throttle = (func, limit) => {
   };
 };
 
-  /**
-   * Handles logging page views, time spent on page, and dead clicks
-   * @param {string} pagePath the path of the page to log
-   * @returns {void}
-   */
+/**
+ * Handles logging page views, time spent on page, and dead clicks
+ * @param {string} pagePath the path of the page to log
+ * @returns {void}
+ */
 const usePageAnalytics = (pagePath) => {
   useReportWebVitals((metric) => {
     if (metric.name === "LCP") {
@@ -101,17 +107,7 @@ const usePageAnalytics = (pagePath) => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Log dead clicks
-      const nonInteractiveElements = [
-        "P",
-        "DIV",
-        "H1",
-        "H2",
-        "H3",
-        "H4",
-        "H5",
-        "H6",
-        "IMG",
-      ];
+      const nonInteractiveElements = ["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "IMG"];
 
       const throttledDeadClickHandler = throttle(async (e) => {
         if (nonInteractiveElements.includes(e.target.tagName)) {
@@ -178,10 +174,7 @@ const usePageAnalytics = (pagePath) => {
       return () => {
         handlePageView(); // record time when component unmounts
         window.removeEventListener("beforeunload", handlePageView);
-        document.removeEventListener(
-          "visibilitychange",
-          handleVisibilityChange
-        );
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
         document.removeEventListener("click", throttledDeadClickHandler);
       };
     }
@@ -230,7 +223,7 @@ class GlobalTracker {
         type: "uncaught_error",
         source: source,
         line: lineno,
-        column: colno
+        column: colno,
       });
     };
 
@@ -250,9 +243,7 @@ class GlobalTracker {
   initializeConnectivityTracking() {
     window.addEventListener("online", () => {
       if (this.disconnectionStartTime) {
-        const duration = Math.round(
-          (Date.now() - this.disconnectionStartTime) / 1000
-        );
+        const duration = Math.round((Date.now() - this.disconnectionStartTime) / 1000);
         console.log("internet disconnection duration:", duration);
         logInternetDisconnection(duration, true);
         this.disconnectionStartTime = null;

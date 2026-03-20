@@ -22,9 +22,7 @@ export default function KidFilter({ filter }) {
 
   const ageLabel = useMemo(() => {
     if (!age) return "";
-    const match = AGE_BRACKETS.find(
-      (b) => b.min === age.min && b.max === age.max
-    );
+    const match = AGE_BRACKETS.find((b) => b.min === age.min && b.max === age.max);
     return match ? match.label : "";
   }, [age]);
 
@@ -43,16 +41,10 @@ export default function KidFilter({ filter }) {
   };
 
   return (
-    <form
-      onSubmit={applyFilter}
-      className="w-full bg-white"
-      style={{ ["--accent"]: ACCENT }}
-    >
+    <form onSubmit={applyFilter} className="w-full bg-white" style={{ ["--accent"]: ACCENT }}>
       <div className="px-5 py-5 space-y-5">
         <div>
-          <label className="block mb-1 text-xs font-medium text-gray-600">
-            Hobbies
-          </label>
+          <label className="block mb-1 text-xs font-medium text-gray-600">Hobbies</label>
           <HobbySelect
             value={hobbies}
             onChange={setHobbies}
@@ -63,9 +55,7 @@ export default function KidFilter({ filter }) {
         </div>
 
         <div>
-          <label className="block mb-1 text-xs font-medium text-gray-600">
-            Gender
-          </label>
+          <label className="block mb-1 text-xs font-medium text-gray-600">Gender</label>
           <Dropdown
             options={genderOptions}
             currentValue={gender || ""}
@@ -75,9 +65,7 @@ export default function KidFilter({ filter }) {
         </div>
 
         <div>
-          <label className="block mb-1 text-xs font-medium text-gray-600">
-            Age
-          </label>
+          <label className="block mb-1 text-xs font-medium text-gray-600">Age</label>
           <Dropdown
             options={AGE_BRACKETS.map((b) => b.label)}
             currentValue={ageLabel}
@@ -101,11 +89,7 @@ export default function KidFilter({ filter }) {
             Apply filters
           </button>
 
-          <button
-            type="button"
-            onClick={clearFilter}
-            className="text-xs text-gray-600 underline"
-          >
+          <button type="button" onClick={clearFilter} className="text-xs text-gray-600 underline">
             Clear filters
           </button>
         </div>

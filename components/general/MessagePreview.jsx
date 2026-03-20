@@ -5,7 +5,6 @@ import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
 import Link from "next/link";
 
-
 const MessagePreview = ({
   profileImage,
   name,
@@ -16,7 +15,7 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
-  id
+  id,
 }) => {
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
@@ -51,18 +50,20 @@ const MessagePreview = ({
         status === "rejected"
           ? "bg-red-50"
           : isRecipient && unread
-          ? "bg-green-50"
-          : status === "pending_review"
-          ? "bg-gray-50"
-          : "bg-white"
-      }`}>
+            ? "bg-green-50"
+            : status === "pending_review"
+              ? "bg-gray-50"
+              : "bg-white"
+      }`}
+    >
       <div className="flex items-start">
         <div
           onClick={handleProfileClick}
           className="cursor-pointer"
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
+          onKeyDown={(e) => e.key === "Enter" && handleProfileClick(e)}
+        >
           <Image
             src={imageSrc}
             alt={`${name}'s profile`}
@@ -91,17 +92,14 @@ const MessagePreview = ({
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}>
+        }`}
+      >
         {lastMessage ? (
           <div className="flex">
-            {getStatusIcon() && (
-              <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            )}
+            {getStatusIcon() && <div className="mr-2 mt-0.5">{getStatusIcon()}</div>}
             <div className="flex-1">
               {status === "rejected" && (
-                <div className="font-normal text-red-500">
-                  Your letter was rejected
-                </div>
+                <div className="font-normal text-red-500">Your letter was rejected</div>
               )}
               {lastMessage}
             </div>
@@ -110,9 +108,7 @@ const MessagePreview = ({
           <div className="flex">
             <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
             {status === "rejected" && (
-              <div className="flex-1 font-normal text-red-500">
-                Your letter was rejected
-              </div>
+              <div className="flex-1 font-normal text-red-500">Your letter was rejected</div>
             )}
           </div>
         )}

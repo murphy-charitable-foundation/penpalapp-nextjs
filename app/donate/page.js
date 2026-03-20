@@ -53,21 +53,18 @@ export default function Donate() {
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
             <div className="space-y-2">
               <p className="text-black dark:text-black">
-               Your generosity makes our work possible. Whether you contribute
-               financially or as an advocate for good, you make a real
-               difference.
+                Your generosity makes our work possible. Whether you contribute financially or as an
+                advocate for good, you make a real difference.
               </p>
 
               <p className="text-xs italic text-slate-600 dark:text-slate-300">
                 You may include a note to indicate your preferred category:
               </p>
 
-               <p className="text-xs italic text-slate-600 dark:text-slate-300">
-               Education, Beddings &amp; Clothing, Medical Care, or Scholastic
-               Materials.
+              <p className="text-xs italic text-slate-600 dark:text-slate-300">
+                Education, Beddings &amp; Clothing, Medical Care, or Scholastic Materials.
               </p>
             </div>
-
 
             {/* DONATE BUTTON */}
             <div className="mt-4 text-center">
@@ -88,23 +85,15 @@ export default function Donate() {
 
                 <div className="grid grid-cols-1 gap-4">
                   {details.map((detail, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-lg p-4 shadow"
-                    >
-                      <h3 className="text-sm font-bold text-secondary">
-                        {detail.label}
-                      </h3>
-                      <p className="text-gray-800 mt-1">
-                        {detail.value}
-                      </p>
+                    <div key={idx} className="bg-white rounded-lg p-4 shadow">
+                      <h3 className="text-sm font-bold text-secondary">{detail.label}</h3>
+                      <p className="text-gray-800 mt-1">{detail.value}</p>
                     </div>
                   ))}
                 </div>
 
                 <p className="text-white/90 text-xs mt-4 text-center">
-                  Please include your email in the transfer note so we can send a
-                  receipt.
+                  Please include your email in the transfer note so we can send a receipt.
                 </p>
               </div>
             </section>

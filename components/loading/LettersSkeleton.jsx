@@ -32,10 +32,7 @@ export default function LettersSkeleton() {
         <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 px-4 py-6">
           <div className="space-y-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
-              >
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <div className="flex items-center mb-3">
                   <div className="w-10 h-10 bg-gray-300 rounded-full mr-3" />
                   <div className="flex-1 space-y-2">

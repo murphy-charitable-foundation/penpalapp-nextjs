@@ -1,19 +1,10 @@
 import Link from "next/link";
 import ProfileImage from "/components/general/ProfileImage";
 
-export default function ProfileHeader({
-  userName,
-  country,
-  profileImage,
-  id,
-  showCountry = true, 
-}) {
+export default function ProfileHeader({ userName, country, profileImage, id, showCountry = true }) {
   return (
     <header className="bg-blue-100 border-b border-gray-200 px-4 py-3">
-      <Link
-        href={`/profile`}
-        className="flex items-center gap-2 sm:gap-3"
-      >
+      <Link href={`/profile`} className="flex items-center gap-2 sm:gap-3">
         <ProfileImage
           photo_uri={profileImage}
           first_name={userName}
@@ -21,14 +12,10 @@ export default function ProfileHeader({
         />
 
         <div className="min-w-0">
-          <div className="font-semibold text-lg text-slate-900 truncate">
-            {userName || "—"}
-          </div>
+          <div className="font-semibold text-lg text-slate-900 truncate">{userName || "—"}</div>
 
           {showCountry && country && (
-            <div className="text-sm text-slate-600 truncate">
-              {country}
-            </div>
+            <div className="text-sm text-slate-600 truncate">{country}</div>
           )}
         </div>
       </Link>

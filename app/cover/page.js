@@ -1,5 +1,5 @@
 // pages/cover.js
-"use client"
+"use client";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import bgImage from "/public/cover.png";

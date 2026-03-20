@@ -13,9 +13,8 @@ const ConfirmReportPopup = ({ setShowPopup }) => {
         <>
           <FaExclamationCircle className="text-green-700 h-10 w-10 mx-auto mb-2" />
           <p>
-            Thank you for reporting the inappropriate message. We greatly
-            appreciate your feedback, as it helps us improve. Our team will
-            review the content of the message.
+            Thank you for reporting the inappropriate message. We greatly appreciate your feedback,
+            as it helps us improve. Our team will review the content of the message.
           </p>
         </>
       }

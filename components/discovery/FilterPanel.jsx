@@ -30,10 +30,7 @@ export default function FilterPanel({
   return (
     <>
       {open && (
-        <div
-          className="fixed inset-0 z-[98] bg-black/35 backdrop-blur-[2px]"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-[98] bg-black/35 backdrop-blur-[2px]" onClick={onClose} />
       )}
 
       <div

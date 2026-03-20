@@ -14,17 +14,13 @@ export function PageHeader({
   imageSize = "md",
   showBorder = true,
 }) {
-  const imageWidth =
-    imageSize === "sm" ? 96 : imageSize === "lg" ? 200 : 160;
+  const imageWidth = imageSize === "sm" ? 96 : imageSize === "lg" ? 200 : 160;
 
   return (
     <>
       {/* HEADER ROW */}
       <div
-        className={[
-          "flex items-center pb-4 px-4 pt-4",
-          showBorder ? "border-b-2" : "",
-        ].join(" ")}
+        className={["flex items-center pb-4 px-4 pt-4", showBorder ? "border-b-2" : ""].join(" ")}
       >
         {/* LEFT */}
         <div className="w-8 flex justify-start">
@@ -34,22 +30,14 @@ export function PageHeader({
         {/* CENTER */}
         {heading ? (
           <h1
-            className={[
-              "flex-1 text-center text-2xl font-bold tracking-tight",
-              titleColor,
-            ].join(" ")}
+            className={["flex-1 text-center text-2xl font-bold tracking-tight", titleColor].join(
+              " "
+            )}
           >
             {title}
           </h1>
         ) : (
-          <span
-            className={[
-              "flex-1 text-center font-medium",
-              titleColor,
-            ].join(" ")}
-          >
-            {title}
-          </span>
+          <span className={["flex-1 text-center font-medium", titleColor].join(" ")}>{title}</span>
         )}
 
         {/* RIGHT SPACER */}
@@ -59,12 +47,7 @@ export function PageHeader({
       {/* LOGO */}
       {image && (
         <div className="flex justify-center mb-4">
-          <Image
-            src={logo}
-            alt="Foundation Logo"
-            width={imageWidth}
-            priority
-          />
+          <Image src={logo} alt="Foundation Logo" width={imageWidth} priority />
         </div>
       )}
     </>

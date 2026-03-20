@@ -29,13 +29,10 @@ export default function Welcome() {
       <PageContainer className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
         <div className="relative w-full h-[50vh] bg-[url('/welcome.png')] bg-cover bg-center"></div>
 
-        <h3 className="pt-16 text-center w-full font-[700] text-2xl">
-          Welcome, {firstName}
-        </h3>
+        <h3 className="pt-16 text-center w-full font-[700] text-2xl">Welcome, {firstName}</h3>
 
         <div className="text-center w-full pt-5 flex-1">
-          We are so happy to be here, thanks for your support. Now you are part
-          of the family.
+          We are so happy to be here, thanks for your support. Now you are part of the family.
         </div>
 
         <div className="text-center w-full pt-10 pb-20">

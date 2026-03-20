@@ -3,12 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import logo from "/public/murphylogo.png";
-import {
-  FaInstagram,
-  FaLinkedinIn,
-  FaEnvelope,
-  FaGlobe,
-} from "react-icons/fa";
+import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";
 import { BackButton } from "../../components/general/BackButton";
 
@@ -55,9 +50,7 @@ export default function Contact() {
           Murphy Charitable Foundation Uganda
         </h1>
 
-        <p className="text-center text-lg text-gray-100 mb-6">
-          Reach out to us here
-        </p>
+        <p className="text-center text-lg text-gray-100 mb-6">Reach out to us here</p>
 
         <div className="space-y-6">
           {socialLinks.map((link) => (

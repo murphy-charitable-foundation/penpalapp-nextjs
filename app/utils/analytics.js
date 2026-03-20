@@ -60,9 +60,7 @@ const logInEvent = (status, message) => {
  */
 const logError = (error, errorInfo) => {
   const errorObject =
-    error instanceof Error
-      ? error
-      : new Error(typeof error === "string" ? error : "Unknown error");
+    error instanceof Error ? error : new Error(typeof error === "string" ? error : "Unknown error");
 
   if (analytics) {
     logEvent(analytics, "uncaught_error", {
@@ -95,7 +93,7 @@ const logDeadClick = (elementClicked, pagePath, screenshotUrl, elementId, ariaLa
       timestamp: new Date().toISOString(),
       screenshot_url: screenshotUrl || null,
       element_id: elementId || "unknown",
-      aria_label: ariaLabel || "unknown"
+      aria_label: ariaLabel || "unknown",
     });
   }
 };

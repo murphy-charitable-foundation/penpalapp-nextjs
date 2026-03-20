@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import  NavBar from "../../components/bottom-nav-bar";
+import NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
@@ -53,17 +53,14 @@ export default function Home() {
         const fetchedConversations = await Promise.all(
           letterboxIds.map(async (id) => {
             const userRef = doc(db, "users", uid);
-            const letter =
-              (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const letter = (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
 
             return {
               id: letter?.id,
               profileImage: recipient?.photo_uri || "",
-              name: `${recipient.first_name ?? "Unknown"} ${
-                recipient.last_name ?? ""
-              }`,
+              name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
               lastMessageDate: letter.created_at || "",
@@ -99,7 +96,7 @@ export default function Home() {
       } else {
         try {
           const uid = user.uid;
-          setUserId(uid)
+          setUserId(uid);
 
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
@@ -123,48 +120,48 @@ export default function Home() {
     return () => unsubscribe();
   }, [router]);
 
-return (
-  <>
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
-        {isLoading && <LetterHomeSkeleton />}
-        {!isLoading && (
-          <>
-          {/* ===== HEADER (FIXED) ===== */}
-          <div className="shrink-0 border-b">
-            <ProfileHeader
-              userName={userName}
-              profileImage={profileImage}
-              id={userId}
-              showCountry={false}
-            />
-          </div>
+  return (
+    <>
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {isLoading && <LetterHomeSkeleton />}
+          {!isLoading && (
+            <>
+              {/* ===== HEADER (FIXED) ===== */}
+              <div className="shrink-0 border-b">
+                <ProfileHeader
+                  userName={userName}
+                  profileImage={profileImage}
+                  id={userId}
+                  showCountry={false}
+                />
+              </div>
 
-          {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-3">
-            {conversations.length > 0 ? (
-              <ConversationList conversations={conversations} />
-            ) : (
-              <EmptyState
-                title="New friends are coming!"
-                description="Many friends are coming — hang tight!"
-              />
-            )}
-          </div>
+              {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-3">
+                {conversations.length > 0 ? (
+                  <ConversationList conversations={conversations} />
+                ) : (
+                  <EmptyState
+                    title="New friends are coming!"
+                    description="Many friends are coming — hang tight!"
+                  />
+                )}
+              </div>
 
-          {/* ===== NAVBAR (FIXED) ===== */}
-          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-            <NavBar />
-          </div>
-          </>
-        )}
-      </PageContainer>
-    </PageBackground>
-  </>
-);
+              {/* ===== NAVBAR (FIXED) ===== */}
+              <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+                <NavBar />
+              </div>
+            </>
+          )}
+        </PageContainer>
+      </PageBackground>
+    </>
+  );
 }

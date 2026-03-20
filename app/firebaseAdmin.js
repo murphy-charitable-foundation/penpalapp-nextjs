@@ -40,9 +40,7 @@ else {
 
 // Validate the service account
 if (!serviceAccount?.privateKey) {
-  console.error(
-    "Firebase private key is missing. Check your environment variables."
-  );
+  console.error("Firebase private key is missing. Check your environment variables.");
 }
 
 // Initialize Firebase only if not already initialized
@@ -61,4 +59,3 @@ if (!admin.apps.length) {
 export const auth = admin.apps.length ? admin.auth() : null;
 export const db = admin.apps.length ? admin.firestore() : null;
 export const storage = admin.apps.length ? admin.storage() : null;
-

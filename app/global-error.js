@@ -7,7 +7,7 @@ import { logError } from "./utils/analytics";
 
 export default function GlobalError({ error }) {
   useEffect(() => {
-    logError(error)
+    logError(error);
   }, [error]);
 
   return (

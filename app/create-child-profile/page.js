@@ -61,19 +61,19 @@ export default function CreateChildProfile() {
   useEffect(() => {
     if (!userLoading && userType && userType !== "admin") {
       setDialogTitle("Access Denied");
-      setDialogMessage("You do not have authorization to access this page. Only admins can create child profiles.");
+      setDialogMessage(
+        "You do not have authorization to access this page. Only admins can create child profiles."
+      );
       setIsDialogOpen(true);
-      
+
       // Redirect to login after dialog closes
       const timer = setTimeout(() => {
         router.push("/login");
       }, 2000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [userType, userLoading, router]);
-
-
 
   const handleImageClick = () => {
     fileInputRef.current.click();
@@ -85,7 +85,7 @@ export default function CreateChildProfile() {
       setSelectedFile(file);
       setShowCropper(true);
       // Reset the input value to allow selecting the same file again
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -106,7 +106,7 @@ export default function CreateChildProfile() {
     setShowCropper(false);
   };
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     logButtonEvent("/user-data-import", "Import User Data button clicked!");
@@ -114,14 +114,20 @@ const handleSubmit = async (e) => {
     try {
       const newErrors = {};
       const formData = new FormData(e.currentTarget);
-      const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
+      const internationalBuddyEmail = formData.get("internationalbuddyemail");
       let email = formData.get("email");
       const password = formData.get("password");
       const birthday = formData.get("birthday");
-      
+
       const userData = {
-        first_name: (() => { const s = formData.get("firstName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
-        last_name: (() => { const s = formData.get("lastName").trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : ""; })(),
+        first_name: (() => {
+          const s = formData.get("firstName").trim();
+          return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+        })(),
+        last_name: (() => {
+          const s = formData.get("lastName").trim();
+          return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+        })(),
         birthday: (formData.get("birthday") || "").toString(),
         country: (formData.get("country") || "").toString(),
         village: (formData.get("village") || "").toString(),
@@ -132,7 +138,7 @@ const handleSubmit = async (e) => {
         dream_job: (formData.get("dreamJob") || "").toString(),
 
         // Backward compatible + new schema
-        hobbies: hobbies.map((h) => h.id), 
+        hobbies: hobbies.map((h) => h.id),
 
         favorite_color: (formData.get("favoriteColor") || "").toString(),
         user_type: "child",
@@ -148,7 +154,7 @@ const handleSubmit = async (e) => {
         } else {
           const firstNameLetter = userData.first_name.charAt(0).toLowerCase();
           const lastName = userData.last_name.toLowerCase();
-          const yearLastTwoDigits = birthday.toString().slice(2,4);
+          const yearLastTwoDigits = birthday.toString().slice(2, 4);
           email = `rez+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
         }
       }
@@ -163,10 +169,9 @@ const handleSubmit = async (e) => {
         newErrors.email = "Invalid email format";
       }
 
-       if (!/\S+@\S+\.\S+/.test(internationalBuddyEmail) && internationalBuddyEmail !== "") {
+      if (!/\S+@\S+\.\S+/.test(internationalBuddyEmail) && internationalBuddyEmail !== "") {
         newErrors.internationalbuddyemail = "Invalid email format";
       }
-
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -180,22 +185,24 @@ const handleSubmit = async (e) => {
           throw new Error("You must be logged in to import user data");
         }
         const token = await auth.currentUser.getIdToken();
-        
+
         // Fetch UID of international buddy only if email is provided
         if (internationalBuddyEmail.trim()) {
           const uidRes = await fetch("/api/getUidByEmail", {
             method: "POST",
-            headers: { 
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json" },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({ email: internationalBuddyEmail }),
           });
 
           internationalBuddyUid = await uidRes.json();
           if (!uidRes.ok) {
-            newErrors.internationalbuddyemail = internationalBuddyUid.error || "No user found with this email";
+            newErrors.internationalbuddyemail =
+              internationalBuddyUid.error || "No user found with this email";
             setErrors(newErrors);
-            throw new Error (internationalBuddyUid.error || "No user found with this email");
+            throw new Error(internationalBuddyUid.error || "No user found with this email");
           }
         }
 
@@ -203,8 +210,9 @@ const handleSubmit = async (e) => {
         const createRes = await fetch("/api/createChild", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json" },
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ email, password, userData }),
         });
 
@@ -216,43 +224,45 @@ const handleSubmit = async (e) => {
         }
       } catch (error) {
         logError(error, {
-          description: "Error creating child or finding the international buddy: ",    
-        })
+          description: "Error creating child or finding the international buddy: ",
+        });
         throw error;
       }
 
-        const kidId = createJson.uid;
-        const kidRef = doc(db, "users", kidId);
+      const kidId = createJson.uid;
+      const kidRef = doc(db, "users", kidId);
 
-        const buddyRef = doc(db, "users", internationalBuddyUid.uid);
-        await createConnection(buddyRef, kidRef);
+      const buddyRef = doc(db, "users", internationalBuddyUid.uid);
+      await createConnection(buddyRef, kidRef);
 
-        // Upload profile image if available
-        if (croppedBlob) {
-          setLoading(true);
-          uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
-            (progress) => {
-              console.log('Upload progress:', progress);
-              if (progress === 100) {
-                setLoading(false);
-              }
-            },
-            (error) => {
-              logError(error, { description: "Error uploading profile image" });
-            },
-            async (url) => {
-              // Update user photo_uri
-              const userRef = doc(db, "users", kidId);
-              await updateDoc(userRef, { photo_uri: url });
+      // Upload profile image if available
+      if (croppedBlob) {
+        setLoading(true);
+        uploadFile(
+          croppedBlob,
+          `profile/${kidId}/profile-image`,
+          (progress) => {
+            console.log("Upload progress:", progress);
+            if (progress === 100) {
+              setLoading(false);
             }
-          );
-        }
+          },
+          (error) => {
+            logError(error, { description: "Error uploading profile image" });
+          },
+          async (url) => {
+            // Update user photo_uri
+            const userRef = doc(db, "users", kidId);
+            await updateDoc(userRef, { photo_uri: url });
+          }
+        );
+      }
 
       // Reset form
       setHobbies([]);
       setCroppedBlob(null);
       setCroppedImage(null);
-      e.target?.closest('form')?.reset();
+      e.target?.closest("form")?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
@@ -302,10 +312,16 @@ const handleSubmit = async (e) => {
                   unoptimized
                 />
               ) : (
-               <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} />
+                <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} />
               )}
             </div>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              style={{ display: "none" }}
+            />
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
@@ -319,9 +335,13 @@ const handleSubmit = async (e) => {
               <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
                 <div
                   className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
-                  onClick={() => handleCancelCrop()}                
-                  />
-                <div className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
+                  onClick={() => handleCancelCrop()}
+                />
+                <div
+                  className={
+                    "relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"
+                  }
+                >
                   <div className="flex justify-center">
                     <EditProfileImage
                       image={URL.createObjectURL(selectedFile)}
@@ -340,9 +360,7 @@ const handleSubmit = async (e) => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Basic Info:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Basic Info:</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
@@ -361,18 +379,18 @@ const handleSubmit = async (e) => {
                     onChange={(e) => setLastName(e.target.value)}
                   />
 
-                  <Input type="date" name="birthday" label="Birthday" error={errors.birthday} onChange={(e) => setBirthday(e.target.value)}/>
+                  <Input
+                    type="date"
+                    name="birthday"
+                    label="Birthday"
+                    error={errors.birthday}
+                    onChange={(e) => setBirthday(e.target.value)}
+                  />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
-                      Pronouns
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Pronouns</label>
                     <Dropdown
-                      options={[                       
-                        "He/Him",
-                        "She/Her",
-                        "Other"
-                      ]}
+                      options={["He/Him", "She/Her", "Other"]}
                       valueChange={setPronouns}
                       currentValue={pronouns}
                       text="Pronouns"
@@ -411,15 +429,12 @@ const handleSubmit = async (e) => {
                       error={errors.internationalbuddyemail ? errors.internationalbuddyemail : ""}
                     />
                   </div>
-                
                 </div>
               </div>
 
               {/* Background */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Background:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Background:</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input name="country" label="Country" />
@@ -444,9 +459,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
-                      Is Orphan
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Is Orphan</label>
                     <Dropdown
                       options={["No", "Yes"]}
                       valueChange={setIsOrphan}
@@ -456,9 +469,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
-                      Guardian
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Guardian</label>
                     <Dropdown
                       options={[
                         "Parents",
@@ -479,18 +490,14 @@ const handleSubmit = async (e) => {
 
               {/* Interests */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Interests:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Interests:</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input name="dreamJob" label="Dream Job" />
                   <Input name="favoriteColor" label="Favorite Color" />
                   <Input name="favoriteAnimal" label="Favorite Animal" />
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
-                      Hobby
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Hobby</label>
                     <HobbySelect
                       value={hobbies}
                       onChange={setHobbies}
@@ -504,17 +511,10 @@ const handleSubmit = async (e) => {
 
               {/* Bio */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Bio:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Bio:</h3>
 
                 <div className="grid grid-cols-1 gap-6">
-                  <TextArea
-                    name="bio"
-                    rows={3}
-                    maxLength={50}
-                    label="Bio / Challenges Faced"
-                  />
+                  <TextArea name="bio" rows={3} maxLength={50} label="Bio / Challenges Faced" />
                 </div>
               </div>
 

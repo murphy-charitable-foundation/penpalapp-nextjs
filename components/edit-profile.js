@@ -28,9 +28,7 @@ const EditProfileImage = ({ router }) => {
 
   useEffect(() => {
     const fetchCountries = async () => {
-      const res = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/iso"
-      );
+      const res = await fetch("https://countriesnow.space/api/v0.1/countries/iso");
       const data = await res.json();
       setCountries(data.data);
     };
@@ -52,10 +50,7 @@ const EditProfileImage = ({ router }) => {
   };
 
   const handleCrop = () => {
-    if (
-      cropperRef.current &&
-      typeof cropperRef.current?.cropper?.getCroppedCanvas === "function"
-    ) {
+    if (cropperRef.current && typeof cropperRef.current?.cropper?.getCroppedCanvas === "function") {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
         setCroppedImage(blob);
@@ -135,8 +130,8 @@ const EditProfileImage = ({ router }) => {
           <div className="min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col p-4 text-white text-center">
             <h2 className="text-[32px]">Welcome {user?.firstName}</h2>
             <p>
-              We are so happy to be here, thanks for your support and help. You
-              are part of the family now.{" "}
+              We are so happy to be here, thanks for your support and help. You are part of the
+              family now.{" "}
             </p>
             <Button
               btnType="button"

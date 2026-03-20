@@ -8,11 +8,7 @@ const WIDTHS = {
   compact: "max-w-lg",
 };
 
-export function PageContainer({
-  children,
-  width = "compactXS",
-  className = "",
-}) {
+export function PageContainer({ children, width = "compactXS", className = "" }) {
   return (
     <div className="w-full flex justify-center">
       <div className={`w-full ${WIDTHS[width]}`}>

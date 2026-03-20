@@ -73,10 +73,7 @@ export default function EditProfileUserImage() {
   };
 
   const handleCrop = () => {
-    if (
-      cropperRef.current &&
-      typeof cropperRef.current.cropper?.getCroppedCanvas === "function"
-    ) {
+    if (cropperRef.current && typeof cropperRef.current.cropper?.getCroppedCanvas === "function") {
       const canvas = cropperRef.current.cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
         setCroppedImage(blob);
@@ -131,10 +128,7 @@ export default function EditProfileUserImage() {
       }
     );
 
-    logButtonEvent(
-      "Save Profile Picture clicked!",
-      "/edit-profile-user-image"
-    );
+    logButtonEvent("Save Profile Picture clicked!", "/edit-profile-user-image");
   };
 
   return (
@@ -145,14 +139,10 @@ export default function EditProfileUserImage() {
         <div className="bg-gray-50 min-h-screen">
           <div className="max-w-lg mx-auto p-6">
             <PageHeader
-                title="Edit image"
-                image={false}
-                onBack={() =>
-                  attemptNavigateWithGuard(() =>
-                    router.push("/profile")
-                  )
-                }
-              />
+              title="Edit image"
+              image={false}
+              onBack={() => attemptNavigateWithGuard(() => router.push("/profile"))}
+            />
 
             <div className="flex flex-col items-center gap-6 mt-6">
               <EditProfileImage

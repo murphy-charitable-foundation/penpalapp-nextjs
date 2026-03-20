@@ -1,7 +1,7 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import LoadingSpinner from '../components/loading/LoadingSpinner';
+import { createContext, useContext, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import LoadingSpinner from "../components/loading/LoadingSpinner";
 
 const NavigationContext = createContext(null);
 
@@ -39,7 +39,7 @@ export function NavigationProvider({ children }) {
 export const useNavigation = () => {
   const context = useContext(NavigationContext);
   if (!context) {
-    throw new Error('useNavigation must be used within a NavigationProvider');
+    throw new Error("useNavigation must be used within a NavigationProvider");
   }
   return context;
 };

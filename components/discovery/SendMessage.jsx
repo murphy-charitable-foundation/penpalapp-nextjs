@@ -2,7 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../../app/firebaseConfig";
-import { addDoc, doc, updateDoc, arrayUnion,getDoc,getDocs,query,collection,where } from "firebase/firestore";
+import {
+  addDoc,
+  doc,
+  updateDoc,
+  arrayUnion,
+  getDoc,
+  getDocs,
+  query,
+  collection,
+  where,
+} from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Button from "../general/Button";
 import { logError } from "../../app/utils/analytics";
@@ -35,10 +45,7 @@ export default function SendMessage({ kid }) {
           router.push("/login");
         }
       } catch (error) {
-        console.error(
-          "There has been a error fetching the logged in user",
-          error
-        );
+        console.error("There has been a error fetching the logged in user", error);
       }
     };
 

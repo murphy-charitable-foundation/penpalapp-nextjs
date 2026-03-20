@@ -24,10 +24,7 @@ export default function Dropdown({
   }, []);
 
   //safety guard
-  const safeValue =
-    typeof currentValue === "string" && currentValue.trim()
-      ? currentValue
-      : "";
+  const safeValue = typeof currentValue === "string" && currentValue.trim() ? currentValue : "";
 
   const displayText = safeValue || placeholder;
 
@@ -47,13 +44,7 @@ export default function Dropdown({
           ${safeValue ? "border-black" : "border-gray-300"}
         `}
       >
-
-
-        <span
-          className={`truncate ${
-            safeValue ? "text-gray-900" : "text-gray-500"
-          }`}
-        >
+        <span className={`truncate ${safeValue ? "text-gray-900" : "text-gray-500"}`}>
           {displayText}
         </span>
         <span className={`text-gray-600 ${caretClass}`}>▾</span>

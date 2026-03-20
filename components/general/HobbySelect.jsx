@@ -21,8 +21,7 @@ export default function HobbySelect({
   placeholder,
   collectionName = "hobbies",
 }) {
-  const safePlaceholder =
-    placeholder || (allowCustom ? "Select or add hobbies" : "Select hobbies");
+  const safePlaceholder = placeholder || (allowCustom ? "Select or add hobbies" : "Select hobbies");
 
   const safeOnChange = typeof onChange === "function" ? onChange : () => {};
 
@@ -42,9 +41,7 @@ export default function HobbySelect({
         const opts = snap.docs
           .map((d) => {
             const data = d.data() || {};
-            const raw = (data.hobby || data.label || data.name || "")
-              .toString()
-              .trim();
+            const raw = (data.hobby || data.label || data.name || "").toString().trim();
             if (!raw) return null;
 
             const id = slugify(raw);
@@ -69,9 +66,7 @@ export default function HobbySelect({
   }, [collectionName]);
 
   const options = useMemo(() => {
-    const selectedExtras = value.filter(
-      (v) => !serverOptions.some((o) => o.id === v.id)
-    );
+    const selectedExtras = value.filter((v) => !serverOptions.some((o) => o.id === v.id));
     return serverOptions.concat(selectedExtras);
   }, [serverOptions, value]);
 
@@ -130,9 +125,7 @@ export default function HobbySelect({
   const selectedText = value.map((v) => v.label).join(", ");
 
   const canShowAddRow =
-    allowCustom &&
-    query.trim() &&
-    !options.some((o) => o.id === slugify(query));
+    allowCustom && query.trim() && !options.some((o) => o.id === slugify(query));
 
   const showNoOptions = !allowCustom && filteredOptions.length === 0;
 
@@ -163,9 +156,7 @@ export default function HobbySelect({
 
           <div className="mt-3 max-h-52 overflow-y-auto">
             {isLoading ? (
-              <div className="py-6 text-sm text-gray-500 text-center">
-                Loading…
-              </div>
+              <div className="py-6 text-sm text-gray-500 text-center">Loading…</div>
             ) : (
               <ul className="space-y-1">
                 {filteredOptions.map((opt) => {
@@ -177,15 +168,8 @@ export default function HobbySelect({
                         onClick={() => toggle(opt)}
                         className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 text-left"
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          readOnly
-                          className="h-4 w-4"
-                        />
-                        <span className="text-sm text-gray-900">
-                          {opt.label}
-                        </span>
+                        <input type="checkbox" checked={checked} readOnly className="h-4 w-4" />
+                        <span className="text-sm text-gray-900">{opt.label}</span>
                       </button>
                     </li>
                   );
@@ -199,17 +183,13 @@ export default function HobbySelect({
                       className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 text-left"
                     >
                       <span className="text-sm font-semibold">+</span>
-                      <span className="text-sm text-gray-900">
-                        Add &quot;{query.trim()}&quot;
-                      </span>
+                      <span className="text-sm text-gray-900">Add &quot;{query.trim()}&quot;</span>
                     </button>
                   </li>
                 )}
 
                 {showNoOptions && (
-                  <li className="py-6 text-sm text-gray-500 text-center">
-                    No options
-                  </li>
+                  <li className="py-6 text-sm text-gray-500 text-center">No options</li>
                 )}
               </ul>
             )}

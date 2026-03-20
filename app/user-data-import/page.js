@@ -38,10 +38,8 @@ export default function UserDataImport() {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const pendingNavRef = useRef(null);
 
-
   const router = useRouter();
   usePageAnalytics("/user-data-import");
-
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -51,10 +49,8 @@ export default function UserDataImport() {
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () =>
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
-
 
   const attemptNavigateWithGuard = (navigate) => {
     if (!hasUnsavedChanges) {
@@ -65,8 +61,6 @@ export default function UserDataImport() {
     pendingNavRef.current = navigate;
     setShowLeaveDialog(true);
   };
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -122,12 +116,11 @@ export default function UserDataImport() {
       setHobbies([]);
       setHasUnsavedChanges(false);
 
-
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
       setDialogMessage("User data imported successfully!");
     } catch (error) {
-      logError(error, { description: "Error importing user data:", error});
+      logError(error, { description: "Error importing user data:", error });
       setIsDialogOpen(true);
       setDialogTitle("Oops");
       setDialogMessage("Error importing user data.");
@@ -144,7 +137,6 @@ export default function UserDataImport() {
         title={dialogTitle}
         content={dialogMessage}
       />
-
 
       <Dialog
         isOpen={showLeaveDialog}
@@ -190,24 +182,19 @@ export default function UserDataImport() {
           <PageHeader
             title="Import User Data"
             imageSize="sm"
-            onBack={() =>
-              attemptNavigateWithGuard(() => router.push("/profile"))
-            }
+            onBack={() => attemptNavigateWithGuard(() => router.push("/profile"))}
           />
-
 
           {/* Single scroller */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
             <form
-                onSubmit={handleSubmit}
-                onChange={() => setHasUnsavedChanges(true)}
-                className="space-y-6"
-              >
+              onSubmit={handleSubmit}
+              onChange={() => setHasUnsavedChanges(true)}
+              className="space-y-6"
+            >
               {/* Basic Info */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Basic Info:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Basic Info:</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
@@ -217,26 +204,14 @@ export default function UserDataImport() {
                     error={errors.first_name}
                   />
 
-                  <Input
-                    type="text"
-                    name="lastName"
-                    label="Last Name"
-                    error={errors.last_name}
-                  />
+                  <Input type="text" name="lastName" label="Last Name" error={errors.last_name} />
 
-                  <Input
-                    type="text"
-                    name="email"
-                    label="Email"
-                    error={errors.email}
-                  />
+                  <Input type="text" name="email" label="Email" error={errors.email} />
 
                   <Input type="date" name="birthday" label="Birthday" />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
-                      Gender
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Gender</label>
                     <Dropdown
                       options={["Male", "Female", "Other"]}
                       valueChange={setGender}
@@ -249,9 +224,7 @@ export default function UserDataImport() {
 
               {/* Background */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Background:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Background:</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input name="country" label="Country" />
@@ -276,9 +249,7 @@ export default function UserDataImport() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
-                      Is Orphan
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Is Orphan</label>
                     <Dropdown
                       options={["No", "Yes"]}
                       valueChange={setIsOrphan}
@@ -288,9 +259,7 @@ export default function UserDataImport() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
-                      Guardian
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Guardian</label>
                     <Dropdown
                       options={[
                         "Parents",
@@ -311,18 +280,14 @@ export default function UserDataImport() {
 
               {/* Interests */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Interests:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Interests:</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input name="dreamJob" label="Dream Job" />
                   <Input name="favoriteColor" label="Favorite Color" />
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
-                      Hobby
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500">Hobby</label>
                     <HobbySelect
                       value={hobbies}
                       onChange={setHobbies}
@@ -336,17 +301,10 @@ export default function UserDataImport() {
 
               {/* Bio */}
               <div className="rounded-2xl bg-white p-4">
-                <h3 className="text-sm font-semibold text-secondary mb-4">
-                  Bio:
-                </h3>
+                <h3 className="text-sm font-semibold text-secondary mb-4">Bio:</h3>
 
                 <div className="grid grid-cols-1 gap-6">
-                  <TextArea
-                    name="bio"
-                    rows={3}
-                    maxLength={50}
-                    label="Bio / Challenges Faced"
-                  />
+                  <TextArea name="bio" rows={3} maxLength={50} label="Bio / Challenges Faced" />
                 </div>
               </div>
 

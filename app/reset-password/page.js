@@ -50,8 +50,8 @@ export default function ResetPassword() {
   const modalContent = (
     <div>
       <p className="text-black mt-5 text-sm">
-        Please check your email inbox and spam folder for a verification email to
-        reset your password.
+        Please check your email inbox and spam folder for a verification email to reset your
+        password.
       </p>
       <div className="flex justify-center mt-4">
         <Button onClick={closeModal} btnText="Understood" color="green" />

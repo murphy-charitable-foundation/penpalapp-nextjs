@@ -1,10 +1,12 @@
 # 📊 Creating Custom Reports
+
 ## 1. Navigate to Explorations
 
 1. Sign in to [Google Analytics](https://analytics.google.com).
 2. In the left-hand menu, go to Explore → this is where you build custom reports.
 
 ## 2. Choose an Exploration Type
+
 GA4 offers several report “templates” to start from:
 
 - **Free form** → flexible table where you choose dimensions & metrics.
@@ -45,6 +47,7 @@ This would give you a custom table showing how many users triggered events on ea
 - You can **share** it with others in the GA4 property (they’ll see it under their Explore tab).
 
 ## 📌 Note on Latency
+
 The data available for the custom reports in the Explore tab of the left hand menu is the same as the data available in the Reports section of the Reports tab. This detailed data is aggregated and takes **2-6 hours** to populate. There are also near realtime options available for viewing the data logged by the app in the Reports tab: **Realtime overview** and **Realtime pages**. There are no options for creating custom dashboards for these in GA4, and the data will be less detailed than in the reports. This data is available with **a couple minutes**.
 
 ---
@@ -77,6 +80,7 @@ It consists of two main files:
 Our project uses **Firebase Analytics** to track events. Most logging should be done through the **wrapper functions** defined in `analytics.js`. This ensures events are logged consistently and makes it easier to update logging logic in one place.
 
 ### 1. Using Existing Logging Functions
+
 Whenever possible, call the appropriate wrapper function instead of calling Firebase directly.  
 Example:
 
@@ -87,11 +91,13 @@ logInEvent("success", "User logged in via Google");
 ```
 
 **This approach:**
+
 - **Keeps event names consistent**
 - **Ensures required parameters are always included**
 - **Makes analytics easier to maintain over time**
 
 ### 2. Logging a New Event (Directly)
+
 If a wrapper function does not exist for your use case, you can log directly with Firebase:
 
 ```jsx
@@ -100,11 +106,12 @@ import { analytics } from "@/firebaseConfig";
 
 logEvent(analytics, "event_name", {
   param1: "value1",
-  param2: "value2"
+  param2: "value2",
 });
 ```
 
 ### 3. Adding a New Wrapper Function (Recommended)
+
 If you find yourself reusing the same event multiple times, add a new wrapper in `analytics.js`:
 
 ```jsx
@@ -139,25 +146,29 @@ logDonationSubmitted(50, "credit_card");
 **Event parameter:** exactly match the parameter name you used in your logEvent call.
 
 **Example:** if your code says:
+
 ```jsx
 logEvent(analytics, "dead_click", {
   clicked_element: e.target.tagName,
   x_coord: e.clientX,
-  y_coord: e.clientY
+  y_coord: e.clientY,
 });
 ```
 
 then you must add `clicked_element`, `x_coord`, and `y_coord` as custom dimensions.
 
 #### 3. Wait ⏳ — custom dimensions take 24–48 hours to start appearing in standard GA4 reports. However, you can check them sooner in Realtime view (they should show up under “Event parameters” when you click into an event).
+
 ---
 
 ## 📂 File: `useAnalytics.js`
 
 ### `usePageAnalytics(pagePath)`
+
 React hook to track analytics for a given page.
 
 **What it tracks:**
+
 - Page views and time spent on the page
 - Dead clicks (clicks on `<div>`, `<p>`, `<img>`, etc.)
 - Large Contentful Paint (LCP) for load time performance
@@ -180,6 +191,7 @@ export default function DonatePage() {
 ```
 
 ### `GlobalTracker`
+
 Singleton class that handles global error and connectivity tracking.
 
 - Errors: Captures uncaught errors & unhandled promise rejections.
@@ -194,10 +206,12 @@ import { globalTracker } from "./useAnalytics";
 ```
 
 ## 📂 File: `analytics.js`
+
 Utility functions for sending events to Firebase Analytics.
 All functions use `logEvent` under the hood and require Firebase to be initialized.
 
 ### `logPageView(pagePath, viewTime)`
+
 Logs a page view with time spent (in seconds).
 
 **Example:**
@@ -207,6 +221,7 @@ logPageView("/donate", 45); // user spent 45s on /donate
 ```
 
 ### `logButtonEvent(buttonName, pagePath)`
+
 Logs when a button is clicked.
 
 **Example:**
@@ -214,13 +229,12 @@ Logs when a button is clicked.
 ```jsx
 <Button
   btnText="Make a Donation"
-  onClick={() =>
-    logButtonEvent("make donation button clicked", "/donate")
-  }
+  onClick={() => logButtonEvent("make donation button clicked", "/donate")}
 />
 ```
 
 ### `logInEvent(status, message)`
+
 Logs login status.
 
 **Example:**
@@ -230,6 +244,7 @@ logInEvent("success", "User logged in via Google");
 ```
 
 ### `logError(error, errorInfo)`
+
 Logs an error to Firebase and Sentry.
 
 **Example:**
@@ -243,6 +258,7 @@ try {
 ```
 
 ### `logDeadClick(elementClicked, pagePath, screenshotUrl, elementId, ariaLabel)`
+
 Logs a "dead click" on non-interactive elements.
 
 **Example:**
@@ -252,23 +268,28 @@ logDeadClick(200, 350, "DIV", "/donate");
 ```
 
 ### `logInternetDisconnection(duration, reconnected)`
+
 Logs internet disconnection or reconnection.
 
 **Example:**
+
 ```jsx
 // User disconnected for 15 seconds
 logInternetDisconnection(15, true);
 ```
 
 ### `logLoadingTime(pagePath, loadingTime)`
+
 Logs page loading performance (LCP metric).
 
 **Example:**
+
 ```jsx
 logLoadingTime("/donate", 1234); // 1234ms
 ```
 
 ## 🚀 Example Workflow
+
 On /donate page:
 
 1. `usePageAnalytics("/donate")` logs page views, load times, and dead clicks.
@@ -280,6 +301,7 @@ On /donate page:
 4. If the user goes offline, `logInternetDisconnection` records duration.
 
 ## 📌 Notes
+
 - All events are logged to Firebase Analytics.
 - Errors are also reported to Sentry for debugging.
 - usePageAnalytics should be called once per page inside the page component.

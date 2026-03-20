@@ -1,8 +1,8 @@
 /**
  * POST /api/report
- * 
+ *
  * Sends a report about inappropriate message content
- * 
+ *
  * Request body:
  * {
  *   receiver_email: string,  // user_uid who is being reported
@@ -10,18 +10,18 @@
  *   sender: string,          // user_uid who is reporting
  *   excerpt: string          // text excerpt of the reported message
  * }
- * 
+ *
  * Response (success):
  * { message: "Message reported successfully!" }
- * 
+ *
  * Response (error):
  * { message: "Failed to send email.", error: "..." }
- * 
+ *
  * Sends email to: admin (penpal@murphycharity.org)
  */
 
-import { NextResponse } from 'next/server';
-import sendgrid from '@sendgrid/mail';
+import { NextResponse } from "next/server";
+import sendgrid from "@sendgrid/mail";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { logError } from "../../utils/analytics";
@@ -31,7 +31,7 @@ export async function POST(request) {
     sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
-    const {receiver_email, currentUrl, sender, excerpt } = body; 
+    const { receiver_email, currentUrl, sender, excerpt } = body;
     const userRef = doc(db, "users", sender);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
@@ -80,7 +80,7 @@ export async function POST(request) {
           <div class="email-container">
             <h1>Message Reported</h1>
             <p><strong>Reported Message:</strong></p>
-            <p class="message-content">${message || 'No message provided.'}</p>
+            <p class="message-content">${message || "No message provided."}</p>
             <footer>
               <p>This email was sent from your report system. If you have any questions, please contact us.</p>
             </footer>
@@ -89,29 +89,26 @@ export async function POST(request) {
       </html>
     `;
 
-
     //SendGrid email configuration
     const msg = {
-      to: 'penpal@murphycharity.org', 
-      from: 'penpal@murphycharity.org', // Your verified sender email
+      to: "penpal@murphycharity.org",
+      from: "penpal@murphycharity.org", // Your verified sender email
       subject: "Message Reported",
-      text: message || 'No message provided.',
-      html:  emailHtml,
+      text: message || "No message provided.",
+      html: emailHtml,
     };
 
     // Send the email
     await sendgrid.send(msg);
-    return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
-    
-
+    return NextResponse.json({ message: "Email sent successfully!" }, { status: 200 });
   } catch (error) {
     logError(error, {
       description: "Failed to send email.",
     });
 
     return NextResponse.json(
-        { message: 'Failed to send email.', error: error.message },
-        { status: 500 }
-      );
-    }
+      { message: "Failed to send email.", error: error.message },
+      { status: 500 }
+    );
   }
+}

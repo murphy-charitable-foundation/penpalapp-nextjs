@@ -40,18 +40,18 @@ export default function About() {
             </div>
 
             <p className="leading-relaxed mb-4 text-gray-700">
-              At Murphy Charitable Foundation Uganda, we are committed to alleviating
-              poverty and improving health and education in the communities we serve.
+              At Murphy Charitable Foundation Uganda, we are committed to alleviating poverty and
+              improving health and education in the communities we serve.
             </p>
 
             <p className="leading-relaxed mb-4 text-gray-700">
-              Our journey began with a profound understanding of the challenges faced
-              by individuals living in extreme poverty.
+              Our journey began with a profound understanding of the challenges faced by individuals
+              living in extreme poverty.
             </p>
 
             <p className="leading-relaxed mb-4 text-gray-700">
-              Inspired by their resilience, we dedicate ourselves to addressing critical
-              social and economic issues in rural communities.
+              Inspired by their resilience, we dedicate ourselves to addressing critical social and
+              economic issues in rural communities.
             </p>
 
             {/* Two columns */}

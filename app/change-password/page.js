@@ -38,9 +38,7 @@ export default function ChangePassword() {
         description: "Error changing password: ",
       });
       if (error.code === "auth/requires-recent-login") {
-        setError(
-          "For security, please sign in again before changing your password"
-        );
+        setError("For security, please sign in again before changing your password");
         router.push("/login");
       } else if (error.code === "auth/weak-password") {
         setError("Please choose a stronger password");
@@ -68,104 +66,88 @@ export default function ChangePassword() {
     router.push("/login");
   }
 
-return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col">
-    <div className="flex-1 min-h-0 flex justify-center items-stretch py-0">
-
-      <PageContainer
-         width="compactXS"
-         padding="none"
-         center={false}
-         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+  return (
+    <PageBackground className="bg-gray-100 h-screen flex flex-col">
+      <div className="flex-1 min-h-0 flex justify-center items-stretch py-0">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
+          {/* ===== HEADER ===== */}
+          <PageHeader title="Create Your New Password" image showBackButton={false} />
 
-        {/* ===== HEADER ===== */}
-        <PageHeader title="Create Your New Password" image showBackButton={false} />
-          
+          {/* ===== CONTENT (ONLY SCROLLER) ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+            <form className="space-y-8 mt-6" onSubmit={handleSubmit}>
+              <div>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="New Password"
+                  placeholder="*******"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
 
-        {/* ===== CONTENT (ONLY SCROLLER) ===== */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+              <div>
+                <Input
+                  id="repeat-passwod"
+                  name="repeatPassword"
+                  type="password"
+                  placeholder="*******"
+                  label="Verified a new Password"
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                />
+              </div>
 
-          <form className="space-y-8 mt-6" onSubmit={handleSubmit}>
-            <div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                label="New Password"
-                placeholder="*******"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+              <div className="text-sm text-red-600">
+                <PasswordChecklist
+                  rules={["minLength", "specialChar", "number", "capital", "lowercase", "match"]}
+                  minLength={7}
+                  value={password}
+                  valueAgain={repeatPassword}
+                  messages={{
+                    minLength: "Must be at least 7 characters.",
+                    specialChar: "Must contain at least 1 special character.",
+                    number: "Must contain at least 1 number.",
+                    capital: "Must contain at least 1 uppercase letter.",
+                    lowercase: "Must contain at least 1 lowercase letter.",
+                    match: "Passwords do not match.",
+                  }}
+                  onChange={(isValid) => setisValidPassword(isValid)}
+                />
+              </div>
 
-            <div>
-              <Input
-                id="repeat-passwod"
-                name="repeatPassword"
-                type="password"
-                placeholder="*******"
-                label="Verified a new Password"
-                value={repeatPassword}
-                onChange={(e) => setRepeatPassword(e.target.value)}
-              />
-            </div>
+              <div className="pt-6 flex justify-center">
+                <Button
+                  btnType="submit"
+                  btnText="Done"
+                  color="gray"
+                  size="large"
+                  disabled={!isValidPassword}
+                  onClick={() =>
+                    logButtonEvent("Change password button clicked", "/change-password")
+                  }
+                />
+              </div>
+            </form>
+          </div>
 
-            <div className="text-sm text-red-600">
-              <PasswordChecklist
-                rules={[
-                  "minLength",
-                  "specialChar",
-                  "number",
-                  "capital",
-                  "lowercase",
-                  "match",
-                ]}
-                minLength={7}
-                value={password}
-                valueAgain={repeatPassword}
-                messages={{
-                  minLength: "Must be at least 7 characters.",
-                  specialChar: "Must contain at least 1 special character.",
-                  number: "Must contain at least 1 number.",
-                  capital: "Must contain at least 1 uppercase letter.",
-                  lowercase: "Must contain at least 1 lowercase letter.",
-                  match: "Passwords do not match.",
-                }}
-                onChange={(isValid) => setisValidPassword(isValid)}
-              />
-            </div>
-
-            <div className="pt-6 flex justify-center">
-              <Button
-                btnType="submit"
-                btnText="Done"
-                color="gray"
-                size="large"
-                disabled={!isValidPassword}
-                onClick={() =>
-                  logButtonEvent(
-                    "Change password button clicked",
-                    "/change-password"
-                  )
-                }
-              />
-            </div>
-          </form>
-        </div>
-
-        {/* ===== DIALOG ===== */}
-        <Dialog
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          title="Password reset was successful!"
-          content={modalContent}
-          width="large"
-        />
-      </PageContainer>
-    </div>
-  </PageBackground>
-);
-
-
+          {/* ===== DIALOG ===== */}
+          <Dialog
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            title="Password reset was successful!"
+            content={modalContent}
+            width="large"
+          />
+        </PageContainer>
+      </div>
+    </PageBackground>
+  );
 }

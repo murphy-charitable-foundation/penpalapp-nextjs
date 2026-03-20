@@ -13,10 +13,7 @@ export default function Input({
   return (
     <div className="relative">
       {label && (
-        <label
-          htmlFor={id}
-          className={`block text-sm font-medium mb-1 text-gray-500`}
-        >
+        <label htmlFor={id} className={`block text-sm font-medium mb-1 text-gray-500`}>
           {label}
         </label>
       )}
@@ -47,4 +44,4 @@ export default function Input({
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
-} 
+}

@@ -1,4 +1,4 @@
-export default function InfoDisplay({children, title, info = ""}) {
+export default function InfoDisplay({ children, title, info = "" }) {
   return (
     <div className="flex items-center gap-3">
       <div className="p-2 rounded-lg">{children}</div>

@@ -14,18 +14,15 @@ export default function TextArea({
   resize,
 }) {
   const sizes = {
-    default: 'w-72',
-    small: 'w-48',
-    large: 'w-96',
-    xs: 'w-24',
+    default: "w-72",
+    small: "w-48",
+    large: "w-96",
+    xs: "w-24",
   };
   return (
     <div className="relative">
       {label && (
-        <label
-          htmlFor={id}
-          className={`block text-sm font-medium mb-1 text-black`}
-        >
+        <label htmlFor={id} className={`block text-sm font-medium mb-1 text-black`}>
           {label}
         </label>
       )}
@@ -65,4 +62,4 @@ export default function TextArea({
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
-} 
+}
