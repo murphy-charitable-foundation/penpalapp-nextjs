@@ -97,7 +97,7 @@ export default function CreateAccount() {
         setErrors(newErrors);
         throw new Error("Form validation error(s)");
       }
-      const { user, userData, loading } = useUser();
+      const { user, userDocRef } = useUser();
 
       console.log(`user is :${user}`);
       const uid = user.uid;
@@ -120,12 +120,11 @@ export default function CreateAccount() {
         }
       }
 
-      const currentUserRef = doc(db, "users", uid);
       // Find any existing users who already have this user in their connected_penpals list
       const matchingUsersSnap = await getDocs(
         query(
           collection(db, "users"),
-          where("connected_penpals", "array-contains", currentUserRef)
+          where("connected_penpals", "array-contains", userDocRef)
         )
       );
       const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => doc(db, "users", userDoc.id));
