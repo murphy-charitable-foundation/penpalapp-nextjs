@@ -43,9 +43,48 @@ export async function POST(request) {
     const body = await request.json();
     //Grab Message Information
     const { sender, id, emailId, reason } = body;
-    //const filtered = users.filter(element => element !== sender);
-    const pathSegments = emailId._key?.path?.segments;
+
+    const pathSegments = emailId?._key?.path?.segments;
+    if (!Array.isArray(pathSegments) || pathSegments.length === 0) {
+      return NextResponse.json(
+        { message: "Invalid payload: emailId path is missing." },
+        { status: 400 }
+      );
+    }
+
+    if (reason === "admin") {
+      const validAdminSender =
+        Array.isArray(sender) &&
+        sender.length >= 2 &&
+        sender[0]?.first_name &&
+        sender[0]?.last_name &&
+        sender[1]?.first_name &&
+        sender[1]?.last_name;
+
+      if (!validAdminSender) {
+        return NextResponse.json(
+          { message: "Invalid payload: admin sender structure is malformed." },
+          { status: 400 }
+        );
+      }
+    } else {
+      const validUserSender = sender?.first_name && sender?.last_name;
+      if (!validUserSender) {
+        return NextResponse.json(
+          { message: "Invalid payload: sender structure is malformed." },
+          { status: 400 }
+        );
+      }
+    }
+
     const uid = pathSegments[pathSegments.length - 1];
+    if (!uid) {
+      return NextResponse.json(
+        { message: "Invalid payload: user uid is missing." },
+        { status: 400 }
+      );
+    }
+
     const userRecord = await auth.getUser(uid); // Fetch user record by UID
     let message;
     if (reason == "admin") {
