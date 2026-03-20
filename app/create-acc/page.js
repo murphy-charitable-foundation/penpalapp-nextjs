@@ -41,6 +41,8 @@ export default function CreateAccount() {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const pendingNavRef = useRef(null);
 
+  const { user, userDocRef } = useUser();
+
 
   usePageAnalytics("/create-acc");
 
@@ -97,7 +99,6 @@ export default function CreateAccount() {
         setErrors(newErrors);
         throw new Error("Form validation error(s)");
       }
-      const { user, userDocRef } = useUser();
 
       console.log(`user is :${user}`);
       const uid = user.uid;
