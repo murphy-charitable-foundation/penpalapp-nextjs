@@ -33,6 +33,7 @@ export default function Button({
 
   const classNames = `
     ${colors[color]}
+    ${textColor}
     ${sizes[size]}
     rounded-full
     text-md font-bold py-3 px-4

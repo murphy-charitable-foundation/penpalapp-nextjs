@@ -1,58 +1,53 @@
 import { db } from "../firebaseConfig";
-import {
-  collection,
-  collectionGroup,
-  getDocs,
-  getDoc,
-  doc,
-  query,
-  where,
-} from "firebase/firestore";
-import * as Sentry from "@sentry/nextjs";
+import { collection, collectionGroup, getDocs, getDoc, doc, query, where} from "firebase/firestore";
 import { dateToTimestamp } from "./dateHelpers";
 import { logError } from "../utils/analytics";
 
 const apiRequest = async (letterbox, emailId, reason) => {
   try {
-    if (reason == "admin") {
-      const ids = letterbox.members.map((member) => {
-        const segments = member._key?.path?.segments;
-        return segments?.[segments.length - 1];
-      });
-      let userData = [];
-      const sender = await getDoc(doc(db, "users", ids[0]));
-      userData.push(sender.data());
-      const sender2 = await getDoc(doc(db, "users", ids[1]));
-      userData.push(sender2.data());
-
-      const response = await fetch("/api/deadchat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason }), // Send data as JSON
-      });
-    } else {
-      const ids = letterbox.members.map((member) => {
-        const segments = member._key?.path?.segments;
-        if (segments?.[segments.length - 1] != emailId) {
+      let response;
+      if (reason == "admin") {
+        const ids = letterbox.members.map((member) => {
+          const segments = member._key?.path?.segments;
           return segments?.[segments.length - 1];
-        }
-      });
-      const sender = await getDoc(doc(db, "users", ids[0]));
-
-      const response = await fetch("/api/deadchat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason }), // Send data as JSON
-      });
-    }
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
+          
+        });
+        let userData = [];
+        const sender = await getDoc(doc(db, "users", ids[0]));
+        userData.push(sender.data());
+        const sender2 = await getDoc(doc(db, "users", ids[1]))
+        userData.push(sender2.data());
+        
+        response = await fetch('/api/deadchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+        });
+      } else {
+        const ids = letterbox.members.map((member) => {
+          const segments = member._key?.path?.segments;
+          if (segments?.[segments.length - 1] != emailId) {
+            return segments?.[segments.length - 1];
+          }
+        });
+        const sender = await getDoc(doc(db, "users", ids[0]));
+        
+        response = await fetch('/api/deadchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+        });
+      }
+      
+        
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+       
   } catch (error) {
     logError(error, { description: "Could not send request to email client:", error });
   }
@@ -129,5 +124,4 @@ export const iterateLetterBoxes = async () => {
         await apiRequest(letterbox, member, "user");
       }
     }
-  }
-};
+}; 

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import logo from "/public/murphylogo.png";
 import { FaInstagram, FaLinkedinIn, FaEnvelope, FaGlobe } from "react-icons/fa";
 import BottomNavBar from "../../components/bottom-nav-bar";

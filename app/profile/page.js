@@ -42,7 +42,7 @@ export default function EditProfile() {
 
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");

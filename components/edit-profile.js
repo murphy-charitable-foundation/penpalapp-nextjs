@@ -89,7 +89,7 @@ const EditProfileImage = ({ router }) => {
         const uploadTask = uploadBytesResumable(storageRef, previewURL);
         uploadTask.on(
           "state_changed",
-          (snapshot) => {
+          () => {
             // const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             // setUploadProgress(progress);
           },

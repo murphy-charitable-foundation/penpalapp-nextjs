@@ -21,22 +21,20 @@ export default function NavigationStateManager() {
   }, [pathname, searchParams]);
 
   // Memoized navigation handler to prevent recreating on every render
-  const handleNavigationStart = useCallback(
-    (url) => {
-      // Prevent multiple simultaneous navigations
-      if (isNavigating) return;
+  const handleNavigationStart = useCallback(() => {
+    // Prevent multiple simultaneous navigations
+    if (isNavigating) return;
+    
+    // Record navigation start time
+    navigationStartTimeRef.current = Date.now();
+    
+    // Use setTimeout to defer state update to next tick
+    setTimeout(() => {
+      setIsNavigating(true);
+    }, 0);
+  }, [isNavigating]);
 
-      // Record navigation start time
-      navigationStartTimeRef.current = Date.now();
-
-      // Use setTimeout to defer state update to next tick
-      setTimeout(() => {
-        setIsNavigating(true);
-      }, 0);
-    },
-    [isNavigating]
-  );
-
+    
   useEffect(() => {
     // Add event listeners for link clicks
     const handleLinkClick = (e) => {
@@ -110,5 +108,4 @@ export default function NavigationStateManager() {
     }
   }, [pathname, searchParams, isNavigating]);
 
-  return <>{isNavigating && <LoadingSpinner />}</>;
 }

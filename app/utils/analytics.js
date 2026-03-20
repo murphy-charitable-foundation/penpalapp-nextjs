@@ -43,7 +43,7 @@ const logButtonEvent = (buttonName, pagePath) => {
 };
 
 // status is either "success" or "failure"
-const logInEvent = (status, message) => {
+const logInEvent = (status) => {
   if (analytics) {
     logEvent(analytics, "login", {
       status: status,

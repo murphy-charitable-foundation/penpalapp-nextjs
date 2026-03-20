@@ -204,13 +204,21 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
     tooltipElement.style.bottom = bottom;
   };
 
-  const handleUseTemplate = () => {
-    console.log("saasada");
-    if (onUseTemplate) {
-      onUseTemplate(defaultTemplate);
+  const nextStep = () => {
+    if (currentStep < steps.length - 1) {
+      setButtonHighlight(false);
+      setCurrentStep(currentStep + 1);
+    } else {
+      // End of guide
+      setButtonHighlight(true);
+      completeGuide();
     }
+  };
 
-    nextStep(); // Move to the next step after using template
+  const completeGuide = () => {
+    localStorage.setItem("hasSeenChatGuide", "true");
+    setShowGuide(false);
+    setButtonHighlight(false);
   };
 
   // If not showing guide or not a first time user, don't render anything
