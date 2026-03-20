@@ -25,6 +25,7 @@ export function UserProvider({ children }) {
   const [userType, setUserType] = useState(null);
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState('');
+  const [userDocRef, setUserDocRef] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -34,6 +35,10 @@ export function UserProvider({ children }) {
       if (authUser) {
         setUser(authUser);
 
+        const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
+        setUserDocRef(userDocRef);  // Set it in state
+        
+        // Fetch user type from Firestore
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -72,6 +77,7 @@ export function UserProvider({ children }) {
         setUserType(null);
         setUserData(null);
         setProfileImage('');
+        setUserDocRef(null);
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
@@ -88,7 +94,8 @@ export function UserProvider({ children }) {
     userType,
     userData,
     profileImage,
-    loading,
+    userDocRef,
+    loading
   };
 
   if (loading && !PUBLIC_PATHS.includes(pathname)) {
