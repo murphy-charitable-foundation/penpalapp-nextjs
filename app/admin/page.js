@@ -67,7 +67,6 @@ export default function Admin() {
   const [activeView, setActiveView] = useState("inbox");
 // "inbox" | "review" | "reject"
 const [reviewAction, setReviewAction] = useState(null);
-// null | "approved" | "rejected"
 
 
   const router = useRouter();
