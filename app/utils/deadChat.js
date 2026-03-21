@@ -1,5 +1,5 @@
 import { db } from "../firebaseConfig";
-import { collection, collectionGroup, getDocs, getDoc, doc, query, orderBy, limit, where} from "firebase/firestore";
+import { collection, collectionGroup, getDocs, getDoc, doc, query, where} from "firebase/firestore";
 import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp } from "./dateHelpers";
 import { logError } from "../utils/analytics";

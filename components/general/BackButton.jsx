@@ -4,16 +4,24 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 export function BackButton({
+  onBack,
   size = "sm",
   className = "",
-  iconClassName = "",
 }) {
   const router = useRouter();
+
+  const handleClick = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    router.back();
+  };
 
   return (
     <button
       type="button"
-      onClick={() => router.back()}
+      onClick={handleClick}
       className={`inline-flex items-center justify-center rounded-full p-2
         hover:bg-black/5 transition ${className}`}
       aria-label="Go back"

@@ -10,13 +10,19 @@ import { CachedUsersProvider } from './contexts/CachedUserContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Pen Pal Magic App',
+  title: {
+    default: 'Pen Pal Magic App',
+    template: '%s | Pen Pal Magic App',
+  },
   description: 'To connect 2000 rural Ugandan Children to the World',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={inter.className}>
         <CachedUsersProvider>
           <UserProvider>

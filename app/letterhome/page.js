@@ -1,12 +1,8 @@
 "use client";
-import { useLayoutEffect, useRef, useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-
-import { storage } from "../firebaseConfig.js";
 import  NavBar from "../../components/bottom-nav-bar";
 import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
@@ -17,64 +13,117 @@ import {
   fetchRecipients,
 } from "../utils/letterboxFunctions";
 
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
-import ProfileImage from "/components/general/ProfileImage";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
-import Button from "../../components/general/Button";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
-import LetterCard from "../../components/general/letter/LetterCard";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { logButtonEvent, logError } from "../utils/analytics";
+import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
-  const [userType, setUserType] = useState("");
-  const [country, setCountry] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
-  const [showWelcome, setShowWelcome] = useState(false);
   const [userId, setUserId] = useState("");
+  const [inactivityWarning, setInactivityWarning] = useState(false);
+  const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState(0);
   const router = useRouter();
 
-  function startInactivityWatcher(timeoutMinutes = 30) {
+  function startInactivityWatcher(timeoutMinutes = 20, warningSeconds = 30) {
     if (typeof window === "undefined") return; // server-side safety
 
     const INACTIVITY_LIMIT = timeoutMinutes * 60 * 1000;
     let timer;
+    let countdownInterval;
+    let isInWarning = false;
+
+    const activityEvents = [
+      "mousemove",
+      "keydown",
+      "click",
+      "scroll",
+      "touchstart",
+    ];
 
     function clearStoredData() {
       localStorage.removeItem("child");
-      router.push("/choose-account");
+      router.push("/choose-profile");
       console.log("Removed 'child' from localStorage due to inactivity");
     }
 
-    function resetTimer() {
+    function cleanupTimers() {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(clearStoredData, INACTIVITY_LIMIT);
+      if (countdownInterval) clearInterval(countdownInterval);
+      timer = undefined;
+      countdownInterval = undefined;
     }
 
-    const activityEvents = ["mousemove", "keydown", "click", "scroll", "touchstart"];
-    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
+    function proceedLogout() {
+      cleanupTimers();
+      activityEvents.forEach((event) =>
+        window.removeEventListener(event, resetTimer)
+      );
+      setInactivityWarning(false);
+      setInactivitySecondsLeft(0);
+      clearStoredData();
+    }
+
+    function resetTimer() {
+      // If the warning UI is showing, treat activity as "still there".
+      if (isInWarning) {
+        isInWarning = false;
+        setInactivityWarning(false);
+        setInactivitySecondsLeft(0);
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = undefined;
+      }
+
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        isInWarning = true;
+        setInactivityWarning(true);
+
+        let remaining = warningSeconds;
+        setInactivitySecondsLeft(remaining);
+
+        countdownInterval = setInterval(() => {
+          remaining -= 1;
+          setInactivitySecondsLeft(remaining);
+
+          if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = undefined;
+            proceedLogout();
+          }
+        }, 1000);
+      }, INACTIVITY_LIMIT);
+    };
+
+    activityEvents.forEach((event) =>
+      window.addEventListener(event, resetTimer)
+    );
 
     // Start timer immediately
     resetTimer();
 
-    // Return a cleanup function if needed
     return function stopWatcher() {
-      clearTimeout(timer);
-      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+      cleanupTimers();
+      isInWarning = false;
+      setInactivityWarning(false);
+      setInactivitySecondsLeft(0);
+      activityEvents.forEach((event) =>
+        window.removeEventListener(event, resetTimer)
+      );
     };
   }
 
   usePageAnalytics("/letterhome");
 
   useEffect(() => {
-    const stopWatcher = startInactivityWatcher(30);
+    const stopWatcher = startInactivityWatcher(20, 30);
     return () => {
       if (typeof stopWatcher === "function") stopWatcher();
     };
@@ -112,16 +161,11 @@ export default function Home() {
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
-              name: `${recipient.first_name ?? "Unknown"} ${
-                recipient.last_name ?? ""
-              }`,
               country: recipient.country ?? "Unknown",
               lastMessage: letter.content || "",
               lastMessageDate: letter.created_at || "",
               status: letter.status || "",
               letterboxId: id || "",
-              isRecipient: letter?.sent_by?.id !== uid,
-              unread: letter?.unread || false,
               isRecipient: letter?.sent_by?.id !== uid,
               unread: letter?.unread || false,
             };
@@ -133,7 +177,7 @@ export default function Home() {
         throw new Error("No letterboxes found.");
       }
     } catch (err) {
-      logError(error, {
+      logError(err, {
         description: "Error fetching data:",
       });
       setError("Failed to load data.");
@@ -156,8 +200,6 @@ export default function Home() {
 
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
-          setCountry(userData.country || "Unknown Country");
-          setUserType(userData.user_type || "Unknown Type");
           const downloaded = await getUserPfp(uid);
           const avatarUrl = downloaded || "";
           setProfileImage(avatarUrl);
@@ -165,8 +207,11 @@ export default function Home() {
           const userConversations = await getConversations(uid, avatarUrl);
           setConversations(userConversations);
         } catch (err) {
-          setError("Error fetching user data or conversations.");
-          console.error(err);
+          logError(err, {
+            description: "Error fetching conversations",
+          });
+          setError("Failed to load data.");
+          throw err;
         } finally {
           setIsLoading(false);
         }
@@ -175,71 +220,6 @@ export default function Home() {
 
     return () => unsubscribe();
   }, [router]);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        try {
-          const uid = auth.currentUser.uid;
-          setUserId(uid);
-
-          const docRef = doc(db, "users", uid);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            setUserName(userData.first_name || "Unknown User");
-            setCountry(userData.country || "Unknown Country");
-            setUserType(userData.user_type || "Unknown Type");
-            const downloaded = await getUserPfp(uid);
-            console.log("downloaded", downloaded);
-            setProfileImage(downloaded || "");
-
-            // Show welcome message
-            setShowWelcome(true);
-
-            // Hide welcome message after 5 seconds
-            setTimeout(() => {
-              setShowWelcome(false);
-            }, 5000);
-          } else {
-            console.log("No such document!");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setError("Failed to load user data");
-        }
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //   setIsLoading(true);
-  //     try {
-  //       const uid = user.uid;
-
-  //       const userData = await getUserData(uid);
-  //       setUserName(userData.first_name || "Unknown User");
-  //       setCountry(userData.country || "Unknown Country");
-  //       setUserType(userData.user_type || "Unknown Type");
-  //       setProfileImage(userData?.photo_uri || "");
-
-  //       const userConversations = await getConversations(uid);
-  //       setConversations(userConversations);
-  //     } catch (err) {
-  //       setError("Error fetching user data or conversations.");
-  //       console.error(err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  // };
-
-  //   fetchUserData();
-  // }, []);
-
 
 return (
   <>
@@ -282,6 +262,31 @@ return (
           </>
         )}
       </PageContainer>
+
+      {inactivityWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-lg p-5 w-[90%] max-w-sm text-center space-y-3">
+            <p className="font-semibold text-gray-900">Are you still there?</p>
+            <p className="text-sm text-gray-600">
+              Logging out in{" "}
+              <span className="font-semibold text-gray-900">
+                {inactivitySecondsLeft}s
+              </span>
+              .
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                // Confirm response: trigger activity so the watcher resets the timer.
+                window.dispatchEvent(new Event("mousemove"));
+              }}
+              className="w-full rounded-full bg-primary hover:bg-primary-light text-white py-3 font-bold"
+            >
+              I&apos;m still here
+            </button>
+          </div>
+        </div>
+      )}
     </PageBackground>
   </>
 );

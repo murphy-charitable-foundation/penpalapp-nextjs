@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../app/firebaseConfig";
@@ -33,8 +33,40 @@ export default function UserDataImport() {
 
   const [hobbies, setHobbies] = useState([]); // [{id,label}]
 
+  //warn user of unsaved changes if they try to navigate away
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const pendingNavRef = useRef(null);
+
+
   const router = useRouter();
   usePageAnalytics("/user-data-import");
+
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!hasUnsavedChanges) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () =>
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+
+  const attemptNavigateWithGuard = (navigate) => {
+    if (!hasUnsavedChanges) {
+      navigate();
+      return;
+    }
+
+    pendingNavRef.current = navigate;
+    setShowLeaveDialog(true);
+  };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,6 +120,8 @@ export default function UserDataImport() {
 
       e.currentTarget.reset();
       setHobbies([]);
+      setHasUnsavedChanges(false);
+
 
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
@@ -111,6 +145,41 @@ export default function UserDataImport() {
         content={dialogMessage}
       />
 
+
+      <Dialog
+        isOpen={showLeaveDialog}
+        onClose={() => {
+          setShowLeaveDialog(false);
+          pendingNavRef.current = null;
+        }}
+        variant="confirmation"
+        title="Unsaved changes"
+        content={
+          <p className="text-base leading-relaxed">
+            You have unsaved changes. Are you sure you want to leave this page?
+          </p>
+        }
+        buttons={[
+          {
+            text: "Cancel",
+            variant: "secondary",
+            onClick: () => {
+              setShowLeaveDialog(false);
+              pendingNavRef.current = null;
+            },
+          },
+          {
+            text: "Leave",
+            variant: "primary",
+            onClick: () => {
+              setShowLeaveDialog(false);
+              pendingNavRef.current?.();
+              pendingNavRef.current = null;
+            },
+          },
+        ]}
+      />
+
       <div className="flex-1 min-h-0 flex justify-center">
         <PageContainer
           width="compactXS"
@@ -118,11 +187,22 @@ export default function UserDataImport() {
           center={false}
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
-          <PageHeader title="Import User Data" imageSize="sm" />
+          <PageHeader
+            title="Import User Data"
+            imageSize="sm"
+            onBack={() =>
+              attemptNavigateWithGuard(() => router.push("/profile"))
+            }
+          />
+
 
           {/* Single scroller */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+                onSubmit={handleSubmit}
+                onChange={() => setHasUnsavedChanges(true)}
+                className="space-y-6"
+              >
               {/* Basic Info */}
               <div className="rounded-2xl bg-white p-4">
                 <h3 className="text-sm font-semibold text-secondary mb-4">

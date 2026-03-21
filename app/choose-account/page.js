@@ -130,10 +130,7 @@ export default function ChooseAccountPage() {
   return (
     <PageBackground>
       <PageContainer maxWidth="md">
-        <PageHeader title="Choose Account" showBackButton={false} />
-        <p className="text-gray-600 text-sm text-center -mt-2 mb-6">
-          Choose an account to continue
-        </p>
+        <PageHeader title="Choose a profile to log in..." image={false} showBackButton={false} />
 
         <div className="mt-4 grid grid-cols-2 gap-4 px-6">
           {users.map((user) => (
