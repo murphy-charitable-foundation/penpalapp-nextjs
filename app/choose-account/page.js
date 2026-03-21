@@ -132,7 +132,7 @@ export default function ChooseAccountPage() {
       <PageContainer maxWidth="md">
         <PageHeader title="Choose a profile to log in..." image={false} showBackButton={false} />
 
-        <div className="mt-4 grid grid-cols-2 gap-4 px-6">
+        <div className="grid grid-cols-2 gap-4 px-6 mt-3">
           {users.map((user) => (
             <button
               key={user.id}

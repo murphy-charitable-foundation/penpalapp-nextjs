@@ -2,7 +2,7 @@
 const nextConfig = {
   async redirects() {
     return [
-      { source: "/children-gallery", destination: "/choose-account", permanent: true },
+      { source: "/profile-gallery", destination: "/choose-profile", permanent: true },
     ];
   },
   env: {
