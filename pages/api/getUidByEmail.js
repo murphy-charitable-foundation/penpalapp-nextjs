@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     // Verify admin authorization (delegated to util)
     await requireAdmin(req);
-    
+
     const { email } = req.body;
 
     if (!email || typeof email !== "string") {

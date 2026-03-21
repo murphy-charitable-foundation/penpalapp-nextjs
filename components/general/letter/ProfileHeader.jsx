@@ -1,12 +1,7 @@
 import Link from "next/link";
 import ProfileImage from "/components/general/ProfileImage";
 
-export default function ProfileHeader({
-  userName,
-  country,
-  profileImage,
-  showCountry = true, 
-}) {
+export default function ProfileHeader({ userName, country, profileImage, showCountry = true }) {
   return (
     <header className="bg-blue-100 border-b border-gray-200 px-4 py-3">
       <Link href={`/profile`} className="flex items-center gap-2 sm:gap-3">

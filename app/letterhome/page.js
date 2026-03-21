@@ -154,14 +154,14 @@ export default function Home() {
                 )}
               </div>
 
-          {/* ===== NAVBAR (FIXED) ===== */}
-          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-            <NavBar />
-          </div>
-          </>
-        )}
-      </PageContainer>
-    </PageBackground>
-  </>
-);
+              {/* ===== NAVBAR (FIXED) ===== */}
+              <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+                <NavBar />
+              </div>
+            </>
+          )}
+        </PageContainer>
+      </PageBackground>
+    </>
+  );
 }

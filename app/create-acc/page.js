@@ -18,7 +18,7 @@ import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../components/general/PageHeader";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from "../../contexts/UserContext";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -41,7 +41,6 @@ export default function CreateAccount() {
   const pendingNavRef = useRef(null);
 
   const { user, userDocRef } = useUser();
-
 
   usePageAnalytics("/create-acc");
 
@@ -119,12 +118,11 @@ export default function CreateAccount() {
 
       // Find any existing users who already have this user in their connected_penpals list
       const matchingUsersSnap = await getDocs(
-        query(
-          collection(db, "users"),
-          where("connected_penpals", "array-contains", userDocRef)
-        )
+        query(collection(db, "users"), where("connected_penpals", "array-contains", userDocRef))
       );
-      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => doc(db, "users", userDoc.id));
+      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) =>
+        doc(db, "users", userDoc.id)
+      );
 
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {

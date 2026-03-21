@@ -24,17 +24,16 @@ export default function NavigationStateManager() {
   const handleNavigationStart = useCallback(() => {
     // Prevent multiple simultaneous navigations
     if (isNavigating) return;
-    
+
     // Record navigation start time
     navigationStartTimeRef.current = Date.now();
-    
+
     // Use setTimeout to defer state update to next tick
     setTimeout(() => {
       setIsNavigating(true);
     }, 0);
   }, [isNavigating]);
 
-    
   useEffect(() => {
     // Add event listeners for link clicks
     const handleLinkClick = (e) => {
@@ -107,5 +106,4 @@ export default function NavigationStateManager() {
       return () => clearTimeout(timer);
     }
   }, [pathname, searchParams, isNavigating]);
-
 }
