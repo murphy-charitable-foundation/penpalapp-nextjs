@@ -40,7 +40,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+          body: JSON.stringify({ sender: sender.data(), id: letterbox.id, emailId, reason: reason}), // Send data as JSON
         });
       }
       
