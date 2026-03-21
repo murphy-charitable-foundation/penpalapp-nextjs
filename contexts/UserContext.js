@@ -23,7 +23,8 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [profileImage, setProfileImage] = useState("");
+  const [profileImage, setProfileImage] = useState('');
+  const [userDocRef, setUserDocRef] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -32,7 +33,9 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
-
+        const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
+        setUserDocRef(userDocRef);  // Set it in state
+        
         // Fetch user type from Firestore
         try {
           const userDocRef = doc(db, "users", authUser.uid);
@@ -69,7 +72,8 @@ export function UserProvider({ children }) {
         setUser(null);
         setUserType(null);
         setUserData(null);
-        setProfileImage("");
+        setProfileImage('');
+        setUserDocRef(null);
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push("/login");
@@ -86,7 +90,8 @@ export function UserProvider({ children }) {
     userType,
     userData,
     profileImage,
-    loading,
+    userDocRef,
+    loading
   };
 
   if (loading && !PUBLIC_PATHS.includes(pathname)) {

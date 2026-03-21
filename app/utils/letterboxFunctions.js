@@ -293,22 +293,82 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
 };
 
 export const createConnection = async (userDocRef, kidDocRef) => {
-  try {
-    const kidSnap = await getDoc(kidDocRef);
-    const buddySnap = await getDoc(userDocRef);
+    try {
+        const kidSnap = await getDoc(kidDocRef);
+        const buddySnap = await getDoc(userDocRef);
+        
+          if (!kidSnap.exists() && !buddySnap.exists()) {
+            logError(error, {
+              description: "Neither of child nor international buddy exist in the users collection: ",
+            })
+            throw new Error("Neither of child nor international buddy exist in the users collection");
+          }
+          console.log("Kid:", kidSnap);
+          console.log("User:", buddySnap);
 
-    if (!kidSnap.exists() || !buddySnap.exists()) {
-      throw new Error("Both child and buddy must exist in users before creating a connection");
-    }
+          if (kidSnap.exists()) {
+            if (kidSnap.data().connected_penpals_count >= 3) {
+              throw new Error("Kid has exceeded penpal limit");
+            }
+            await updateDoc(kidDocRef, {
+              connected_penpals: arrayUnion(userDocRef),
+              connected_penpals_count: increment(1),
+            });
+          }
 
-    if (kidSnap.exists()) {
-      if (kidSnap.data().connected_penpals_count >= 3) {
-        throw new Error("Kid has exceeded penpal limit");
-      }
-      await updateDoc(kidDocRef, {
-        connected_penpals: arrayUnion(userDocRef),
-        connected_penpals_count: increment(1),
-      });
+          if (buddySnap.exists()) {
+            await updateDoc(userDocRef, {
+              connected_penpals: arrayUnion(kidDocRef),
+              connected_penpals_count: increment(1),
+            });
+          }
+
+          // query DB to check for existing letterbox
+          let letterboxQuery = query(
+            collection(db, "letterbox"),
+            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
+          );
+
+          let querySnapshot = await getDocs(letterboxQuery);
+          
+          if (querySnapshot.empty) {
+            letterboxQuery = query(
+              collection(db, "letterbox"),
+              where("members", "==", [kidDocRef, userDocRef])
+            );
+            querySnapshot = await getDocs(letterboxQuery);
+          }
+
+          let letterboxRef;
+
+          if (querySnapshot.empty) { // if there's no letterbox, create one.
+            letterboxRef = await addDoc(collection(db, "letterbox"), {
+              members: [
+                userDocRef, 
+                kidDocRef   
+              ],
+              created_at: new Date(),
+              archived_at: null,
+            });
+
+            await addDoc(collection(letterboxRef, "letters"), {
+              sent_by: userDocRef,
+              content: "Please complete your first letter here...",
+              status: "draft",
+              updated_at: new Date(),
+              created_at: new Date(),
+              deleted: null
+            });
+
+            console.log(letterboxRef);
+            return letterboxRef;
+          } else {
+            // Penpal and kid are already connected, do nothing
+            return querySnapshot.ref;
+          }
+    } catch (error) {
+      logError("There has been a error creating the connection: " + error.message, { error });
+      throw error; // rethrow so callers can handle it
     }
 
     if (buddySnap.exists()) {

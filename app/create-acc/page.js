@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,6 +18,7 @@ import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../components/general/PageHeader";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import { useUser } from '../../contexts/UserContext';
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -38,6 +39,9 @@ export default function CreateAccount() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track if there are unsaved changes
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const pendingNavRef = useRef(null);
+
+  const { user, userDocRef } = useUser();
+
 
   usePageAnalytics("/create-acc");
 
@@ -93,7 +97,6 @@ export default function CreateAccount() {
         setErrors(newErrors);
         throw new Error("Form validation error(s)");
       }
-      const user = auth.currentUser;
 
       console.log(`user is :${user}`);
       const uid = user.uid;
@@ -114,13 +117,23 @@ export default function CreateAccount() {
         }
       }
 
+      // Find any existing users who already have this user in their connected_penpals list
+      const matchingUsersSnap = await getDocs(
+        query(
+          collection(db, "users"),
+          where("connected_penpals", "array-contains", userDocRef)
+        )
+      );
+      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => doc(db, "users", userDoc.id));
+
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {
         created_at: new Date(),
         first_name: firstName,
         last_name: lastName,
         birthday,
-        connected_penpals_count: 0,
+        connected_penpals: connectedPenpals,
+        connected_penpals_count: connectedPenpals.length,
       });
 
       localStorage.setItem("userFirstName", firstName);
