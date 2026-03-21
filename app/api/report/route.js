@@ -89,7 +89,7 @@ export async function POST(request) {
       </html>
     `;
 
-    //SendGrid email configuration
+    // Email configuration
     const msg = {
       to: "penpal@murphycharity.org",
       from: "penpal@murphycharity.org", // Your verified sender email
