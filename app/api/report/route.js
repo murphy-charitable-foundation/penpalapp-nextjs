@@ -15,7 +15,7 @@
  * { message: "Message reported successfully!" }
  *
  * Response (error):
- * { message: "Failed to send email.", error: "..." }
+ * { message: "Failed to send email." }
  *
  * Sends email to: admin (penpal@murphycharity.org)
  */
@@ -106,9 +106,6 @@ export async function POST(request) {
       description: "Failed to send email.",
     });
 
-    return NextResponse.json(
-      { message: "Failed to send email.", error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Failed to send email." }, { status: 500 });
   }
 }
