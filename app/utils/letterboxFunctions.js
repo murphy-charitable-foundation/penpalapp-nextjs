@@ -297,14 +297,9 @@ export const createConnection = async (userDocRef, kidDocRef) => {
     const kidSnap = await getDoc(kidDocRef);
     const buddySnap = await getDoc(userDocRef);
 
-    if (!kidSnap.exists() && !buddySnap.exists()) {
-      logError(error, {
-        description: "Neither of child nor international buddy exist in the users collection: ",
-      });
-      throw new Error("Neither of child nor international buddy exist in the users collection");
+    if (!kidSnap.exists() || !buddySnap.exists()) {
+      throw new Error("Both child and buddy must exist in users before creating a connection");
     }
-    console.log("Kid:", kidSnap);
-    console.log("User:", buddySnap);
 
     if (kidSnap.exists()) {
       if (kidSnap.data().connected_penpals_count >= 3) {
@@ -361,7 +356,7 @@ export const createConnection = async (userDocRef, kidDocRef) => {
       return letterboxRef;
     } else {
       // Penpal and kid are already connected, do nothing
-      return querySnapshot.ref;
+      return querySnapshot.docs[0].ref;
     }
   } catch (error) {
     logError("There has been a error creating the connection: " + error.message, { error });
