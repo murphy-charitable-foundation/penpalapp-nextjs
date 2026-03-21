@@ -184,9 +184,6 @@ export async function POST(request) {
       description: "Failed to send email.",
     });
 
-    return NextResponse.json(
-      { message: "Failed to send email." },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Failed to send email." }, { status: 500 });
   }
 }
