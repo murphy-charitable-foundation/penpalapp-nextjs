@@ -65,7 +65,6 @@ export default function Admin() {
 
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [activeView, setActiveView] = useState("inbox");
-// "inbox" | "review" | "reject"
 const [reviewAction, setReviewAction] = useState(null);
 
 
