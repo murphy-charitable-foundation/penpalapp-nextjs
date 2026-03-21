@@ -34,6 +34,15 @@ import sendgrid from "@sendgrid/mail";
 import { auth } from "../../firebaseAdmin"; // Import Firebase Admin SDK from the centralized file
 import { logError } from "../../utils/analytics";
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function POST(request) {
   if (auth == null) {
     return NextResponse.json({ message: "Admin is null." }, { status: 500 });
@@ -94,6 +103,8 @@ export async function POST(request) {
     }
     // Remove null values (failed fetches)
 
+    const safeMessage = escapeHtml(message || "No message provided.");
+
     const emailHtml = `
       <html>
         <head>
@@ -138,7 +149,7 @@ export async function POST(request) {
           <div class="email-container">
             <h1>Chat Found Inactive</h1>
             <p><strong>Reported Message:</strong></p>
-            <p class="message-content">${message || "No message provided."}</p>
+            <p class="message-content">${safeMessage}</p>
             <footer>
               <p>This email was sent from your report system. If you have any questions, please contact us.</p>
             </footer>
