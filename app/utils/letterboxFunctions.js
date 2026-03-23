@@ -295,7 +295,9 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
 export const createConnection = async (userDocRef, kidDocRef) => {
   try {
     const [firstUid, secondUid] = [userDocRef.id, kidDocRef.id].sort();
-    const letterboxRef = doc(db, "letterbox", `${firstUid}_${secondUid}`);
+    // Encode each UID so the separator cannot collide with UID contents.
+    const pairKey = `${encodeURIComponent(firstUid)}|${encodeURIComponent(secondUid)}`;
+    const letterboxRef = doc(db, "letterbox", pairKey);
     const initialLetterRef = doc(collection(letterboxRef, "letters"));
 
     await runTransaction(db, async (transaction) => {
