@@ -13,7 +13,7 @@ export default function WelcomeToast({ userName, onClose, isVisible }) {
         </div>
         <div>
           <h3 className="font-semibold text-gray-800 mb-1">Welcome back, {userName}!</h3>
-          <p className="text-sm text-gray-600">Check out your recent letters and stay connected.</p>
+          <p className="text-sm text-gray-600">Check out your recent messages and stay connected.</p>
         </div>
         <Button
           onClick={onClose}

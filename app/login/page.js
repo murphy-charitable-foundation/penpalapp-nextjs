@@ -50,8 +50,10 @@ export default function Login() {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
 
+      console.log(userRef)
+
       if (userSnap.exists()) {
-        router.push("/letterhome");
+        router.push("/inbox");
       } else {
         router.push("/create-acc");
       }

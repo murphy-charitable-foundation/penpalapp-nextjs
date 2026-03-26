@@ -28,7 +28,7 @@ export default function Donate() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
       <div className="max-w-2xl w-full mb-8">
-        <Link href="letterhome">
+        <Link href="/inbox">
           <BackButton />
         </Link>
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">

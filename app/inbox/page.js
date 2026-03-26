@@ -13,18 +13,18 @@ import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
   getUserPfp,
-  fetchLatestLetterFromLetterbox,
-  fetchLetterboxes,
+  fetchLatestMessageFromConversations,
+  fetchConversations,
   fetchRecipients,
-} from "../utils/letterboxFunctions";
+} from "../utils/conversationsFunctions";
 
-import { deadChat, iterateLetterBoxes } from "../utils/deadChat";
+import { deadChat, iterateConversations } from "../utils/deadChat";
 import ProfileImage from "/components/general/ProfileImage";
-import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
+import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import Button from "../../components/general/Button";
-import ProfileHeader from "../../components/general/letter/ProfileHeader";
-import LetterCard from "../../components/general/letter/LetterCard";
-import EmptyState from "../../components/general/letterhome/EmptyState";
+import ProfileHeader from "../../components/general/message/ProfileHeader";
+import MessageCard from "../../components/general/message/MessageCard";
+import EmptyState from "../../components/general/inbox/EmptyState";
 import { BackButton } from "../../components/general/BackButton";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
@@ -43,11 +43,12 @@ export default function Home() {
   const [userId, setUserId] = useState("");
   const router = useRouter();
 
-  usePageAnalytics("/letterhome");
+  usePageAnalytics("/inbox");
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
     const docSnap = await getDoc(docRef);
+    
 
     if (docSnap.exists()) {
       return docSnap.data();
@@ -57,54 +58,55 @@ export default function Home() {
     }
   };
 
+  console.log("got UserData")
+
   const getConversations = async (uid) => {
     try {
-      const letterboxes = await fetchLetterboxes();
-      if (letterboxes && letterboxes.length > 0) {
-        const letterboxIds = letterboxes.map((l) => l.id);
+      const conversations = await fetchConversations(uid);
+      console.log("my list of conversations: .....", conversations);
+      
+      if (conversations && conversations.length > 0) {
+        const conversationsIds = conversations.map((l) => l.id);
 
         const fetchedConversations = await Promise.all(
-          letterboxIds.map(async (id) => {
+          conversationsIds.map(async (id) => {
             const userRef = doc(db, "users", uid);
-            const letter =
-              (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            const message =
+              (await fetchLatestMessageFromConversations(id, userRef)) || {};
             const rec = await fetchRecipients(id);
             const recipient = rec?.[0] ?? {};
 
             return {
-              id: letter?.id,
+              id: message?.id,
               profileImage: recipient?.photo_uri || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
-              name: `${recipient.first_name ?? "Unknown"} ${
-                recipient.last_name ?? ""
-              }`,
               country: recipient.country ?? "Unknown",
-              lastMessage: letter.content || "",
-              lastMessageDate: letter.created_at || "",
-              status: letter.status || "",
-              letterboxId: id || "",
-              isRecipient: letter?.sent_by?.id !== uid,
-              unread: letter?.unread || false,
-              isRecipient: letter?.sent_by?.id !== uid,
-              unread: letter?.unread || false,
+              lastMessage: message.content || "",
+              lastMessageDate: message.created_at || "",
+              status: message.status || "",
+              conversationsId: id || "",
+              isRecipient: message?.sent_by?.id !== uid,
+              unread: message?.unread || false,
             };
           })
         );
         return fetchedConversations;
       } else {
-        setError("No conversations found.");
-        throw new Error("No letterboxes found.");
+        // no conversations is not an exceptional situation – return empty array
+        return [];
       }
     } catch (err) {
-      logError(error, {
+      logError(err, {
         description: "Error fetching data:",
       });
       setError("Failed to load data.");
       throw err;
     }
   };
+
+   console.log("got conversations")
 
   useEffect(() => {
     setIsLoading(true);
@@ -207,7 +209,7 @@ export default function Home() {
       <PageContainer maxWidth="lg">
         <>
           {isLoading ? (
-            <LetterHomeSkeleton />
+            <InboxSkeleton />
           ) : (
             <>
               <div className="w-full bg-gray-100 min-h-screen py-24 fixed top-0 left-0 z-[100]">
@@ -244,9 +246,9 @@ export default function Home() {
                   onClick={() => {
                     logButtonEvent(
                       "check for inactive chats button clicked",
-                      "/letterhome"
+                      "/inbox"
                     );
-                    iterateLetterBoxes();
+                    iterateConversations();
                   }}
                 />
               )}

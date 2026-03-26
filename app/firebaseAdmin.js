@@ -1,5 +1,6 @@
-import * as admin from "firebase-admin";
-import { logError } from "./utils/analytics";
+import admin from "firebase-admin";
+
+import { logError } from "./utils/analytics.js";
 
 // Trying to different approaches to get Firebase credentials
 let serviceAccount;
@@ -40,7 +41,7 @@ else {
 
 // Validate the service account
 if (!serviceAccount?.privateKey) {
-  console.error(
+    throw new Error(
     "Firebase private key is missing. Check your environment variables."
   );
 }
@@ -61,4 +62,5 @@ if (!admin.apps.length) {
 export const auth = admin.apps.length ? admin.auth() : null;
 export const db = admin.apps.length ? admin.firestore() : null;
 export const storage = admin.apps.length ? admin.storage() : null;
+export const FieldPath = admin.firestore.FieldPath;
 

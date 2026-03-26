@@ -4,10 +4,10 @@ import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp } from "./dateHelpers";
 
 
-const apiRequest = async (letterbox, emailId, reason) => {
+const apiRequest = async (conversations, emailId, reason) => {
   try {
       if (reason == "admin") {
-        const ids = letterbox.members.map((member) => {
+        const ids = conversations.members.map((member) => {
           const segments = member._key?.path?.segments;
           return segments?.[segments.length - 1];
           
@@ -23,10 +23,10 @@ const apiRequest = async (letterbox, emailId, reason) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sender: userData, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+          body: JSON.stringify({ sender: userData, id: conversations.id, emailId, reason: reason}), // Send data as JSON
         });
       } else {
-        const ids = letterbox.members.map((member) => {
+        const ids = conversations.members.map((member) => {
           const segments = member._key?.path?.segments;
           if (segments?.[segments.length - 1] != emailId) {
             return segments?.[segments.length - 1];
@@ -39,7 +39,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sender: sender, id: letterbox.id, emailId, reason: reason}), // Send data as JSON
+          body: JSON.stringify({ sender: sender, id: conversations.id, emailId, reason: reason}), // Send data as JSON
         });
       }
       
@@ -54,7 +54,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
 }
 
 
-  export const iterateLetterBoxes = async () => {
+  export const iterateConversations = async () => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
@@ -62,14 +62,14 @@ const apiRequest = async (letterbox, emailId, reason) => {
     const oneMonthAgoTimestamp = dateToTimestamp(oneMonthAgo);
 
     //Two indexes needed for this query but keeps read calls down.
-    const allLettersQuery = query(
-        collectionGroup(db, "letters"), 
+    const allMessagesQuery = query(
+        collectionGroup(db, "messages"), 
         where("status", "==", "sent"),
         where("created_at", ">=", oneMonthAgoTimestamp), // Use Firestore Timestamp here
     );
 
-    const querySnapshot = await getDocs(allLettersQuery);
-    const letterboxes = {}; 
+    const querySnapshot = await getDocs(allMessagesQuery);
+    const conversations = {}; 
 
     const documents = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -79,21 +79,21 @@ const apiRequest = async (letterbox, emailId, reason) => {
 
     documents.forEach((doc) => {
       const pathSegments = doc.refPath.split("/");
-      const letterboxId = pathSegments[1];
+      const conversationsId = pathSegments[1];
   
-      if (!letterboxes[letterboxId]) {
-        letterboxes[letterboxId] = {};
+      if (!conversations[conversationsId]) {
+        conversations[conversationsId] = {};
       }
   
-      if (!letterboxes[letterboxId][doc.sent_by]) {
-        letterboxes[letterboxId][doc.sent_by] = [];
+      if (!conversations[conversationsId][doc.sent_by]) {
+        conversations[conversationsId][doc.sent_by] = [];
       }
   
-      letterboxes[letterboxId][doc.sent_by].push(doc);
+      conversations[conversationsId][doc.sent_by].push(doc);
     });
   
-    const letterboxSnapshot = await getDocs(collection(db, "letterbox"));
-    const letterboxDocuments = letterboxSnapshot.docs.map((doc) => ({
+    const conversationsSnapshot = await getDocs(collection(db, "conversations"));
+    const conversationsDocuments = conversationsSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
@@ -102,27 +102,27 @@ const apiRequest = async (letterbox, emailId, reason) => {
     const twoWeeksAgo = new Date(now);
     twoWeeksAgo.setDate(now.getDate() - 14);
   
-    for (const letterbox of letterboxDocuments) {
-      const id = letterbox.id;
-      const members = letterbox.members || [];
+    for (const conversations of conversationsDocuments) {
+      const id = conversations.id;
+      const members = conversations.members || [];
   
-      const activityMap = letterboxes[id] || {};
+      const activityMap = conversations[id] || {};
   
       for (const member of members) {
-        const lettersByMember = activityMap[member] || [];
+        const messagesByMember = activityMap[member] || [];
   
-        const lastSentDate = lettersByMember
-          .map((letter) => letter.created_at?.toDate?.())
+        const lastSentDate = messagesByMember
+          .map((message) => message.created_at?.toDate?.())
           .filter((d) => !!d)
           .sort((a, b) => b - a)[0]; // Most recent
   
           if (!lastSentDate) {
             // User has sent nothing in the last month
-            await apiRequest(letterbox, member, "user");
-            await apiRequest(letterbox, member, "admin");
+            await apiRequest(conversations, member, "user");
+            await apiRequest(conversations, member, "admin");
           } else if (lastSentDate < twoWeeksAgo) {
             // User sent something between 2 weeks ago to 1 month ago 
-            await apiRequest(letterbox, member, "user");
+            await apiRequest(conversations, member, "user");
           }
       }
     }

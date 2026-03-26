@@ -17,18 +17,18 @@ import {
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
-  fetchLetterbox,
+  fetchConversations,
   fetchRecipients,
-} from "../../../app/utils/letterboxFunctions";
+} from "../../../app/utils/conversationsFunctions";
 import { formatTimestamp, isDifferentDay } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
-import ReportPopup from "../../../components/general/letter/ReportPopup";
-import ConfirmReportPopup from "../../../components/general/letter/ConfirmReportPopup";
+import ReportPopup from "../../../components/general/message/ReportPopup";
+import ConfirmReportPopup from "../../../components/general/message/ConfirmReportPopup";
 import { useRouter } from "next/navigation";
 import FirstTimeChatGuide from "../../../components/tooltip/FirstTimeChatGuide";
 import { usePathname } from "next/navigation";
-import LettersSkeleton from "../../../components/loading/LettersSkeleton";
+import MessagesSkeleton from "../../../components/loading/MessagesSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { AlertTriangle } from "lucide-react";
@@ -38,13 +38,13 @@ import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
 
 
-const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
+const fetchDraft = async (conversationsId, userRef, shouldCreate = false) => {
   try {
-    const letterboxRef = doc(db, "letterbox", letterboxId);
-    const lettersRef = collection(letterboxRef, "letters");
+    const conversationsRef = doc(db, "conversations", conversationsId);
+    const messagesRef = collection(conversationsRef, "messages");
 
     const draftQuery = query(
-      lettersRef,
+      messagesRef,
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
       orderBy("updated_at", "desc"),
@@ -78,7 +78,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         unread: true,
       };
 
-      const newDraftRef = doc(lettersRef);
+      const newDraftRef = doc(messagesRef);
       await setDoc(newDraftRef, newDraftData);
 
       return {
@@ -122,7 +122,7 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
-  const [lettersRef, setLettersRef] = useState(null);
+  const [messagesRef, setMessagesRef] = useState(null);
   const [userType, setUserType] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
@@ -151,21 +151,21 @@ export default function Page({ params }) {
 
   const saveDraft = useCallback(
     async (content) => {
-      if (!user || !lettersRef || isSending) {
+      if (!user || !messagesRef || isSending) {
         return Promise.resolve();
       }
 
       setIsUpdatingFirebase(true);
 
       try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
+        const messageUserRef = userRef || doc(db, "users", user.uid);
         const trimmedContent = content.trim();
         const currentTime = new Date();
 
         let existingDraft = draft;
 
         if (!existingDraft?.id) {
-          existingDraft = await fetchDraft(id, letterUserRef, false);
+          existingDraft = await fetchDraft(id, messageUserRef, false);
 
           if (existingDraft) {
             setDraft(existingDraft);
@@ -173,7 +173,7 @@ export default function Page({ params }) {
         }
 
         const baseDraftData = {
-          sent_by: letterUserRef,
+          sent_by: messageUserRef,
           content: trimmedContent,
           status: "draft",
           updated_at: currentTime,
@@ -182,7 +182,7 @@ export default function Page({ params }) {
         };
 
         if (existingDraft?.id) {
-          const draftDocRef = doc(lettersRef, existingDraft.id);
+          const draftDocRef = doc(messagesRef, existingDraft.id);
 
           const updateData = {
             ...baseDraftData,
@@ -198,7 +198,7 @@ export default function Page({ params }) {
             created_at: currentTime,
           };
 
-          const newDraftRef = doc(lettersRef);
+          const newDraftRef = doc(messagesRef);
           await setDoc(newDraftRef, newDraftData);
 
           setDraft({ ...newDraftData, id: newDraftRef.id });
@@ -227,7 +227,7 @@ export default function Page({ params }) {
                 ...baseDraftData,
                 created_at: currentTime,
               };
-              const newDraftRef = doc(lettersRef);
+              const newDraftRef = doc(messagesRef);
               await setDoc(newDraftRef, newDraftData);
 
               setDraft({ ...newDraftData, id: newDraftRef.id });
@@ -244,7 +244,7 @@ export default function Page({ params }) {
         setIsUpdatingFirebase(false);
       }
     },
-    [user, lettersRef, isSending, draft, userRef, isEditing, id]
+    [user, messagesRef, isSending, draft, userRef, isEditing, id]
   );
 
   const handleMessageChange = async (e) => {
@@ -314,12 +314,12 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
-        throw new Error("Missing required dependencies: user or lettersRef");
+      if (!user || !messagesRef) {
+        throw new Error("Missing required dependencies: user or messagesRef");
       }
 
       const currentTime = new Date();
-      const messageRef = doc(lettersRef, editingMessageId);
+      const messageRef = doc(messagesRef, editingMessageId);
 
       const updateData = {
         content: trimmedContent,
@@ -328,8 +328,8 @@ export default function Page({ params }) {
 
       await updateDoc(messageRef, updateData);
 
-      const letterUserRef = userRef || doc(db, "users", user.uid);
-      const existingDraft = await fetchDraft(id, letterUserRef, false);
+      const messageUserRef = userRef || doc(db, "users", user.uid);
+      const existingDraft = await fetchDraft(id, messageUserRef, false);
 
       if (existingDraft && existingDraft.content?.trim()) {
         setDraft(existingDraft);
@@ -400,15 +400,15 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
-        throw new Error("Missing required dependencies: user or lettersRef");
+      if (!user || !messagesRef) {
+        throw new Error("Missing required dependencies: user or messagesRef");
       }
 
-      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const messageUserRef = userRef || doc(db, "users", user.uid);
       const currentTime = new Date();
 
       const messageData = {
-        sent_by: letterUserRef,
+        sent_by: messageUserRef,
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
@@ -420,7 +420,7 @@ export default function Page({ params }) {
       let messageRef;
 
       if (draft?.id) {
-        messageRef = doc(lettersRef, draft.id);
+        messageRef = doc(messagesRef, draft.id);
 
         const updateData = {
           ...messageData,
@@ -429,7 +429,7 @@ export default function Page({ params }) {
 
         await updateDoc(messageRef, updateData);
       } else {
-        messageRef = doc(lettersRef);
+        messageRef = doc(messagesRef);
         await setDoc(messageRef, messageData);
       }
 
@@ -583,8 +583,8 @@ export default function Page({ params }) {
 
     if (!draft?.id) {
       try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
-        const existingDraft = await fetchDraft(id, letterUserRef, false);
+        const messageUserRef = userRef || doc(db, "users", user.uid);
+        const existingDraft = await fetchDraft(id, messageUserRef, false);
 
         if (existingDraft) {
           setDraft(existingDraft);
@@ -613,7 +613,7 @@ export default function Page({ params }) {
     }, 100);
   };
 
-  usePageAnalytics(`/letters/[id]`);
+  usePageAnalytics(`/messages/[id]`);
 
   useEffect(() => {
 
@@ -634,11 +634,11 @@ export default function Page({ params }) {
       
 
       try {
-        const letterboxRef = doc(db, "letterbox", id);
-        const letterboxDoc = await getDoc(letterboxRef);
+        const conversationsRef = doc(db, "conversations", id);
+        const conversationsDoc = await getDoc(conversationsRef);
 
-        if (!letterboxDoc.exists()) {
-          console.error("❌ Letterbox does not exist:", id);
+        if (!conversationsDoc.exists()) {
+          console.error("❌ conversations does not exist:", id);
           setIsLoading(false);
           return;
         }
@@ -664,8 +664,8 @@ export default function Page({ params }) {
           setRecipientName(recipientName);
         }
 
-        const lRef = collection(letterboxRef, "letters");
-        setLettersRef(lRef);
+        const lRef = collection(conversationsRef, "messages");
+        setMessagesRef(lRef);
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
@@ -792,7 +792,7 @@ export default function Page({ params }) {
   }, [allMessages, isEditing]);
 
   if (isLoading) {
-    return <LettersSkeleton />;
+    return <MessagesSkeleton />;
   }
 
   const selectMessage = (messageId) => {
@@ -852,7 +852,7 @@ export default function Page({ params }) {
                   width={30}
                   height={30}
                   className="object-contain"
-                  id="send-letter"
+                  id="send-message"
                 />
               </button>
             )
@@ -867,12 +867,12 @@ export default function Page({ params }) {
             </div>
             <button
               onClick={async () => {
-                const letterUserRef = userRef || doc(db, "users", user.uid);
+                const messageUserRef = userRef || doc(db, "users", user.uid);
 
                 try {
                   const existingDraft = await fetchDraft(
                     id,
-                    letterUserRef,
+                    messageUserRef,
                     false
                   );
 
@@ -985,7 +985,7 @@ export default function Page({ params }) {
                                 setShowReportPopup(true);
                                 logButtonEvent(
                                   "Report message clicked!",
-                                  "/letters/[id]"
+                                  "/messages/[id]"
                                 );
                               }}
                               className="text-xs text-gray-500 hover:text-gray-700 flex items-center">
@@ -1002,7 +1002,7 @@ export default function Page({ params }) {
                                 <div className="flex items-start text-red-700 font-semibold">
                                   <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
                                   <div>
-                                    <div>Your letter was not sent.</div>
+                                    <div>Your message was not sent.</div>
 
                                     {message.rejection_reason && (
                                       <div className="text-sm text-red-600 mt-1">
@@ -1030,7 +1030,7 @@ export default function Page({ params }) {
                                     handleEditMessage(message);
                                     logButtonEvent(
                                       "Edit message clicked!",
-                                      "/letters/[id]"
+                                      "/messages/[id]"
                                     );
                                   }}
                                   className="absolute -bottom-0.5 right-7 bg-primary text-white text-xs px-2 py-1 rounded-full transition-colors"
@@ -1080,7 +1080,7 @@ export default function Page({ params }) {
                 onClick={handleReplyClick}>
                 {hasDraftContent
                   ? "Continue draft..."
-                  : "Reply to the letter..."}
+                  : "Reply to the message..."}
               </div>
             </div>
           ) : (

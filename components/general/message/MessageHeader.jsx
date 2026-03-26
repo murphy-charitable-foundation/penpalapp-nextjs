@@ -6,7 +6,7 @@ import IconButton from "../IconButton";
 import Button from "../Button";
 import Image from "next/image";
 
-export default function LetterHeader({
+export default function MessageHeader({
   attachmentsCount,
   onAttach,
   onSend,

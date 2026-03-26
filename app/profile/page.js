@@ -246,7 +246,7 @@ export default function EditProfile() {
         isOpen={isDialogOpen}
         onClose={() => {
           setIsDialogOpen(false);
-          if (isSaved) router.push("/letterhome");
+          if (isSaved) router.push("/inbox");
         }}
         title={dialogTitle}
         content={dialogMessage}
@@ -515,7 +515,7 @@ export default function EditProfile() {
 
             <div className="flex justify-center">
               <Link
-                href="/letterhome"
+                href="/inbox"
                 className="transition-transform hover:scale-105 focus:outline-none"
                 onClick={(e) => {
                   e.preventDefault();

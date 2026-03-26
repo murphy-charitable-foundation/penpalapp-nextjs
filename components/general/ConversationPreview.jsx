@@ -5,13 +5,13 @@ import { formatTimestamp } from "@/app/utils/dateHelpers";
 
 
 
-const MessagePreview = ({
+const ConversationPreview = ({
   profileImage,
   name,
   country,
   lastMessage,
   lastMessageDate,
-  letterboxId,
+  conversationsId,
   status,
   isRecipient,
   unread = false,
@@ -38,7 +38,7 @@ const MessagePreview = ({
 
   return (
     <a
-      href={`/letters/${letterboxId}`}
+      href={`/messages/${conversationsId}`}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
@@ -85,7 +85,7 @@ const MessagePreview = ({
             <div className="flex-1">
               {status === "rejected" && (
                 <div className="font-normal text-red-500">
-                  Your letter was rejected
+                  Your message was rejected
                 </div>
               )}
               {lastMessage}
@@ -96,7 +96,7 @@ const MessagePreview = ({
             <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
             {status === "rejected" && (
               <div className="flex-1 font-normal text-red-500">
-                Your letter was rejected
+                Your message was rejected
               </div>
             )}
           </div>
@@ -106,4 +106,4 @@ const MessagePreview = ({
   );
 };
 
-export default MessagePreview;
+export default ConversationPreview;

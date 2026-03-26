@@ -56,26 +56,26 @@ export default function SendMessage({ kid }) {
           const userDocRef = doc(db, "users", auth.currentUser.uid);
           const kidDocRef = doc(db, "users", kid.id);
 
-          // query DB to check for existing letterbox
-          let letterboxQuery = query(
-            collection(db, "letterbox"),
+          // query DB to check for existing conversations
+          let conversationsQuery = query(
+            collection(db, "conversations"),
             where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
           );
 
-          let querySnapshot = await getDocs(letterboxQuery);
+          let querySnapshot = await getDocs(conversationsQuery);
           
           if (querySnapshot.empty) {
-            letterboxQuery = query(
-              collection(db, "letterbox"),
+            conversationsQuery = query(
+              collection(db, "conversations"),
               where("members", "==", [kidDocRef, userDocRef])
             );
-            querySnapshot = await getDocs(letterboxQuery);
+            querySnapshot = await getDocs(conversationsQuery);
           }
 
-          let letterboxRef;
+          let conversationsRef;
 
-          if (querySnapshot.empty) { // if there's no letterbox, create one.
-            letterboxRef = await addDoc(collection(db, "letterbox"), {
+          if (querySnapshot.empty) { // if there's no conversations, create one.
+            conversationsRef = await addDoc(collection(db, "conversations"), {
               members: [
                 userDocRef, 
                 kidDocRef   
@@ -84,11 +84,11 @@ export default function SendMessage({ kid }) {
               archived_at: null,
             });
 
-            console.log("Letterbox created");
+            console.log("Conversations created");
 
-            await addDoc(collection(letterboxRef, "letters"), {
+            await addDoc(collection(conversationsRef, "messages"), {
               sent_by: userRef,
-              content: "Please complete your first letter here...",
+              content: "Please complete your first message here...",
               status: "draft",
               created_at: new Date(),
               deleted: null
@@ -104,11 +104,11 @@ export default function SendMessage({ kid }) {
               connected_penpals_count: kid.connected_penpals_count + 1,
             });
 
-            router.push("/letters/" + letterboxRef.id);
+            router.push("/messages/" + conversationsRef.id);
           } else {
-            router.push("/letters/" + querySnapshot.docs[0].id);
-            console.log("Letterbox already exists");
-            logError("Penpal filter error -- Letterbox already exists.", {
+            router.push("/messages/" + querySnapshot.docs[0].id);
+            console.log("Conversations already exists");
+            logError("Penpal filter error -- Conversations already exists.", {
               description: "debug",
             });
           }
