@@ -8,6 +8,7 @@ import { getUserPfp } from '../app/utils/letterboxFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();
+
 const PUBLIC_PATHS = [
   '/login', 
   '/', 
@@ -18,12 +19,6 @@ const PUBLIC_PATHS = [
   '/create-acc',
   '/reset-password',
 ]; // public routes that don't require authentication
-
-const isProfileComplete = (data) => {
-  const firstName = data?.first_name?.trim?.() || '';
-  const lastName = data?.last_name?.trim?.() || '';
-  return Boolean(firstName || lastName);
-};
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -39,7 +34,6 @@ export function UserProvider({ children }) {
       if (authUser) {
         setUser(authUser);
         
-        // Fetch user type from Firestore
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -48,13 +42,6 @@ export function UserProvider({ children }) {
             const fetchedUserData = userDoc.data();
             setUserData(fetchedUserData);
             setUserType(fetchedUserData.user_type || "Unknown Type");
-
-            if (
-              !isProfileComplete(fetchedUserData) &&
-              pathname !== '/create-acc' &&
-              !PUBLIC_PATHS.includes(pathname)) {
-              router.push('/create-acc');
-            }
 
             try {
               const pfp = await getUserPfp(authUser.uid);
@@ -70,8 +57,8 @@ export function UserProvider({ children }) {
             setProfileImage('');
 
             if (pathname !== '/create-acc' && !PUBLIC_PATHS.includes(pathname)) {
-                router.push('/create-acc');
-              }
+              router.push('/create-acc');
+            }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -79,7 +66,6 @@ export function UserProvider({ children }) {
           setUserType('Unknown Type');
           setProfileImage('');
         } finally {
-          // Always set loading to false after processing authenticated user
           setLoading(false);
         }
       } else {
