@@ -31,7 +31,6 @@ export default function Page({ params }) {
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
-  const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [userType, setUserType] = useState("international_buddy");
@@ -60,7 +59,6 @@ export default function Page({ params }) {
         setIsOrphan(u.is_orphan ? "Yes" : "No");
         setGuardian(u.guardian || "");
         setDreamJob(u.dream_job || "");
-        setHobby(u.hobby || "");
         setHobbies(u.hobbies || []);
         setFavoriteColor(u.favorite_color || "");
         setPhotoUri(u.photo_uri || "");

@@ -25,7 +25,7 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
 
@@ -120,6 +120,7 @@ export default function Home() {
   }, [user]);
 
   return (
+  <>
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
       <PageContainer
         width="compactXS"
@@ -157,5 +158,6 @@ export default function Home() {
         )}
       </PageContainer>
     </PageBackground>
-  );
+  </>
+);
 }

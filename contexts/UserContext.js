@@ -31,6 +31,7 @@ export function UserProvider({ children }) {
   const [userType, setUserType] = useState(null);
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState('');
+  const [userDocRef, setUserDocRef] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -39,6 +40,8 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
+        const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
+        setUserDocRef(userDocRef);  // Set it in state
         
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
@@ -86,6 +89,7 @@ export function UserProvider({ children }) {
         setUserType(null);
         setUserData(null);
         setProfileImage('');
+        setUserDocRef(null);
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
@@ -102,6 +106,7 @@ export function UserProvider({ children }) {
     userType,
     userData,
     profileImage,
+    userDocRef,
     loading
   };
 
