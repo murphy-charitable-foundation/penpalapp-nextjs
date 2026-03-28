@@ -10,28 +10,21 @@ import LoadingSpinner from '../components/loading/LoadingSpinner';
 const UserContext = createContext();
 
 const PUBLIC_PATHS = [
-  '/login', 
-  '/', 
-  '/about', 
-  '/contact', 
-  '/donate', 
+  '/login',
+  '/',
+  '/about',
+  '/contact',
+  '/donate',
   '/welcome',
   '/create-acc',
   '/reset-password',
-]; // public routes that don't require authentication
-
-const isProfileComplete = (data) => {
-  const firstName = data?.first_name?.trim?.() || '';
-  const lastName = data?.last_name?.trim?.() || '';
-  return Boolean(firstName && lastName);
-};
+];
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState('');
-  const [userDocRef, setUserDocRef] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -40,24 +33,15 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
-        const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
-        setUserDocRef(userDocRef);  // Set it in state
-        
+
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
-          
+
           if (userDoc.exists()) {
             const fetchedUserData = userDoc.data();
             setUserData(fetchedUserData);
-            setUserType(fetchedUserData.user_type || "Unknown Type");
-
-            if (
-              !isProfileComplete(fetchedUserData) &&
-              pathname !== '/create-acc'
-            ) {
-              router.push('/create-acc');
-            }
+            setUserType(fetchedUserData.user_type || 'Unknown Type');
 
             try {
               const pfp = await getUserPfp(authUser.uid);
@@ -67,7 +51,6 @@ export function UserProvider({ children }) {
               setProfileImage('');
             }
           } else {
-            console.log('No user document found');
             setUserData(null);
             setUserType('Unknown Type');
             setProfileImage('');
@@ -89,7 +72,6 @@ export function UserProvider({ children }) {
         setUserType(null);
         setUserData(null);
         setProfileImage('');
-        setUserDocRef(null);
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
@@ -106,8 +88,7 @@ export function UserProvider({ children }) {
     userType,
     userData,
     profileImage,
-    userDocRef,
-    loading
+    loading,
   };
 
   if (loading && !PUBLIC_PATHS.includes(pathname)) {
