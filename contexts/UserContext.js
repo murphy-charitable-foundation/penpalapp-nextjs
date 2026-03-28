@@ -20,6 +20,12 @@ const PUBLIC_PATHS = [
   '/reset-password',
 ]; // public routes that don't require authentication
 
+const isProfileComplete = (data) => {
+  const firstName = data?.first_name?.trim?.() || '';
+  const lastName = data?.last_name?.trim?.() || '';
+  return Boolean(firstName && lastName);
+};
+
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
@@ -43,6 +49,13 @@ export function UserProvider({ children }) {
             setUserData(fetchedUserData);
             setUserType(fetchedUserData.user_type || "Unknown Type");
 
+            if (
+              !isProfileComplete(fetchedUserData) &&
+              pathname !== '/create-acc'
+            ) {
+              router.push('/create-acc');
+            }
+
             try {
               const pfp = await getUserPfp(authUser.uid);
               setProfileImage(pfp || '');
@@ -56,7 +69,7 @@ export function UserProvider({ children }) {
             setUserType('Unknown Type');
             setProfileImage('');
 
-            if (pathname !== '/create-acc' && !PUBLIC_PATHS.includes(pathname)) {
+            if (pathname !== '/create-acc') {
               router.push('/create-acc');
             }
           }
