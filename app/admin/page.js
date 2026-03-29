@@ -5,21 +5,21 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import BottomNavBar from "../../components/bottom-nav-bar";
-import { updateDoc } from "firebase/firestore";
 import SuccessModal from "../../components/general/admin/SuccessModal";
-import { deleteField } from "firebase/firestore";
-
 import {
   collectionGroup,
+  collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
-  collection,
-  query,
-  where,
   limit,
-  startAfter,
   orderBy,
+  query,
+  serverTimestamp,
+  startAfter,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { storage } from "../firebaseConfig.js";
@@ -82,14 +82,6 @@ const currentLetter =
   selectedLetter;
 
   useEffect(() => {
-    if (!isDormantLetterboxLoading) {
-      handleDormantLetterboxWorker();
-    }
-  }, [isDormantLetterboxLoading]);
-
-
-
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsLoading(true);
 
@@ -123,11 +115,14 @@ const currentLetter =
         setProfileImage("/usericon.png");
       }
 
+      // Run dormant worker once after auth/admin validation.
+      handleDormantLetterboxWorker();
+
       setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, handleDormantLetterboxWorker]);
 
   useEffect(() => {
   if (activeView !== "inbox") return;
@@ -343,7 +338,7 @@ const currentLetter =
                       await updateDoc(ref, {
                         status: "approved",
                         moderator_id: userId,
-                        updated_at: new Date(),
+                        updated_at: serverTimestamp(),
                       });
                     } catch (err) {
                       console.warn("Approve blocked", err);
@@ -366,6 +361,13 @@ const currentLetter =
                   letter={selectedLetter}
                   onClose={() => setActiveView("review")}
                   onSubmit={async (reason, feedback) => {
+                    if (!selectedLetter?.letterboxId || !selectedLetter?.id) {
+                      const refError = new Error(
+                        "Missing letter reference for rejection."
+                      );
+                      setError("Could not reject this letter. Please refresh and try again.");
+                      throw refError;
+                    }
                     try {
                       const ref = doc(
                         db,
@@ -384,6 +386,8 @@ const currentLetter =
                       setReviewAction("rejected");
                     } catch (err) {
                       console.warn("Reject blocked by Firestore rules", err);
+                      setError("Reject failed. Please check your permissions and try again.");
+                      throw err;
                     }
                   }}
                 />

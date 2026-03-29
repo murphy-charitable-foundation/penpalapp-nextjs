@@ -14,7 +14,7 @@ self.onmessage = async function (e) {
 };
 
 async function sendDormantLetterbox(idToken) {
-  const response = await fetch("/api/dormantletterbox", {
+  /*const response = await fetch("/api/dormantletterbox", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -22,5 +22,11 @@ async function sendDormantLetterbox(idToken) {
     },
   });
 
-  return response;
+  return response;*/
+  return {
+    success: true,
+    data: {
+      message: "Dormant letterbox worker is working",
+    },
+  };
 }

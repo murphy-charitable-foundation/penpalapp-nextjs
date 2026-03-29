@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext, useEffect, useCallback } from "react";
 import { logError } from "../app/utils/analytics";
 import { auth } from "../app/firebaseConfig";
 
@@ -38,7 +38,18 @@ export const DormantLetterboxProvider = ({ children }) => {
     }
   }, []);
 
-  const handleDormantLetterboxWorker = async () => {
+  const handleDormantLetterboxWorker = useCallback(async () => {
+    if (isDormantLetterboxLoading) return;
+
+    const lastAttempt = localStorage.getItem("dormantLetterboxAttemptTimestamp");
+    if (lastAttempt) {
+      const diffInMinutes = Math.floor(
+        (Date.now() - new Date(lastAttempt).getTime()) / (1000 * 60)
+      );
+      // Cooldown to avoid repeated retries when API/worker fails.
+      if (diffInMinutes < 60) return;
+    }
+
     const dormantLetterboxTimestamp = localStorage.getItem("dormantLetterboxTimestamp");
     if (dormantLetterboxTimestamp) {
       const timestampDate = new Date(dormantLetterboxTimestamp);
@@ -65,9 +76,10 @@ export const DormantLetterboxProvider = ({ children }) => {
       logError(err, { description: "Dormant letterbox: failed to get token" });
       return;
     }
+    localStorage.setItem("dormantLetterboxAttemptTimestamp", new Date().toISOString());
     setIsDormantLetterboxLoading(true);
     worker.postMessage({ idToken });
-  };
+  }, [isDormantLetterboxLoading, worker]);
 
   return (
     <DormantLetterboxContext.Provider
