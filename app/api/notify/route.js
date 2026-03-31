@@ -116,7 +116,7 @@ export async function POST(req) {
     const tokens = await getConversationTokens(conversationId, senderUid);
 
     if (tokens.length === 0) {
-      return new Response(JSON.stringify({ message: "No FCM tokens found for recipients." }), { status: 500 });
+      return new Response(JSON.stringify({ message: "No FCM tokens found for recipients." }), { status: 200 });
     }
 
     // --- SEND ---
