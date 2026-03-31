@@ -12,7 +12,6 @@ import {
   fetchLetterboxes,
   fetchRecipients,
 } from "../utils/letterboxFunctions";
-
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
@@ -66,6 +65,7 @@ export default function Home() {
           return {
             id: letter?.id,
             profileImage: recipient?.photo_uri || "",
+            penpalId: recipient?.id || "",
             name: `${recipient.first_name ?? "Unknown"} ${
               recipient.last_name ?? ""
             }`,
@@ -94,8 +94,7 @@ export default function Home() {
     const fetchData = async () => {
       setIsLoading(true);
 
-      if (!user) return;
-
+      if (!user) return; // UserContext handles route protection
       const uid = user.uid;
       setUserId(uid);
 
@@ -131,6 +130,7 @@ export default function Home() {
         {isLoading && <LetterHomeSkeleton />}
         {!isLoading && (
           <>
+            {/* HEADER */}
             <div className="shrink-0 border-b">
               <ProfileHeader
                 userName={userName}

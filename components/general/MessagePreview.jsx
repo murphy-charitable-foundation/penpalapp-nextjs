@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle } from "lucide-react";
@@ -8,6 +10,7 @@ import { formatTimestamp } from "@/app/utils/dateHelpers";
 const MessagePreview = ({
   profileImage,
   name,
+  penpalId,
   country,
   lastMessage,
   lastMessageDate,
@@ -19,11 +22,6 @@ const MessagePreview = ({
 }) => {
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
-
-  const handleProfileClick = (e) => {
-    e.preventDefault();
-    router.push(`/profile-view/${id}`);
-  };
 
   const getStatusIcon = () => {
     if (status === "rejected") {
@@ -44,8 +42,8 @@ const MessagePreview = ({
   };
 
   return (
-    <a
-      href={`/letters/${letterboxId}`}
+    <div
+      onClick={() => router.push(`/letters/${letterboxId}`)}
       className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
@@ -56,12 +54,11 @@ const MessagePreview = ({
           : "bg-white"
       }`}>
       <div className="flex items-start">
-        <div
-          onClick={handleProfileClick}
-          className="cursor-pointer"
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
+        <Link
+          href={`/profile-view/${penpalId}`}
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 hover:opacity-80 transition cursor-pointer"
+        >
           <Image
             src={imageSrc}
             alt={`${name}'s profile`}
@@ -69,7 +66,7 @@ const MessagePreview = ({
             width={36}
             height={36}
           />
-        </div>
+        </Link>
         <div className="flex-1">
           <div className="flex justify-between items-start">
             <div>
@@ -77,7 +74,7 @@ const MessagePreview = ({
                 {status === "draft" && lastMessage !== "" && (
                   <span className="text-red-500 mr-1">[Draft]</span>
                 )}
-                {name}
+                  <span>{name}</span>
               </div>
               <div className="text-sm text-gray-500">{country}</div>
             </div>
@@ -116,7 +113,7 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </div>
   );
 };
 
