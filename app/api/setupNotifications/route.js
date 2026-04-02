@@ -70,7 +70,7 @@ export async function POST(req) {
       });
     } else {
       return new Response(JSON.stringify({
-        error: "User not registered for notifications. Please log in on the client first.",
+        error: "User needs to create profile after their first login before setting up the notifications.",
       }), { status: 400 });
     }
   } catch (err) {

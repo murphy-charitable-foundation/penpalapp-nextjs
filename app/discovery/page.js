@@ -120,11 +120,11 @@ export default function ChooseKid() {
               const storage = getStorage();
               const photoRef = ref(storage, data.photo_uri);
               const photoURL = await getDownloadURL(photoRef);
-              return { id: d.id, ...data, photoURL };
+              return { id: d.id, ref: d.ref, ...data, photoURL };
             }
-            return { id: d.id, ...data, photoURL: "/usericon.png" };
+            return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
           } catch {
-            return { id: d.id, ...data, photoURL: "/usericon.png" };
+            return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
           }
         })
       );
