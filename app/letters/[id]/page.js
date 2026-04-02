@@ -427,12 +427,14 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageData);
       }
       
-      // Clear states
+      
       if (globalLetterboxReference) {
         sendNotification(globalLetterboxReference, "").catch(error => {
           console.error("Failed to send notification:", error);
         });
       }
+      
+      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
