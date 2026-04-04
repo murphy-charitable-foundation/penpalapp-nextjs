@@ -220,7 +220,7 @@ const currentLetter =
   try {
     const ref = doc(
       db,
-      "letterboxes",
+"letterbox",
       letter.letterboxId,
       "letters",
       letter.id
