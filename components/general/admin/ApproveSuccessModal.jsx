@@ -4,8 +4,8 @@ import Image from "next/image";
 import Button from "../../general/Button";
 
 export default function ApproveSuccessView({
-  onClose,
-  onRevert,
+  onClose = () => {},
+  onRevert = () => {},
 }) {
   return (
     <div className="fixed inset-0 z-[10000] flex items-start justify-center bg-gray-100">
@@ -15,7 +15,7 @@ export default function ApproveSuccessView({
 
             <div className="flex justify-center mb-6">
               <Image
-                src="/rejection-success.png"
+                src="/letter-sent-success.png"
                 alt="Letter approved"
                 width={104}
                 height={104}

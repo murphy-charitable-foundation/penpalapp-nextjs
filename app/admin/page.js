@@ -215,7 +215,7 @@ const currentLetter =
   try {
     const ref = doc(
       db,
-      "letterboxes",
+"letterbox",
       letter.letterboxId,
       "letters",
       letter.id
@@ -334,7 +334,7 @@ const currentLetter =
                     setActiveView("inbox");
 
                     try {
-                      const ref = doc(db, "letterboxes", letterboxId, "letters", id);
+                      const ref = doc(db, "letterbox", letterboxId, "letters", id);
                       await updateDoc(ref, {
                         status: "approved",
                         moderator_id: userId,
@@ -371,7 +371,7 @@ const currentLetter =
                     try {
                       const ref = doc(
                         db,
-                        "letterboxes",
+                        "letterbox",
                         selectedLetter.letterboxId,
                         "letters",
                         selectedLetter.id

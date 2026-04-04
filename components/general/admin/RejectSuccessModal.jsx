@@ -4,8 +4,8 @@ import Image from "next/image";
 import Button from "../../general/Button";
 
 export default function RejectSuccessModal({
-  onClose,
-  onRevert,
+  onClose = () => {},
+  onRevert = () => {},
 }) {
   return (
     <div className="fixed inset-0 z-[999] flex items-start justify-center bg-gray-100">
@@ -16,7 +16,7 @@ export default function RejectSuccessModal({
             {/* ICON */}
             <div className="flex justify-center mb-4">
               <Image
-                src="/rejection-success.png"
+                src="/letter-sent-success.png"
                 alt="Rejection sent"
                 width={104}
                 height={104}

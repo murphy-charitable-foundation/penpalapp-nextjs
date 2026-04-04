@@ -8,6 +8,18 @@ import Dropdown from "../Dropdown";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+/** Match DatePicker local state: a Date, or "" when cleared. Accepts Date, ISO strings, timestamps, or Firestore Timestamp-like objects. */
+function normalizeFilterDate(value) {
+  if (value == null || value === "" || value === 0) return "";
+  if (typeof value?.toDate === "function") {
+    const d = value.toDate();
+    return d instanceof Date && !isNaN(d.getTime()) ? d : "";
+  }
+  if (value instanceof Date) return isNaN(value.getTime()) ? "" : value;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? "" : d;
+}
+
 export default function AdminFilter({
   setStatus,
   status,
@@ -24,8 +36,8 @@ export default function AdminFilter({
   const statusLabels = new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
 
   const [statusFilter, setStatusFilter] = useState(status || "");
-  const [startFilter, setStartFilter] = useState(start || "2025-01-01");
-  const [endFilter, setEndFilter] = useState(end || "2025-01-01");
+  const [startFilter, setStartFilter] = useState(() => normalizeFilterDate(start));
+  const [endFilter, setEndFilter] = useState(() => normalizeFilterDate(end));
   const [currentFilter, setCurrentFilter] = useState(status ? statusLabels.get(status) : "");
 
   const toDateOrNull = (value) => {
@@ -37,8 +49,8 @@ export default function AdminFilter({
 
   useEffect(() => {
     setStatusFilter(status || "");
-    setStartFilter(start !== 0 && start !== null ? start : "");
-    setEndFilter(end || "");
+    setStartFilter(normalizeFilterDate(start));
+    setEndFilter(normalizeFilterDate(end));
     setCurrentFilter(status ? statusLabels.get(status) : "");
   }, [status, start, end]);
 

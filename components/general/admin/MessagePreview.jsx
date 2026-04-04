@@ -25,6 +25,10 @@ const MessagePreview = ({
 
     // Approve function
     const handleApprove = async (letterboxId, moderatorId) => {
+        if (!moderatorId) {
+          console.warn("Cannot approve letter: moderator not signed in.");
+          return;
+        }
         try {
         const letterRef = doc(db, "letters", letterboxId); // Adjust collection name if needed
         
@@ -47,6 +51,10 @@ const MessagePreview = ({
     
     // Reject function
     const handleReject = async (letterboxId, moderatorId, rejectionReason, rejectionFeedback = "") => {
+        if (!moderatorId) {
+          console.warn("Cannot reject letter: moderator not signed in.");
+          return;
+        }
         try {
         const letterRef = doc(db, "letters", letterboxId); // Adjust collection name if needed
         
@@ -282,11 +290,15 @@ const MessagePreview = ({
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
-                      // Handle deny logic here
+                      const moderatorUid = auth.currentUser?.uid;
+                      if (!moderatorUid) {
+                        console.warn("Cannot reject letter: auth is not ready.");
+                        return;
+                      }
                       handleReject(
-                        letterboxId, 
-                        auth.currentUser.uid, 
-                        "Personal Information Disclosure", 
+                        letterboxId,
+                        moderatorUid,
+                        "Personal Information Disclosure",
                         "Optional feedback message"
                       );
                     }}
@@ -297,11 +309,12 @@ const MessagePreview = ({
                   </button>
                   <button
                     onClick={() => {
-                      // Handle approve logic here
-                      handleApprove(
-                        letterboxId,
-                        auth.currentUser.uid // Get this from your auth context/state
-                      );
+                      const moderatorUid = auth.currentUser?.uid;
+                      if (!moderatorUid) {
+                        console.warn("Cannot approve letter: auth is not ready.");
+                        return;
+                      }
+                      handleApprove(letterboxId, moderatorUid);
                     }}
                     className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm hover:shadow flex items-center gap-2"
                   >
