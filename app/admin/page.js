@@ -339,7 +339,7 @@ const currentLetter =
                     setActiveView("inbox");
 
                     try {
-                      const ref = doc(db, "letterboxes", letterboxId, "letters", id);
+                      const ref = doc(db, "letterbox", letterboxId, "letters", id);
                       await updateDoc(ref, {
                         status: "approved",
                         moderator_id: userId,
