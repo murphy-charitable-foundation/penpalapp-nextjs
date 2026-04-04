@@ -4,14 +4,20 @@ import Link from "next/link";
 import Button from "./Button";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
+
+const STATUS_HEADER_BG = {
+  sent: "bg-green-700",
+  pending_review: "bg-blue-700",
+  rejected: "bg-red-700",
+};
+
+function headerBgClassForStatus(status) {
+  return STATUS_HEADER_BG[status] ?? "bg-gray-600";
+}
+
 export default function Header({ activeFilter, setActiveFilter, title, status="sent", isLoadingMore=false }) {
   return (
-    <div className={`${status=="sent" 
-      ? "bg-green-700" 
-      : status=="pending_review" 
-      ? "bg-blue-700" 
-      : "bg-red-700"} 
-    text-white p-4 flex items-center gap-4 rounded-md`}>
+    <div className={`${headerBgClassForStatus(status)} text-white p-4 flex items-center gap-4 rounded-md`}>
       <Image
         src={logo}
         alt="Murphy Charitable Foundation Uganda"

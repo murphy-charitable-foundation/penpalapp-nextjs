@@ -6,6 +6,13 @@ import { auth } from "../app/firebaseConfig";
 
 const DormantLetterboxContext = createContext(undefined);
 
+/** Returns a Date for valid ISO strings, or null if missing/invalid (avoids NaN in diffs). */
+function parseStoredISODate(value) {
+  if (value == null || value === "") return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export const DormantLetterboxProvider = ({ children }) => {
   const [isDormantLetterboxLoading, setIsDormantLetterboxLoading] = useState(false);
   const [worker, setWorker] = useState(null);
@@ -41,18 +48,25 @@ export const DormantLetterboxProvider = ({ children }) => {
   const handleDormantLetterboxWorker = useCallback(async () => {
     if (isDormantLetterboxLoading) return;
 
-    const lastAttempt = localStorage.getItem("dormantLetterboxAttemptTimestamp");
-    if (lastAttempt) {
+    const lastAttemptRaw = localStorage.getItem("dormantLetterboxAttemptTimestamp");
+    const lastAttemptDate = parseStoredISODate(lastAttemptRaw);
+    if (lastAttemptRaw && !lastAttemptDate) {
+      localStorage.removeItem("dormantLetterboxAttemptTimestamp");
+    }
+    if (lastAttemptDate) {
       const diffInMinutes = Math.floor(
-        (Date.now() - new Date(lastAttempt).getTime()) / (1000 * 60)
+        (Date.now() - lastAttemptDate.getTime()) / (1000 * 60)
       );
       // Cooldown to avoid repeated retries when API/worker fails.
       if (diffInMinutes < 60) return;
     }
 
-    const dormantLetterboxTimestamp = localStorage.getItem("dormantLetterboxTimestamp");
-    if (dormantLetterboxTimestamp) {
-      const timestampDate = new Date(dormantLetterboxTimestamp);
+    const dormantRaw = localStorage.getItem("dormantLetterboxTimestamp");
+    const timestampDate = parseStoredISODate(dormantRaw);
+    if (dormantRaw && !timestampDate) {
+      localStorage.removeItem("dormantLetterboxTimestamp");
+    }
+    if (timestampDate) {
       const now = new Date();
       const diffInDays = Math.floor(
         (now - timestampDate) / (1000 * 60 * 60 * 24)

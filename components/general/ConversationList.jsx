@@ -3,7 +3,7 @@ import MessagePreview from "./MessagePreview.jsx";
 const ConversationList = ({
   conversations,
   isAdmin = false,
-  onSelectConversation,
+  onSelectConversation = () => {},
 }) => {
 
   return (

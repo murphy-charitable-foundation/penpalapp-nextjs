@@ -17,7 +17,7 @@ const MessagePreview = ({
   isRecipient,
   unread = false,
   isAdmin = false,
-  onClick,
+  onClick = () => {},
   id
 }) => {
   const router = useRouter();
