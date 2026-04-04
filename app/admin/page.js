@@ -369,7 +369,7 @@ const currentLetter =
                     try {
                       const ref = doc(
                         db,
-                        "letterboxes",
+                        "letterbox",
                         selectedLetter.letterboxId,
                         "letters",
                         selectedLetter.id
