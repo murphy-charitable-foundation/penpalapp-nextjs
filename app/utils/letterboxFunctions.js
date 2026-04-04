@@ -13,10 +13,19 @@ const getUserDoc = async () => {
 };
 
 export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
-  const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try { 
+    const path = `profile/${uid}/profile-image`;
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch (error) {
+    logError(error, {
+      description: "Error fetching user profile picture: ",
+    });
+    throw error;
+    return null;
+  }
+  
 }
 
 export const fetchLetterboxes = async () => {
@@ -262,6 +271,7 @@ export const fetchRecipients = async (id) => {
         description: "Error fetching user:",
       });
       members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
+      return null;
     }
   }
   return members;
