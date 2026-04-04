@@ -133,7 +133,6 @@ export default function ChooseKid() {
   useEffect(() => {
     if (!userId) return;
 
-    setKids([]);
     setLastKidDoc(null);
     setInitialLoad(true);
 
