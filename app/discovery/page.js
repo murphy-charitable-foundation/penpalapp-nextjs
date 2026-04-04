@@ -124,21 +124,20 @@ export default function ChooseKid() {
       setError("Error fetching kids");
       logError(e, { description: "Error fetching kids" });
     } finally {
-      setLoading(false);
-      setInitialLoad(false);
+    setLoading(false);
+    setInitialLoad(false);
     }
   }, [age, gender, hobbies]);
 
   // Refetch when filters change
   useEffect(() => {
-    if (!userId) return;
+  if (!userId) return;
 
-    setKids([]);
-    setLastKidDoc(null);
-    setInitialLoad(true);
+  setLastKidDoc(null);
+  setInitialLoad(true);
 
-    fetchKids(userId, true, null);
-  }, [userId, fetchKids]);
+  fetchKids(userId, true, null);
+}, [userId, fetchKids]);
 
   const calculateAge = (birthdayTimestamp) => {
     if (!birthdayTimestamp) return 0;
