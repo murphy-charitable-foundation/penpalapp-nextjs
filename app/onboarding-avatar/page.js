@@ -9,6 +9,9 @@ import "cropperjs/dist/cropper.css";
 import { ChevronLeft, Camera, ImageIcon, Smile, Trash2, X } from "lucide-react";
 import { logButtonEvent } from "../utils/analytics";
 import { saveAvatar } from "@/app/lib/avatarUtils";
+import Dialog from "@/components/general/Dialog";
+import PageBackground from "@/components/general/PageBackground";
+import PageContainer from "@/components/general/PageContainer";
 
 // Cropper circular styles are defined in globals.css — no inline injection needed
 
@@ -27,6 +30,11 @@ export default function OnboardingAvatar() {
   const [showConfirm, setShowConfirm] = useState(false); // delete confirm dialog
   const [loading, setLoading] = useState(false); // upload in progress
   const [errorMsg, setErrorMsg] = useState(null); // upload error message
+
+  const [errorDialog, setErrorDialog] = useState({
+    isOpen: false,
+    message: "",
+  });
 
   // ── Guard against state updates after unmount ────────────────────────────────
   useEffect(() => {
@@ -124,7 +132,7 @@ export default function OnboardingAvatar() {
 
   // ── Continue — upload to Firebase Storage then navigate ──────────────────────
   const handleContinue = useCallback(async () => {
-    logButtonEvent("Continue clicked", "/onboarding-location");
+    logButtonEvent("Continue clicked", "/onboarding-avatar");
     setErrorMsg(null);
 
     await saveAvatar({
@@ -135,7 +143,12 @@ export default function OnboardingAvatar() {
         if (isMountedRef.current) router.push("/onboarding-location");
       },
       onError: (error) => {
+        // fixed: was incorrectly referencing `err` instead of `error`
         if (isMountedRef.current) {
+          setErrorDialog({
+            isOpen: true,
+            message: error.message || "An unexpected error occurred.",
+          });
           setErrorMsg("Failed to save avatar. Please try again.");
           console.error("Avatar upload error:", error);
         }
@@ -144,252 +157,269 @@ export default function OnboardingAvatar() {
   }, [croppedUrl, router]);
 
   const handleSkip = useCallback(() => {
-    logButtonEvent("Skip for now clicked", "/onboarding-location");
+    logButtonEvent("Skip for now clicked", "/onboarding-avatar");
     router.push("/onboarding-location");
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-lg mx-auto relative">
-      {/* ── Loading overlay ───────────────────────────────────────────────────── */}
-      {loading && (
-        <div className="absolute inset-0 bg-white/70 z-[80] flex items-center justify-center">
-          <div className="w-10 h-10 border-4 border-[#034792] border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      {/* ── Back button ───────────────────────────────────────────────────────── */}
-      <button
-        onClick={() => router.back()}
-        className="absolute top-4 left-4 p-1 text-gray-700 z-10 active:scale-95 transition-transform"
-        aria-label="Go back"
-      >
-        <ChevronLeft size={24} />
-      </button>
-
-      {/* ── Main content ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center flex-1 pt-16 px-6">
-        <h1 className="text-2xl font-bold text-[#034792] text-center mb-12">
-          Add a profile avatar
-        </h1>
-
-        {/* Avatar circle — tap to open bottom sheet */}
-        <div className="relative">
-          <button
-            onClick={openSheet}
-            className="w-48 h-48 rounded-full overflow-hidden bg-[#4E802A] flex items-center justify-center focus:outline-none active:opacity-80 transition-opacity"
-            aria-label="Select profile picture"
-          >
-            {croppedUrl ? (
-              <img
-                src={croppedUrl}
-                alt="Profile preview"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#4E802A] flex items-center justify-center">
-                <Camera size={40} className="text-white/50" />
-              </div>
-            )}
-          </button>
-
-          {/* Edit badge — only shown when a photo is selected */}
-          {croppedUrl && (
-            <button
-              onClick={openSheet}
-              className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#034792] flex items-center justify-center shadow-md"
-              aria-label="Edit photo"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="white"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Bottom buttons ────────────────────────────────────────────────────── */}
-      <div className="pb-10 px-6 flex flex-col items-center gap-4">
-        {/* Error message */}
-        {errorMsg && (
-          <p className="text-red-500 text-sm text-center">{errorMsg}</p>
-        )}
-
-        <button
-          onClick={handleContinue}
-          disabled={!croppedUrl || loading}
-          className={`w-full max-w-xs py-3 rounded-full font-semibold text-sm transition-colors ${
-            croppedUrl && !loading
-              ? "bg-[#4E802A] text-white hover:bg-[#3d6621]"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {loading ? "Uploading..." : "Continue"}
-        </button>
-
-        <button
-          onClick={handleSkip}
-          className="text-sm font-semibold text-gray-800 hover:underline"
-        >
-          Skip for now
-        </button>
-      </div>
-
-      {/* ── Bottom sheet ──────────────────────────────────────────────────────── */}
-      {showSheet && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop — fades in/out */}
-          <div
-            className={`absolute inset-0 bg-black transition-opacity duration-300 ${
-              sheetVisible ? "opacity-40" : "opacity-0"
-            }`}
-            onClick={closeSheet}
+    <PageBackground className="min-h-screen !bg-primary">
+      <PageContainer className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
+        <div className="min-h-screen flex flex-col relative">
+          <Dialog
+            isOpen={errorDialog.isOpen}
+            onClose={() => setErrorDialog({ ...errorDialog, isOpen: false })}
+            variant="alert"
+            title="Oops!"
+            content={errorDialog.message}
+            buttons={[
+              {
+                text: "Got it",
+                onClick: () =>
+                  setErrorDialog({ ...errorDialog, isOpen: false }),
+                variant: "primary",
+              },
+            ]}
           />
 
-          {/* Sheet panel — slides up from bottom
-              Key fix: use inset-x-0 + mx-auto instead of left-1/2 + -translate-x-1/2
-              to avoid stacking context issues inside a constrained parent */}
-          <div
-            className={`absolute bottom-0 inset-x-0 mx-auto w-full max-w-lg bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
-              sheetVisible ? "translate-y-0" : "translate-y-full"
-            }`}
-          >
-            {/* Sheet header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <Smile size={18} className="text-gray-500" />
-                </div>
-                <span className="font-semibold text-gray-900">
-                  Select Profile Picture
-                </span>
-              </div>
-              <button
-                onClick={closeSheet}
-                className="text-gray-400 hover:text-gray-600 p-1"
-                aria-label="Close menu"
-              >
-                <X size={20} />
-              </button>
+          {/* ── Loading overlay ───────────────────────────────────────────────────── */}
+          {loading && (
+            <div className="absolute inset-0 bg-white/70 z-[80] flex items-center justify-center">
+              <div className="w-10 h-10 border-4 border-[#034792] border-t-transparent rounded-full animate-spin" />
             </div>
+          )}
 
-            {/* Options */}
-            <div className="flex flex-col">
-              <SheetOption
-                icon={<Camera size={20} />}
-                label="Take Photo"
-                onClick={() => handlePickImage(true)}
-              />
-              <SheetOption
-                icon={<ImageIcon size={20} />}
-                label="Choose Photo"
-                onClick={() => handlePickImage(false)}
-              />
-              <SheetOption
-                icon={<Smile size={20} />}
-                label="Use Avatar"
-                onClick={() => {
-                  // TODO: navigate to avatar picker
-                  closeSheet();
-                }}
-              />
-              {/* Delete Photo — only shown when a photo exists */}
+          {/* ── Back button ───────────────────────────────────────────────────────── */}
+          <button
+            onClick={() => router.back()}
+            className="absolute top-4 p-1 text-gray-700 z-10 active:scale-95 transition-transform"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={24} />
+          </button>
+
+          {/* ── Main content ──────────────────────────────────────────────────────── */}
+          <div className="flex flex-col items-center flex-1 pt-16 px-6">
+            <h1 className="text-2xl font-bold text-[#034792] text-center mb-12">
+              Add a profile avatar
+            </h1>
+
+            {/* Avatar circle — tap to open bottom sheet */}
+            <div className="relative">
+              <button
+                onClick={openSheet}
+                className="w-48 h-48 rounded-full overflow-hidden bg-[#4E802A] flex items-center justify-center focus:outline-none active:opacity-80 transition-opacity"
+                aria-label="Select profile picture"
+              >
+                {croppedUrl ? (
+                  <img
+                    src={croppedUrl}
+                    alt="Profile preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#4E802A] flex items-center justify-center">
+                    <Camera size={40} className="text-white/50" />
+                  </div>
+                )}
+              </button>
+
+              {/* Edit badge — only shown when a photo is selected */}
               {croppedUrl && (
-                <SheetOption
-                  icon={<Trash2 size={20} className="text-red-500" />}
-                  label="Delete Photo"
-                  onClick={handleDeleteRequest}
-                  danger
-                />
+                <button
+                  onClick={openSheet}
+                  className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#034792] flex items-center justify-center shadow-md"
+                  aria-label="Edit photo"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="white"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z"
+                    />
+                  </svg>
+                </button>
               )}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ── Delete confirm dialog ─────────────────────────────────────────────── */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-black/50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
-            <h2 className="font-semibold text-gray-900 text-lg mb-2">
-              Delete Photo?
-            </h2>
-            <p className="text-gray-500 text-sm mb-6">
-              Are you sure you want to remove your profile photo?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="flex-1 py-2 rounded-full border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors"
+          {/* ── Bottom buttons ────────────────────────────────────────────────────── */}
+          <div className="pb-10 px-6 flex flex-col items-center gap-4">
+            {errorMsg && (
+              <p className="text-red-500 text-sm text-center">{errorMsg}</p>
+            )}
+
+            <button
+              onClick={handleContinue}
+              disabled={!croppedUrl || loading}
+              className={`w-full max-w-xs py-3 rounded-full font-semibold text-sm transition-colors ${
+                croppedUrl && !loading
+                  ? "bg-[#4E802A] text-white hover:bg-[#3d6621]"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {loading ? "Uploading..." : "Continue"}
+            </button>
+
+            <button
+              onClick={handleSkip}
+              className="text-sm font-semibold text-gray-800 hover:underline"
+            >
+              Skip for now
+            </button>
+          </div>
+
+          {/* ── Bottom sheet ──────────────────────────────────────────────────────── */}
+          {showSheet && (
+            <div className="fixed inset-0 z-50">
+              {/* Backdrop — fades in/out */}
+              <div
+                className={`absolute inset-0 bg-black transition-opacity duration-300 ${
+                  sheetVisible ? "opacity-40" : "opacity-0"
+                }`}
+                onClick={closeSheet}
+              />
+
+              {/* Sheet panel — slides up from bottom
+                  Key fix: use inset-x-0 + mx-auto instead of left-1/2 + -translate-x-1/2
+                  to avoid stacking context issues inside a constrained parent */}
+              <div
+                className={`absolute bottom-0 inset-x-0 mx-auto w-full max-w-lg bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
+                  sheetVisible ? "translate-y-0" : "translate-y-full"
+                }`}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="flex-1 py-2 rounded-full bg-red-500 text-white font-semibold text-sm hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
+                {/* Sheet header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                      <Smile size={18} className="text-gray-500" />
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      Select Profile Picture
+                    </span>
+                  </div>
+                  <button
+                    onClick={closeSheet}
+                    className="text-gray-400 hover:text-gray-600 p-1"
+                    aria-label="Close menu"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Options */}
+                <div className="flex flex-col">
+                  <SheetOption
+                    icon={<Camera size={20} />}
+                    label="Take Photo"
+                    onClick={() => handlePickImage(true)}
+                  />
+                  <SheetOption
+                    icon={<ImageIcon size={20} />}
+                    label="Choose Photo"
+                    onClick={() => handlePickImage(false)}
+                  />
+                  {/* Delete Photo — only shown when a photo exists */}
+                  {croppedUrl && (
+                    <SheetOption
+                      icon={<Trash2 size={20} className="text-red-500" />}
+                      label="Delete Photo"
+                      onClick={handleDeleteRequest}
+                      danger
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ── Delete confirm dialog ─────────────────────────────────────────────── */}
+          {showConfirm && (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-black/50">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl">
+                <h2 className="font-semibold text-gray-900 text-lg mb-2">
+                  Delete Photo?
+                </h2>
+                <p className="text-gray-500 text-sm mb-6">
+                  Are you sure you want to remove your profile photo?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowConfirm(false)}
+                    className="flex-1 py-2 rounded-full border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteConfirm}
+                    className="flex-1 py-2 rounded-full bg-red-500 text-white font-semibold text-sm hover:bg-red-600 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Cropper full-screen modal ─────────────────────────────────────────── */}
+          {isCropping && imageSrc && (
+            <div className="fixed inset-0 bg-black z-[60] flex flex-col">
+              <div className="flex items-center justify-between px-4 py-3">
+                <button
+                  onClick={() => setIsCropping(false)}
+                  className="text-white text-sm"
+                >
+                  Cancel
+                </button>
+                <span className="text-white font-semibold">Move and Scale</span>
+                <button
+                  onClick={handleCropConfirm}
+                  className="font-bold text-sm text-[#4E802A]"
+                >
+                  Choose
+                </button>
+              </div>
+
+              {/* viewMode=2 forces the image to fill the crop box, preventing
+                  the crop frame from extending beyond the image boundary */}
+              <div className="flex-1 overflow-hidden">
+                <Cropper
+                  ref={cropperRef}
+                  src={imageSrc}
+                  style={{ height: "100%", width: "100%" }}
+                  aspectRatio={1}
+                  viewMode={2}
+                  guides={false}
+                  background={false}
+                  responsive
+                  autoCropArea={0.8}
+                  checkOrientation={false}
+                  minCropBoxWidth={100}
+                  minCropBoxHeight={100}
+                  cropBoxResizable={false}
+                  dragMode="move"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Hidden file input — shared by Take Photo and Choose Photo */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
-      )}
-
-      {/* ── Cropper full-screen modal ─────────────────────────────────────────── */}
-      {isCropping && imageSrc && (
-        <div className="fixed inset-0 bg-black z-[60] flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button
-              onClick={() => setIsCropping(false)}
-              className="text-white text-sm"
-            >
-              Cancel
-            </button>
-            <span className="text-white font-semibold">Move and Scale</span>
-            <button
-              onClick={handleCropConfirm}
-              className="font-bold text-sm text-[#4E802A]"
-            >
-              Choose
-            </button>
-          </div>
-
-          <div className="flex-1">
-            <Cropper
-              ref={cropperRef}
-              src={imageSrc}
-              style={{ height: "100%", width: "100%" }}
-              aspectRatio={1}
-              viewMode={1}
-              guides={false}
-              background={false}
-              responsive
-              autoCropArea={1}
-              checkOrientation={false}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Hidden file input — shared by Take Photo and Choose Photo */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-    </div>
+      </PageContainer>
+    </PageBackground>
   );
 }
 

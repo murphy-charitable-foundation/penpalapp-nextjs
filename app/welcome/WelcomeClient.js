@@ -1,44 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "../firebaseConfig";
-import { logButtonEvent } from "../utils/analytics";
-import { usePageAnalytics } from "../useAnalytics";
+import { useUser } from "@/contexts/UserContext";
+// app/welcome/WelcomeClient.js
 
 export default function WelcomeClient() {
-  const [firstName, setFirstName] = useState("");
+  const { user } = useUser();
   const router = useRouter();
 
-  usePageAnalytics("/welcome");
-
-  useEffect(() => {
-    // 1. Try Firebase Auth first (most reliable across devices/sessions)
-    const firebaseUser = auth.currentUser;
-    if (firebaseUser?.displayName) {
-      setFirstName(firebaseUser.displayName.split(" ")[0]);
-      return;
-    }
-
-    // 2. Fall back to localStorage (set during registration)
-    const cached = localStorage.getItem("userFirstName");
-    if (cached) {
-      setFirstName(cached);
-      return;
-    }
-
-    // 3. If auth hasn't loaded yet, wait for it
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user?.displayName) {
-        setFirstName(user.displayName.split(" ")[0]);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // First name is derived from Firebase Auth displayName via UserContext
+  const firstName = user?.displayName?.split(" ")[0] ?? "";
 
   const handleContinue = () => {
-    logButtonEvent("Continue button clicked!", "/welcome");
     router.push("/onboarding-avatar");
   };
 
@@ -66,6 +39,7 @@ export default function WelcomeClient() {
         {/* CTA */}
         <div className="text-center pt-10 pb-20">
           <button
+            type="button"
             onClick={handleContinue}
             className="bg-white text-[#111111] px-16 py-2 rounded-full font-semibold hover:bg-opacity-90 transition-opacity"
           >

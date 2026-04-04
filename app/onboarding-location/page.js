@@ -7,7 +7,8 @@ import { doc, updateDoc } from "firebase/firestore";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { auth, db } from "../firebaseConfig";
 import { logButtonEvent } from "../utils/analytics";
-
+import PageBackground from "@/components/general/PageBackground";
+import PageContainer from "@/components/general/PageContainer";
 // Full country list
 const COUNTRIES = [
   "Afghanistan",
@@ -265,117 +266,121 @@ export default function OnboardingLocation() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-lg mx-auto relative">
-      {/* ── Loading overlay ───────────────────────────────────────────────────── */}
-      {loading && (
-        <div className="absolute inset-0 bg-white/70 z-50 flex items-center justify-center">
-          <div className="w-10 h-10 border-4 border-[#034792] border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      {/* ── Back button ───────────────────────────────────────────────────────── */}
-      <button
-        onClick={() => router.back()}
-        className="absolute top-4 left-4 p-1 text-gray-700 z-10 active:scale-95 transition-transform"
-        aria-label="Go back"
-      >
-        <ChevronLeft size={24} />
-      </button>
-
-      {/* ── Main content ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 pt-24 px-8">
-        <h1 className="text-3xl font-bold text-[#034792] text-center mb-16 leading-tight">
-          Where are you located?
-        </h1>
-
-        {/* Country dropdown */}
-        <div ref={dropdownRef} className="relative">
-          <p className="text-xs text-gray-500 mb-1 ml-1">Country</p>
-
-          {/* Trigger */}
-          <button
-            onClick={() => {
-              setIsOpen((prev) => !prev);
-              setSearch("");
-            }}
-            className="w-full flex items-center justify-between border-b-2 border-gray-300 pb-2 focus:outline-none focus:border-[#034792] transition-colors"
-          >
-            <span className={country ? "text-gray-900" : "text-gray-400"}>
-              {country || "Select an option"}
-            </span>
-            <ChevronDown
-              size={20}
-              className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {/* Dropdown list */}
-          {isOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-64 flex flex-col">
-              {/* Search input */}
-              <div className="px-3 pt-3 pb-2">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#034792]"
-                  autoFocus
-                />
-              </div>
-
-              {/* Options */}
-              <div className="overflow-y-auto flex-1">
-                {filteredCountries.length > 0 ? (
-                  filteredCountries.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => handleSelect(c)}
-                      className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-colors ${
-                        c === country
-                          ? "text-[#034792] font-semibold bg-blue-50"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-center text-gray-400 text-sm py-6">
-                    No results found
-                  </p>
-                )}
-              </div>
+    <PageBackground className="min-h-screen !bg-primary">
+      <PageContainer className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen">
+          {/* ── Loading overlay ───────────────────────────────────────────────────── */}
+          {loading && (
+            <div className="absolute inset-0 bg-white/70 z-50 flex items-center justify-center">
+              <div className="w-10 h-10 border-4 border-[#034792] border-t-transparent rounded-full animate-spin" />
             </div>
           )}
+
+          {/* ── Back button ───────────────────────────────────────────────────────── */}
+          <button
+            onClick={() => router.back()}
+            className="absolute top-4 left-4 p-1 text-gray-700 z-10 active:scale-95 transition-transform"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={24} />
+          </button>
+
+          {/* ── Main content ──────────────────────────────────────────────────────── */}
+          <div className="flex flex-col flex-1 pt-24 px-8">
+            <h1 className="text-3xl font-bold text-[#034792] text-center mb-16 leading-tight">
+              Where are you located?
+            </h1>
+
+            {/* Country dropdown */}
+            <div ref={dropdownRef} className="relative">
+              <p className="text-xs text-gray-500 mb-1 ml-1">Country</p>
+
+              {/* Trigger */}
+              <button
+                onClick={() => {
+                  setIsOpen((prev) => !prev);
+                  setSearch("");
+                }}
+                className="w-full flex items-center justify-between border-b-2 border-gray-300 pb-2 focus:outline-none focus:border-[#034792] transition-colors"
+              >
+                <span className={country ? "text-gray-900" : "text-gray-400"}>
+                  {country || "Select an option"}
+                </span>
+                <ChevronDown
+                  size={20}
+                  className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {/* Dropdown list */}
+              {isOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-64 flex flex-col">
+                  {/* Search input */}
+                  <div className="px-3 pt-3 pb-2">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#034792]"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Options */}
+                  <div className="overflow-y-auto flex-1">
+                    {filteredCountries.length > 0 ? (
+                      filteredCountries.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => handleSelect(c)}
+                          className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-colors ${
+                            c === country
+                              ? "text-[#034792] font-semibold bg-blue-50"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-400 text-sm py-6">
+                        No results found
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Bottom buttons ────────────────────────────────────────────────────── */}
+          <div className="pb-10 px-8 flex flex-col items-center gap-4">
+            {errorMsg && (
+              <p className="text-red-500 text-sm text-center">{errorMsg}</p>
+            )}
+
+            <button
+              onClick={handleContinue}
+              disabled={!country || loading}
+              className={`w-full max-w-xs py-3 rounded-full font-semibold text-sm transition-colors ${
+                country && !loading
+                  ? "bg-[#034792] text-white hover:bg-[#023a7a]"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {loading ? "Saving..." : "Continue"}
+            </button>
+
+            <button
+              onClick={handleSkip}
+              className="text-sm font-semibold text-gray-800 hover:underline"
+            >
+              Skip for now
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* ── Bottom buttons ────────────────────────────────────────────────────── */}
-      <div className="pb-10 px-8 flex flex-col items-center gap-4">
-        {errorMsg && (
-          <p className="text-red-500 text-sm text-center">{errorMsg}</p>
-        )}
-
-        <button
-          onClick={handleContinue}
-          disabled={!country || loading}
-          className={`w-full max-w-xs py-3 rounded-full font-semibold text-sm transition-colors ${
-            country && !loading
-              ? "bg-[#034792] text-white hover:bg-[#023a7a]"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {loading ? "Saving..." : "Continue"}
-        </button>
-
-        <button
-          onClick={handleSkip}
-          className="text-sm font-semibold text-gray-800 hover:underline"
-        >
-          Skip for now
-        </button>
-      </div>
-    </div>
+      </PageContainer>
+    </PageBackground>
   );
 }
