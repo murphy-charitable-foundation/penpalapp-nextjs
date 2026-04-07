@@ -71,7 +71,7 @@ export default function Home() {
             }`,
             country: recipient.country ?? "Unknown",
             lastMessage: letter.content || "",
-            lastMessageDate: letter.created_at || "",
+            lastMessageDate: letter.drafted_at || letter.updated_at || "",
             status: letter.status || "",
             letterboxId: id || "",
             isRecipient: letter?.sent_by?.id !== uid,
@@ -79,6 +79,13 @@ export default function Home() {
           };
         })
       );
+
+      // sort the conversations by the last message date
+      fetchedConversations.sort((a, b) => {
+        const dateA = a.lastMessageDate?.toDate?.() || a.lastMessageDate || new Date(0);
+        const dateB = b.lastMessageDate?.toDate?.() || b.lastMessageDate || new Date(0);
+        return dateB - dateA;
+      });
 
       return fetchedConversations;
     } catch (err) {
