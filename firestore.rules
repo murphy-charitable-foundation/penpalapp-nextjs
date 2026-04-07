@@ -72,8 +72,8 @@ service cloud.firestore {
       allow create: if isSignedIn() && isSelfOrAdmin(userId) && isCreatedUserDataValid();
       allow delete: if isSignedIn() && isAdmin();
       allow read: if isSignedIn() &&
-        (isSelfOrAdmin(userId) || isConnected(userId) || isListingChildren());
-      allow list: if isSignedIn() && (isListingChildren() || isAdmin());
+        (isSelfOrAdmin(userId) || isConnected(userId));
+      allow list: if isSignedIn() && isAdmin();
       allow update: if isSignedIn() &&
         (
           isSelfOrAdmin(userId) ||
