@@ -52,7 +52,7 @@ export const saveAvatar = async ({
     (error) => {
       console.error("Upload error:", error);
       setLoading(false);
-      onError("Upload error");
+      onError(new Error("Upload error"));
     },
     async (url) => {
       if (!url) return;
@@ -62,7 +62,7 @@ export const saveAvatar = async ({
         onSuccess(url);
       } catch (e) {
         console.error("Firestore update error:", e);
-        onError?.("Save Error!");
+        onError?.(new Error("Save Error!"));
       } finally {
         setLoading(false);
       }
