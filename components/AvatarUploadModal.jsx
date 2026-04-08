@@ -10,20 +10,22 @@ import Dialog from "@/components/general/Dialog";
 import { useAvatarUpload } from "@/app/lib/useAvatarUpload";
 
 /**
- * AvatarUploadModal - A reusable avatar upload component
+ * AvatarUploadModal - A reusable avatar upload & crop component
  *
  * Props:
  * - title: string - The heading text (e.g., "Add a profile avatar")
  * - continueText: string - Text for the continue/save button (default: "Continue")
  * - skipText: string | null - Text for the skip button (null to hide)
  * - onBackClick: () => void - Called when back button is clicked
- * - onContinue: async (croppedUrl) => void - Called when continue button is clicked
+ * - onContinue: (blobOrUrl) => void - Called when continue button is clicked
+ *   - If autoSave=true: receives data URL string and uploads to Firebase automatically
+ *   - If autoSave=false: receives Blob object for manual upload (e.g., form submission)
  * - onSkip: () => void - Optional callback for skip button
  * - circleBgColor: string - Tailwind bg color for avatar circle (default: "bg-[#4E802A]")
  * - primaryColor: string - Tailwind color for primary elements (default: "#4E802A")
  * - primaryColorBg: string - Tailwind bg color for primary button (default: "bg-[#4E802A]")
  * - primaryColorDark: string - Tailwind color for darker primary variant (default: "#034792")
- * - autoSave: bool - If true, calls onContinue automatically (default: false)
+ * - autoSave: bool - If true, auto-uploads to Firebase. If false, returns blob for form submission (default: true)
  * - showBackButton: bool - Whether to show the back button (default: true)
  * - pageAnalyticsPath: string - Path for analytics logging (optional)
  */
@@ -38,7 +40,7 @@ export default function AvatarUploadModal({
   primaryColor = "#4E802A",
   primaryColorBg = "bg-[#4E802A]",
   primaryColorDark = "#034792",
-  autoSave = false,
+  autoSave = true,
   showBackButton = true,
   pageAnalyticsPath = "/avatar-upload",
 }) {
@@ -48,6 +50,7 @@ export default function AvatarUploadModal({
     isMountedRef,
     imageSrc,
     croppedUrl,
+    croppedBlob,
     showSheet,
     sheetVisible,
     isCropping,
@@ -67,11 +70,20 @@ export default function AvatarUploadModal({
     setErrorMsg,
   } = useAvatarUpload();
 
-  // Handle continue — upload to Firebase Storage
+  // Handle continue — upload to Firebase Storage or return blob for form submission
   const handleContinue = useCallback(async () => {
     logButtonEvent("Continue clicked", pageAnalyticsPath);
     setErrorMsg(null);
 
+    // Form mode: just return the blob without uploading
+    if (!autoSave) {
+      if (isMountedRef.current && croppedBlob) {
+        onContinue?.(croppedBlob);
+      }
+      return;
+    }
+
+    // Upload mode: save to Firebase
     await saveAvatar({
       avatar: croppedUrl,
       setLoading,
@@ -92,7 +104,7 @@ export default function AvatarUploadModal({
         }
       },
     });
-  }, [croppedUrl, onContinue, isMountedRef, setLoading, setErrorMsg, setErrorDialog, pageAnalyticsPath]);
+  }, [croppedUrl, croppedBlob, onContinue, isMountedRef, setLoading, setErrorMsg, setErrorDialog, pageAnalyticsPath, autoSave]);
 
   const handleSkip = useCallback(() => {
     logButtonEvent("Skip for now clicked", pageAnalyticsPath);

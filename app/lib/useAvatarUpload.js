@@ -11,6 +11,7 @@ export const useAvatarUpload = () => {
 
   const [imageSrc, setImageSrc] = useState(null); // raw image fed into Cropper
   const [croppedUrl, setCroppedUrl] = useState(null); // final cropped data URL
+  const [croppedBlob, setCroppedBlob] = useState(null); // final cropped blob
   const [showSheet, setShowSheet] = useState(false); // controls DOM mount
   const [sheetVisible, setSheetVisible] = useState(false); // controls CSS transition
   const [isCropping, setIsCropping] = useState(false); // cropper full-screen state
@@ -77,13 +78,21 @@ export const useAvatarUpload = () => {
     fileInputRef.current.click();
   }, []);
 
-  // Confirm crop and generate preview data URL
+  // Confirm crop and generate preview data URL and blob
   const handleCropConfirm = useCallback(() => {
     const cropper = cropperRef.current?.cropper;
     if (!cropper) return;
 
     const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
     setCroppedUrl(canvas.toDataURL("image/jpeg", 0.9));
+    
+    // Also convert to blob for form submissions
+    canvas.toBlob((blob) => {
+      if (isMountedRef.current) {
+        setCroppedBlob(blob);
+      }
+    }, "image/jpeg", 0.9);
+    
     setIsCropping(false);
   }, []);
 
@@ -97,6 +106,7 @@ export const useAvatarUpload = () => {
 
   const handleDeleteConfirm = useCallback(() => {
     setCroppedUrl(null);
+    setCroppedBlob(null);
     setImageSrc(null);
     setShowConfirm(false);
   }, []);
@@ -108,6 +118,7 @@ export const useAvatarUpload = () => {
     // State
     imageSrc,
     croppedUrl,
+    croppedBlob,
     showSheet,
     sheetVisible,
     isCropping,
@@ -117,6 +128,7 @@ export const useAvatarUpload = () => {
     errorDialog,
     setImageSrc,
     setCroppedUrl,
+    setCroppedBlob,
     setShowSheet,
     setSheetVisible,
     setIsCropping,
