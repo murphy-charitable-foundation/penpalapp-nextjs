@@ -255,7 +255,7 @@ const handleSubmit = async (e) => {
       {showAvatarModal && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998]"
+            className="fixed inset-0 bg-[#4E802A] z-[998]"
             onClick={() => setShowAvatarModal(false)}
           />
           <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">

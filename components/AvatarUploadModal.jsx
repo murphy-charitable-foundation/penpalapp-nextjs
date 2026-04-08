@@ -68,6 +68,8 @@ export default function AvatarUploadModal({
     handleDeleteConfirm,
     setLoading,
     setErrorMsg,
+    setIsCropping,
+    setShowConfirm,
   } = useAvatarUpload();
 
   // Handle continue — upload to Firebase Storage or return blob for form submission
@@ -302,7 +304,7 @@ export default function AvatarUploadModal({
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => setErrorDialog({ isOpen: false, message: "" }) || closeSheet()}
+                onClick={() => setShowConfirm(false)}
                 className="flex-1 py-2 rounded-full border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors"
               >
                 Cancel
@@ -323,7 +325,7 @@ export default function AvatarUploadModal({
         <div className="fixed inset-0 bg-black z-[60] flex flex-col">
           <div className="flex items-center justify-between px-4 py-3">
             <button
-              onClick={() => setErrorDialog({ isOpen: false, message: "" })}
+              onClick={() => setIsCropping(false)}
               className="text-white text-sm"
             >
               Cancel
