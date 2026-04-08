@@ -5,9 +5,9 @@ import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import { ChevronLeft, Camera, ImageIcon, Smile, Trash2, X } from "lucide-react";
 import { logButtonEvent } from "@/app/utils/analytics";
-import { saveAvatar } from "@/app/lib/avatarUtils";
+import { saveAvatar } from "@/app/utils/avatarUtils";
 import Dialog from "@/components/general/Dialog";
-import { useAvatarUpload } from "@/app/lib/useAvatarUpload";
+import { useAvatarUpload } from "@/app/utils/useAvatarUpload";
 
 /**
  * AvatarUploadModal - A reusable avatar upload & crop component

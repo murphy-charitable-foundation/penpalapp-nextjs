@@ -22,7 +22,7 @@ import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/letterboxFunctions";
 import Image from "next/image";
 import AvatarUploadModal from "../../components/AvatarUploadModal";
-import { uploadFile } from "../lib/uploadFile";
+import { uploadFile } from "../utils/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function CreateChildProfile() {
@@ -268,7 +268,7 @@ const handleSubmit = async (e) => {
                 onContinue={handleAvatarSelected}
                 onBackClick={() => setShowAvatarModal(false)}
                 continueText="Select"
-                skipText="Skip"
+                skipText=""
                 colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
                 pageAnalyticsPath="/create-child-profile"
               />
