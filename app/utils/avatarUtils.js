@@ -2,7 +2,7 @@
 
 import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/app/firebaseConfig";
-import { uploadFile } from "@/app/lib/uploadFile";
+import { uploadFile } from "@/app/utils/uploadFile";
 
 export const base64ToBlob = (base64, type = "image/jpeg") => {
   try {

@@ -21,8 +21,8 @@ import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/letterboxFunctions";
 import Image from "next/image";
-import EditProfileImage from "../../components/edit-profile-image";
-import { uploadFile } from "../lib/uploadFile";
+import AvatarUploadModal from "../../components/AvatarUploadModal";
+import { uploadFile } from "../utils/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function CreateChildProfile() {
@@ -41,17 +41,14 @@ export default function CreateChildProfile() {
   const [birthday, setBirthday] = useState("");
   const [hobbies, setHobbies] = useState([]); // [{id,label}]
 
-  const [selectedFile, setSelectedFile] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
   const [croppedBlob, setCroppedBlob] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
   const auth = getAuth();
-  const fileInputRef = useRef(null);
-  const cropperRef = useRef(null);
   const { userType, loading: userLoading } = useUser();
   usePageAnalytics("/user-data-import");
 
@@ -73,35 +70,12 @@ export default function CreateChildProfile() {
 
 
 
-  const handleImageClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setShowCropper(true);
-      // Reset the input value to allow selecting the same file again
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleCrop = () => {
-    const cropper = cropperRef.current?.cropper;
-    if (cropper) {
-      const canvas = cropper.getCroppedCanvas();
-      canvas.toBlob((blob) => {
-        setCroppedBlob(blob);
-        setCroppedImage(URL.createObjectURL(blob));
-        setShowCropper(false);
-      });
-    }
-  };
-
-  const handleCancelCrop = () => {
-    setSelectedFile(null);
-    setShowCropper(false);
+  // Handle avatar selection from AvatarUploadModal
+  const handleAvatarSelected = (blob) => {
+    setCroppedBlob(blob);
+    // Generate preview URL from blob
+    setCroppedImage(URL.createObjectURL(blob));
+    setShowAvatarModal(false);
   };
 
 const handleSubmit = async (e) => {
@@ -250,6 +224,7 @@ const handleSubmit = async (e) => {
       setHobbies([]);
       setCroppedBlob(null);
       setCroppedImage(null);
+      setShowAvatarModal(false);
       e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
@@ -277,6 +252,31 @@ const handleSubmit = async (e) => {
         content={dialogMessage}
       />
 
+      {showAvatarModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-[#4E802A] z-[998]"
+            onClick={() => setShowAvatarModal(false)}
+          />
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md bg-white rounded-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AvatarUploadModal
+                autoSave={false}
+                onContinue={handleAvatarSelected}
+                onBackClick={() => setShowAvatarModal(false)}
+                continueText="Select"
+                skipText=""
+                colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
+                pageAnalyticsPath="/create-child-profile"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="flex-1 min-h-0 flex justify-center">
         <PageContainer
           width="compactXS"
@@ -296,37 +296,15 @@ const handleSubmit = async (e) => {
                <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} />
               )}
             </div>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
-                onClick={handleImageClick}
+                onClick={() => setShowAvatarModal(true)}
                 className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
               >
                 Upload Photo
               </button>
             </div>
-            {showCropper && (
-              <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
-                <div
-                  className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
-                  onClick={() => handleCancelCrop()}                
-                  />
-                <div className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
-                  <div className="flex justify-center">
-                    <EditProfileImage
-                      image={URL.createObjectURL(selectedFile)}
-                      newProfileImage={null}
-                      previewURL={null}
-                      handleDrop={() => {}}
-                      handleCrop={() => {}}
-                      cropperRef={cropperRef}
-                      onDone={handleCrop}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
