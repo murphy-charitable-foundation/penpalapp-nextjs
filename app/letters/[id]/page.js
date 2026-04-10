@@ -57,6 +57,8 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
           draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
         updated_at:
           draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+        drafted_at:
+          draftDoc.data().drafted_at?.toDate?.() || draftDoc.data().drafted_at,
       };
 
       return draftData;
@@ -69,6 +71,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         status: "draft",
         created_at: new Date(),
         updated_at: new Date(),
+        drafted_at: new Date(),
         deleted: null,
         unread: true,
       };
@@ -166,6 +169,7 @@ export default function Page({ params }) {
           content: trimmedContent,
           status: "draft",
           updated_at: currentTime,
+          drafted_at: currentTime,
           deleted: null,
           unread: true,
         };
@@ -313,6 +317,7 @@ export default function Page({ params }) {
       const updateData = {
         content: trimmedContent,
         updated_at: currentTime,
+        drafted_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -343,6 +348,7 @@ export default function Page({ params }) {
               ...msg,
               content: trimmedContent,
               updated_at: currentTime,
+              drafted_at: currentTime,
             };
           }
           return msg;
@@ -402,6 +408,7 @@ export default function Page({ params }) {
         status: "pending_review",
         created_at: currentTime,
         updated_at: currentTime,
+        drafted_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -701,6 +708,7 @@ export default function Page({ params }) {
                 ...docSnap.data(),
                 created_at: docSnap.data().created_at?.toDate(),
                 updated_at: docSnap.data().updated_at?.toDate(),
+                drafted_at: docSnap.data().drafted_at?.toDate(),
               };
       
               // Normalize Firestore DocumentReference → { id }

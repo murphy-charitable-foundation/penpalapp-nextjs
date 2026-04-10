@@ -239,14 +239,20 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
         allLetters.push({ id: doc?.id, ...doc?.data() });
     });
 
+  // Use drafted_at for new docs, and updated_at for old as fallback
+  const getLetterDate = (letter) => 
+    letter?.drafted_at?.toDate?.() ||
+    letter?.updated_at?.toDate?.() ||
+    letter?.created_at?.toDate?.() ||
+    new Date(0);
+  
+
   if (allLetters.length === 0) return null;
-  else if (allLetters.length === 1) return allLetters[0];
-  else if (
-    allLetters[0]?.updated_at?.toDate?.() >
-    allLetters[1]?.updated_at?.toDate?.()
-  )
-    return allLetters[0];
-  else return allLetters[1];
+  if (allLetters.length === 1) return allLetters[0];
+  
+  return getLetterDate(allLetters[0]) > getLetterDate(allLetters[1]) 
+      ? allLetters[0] 
+      : allLetters[1];
 };
 
 export const fetchRecipients = async (id) => {
