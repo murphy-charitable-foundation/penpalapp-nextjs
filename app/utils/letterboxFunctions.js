@@ -202,28 +202,40 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
   const lRef = collection(letterboxRef, "letters");
 
-  // My Letters
-  const userLettersQuery = query(
-    lRef,
-    where("sent_by", "==", userRef),
-    where("content", "!=", ""),
-    orderBy("updated_at", "desc"),
-    limit(1) // grab a few in case of fallback
-  );
+  // Query with fallback in case no result for drafted_at
+  const getLatestByFieldFallback = async (constraints) => {
 
-  // Your letters
-  const sentLettersQuery = query(
-    lRef,
-    where("status", "==", "sent"),
-    where("content", "!=", ""),
-    orderBy("updated_at", "desc"),
-    limit(1)
-  );
+    const draftedQuery = query (
+      lRef,
+      ...constraints,
+      orderBy("drafted_at", "desc"),
+      limit(1)
+    );
+    
+    const draftedSnap = await getDocs(draftedQuery);
+    
+    if (!draftedSnap.empty) return draftedSnap;
+
+    const updatedQuery = query(
+      lRef,
+      ...constraints,
+      orderBy("updated_at", "desc"),
+      limit(1)
+    );
+
+    return getDocs(updatedQuery);
+  };
 
   // Run both in parallel
   const [userLettersSnap, sentLettersSnap] = await Promise.all([
-    getDocs(userLettersQuery),
-    getDocs(sentLettersQuery),
+    getLatestByFieldFallback([
+      where("sent_by", "==", userRef),
+      where("content", "!=", ""),
+    ]),
+    getLatestByFieldFallback([
+      where("status", "==", "sent"),
+      where("content", "!=", ""),
+    ]),
   ]);
 
   const allLetters = [];
@@ -238,7 +250,6 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
       if (doc?.data()?.sent_by?.id !== userRef?.id)
         allLetters.push({ id: doc?.id, ...doc?.data() });
     });
-
   // Use drafted_at for new docs, and updated_at for old as fallback
   const getLetterDate = (letter) => 
     letter?.drafted_at?.toDate?.() ||
