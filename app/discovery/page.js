@@ -84,10 +84,6 @@ export default function ChooseKid() {
         q = query(q, where("gender", "==", gender.trim()));
       }
 
-      if (hobbies?.length) {
-        q = query(q, where("hobby", "array-contains-any", hobbies));
-      }
-
       if (!reset && cursor) {
         q = query(q, startAfter(cursor));
       }
@@ -96,13 +92,38 @@ export default function ChooseKid() {
 
       const snapshot = await getDocs(q);
 
-      const availableDocs = snapshot.docs.filter((d) => {
+      const selectedHobbies = (hobbies ?? []).map((h) =>
+        String(h).toLowerCase()
+      );
+
+      const allDocs = snapshot.docs.filter((d) => {
         const data = d.data();
-        return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
+
+        if (data.connected_penpals?.some((ref) => ref?.path === userRef.path)) {
+          return false;
+        }
+
+        if (selectedHobbies.length > 0) {
+          const hobby = data.hobby;
+
+          if (typeof hobby === "string") {
+            return selectedHobbies.includes(hobby.toLowerCase());
+          }
+
+          if (Array.isArray(hobby)) {
+            return hobby.some(
+              (h) => typeof h === "string" && selectedHobbies.includes(h.toLowerCase())
+            );
+          }
+
+          return false;
+        }
+
+        return true;
       });
 
       const kidsList = await Promise.all(
-        availableDocs.map(async (d) => {
+        allDocs.map(async (d) => {
           const data = d.data();
           try {
             if (data.photo_uri) {
@@ -171,7 +192,11 @@ export default function ChooseKid() {
   const handleApplyFilters = ({ age, gender, hobbies }) => {
     setAge(age ?? null);
     setGender(gender ?? "");
-    setHobbies(hobbies ?? []);
+    setHobbies(
+      (hobbies ?? []).map((h) =>
+        typeof h === "string" ? h.toLowerCase() : (h?.label ?? "").toLowerCase()
+      )
+    );
     setFiltersOpen(false);
   };
 
