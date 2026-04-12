@@ -9,7 +9,6 @@ on:
 permissions:
   contents: read
   deployments: write
-  id-token: write
 
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
