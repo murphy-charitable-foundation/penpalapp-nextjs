@@ -38,6 +38,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
+    // Retain the old query for existing documents
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -357,7 +358,6 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
-              updated_at: currentTime,
               drafted_at: currentTime,
             };
           }
@@ -716,7 +716,6 @@ export default function Page({ params }) {
                 id: docSnap.id,
                 ...docSnap.data(),
                 created_at: docSnap.data().created_at?.toDate(),
-                updated_at: docSnap.data().updated_at?.toDate(),
                 drafted_at: docSnap.data().drafted_at?.toDate(),
               };
       

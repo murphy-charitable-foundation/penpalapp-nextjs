@@ -205,6 +205,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
   // Query with fallback in case no result for drafted_at
   const getLatestByFieldFallback = async (constraints) => {
 
+    // initial query to check existence of the new field drafted_at
     const draftedQuery = query (
       lRef,
       ...constraints,
@@ -216,6 +217,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     
     if (!draftedSnap.empty) return draftedSnap;
 
+    // fallback query in case drafted_at is not found, usually for old or existing documents
     const updatedQuery = query(
       lRef,
       ...constraints,
@@ -375,7 +377,7 @@ export const createConnection = async (userDocRef, kidDocRef) => {
               sent_by: userDocRef,
               content: "Please complete your first letter here...",
               status: "draft",
-              updated_at: new Date(),
+              drafted_at: new Date(),
               created_at: new Date(),
               deleted: null
             });
