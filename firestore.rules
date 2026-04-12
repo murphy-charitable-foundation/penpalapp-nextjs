@@ -157,9 +157,7 @@ service cloud.firestore {
               'content',
               'updated_at',
               'drafted_at',
-              'attachments',
-              'unread',
-              'deleted'
+              'attachments'
             ]) &&
             (
               (resource.data.status == 'draft' &&
