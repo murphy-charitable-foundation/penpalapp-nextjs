@@ -1,7 +1,7 @@
 // components/NavigationStateManager.jsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import LoadingSpinner from "../loading/LoadingSpinner";
 
@@ -84,19 +84,6 @@ export default function NavigationStateManager() {
     finishNavigation();
   }, [pathname, searchParams]);
 
-  // Memoized navigation handler to prevent recreating on every render
-  const handleNavigationStart = useCallback(() => {
-    // Prevent multiple simultaneous navigations
-    if (isNavigating) return;
-    
-    // Record navigation start time
-    navigationStartTimeRef.current = Date.now();
-    
-    // Use setTimeout to defer state update to next tick
-    setTimeout(() => {
-      setIsNavigating(true);
-    }, 0);
-  }, [isNavigating]);
 
     
   useEffect(() => {
