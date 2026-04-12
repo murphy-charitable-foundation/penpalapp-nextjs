@@ -124,7 +124,7 @@ const usePageAnalytics = (pagePath) => {
           const screenshot = await captureClickArea(normalizedX, normalizedY);
           // Use a UUID for the filename
           const fileName = `${crypto.randomUUID()}`;
-          const screenshotUrl = await uploadScreenshot(screenshot, fileName);
+          await uploadScreenshot(screenshot, fileName);
           logDeadClick(
             e.target.tagName,
             window.location.pathname,

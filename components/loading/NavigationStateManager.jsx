@@ -84,6 +84,21 @@ export default function NavigationStateManager() {
     finishNavigation();
   }, [pathname, searchParams]);
 
+  // Memoized navigation handler to prevent recreating on every render
+  const handleNavigationStart = useCallback(() => {
+    // Prevent multiple simultaneous navigations
+    if (isNavigating) return;
+    
+    // Record navigation start time
+    navigationStartTimeRef.current = Date.now();
+    
+    // Use setTimeout to defer state update to next tick
+    setTimeout(() => {
+      setIsNavigating(true);
+    }, 0);
+  }, [isNavigating]);
+
+    
   useEffect(() => {
     const handleClick = (e) => {
       const link = e.target.closest?.("a");

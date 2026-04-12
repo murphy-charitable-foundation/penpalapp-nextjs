@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { fetchRecipients } from "../../../app/utils/letterboxFunctions";
+import { useUser } from "../../../contexts/UserContext";
 import { formatTimestamp } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -29,7 +30,6 @@ import { PageBackground } from "../../../components/general/PageBackground";
 import { AlertTriangle } from "lucide-react";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
-import React from "react";
 
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
   try {
@@ -91,10 +91,9 @@ export default function Page({ params }) {
   const { id } = params;
 
   const router = useRouter();
+  const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
-
-  const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -641,6 +640,12 @@ export default function Page({ params }) {
 
       setUser(currentUser);
 
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
+    const initializeData = async () => {
       try {
         const letterboxRef = doc(db, "letterbox", id);
         const letterboxDoc = await getDoc(letterboxRef);
@@ -650,7 +655,7 @@ export default function Page({ params }) {
           return;
         }
 
-        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocRef = doc(db, "users", user.uid);
         setUserRef(userDocRef);
 
         const userDoc = await getDoc(userDocRef);
@@ -701,7 +706,7 @@ export default function Page({ params }) {
         }
 
         if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", currentUser.uid);
+          const userRefDoc = doc(db, "users", user.uid);
 
           const myMessagesQuery = query(
             lRef,
@@ -751,7 +756,7 @@ export default function Page({ params }) {
 
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
-              if (message.sent_by?.id !== currentUser.uid) {
+              if (message.sent_by?.id !== user.uid) {
                 const recipient = fetchedRecipients.find(
                   (r) => r.id === message.sent_by?.id
                 );
@@ -777,13 +782,10 @@ export default function Page({ params }) {
         setIsLoading(false);
         setIsSendButtonDisabled(false);
       }
-    });
-
-    return () => {
-      unsubscribe();
-      if (redirectTimer) clearTimeout(redirectTimer);
     };
-  }, [id, router]);
+
+    initializeData();
+  }, [id, user]);
 
   useEffect(() => {
     return () => {
@@ -824,49 +826,62 @@ export default function Page({ params }) {
     return messageContent.trim().length > 0 && !isSending;
   };
 
-  return (
+return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
-        <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
-          <button
-            onClick={handleCloseMessage}
-            className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
-            title="Close conversation"
-          >
-            X
-          </button>
+    <PageContainer
+      width="compactXS"
+      padding="none"
+      center={false}
+      className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+    >
+      {/* ===== HEADER ===== */}
+      <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
+        <button
+          onClick={handleCloseMessage}
+          className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
+          title="Close conversation"
+        >
+          X
+        </button>
 
-          <div className="w-10 h-10 flex items-center justify-center">
-            {isSendButtonDisabled || isUpdatingFirebase ? (
-              <div className="w-6 h-6 flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <button
-                onClick={handleSendMessage}
-                disabled={!isEditing || !canSendMessage()}
-                className={`p-1 ${
-                  !isEditing || !canSendMessage()
-                    ? "cursor-not-allowed opacity-50"
-                    : "hover:bg-blue-200 rounded"
-                }`}
-                style={{ visibility: isEditing ? "visible" : "hidden" }}
-              >
-                <Image
-                  src="/send-message-icon.png"
-                  alt={editingMessageId ? "Update message" : "Send message"}
-                  width={30}
-                  height={30}
-                  className="object-contain"
-                  id="send-letter"
-                />
-              </button>
-            )}
+        {/* Keep header layout stable (no mount/unmount jumps) */}
+        <div className="w-10 h-10 flex items-center justify-center">
+          {isSendButtonDisabled || isUpdatingFirebase ? (
+            <div className="w-6 h-6 flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <button
+              onClick={handleSendMessage}
+              disabled={!isEditing || !canSendMessage()}
+              className={`p-1 ${
+                !isEditing || !canSendMessage()
+                  ? "cursor-not-allowed opacity-50"
+                  : "hover:bg-blue-200 rounded"
+              }`}
+              style={{ visibility: isEditing ? "visible" : "hidden" }}
+            >
+              <Image
+                src="/send-message-icon.png"
+                alt={editingMessageId ? "Update message" : "Send message"}
+                width={30}
+                height={30}
+                className="object-contain"
+                id="send-letter"
+              />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ===== EDITING BANNER ===== */}
+      {editingMessageId && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
+          <div className="flex items-center text-amber-800 text-sm min-w-0">
+            <span className="mr-2 shrink-0" aria-hidden="true">
+              ✏️
+            </span>
+            <span className="whitespace-nowrap truncate">Editing message</span>
           </div>
         </div>
 
