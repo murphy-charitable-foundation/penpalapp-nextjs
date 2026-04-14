@@ -14,7 +14,6 @@ import TextArea from "../../components/general/TextArea";
 import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 
-import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";

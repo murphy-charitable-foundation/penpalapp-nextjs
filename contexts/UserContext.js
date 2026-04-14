@@ -8,6 +8,7 @@ import { getUserPfp } from '../app/utils/letterboxFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();
+
 const PUBLIC_PATHS = [
   '/login',
 '/choose-profile',
@@ -19,13 +20,14 @@ const PUBLIC_PATHS = [
   '/welcome',
   '/create-acc',
   '/reset-password',
-]; // public routes that don't require authentication
+];
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userType, setUserType] = useState(null);
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState('');
+  const [userDocRef, setUserDocRef] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -34,16 +36,19 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         setUser(authUser);
+
+        const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
+        setUserDocRef(userDocRef);  // Set it in state
         
         // Fetch user type from Firestore
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
-          
+
           if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserData(userData);
-            setUserType(userData.user_type || "Unknown Type");
+            const fetchedUserData = userDoc.data();
+            setUserData(fetchedUserData);
+            setUserType(fetchedUserData.user_type || 'Unknown Type');
 
             try {
               const pfp = await getUserPfp(authUser.uid);
@@ -53,10 +58,13 @@ export function UserProvider({ children }) {
               setProfileImage('');
             }
           } else {
-            console.log('No user document found');
             setUserData(null);
             setUserType('Unknown Type');
             setProfileImage('');
+
+            if (pathname !== '/create-acc') {
+              router.push('/create-acc');
+            }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -64,7 +72,6 @@ export function UserProvider({ children }) {
           setUserType('Unknown Type');
           setProfileImage('');
         } finally {
-          // CRITICAL FIX: Always set loading to false after processing authenticated user
           setLoading(false);
         }
       } else {
@@ -72,6 +79,7 @@ export function UserProvider({ children }) {
         setUserType(null);
         setUserData(null);
         setProfileImage('');
+        setUserDocRef(null);
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');
@@ -88,6 +96,7 @@ export function UserProvider({ children }) {
     userType,
     userData,
     profileImage,
+    userDocRef,
     loading
   };
 

@@ -1,12 +1,12 @@
 import { db } from "../firebaseConfig";
 import { collection, collectionGroup, getDocs, getDoc, doc, query, where} from "firebase/firestore";
-import * as Sentry from "@sentry/nextjs";
 import { dateToTimestamp } from "./dateHelpers";
 import { logError } from "../utils/analytics";
 
 
 const apiRequest = async (letterbox, emailId, reason) => {
   try {
+      let response;
       if (reason == "admin") {
         const ids = letterbox.members.map((member) => {
           const segments = member._key?.path?.segments;
@@ -19,7 +19,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
         const sender2 = await getDoc(doc(db, "users", ids[1]))
         userData.push(sender2.data());
         
-        const response = await fetch('/api/deadchat', {
+        response = await fetch('/api/deadchat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ const apiRequest = async (letterbox, emailId, reason) => {
         });
         const sender = await getDoc(doc(db, "users", ids[0]));
         
-        const response = await fetch('/api/deadchat', {
+        response = await fetch('/api/deadchat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
