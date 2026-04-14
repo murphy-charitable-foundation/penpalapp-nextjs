@@ -93,7 +93,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
   }, [page, params]);
 
   useEffect(() => {
-    console.log(`show guide: ${showGuide}, current step: ${currentStep}`);
     if (currentStep === steps.length - 1) {
       setButtonHighlight(true);
     }
@@ -118,7 +117,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
     let cleanupFn = () => {};
 
     if (currentStepData.advanceOn) {
-      console.log("test");
       const handleTargetAction = () => {
         if (currentStepData.advanceOn === "click") {
           // When the textarea is focused, automatically use the template
@@ -154,7 +152,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
 
     // Calculate tooltip position based on target and preferred position
     let top, left, right, bottom;
-    console.log(targetRect);
     switch (position) {
       case "top":
         top = targetRect.top - tooltipRect.height - 10 + "px";
@@ -209,7 +206,6 @@ export default function FirstTimeChatGuide({ page, onUseTemplate, params, recipi
     return null;
   }
 
-  //console.log(user);
   const currentStepData = steps[currentStep];
   return (
     <>
