@@ -1,10 +1,10 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { db } from "../firebaseConfig";
-import { useUser } from "../../contexts/UserContext";
+import { db, auth } from "../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import NavBar from "../../components/bottom-nav-bar";
+import  NavBar from "../../components/bottom-nav-bar";
+import { useRouter } from "next/navigation";
 import ConversationList from "../../components/general/ConversationList";
 import {
   getUserPfp,
@@ -25,7 +25,7 @@ export default function Home() {
   const [userName, setUserName] = useState("");
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [, setError] = useState("");
+  const [error, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
   const [inactivityWarning, setInactivityWarning] = useState(false);
@@ -176,45 +176,9 @@ export default function Home() {
         setError("No conversations found.");
         throw new Error("No letterboxes found.");
       }
-
-      const letterboxIds = letterboxes.map((l) => l.id);
-
-      const fetchedConversations = await Promise.all(
-        letterboxIds.map(async (id) => {
-          const userRef = doc(db, "users", uid);
-          const letter =
-            (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
-          const rec = await fetchRecipients(id);
-          const recipient = rec?.[0] ?? {};
-
-          return {
-            id: letter?.id,
-            profileImage: recipient?.photo_uri || "",
-            name: `${recipient.first_name ?? "Unknown"} ${
-              recipient.last_name ?? ""
-            }`,
-            country: recipient.country ?? "Unknown",
-            lastMessage: letter.content || "",
-            lastMessageDate: letter.drafted_at || letter.updated_at || "",
-            status: letter.status || "",
-            letterboxId: id || "",
-            isRecipient: letter?.sent_by?.id !== uid,
-            unread: letter?.unread || false,
-          };
-        })
-      );
-
-      // sort the conversations by the last message date
-      fetchedConversations.sort((a, b) => {
-        const dateA = a.lastMessageDate?.toDate?.() || a.lastMessageDate || new Date(0);
-        const dateB = b.lastMessageDate?.toDate?.() || b.lastMessageDate || new Date(0);
-        return dateB - dateA;
-      });
-
-      return fetchedConversations;
     } catch (err) {
       logError(err, {
-        description: "Error fetching conversations",
+        description: "Error fetching data:",
       });
       setError("Failed to load data.");
       throw err;
@@ -252,12 +216,12 @@ export default function Home() {
           setIsLoading(false);
         }
       }
-    };
+    });
 
-    fetchData();
-  }, [user]);
+    return () => unsubscribe();
+  }, [router]);
 
-  return (
+return (
   <>
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
       <PageContainer
@@ -269,29 +233,32 @@ export default function Home() {
         {isLoading && <LetterHomeSkeleton />}
         {!isLoading && (
           <>
-            <div className="shrink-0 border-b">
-              <ProfileHeader
-                userName={userName}
-                profileImage={profileImage}
-                id={userId}
-                showCountry={false}
+          {/* ===== HEADER (FIXED) ===== */}
+          <div className="shrink-0 border-b">
+            <ProfileHeader
+              userName={userName}
+              profileImage={profileImage}
+              id={userId}
+              showCountry={false}
+            />
+          </div>
+
+          {/* ===== SCROLLABLE LIST (ONLY SCROLLER) ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-3">
+            {conversations.length > 0 ? (
+              <ConversationList conversations={conversations} />
+            ) : (
+              <EmptyState
+                title="New friends are coming!"
+                description="Many friends are coming — hang tight!"
               />
-            </div>
+            )}
+          </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto px-3">
-              {conversations.length > 0 ? (
-                <ConversationList conversations={conversations} />
-              ) : (
-                <EmptyState
-                  title="New friends are coming!"
-                  description="Many friends are coming — hang tight!"
-                />
-              )}
-            </div>
-
-            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-              <NavBar />
-            </div>
+          {/* ===== NAVBAR (FIXED) ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
           </>
         )}
       </PageContainer>

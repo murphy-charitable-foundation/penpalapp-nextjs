@@ -20,7 +20,7 @@ import { useNavigation } from "../../contexts/NavigationContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { userType } = useUser();
   const { setIsNavigating } = useNavigation();

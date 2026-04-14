@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
-import { useUser } from "../../../contexts/UserContext";
-import { logButtonEvent } from "../../utils/analytics";
+import { db, auth } from "../../firebaseConfig";
 
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageHeader } from "../../../components/general/PageHeader";
@@ -15,6 +14,7 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
+import { set } from "nprogress";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and user-data-import page */
 
@@ -31,6 +31,7 @@ export default function Page({ params }) {
   const [isOrphan, setIsOrphan] = useState("");
   const [guardian, setGuardian] = useState("");
   const [dreamJob, setDreamJob] = useState("");
+  const [hobby, setHobby] = useState("");
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
   const [userType, setUserType] = useState("international_buddy");
@@ -39,7 +40,6 @@ export default function Page({ params }) {
   const [pronouns, setPronouns] = useState("");
   const [lastOnline, setLastOnline] = useState("");
   const [hobbies, setHobbies] = useState([]);
-  const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -59,6 +59,7 @@ export default function Page({ params }) {
         setIsOrphan(u.is_orphan ? "Yes" : "No");
         setGuardian(u.guardian || "");
         setDreamJob(u.dream_job || "");
+        setHobby(u.hobby || "");
         setHobbies(u.hobbies || []);
         setFavoriteColor(u.favorite_color || "");
         setPhotoUri(u.photo_uri || "");
@@ -73,8 +74,15 @@ export default function Page({ params }) {
     fetchUserData();
   }, [id]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) router.push("/login");
+    });
+    return () => unsubscribe();
+  }, []);
+
 return (
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <div className="flex-1 min-h-0 flex justify-center">
 
       <PageContainer
@@ -99,7 +107,7 @@ return (
                 className="rounded-full object-cover"
               />
             </div>
-            {user?.uid === id && (
+            {auth.currentUser?.uid === id && (
               <div className="mt-4 flex justify-center">
                 <button
                   type="button"

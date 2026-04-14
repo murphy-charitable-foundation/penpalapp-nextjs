@@ -212,6 +212,15 @@ export default function FirstTimeChatGuide({
     setButtonHighlight(false);
   };
 
+  const handleUseTemplate = () => {
+    console.log("saasada");
+    if (onUseTemplate) {
+      onUseTemplate(defaultTemplate);
+    }
+
+    nextStep(); // Move to the next step after using template
+  };
+
   // If not showing guide or not a first time user, don't render anything
   if (!showGuide) {
     return null;

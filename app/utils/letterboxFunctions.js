@@ -359,7 +359,6 @@ export const createConnection = async (userDocRef, kidDocRef) => {
               content: "Please complete your first letter here...",
               status: "draft",
               updated_at: new Date(),
-              created_at: new Date(),
               deleted: null
             });
 

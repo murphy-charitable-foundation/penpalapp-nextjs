@@ -20,7 +20,7 @@ export default function NavigationStateManager() {
   }, [pathname, searchParams]);
 
   // Memoized navigation handler to prevent recreating on every render
-  const handleNavigationStart = useCallback(() => {
+  const handleNavigationStart = useCallback((url) => {
     // Prevent multiple simultaneous navigations
     if (isNavigating) return;
     

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
@@ -16,11 +16,13 @@ import TextArea from "../../components/general/TextArea";
 import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 
+import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/letterboxFunctions";
 import Image from "next/image";
+import logo from "../../public/murphylogo.png";
 import EditProfileImage from "../../components/edit-profile-image";
 import { uploadFile } from "../lib/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";

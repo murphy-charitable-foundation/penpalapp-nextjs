@@ -18,7 +18,7 @@ import { usePageAnalytics } from "../useAnalytics";
 export default function ChangePassword() {
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [, setError] = useState("");
+  const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [isValidPassword, setisValidPassword] = useState(false);
   const router = useRouter();
@@ -30,6 +30,7 @@ export default function ChangePassword() {
 
     try {
       const user = auth.currentUser;
+      const uid = user.uid;
       await updatePassword(user, password);
       setShowModal(true);
     } catch (error) {
