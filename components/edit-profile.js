@@ -123,9 +123,11 @@ const EditProfileImage = ({ router }) => {
       {stage === 0 && (
         <div className="absolute top-0 left-0 right-0 bottom-0 rounded-lg overflow-hidden">
           <Image
-            className="absolute top-0 left-0 bottom-0 right-0 h-full w-full object-cover"
+            className="object-cover"
             src="/welcomebackground.jpeg"
             alt="Welcome background"
+            fill
+            sizes="100vw"
           />
           <div className="min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col p-4 text-white text-center">
             <h2 className="text-[32px]">Welcome {user?.firstName}</h2>
