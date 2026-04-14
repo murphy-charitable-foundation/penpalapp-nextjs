@@ -89,21 +89,39 @@ export default function ChooseKid() {
           q = query(q, where("hobby", "array-contains-any", hobbies));
         }
 
-        if (!reset && cursor) {
-          q = query(q, startAfter(cursor));
+        let queryCursor = !reset ? cursor : null;
+        let hasMoreRawDocs = true;
+        const visibleDocs = [];
+
+        while (visibleDocs.length < PAGE_SIZE && hasMoreRawDocs) {
+          let pagedQuery = q;
+          if (queryCursor) {
+            pagedQuery = query(pagedQuery, startAfter(queryCursor));
+          }
+          pagedQuery = query(pagedQuery, limit(PAGE_SIZE));
+
+          const snapshot = await getDocs(pagedQuery);
+          if (!snapshot.docs.length) {
+            hasMoreRawDocs = false;
+            break;
+          }
+
+          queryCursor = snapshot.docs[snapshot.docs.length - 1];
+
+          const batchVisibleDocs = snapshot.docs.filter((d) => {
+            const data = d.data();
+            return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
+          });
+
+          visibleDocs.push(...batchVisibleDocs);
+
+          if (snapshot.docs.length < PAGE_SIZE) {
+            hasMoreRawDocs = false;
+          }
         }
 
-        q = query(q, limit(PAGE_SIZE));
-
-        const snapshot = await getDocs(q);
-
-        const availableDocs = snapshot.docs.filter((d) => {
-          const data = d.data();
-          return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
-        });
-
         const kidsList = await Promise.all(
-          availableDocs.map(async (d) => {
+          visibleDocs.slice(0, PAGE_SIZE).map(async (d) => {
             const data = d.data();
             try {
               if (data.photo_uri) {
@@ -120,7 +138,7 @@ export default function ChooseKid() {
         );
 
         setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
-        setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+        setLastKidDoc(hasMoreRawDocs ? queryCursor : null);
       } catch (e) {
         setError("Error fetching kids");
         logError(e, { description: "Error fetching kids" });
