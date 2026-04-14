@@ -193,7 +193,10 @@ export default function ChooseKid() {
   const handleApplyFilters = ({ age, gender, hobbies }) => {
     setAge(age ?? null);
     setGender(gender ?? "");
-    setHobbies(hobbies ?? []);
+    const normalizedHobbies = (hobbies ?? [])
+      .map((h) => (typeof h === "string" ? h.toLowerCase() : (h?.label ?? "").toLowerCase()))
+      .filter((h) => h.trim().length > 0);
+    setHobbies(normalizedHobbies);
     setFiltersOpen(false);
   };
 
