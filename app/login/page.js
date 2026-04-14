@@ -19,6 +19,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const startNavigationSpinner = () => {
+    window.dispatchEvent(new Event("app:navigation-start"));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -39,8 +43,10 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
+        startNavigationSpinner();
         router.push("/letterhome");
       } else {
+        startNavigationSpinner();
         router.push("/create-acc");
       }
     } catch (err) {
@@ -67,6 +73,7 @@ export default function Login() {
   const handleInputChange = () => setError("");
 
   const handleForgotPassword = () => {
+    startNavigationSpinner();
     router.push("/reset-password");
   };
 

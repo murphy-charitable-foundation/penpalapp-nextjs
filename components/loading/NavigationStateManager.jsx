@@ -1,4 +1,3 @@
-// components/NavigationStateManager.jsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -12,89 +11,120 @@ export default function NavigationStateManager() {
   const [showSpinner, setShowSpinner] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
+  // Stores the current URL (path + query)
   const currentUrlRef = useRef("");
+
+  // Tracks whether a navigation has started
   const navigationStartedRef = useRef(false);
-  const startTimeRef = useRef(null);
 
+  // Stores navigation start time
+  const startTimeRef = useRef(0);
+
+  // Used to skip logic on initial mount
+  const mountedRef = useRef(false);
+
+  // Timer references for controlling spinner behavior
+  const minTimerRef = useRef(null);
+  const exitTimerRef = useRef(null);
   const safetyTimerRef = useRef(null);
-  const hideTimerRef = useRef(null);
-  const fadeTimerRef = useRef(null);
 
-  const MIN_DISPLAY_TIME = 250;
-  const FADE_OUT_TIME = 150;
-  const MAX_WAIT_TIME = 5000;
+  // Minimum time the spinner should stay visible
+  const MIN_DISPLAY_TIME = 600;
 
-  // Keep the current route so we can avoid showing the spinner for the same page
-  useEffect(() => {
-    const qs = searchParams?.toString?.() || "";
-    currentUrlRef.current = pathname + (qs ? `?${qs}` : "");
-  }, [pathname, searchParams]);
+  // Duration of exit animation
+  const FADE_OUT_TIME = 200;
 
-  const clearTimers = () => {
-    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+  // Fallback timeout in case navigation never finishes
+  const MAX_WAIT_TIME = 4000;
 
-    safetyTimerRef.current = null;
-    hideTimerRef.current = null;
-    fadeTimerRef.current = null;
-  };
+  // Clear all active timers
+  const clearTimers = useCallback(() => {
+    if (minTimerRef.current) {
+      clearTimeout(minTimerRef.current);
+      minTimerRef.current = null;
+    }
 
-  const resetSpinner = () => {
+    if (exitTimerRef.current) {
+      clearTimeout(exitTimerRef.current);
+      exitTimerRef.current = null;
+    }
+
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
+    }
+  }, []);
+
+  // Reset spinner state and navigation tracking
+  const reset = useCallback(() => {
     clearTimers();
+    navigationStartedRef.current = false;
+    startTimeRef.current = 0;
     setShowSpinner(false);
     setIsExiting(false);
-    navigationStartedRef.current = false;
-    startTimeRef.current = null;
-  };
+  }, [clearTimers]);
 
-  const startNavigation = () => {
-    // Prevent duplicate starts while a navigation is already in progress
+  // Triggered when navigation starts
+  const startNavigation = useCallback(() => {
+    // Prevent duplicate triggers
     if (navigationStartedRef.current) return;
 
     navigationStartedRef.current = true;
     startTimeRef.current = Date.now();
+
     setIsExiting(false);
     setShowSpinner(true);
 
-    // Safety fallback in case navigation gets stuck
+    // Safety timeout in case finishNavigation is never called
     safetyTimerRef.current = setTimeout(() => {
-      resetSpinner();
+      reset();
     }, MAX_WAIT_TIME);
-  };
+  }, [reset]);
 
-  const finishNavigation = () => {
-    if (!navigationStartedRef.current || !startTimeRef.current) return;
+  // Triggered when navigation finishes (route change detected)
+  const finishNavigation = useCallback(() => {
+    if (!navigationStartedRef.current) return;
 
     const elapsed = Date.now() - startTimeRef.current;
+
+    // Ensure spinner stays visible for at least MIN_DISPLAY_TIME
     const remaining = Math.max(0, MIN_DISPLAY_TIME - elapsed);
 
-    // Keep the spinner visible briefly, then fade it out
-    hideTimerRef.current = setTimeout(() => {
+    minTimerRef.current = setTimeout(() => {
       setIsExiting(true);
 
-      fadeTimerRef.current = setTimeout(() => {
-        resetSpinner();
+      // Allow exit animation before fully hiding spinner
+      exitTimerRef.current = setTimeout(() => {
+        reset();
       }, FADE_OUT_TIME);
     }, remaining);
-  };
+  }, [reset]);
 
-  // When the route changes, treat navigation as complete
+  // Track route changes and mark navigation as finished
   useEffect(() => {
+    const qs = searchParams?.toString?.() || "";
+    currentUrlRef.current = pathname + (qs ? `?${qs}` : "");
+
+    // Skip first render
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+
     finishNavigation();
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, finishNavigation]);
 
-
-    
   useEffect(() => {
+    // Detect clicks on <a> (including Next.js Link)
     const handleClick = (e) => {
       const link = e.target.closest?.("a");
       if (!link) return;
 
+      // Ignore modified clicks or non-navigation cases
       if (
         e.defaultPrevented ||
         e.button !== 0 ||
-        link.target ||
+        link.target === "_blank" ||
         link.hasAttribute("download") ||
         e.metaKey ||
         e.ctrlKey ||
@@ -105,72 +135,49 @@ export default function NavigationStateManager() {
       }
 
       const href = link.getAttribute("href");
-      if (!href) return;
+      if (!href || href.startsWith("#")) return;
 
-      const nextUrl = new URL(link.href, window.location.origin);
+      let nextUrl;
+      try {
+        nextUrl = new URL(link.href, window.location.origin);
+      } catch {
+        return;
+      }
 
       // Ignore external links
       if (nextUrl.origin !== window.location.origin) return;
 
       const nextPath = nextUrl.pathname + nextUrl.search;
 
+      // Only trigger navigation if URL actually changes
       if (nextPath !== currentUrlRef.current) {
         startNavigation();
       }
     };
 
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-
-    // Handle programmatic navigation
-    window.history.pushState = function (...args) {
-      const url = args[2];
-
-      if (typeof url === "string") {
-        const nextUrl = new URL(url, window.location.origin);
-        const nextPath = nextUrl.pathname + nextUrl.search;
-
-        if (nextPath !== currentUrlRef.current) {
-          startNavigation();
-        }
-      }
-
-      return originalPushState.apply(this, args);
-    };
-
-    window.history.replaceState = function (...args) {
-      const url = args[2];
-
-      if (typeof url === "string") {
-        const nextUrl = new URL(url, window.location.origin);
-        const nextPath = nextUrl.pathname + nextUrl.search;
-
-        if (nextPath !== currentUrlRef.current) {
-          startNavigation();
-        }
-      }
-
-      return originalReplaceState.apply(this, args);
-    };
-
+    // Handle browser back/forward navigation
     const handlePopState = () => {
       startNavigation();
     };
 
-    document.addEventListener("click", handleClick);
+    // Handle manual navigation (e.g., router.push via custom hook)
+    const handleManualStart = () => {
+      startNavigation();
+    };
+
+    document.addEventListener("click", handleClick, true);
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("app:navigation-start", handleManualStart);
 
     return () => {
-      document.removeEventListener("click", handleClick);
+      document.removeEventListener("click", handleClick, true);
       window.removeEventListener("popstate", handlePopState);
-
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-
+      window.removeEventListener("app:navigation-start", handleManualStart);
       clearTimers();
     };
-  }, []);
+  }, [startNavigation, clearTimers]);
 
+  // Do not render anything if spinner is not active
   if (!showSpinner) return null;
 
   return <LoadingSpinner exiting={isExiting} />;

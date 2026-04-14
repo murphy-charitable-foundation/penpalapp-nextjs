@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useTransition  } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
@@ -16,26 +16,25 @@ import {
 
 import { auth } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
-import { useNavigation } from "../../contexts/NavigationContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [, startTransition] = useTransition();
   const router = useRouter();
   const { userType } = useUser();
-  const { setIsNavigating } = useNavigation();
 
   const containerRef = useRef(null);
 
-  // Close menu when clicking outside (use pointerdown for less jank)
+  // close menu when clicking outside
   useEffect(() => {
-    function handleOutside(e) {
+    const handleOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsMenuOpen(false);
       }
-    }
+    };
+
     document.addEventListener("pointerdown", handleOutside);
-    return () => document.removeEventListener("pointerdown", handleOutside);
+    return () =>
+      document.removeEventListener("pointerdown", handleOutside);
   }, []);
 
   if (userType === null) return null;
@@ -46,17 +45,12 @@ export default function NavBar() {
 
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
-    startGlobalNavSpinner(); // start spinner immediately
-    router.push(href); // don't wrap in startTransition
+    startGlobalNavSpinner();
+    router.push(href);
   };
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
-
-    // Keep your existing local navigation spinner if you want
-    setIsNavigating(true);
-
-    // Start global spinner immediately
     startGlobalNavSpinner();
 
     try {
@@ -64,8 +58,6 @@ export default function NavBar() {
       router.push("/login");
     } catch (err) {
       console.error(err);
-    } finally {
-      setIsNavigating(false);
     }
   };
 
@@ -116,13 +108,15 @@ export default function NavBar() {
         {isMenuOpen && (
           <div
             className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2"
-            onClick={(e) => e.stopPropagation()} // prevent bubbling to document handler
+            onClick={(e) => e.stopPropagation()}
           >
             {navLinks.map((link) => (
               <button
                 key={link.label || link.href}
                 onClick={
-                  link.onClick ? link.onClick : () => handleNavigation(link.href)
+                  link.onClick
+                    ? link.onClick
+                    : () => handleNavigation(link.href)
                 }
                 className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
               >
