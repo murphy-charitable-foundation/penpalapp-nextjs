@@ -69,10 +69,10 @@ export default function ChooseKid() {
       let q = query(
         usersRef,
         where("user_type", "==", "child"),
-        where("connected_penpals_count", "<", 3) // Server-side filter
+        where("connected_penpals_count", "<", 3)
       );
 
-      // Client-side filters
+      // Age filter (server-side)
       if (age?.min != null && age?.max != null) {
         const now = new Date();
         const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
@@ -80,6 +80,7 @@ export default function ChooseKid() {
         q = query(q, where("birthday", ">=", minBirthDate), where("birthday", "<=", maxBirthDate));
       }
 
+      // Gender filter (server-side)
       if (gender?.trim()) {
         q = query(q, where("gender", "==", gender.trim()));
       }
@@ -96,34 +97,36 @@ export default function ChooseKid() {
         String(h).toLowerCase()
       );
 
-      const allDocs = snapshot.docs.filter((d) => {
+      const filteredDocs = snapshot.docs.filter((d) => {
         const data = d.data();
 
+        // Exclude already connected
         if (data.connected_penpals?.some((ref) => ref?.path === userRef.path)) {
           return false;
         }
 
+        // ✅ CLEANED hobby handling (supports both but not messy)
         if (selectedHobbies.length > 0) {
           const hobby = data.hobby;
 
-          if (typeof hobby === "string") {
-            return selectedHobbies.includes(hobby.toLowerCase());
-          }
+          const normalizedHobbies = Array.isArray(hobby)
+            ? hobby
+            : typeof hobby === "string"
+            ? [hobby]
+            : [];
 
-          if (Array.isArray(hobby)) {
-            return hobby.some(
-              (h) => typeof h === "string" && selectedHobbies.includes(h.toLowerCase())
-            );
-          }
+          const lower = normalizedHobbies.map((h) =>
+            String(h).toLowerCase()
+          );
 
-          return false;
+          return lower.some((h) => selectedHobbies.includes(h));
         }
 
         return true;
       });
 
       const kidsList = await Promise.all(
-        allDocs.map(async (d) => {
+        filteredDocs.map(async (d) => {
           const data = d.data();
           try {
             if (data.photo_uri) {
@@ -140,7 +143,9 @@ export default function ChooseKid() {
       );
 
       setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
-      setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+      setLastKidDoc(
+        snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
+      );
     } catch (e) {
       setError("Error fetching kids");
       logError(e, { description: "Error fetching kids" });
@@ -160,26 +165,36 @@ export default function ChooseKid() {
     fetchKids(userId, true, null);
   }, [userId, fetchKids]);
 
+  // ✅ FIXED AGE FUNCTION (no crashes)
   const calculateAge = (birthdayTimestamp) => {
-    if (!birthdayTimestamp) return 0;
+    if (!birthdayTimestamp) return null;
 
     try {
-      const date =
-        birthdayTimestamp instanceof Date
-          ? birthdayTimestamp
-          : birthdayTimestamp.toDate?.() ?? new Date(birthdayTimestamp._seconds * 1000);
+      let date;
+
+      if (birthdayTimestamp instanceof Date) {
+        date = birthdayTimestamp;
+      } else if (birthdayTimestamp?.toDate) {
+        date = birthdayTimestamp.toDate();
+      } else if (birthdayTimestamp?._seconds) {
+        date = new Date(birthdayTimestamp._seconds * 1000);
+      } else {
+        return null;
+      }
 
       const now = new Date();
       let years = now.getFullYear() - date.getFullYear();
+
       if (
         now.getMonth() < date.getMonth() ||
         (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
       ) {
         years -= 1;
       }
+
       return years;
     } catch {
-      return 0;
+      return null;
     }
   };
 
@@ -194,7 +209,9 @@ export default function ChooseKid() {
     setGender(gender ?? "");
     setHobbies(
       (hobbies ?? []).map((h) =>
-        typeof h === "string" ? h.toLowerCase() : (h?.label ?? "").toLowerCase()
+        typeof h === "string"
+          ? h.toLowerCase()
+          : (h?.label ?? "").toLowerCase()
       )
     );
     setFiltersOpen(false);
@@ -217,7 +234,6 @@ export default function ChooseKid() {
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           <PageHeader title="Discovery" image={false} showBackButton />
-
           <Header activeFilter={filtersOpen} setActiveFilter={setFiltersOpen} />
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
