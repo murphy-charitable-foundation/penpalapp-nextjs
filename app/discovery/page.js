@@ -167,36 +167,40 @@ export default function ChooseKid() {
 
   // ✅ FIXED AGE FUNCTION (no crashes)
   const calculateAge = (birthdayTimestamp) => {
-    if (!birthdayTimestamp) return null;
+  if (!birthdayTimestamp) return null;
 
-    try {
-      let date;
+  try {
+    let date;
 
-      if (birthdayTimestamp instanceof Date) {
-        date = birthdayTimestamp;
-      } else if (birthdayTimestamp?.toDate) {
-        date = birthdayTimestamp.toDate();
-      } else if (birthdayTimestamp?._seconds) {
-        date = new Date(birthdayTimestamp._seconds * 1000);
-      } else {
-        return null;
-      }
-
-      const now = new Date();
-      let years = now.getFullYear() - date.getFullYear();
-
-      if (
-        now.getMonth() < date.getMonth() ||
-        (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
-      ) {
-        years -= 1;
-      }
-
-      return years;
-    } catch {
+    if (birthdayTimestamp instanceof Date) {
+      date = birthdayTimestamp;
+    } else if (birthdayTimestamp?.toDate) {
+      date = birthdayTimestamp.toDate();
+    } else if (birthdayTimestamp?._seconds) {
+      date = new Date(birthdayTimestamp._seconds * 1000);
+    } else if (typeof birthdayTimestamp === "string") {
+      date = new Date(birthdayTimestamp); // ✅ THIS is the missing piece
+    } else {
       return null;
     }
-  };
+
+    if (isNaN(date.getTime())) return null;
+
+    const now = new Date();
+    let years = now.getFullYear() - date.getFullYear();
+
+    if (
+      now.getMonth() < date.getMonth() ||
+      (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
+    ) {
+      years -= 1;
+    }
+
+    return years;
+  } catch {
+    return null;
+  }
+};
 
   const loadMoreKids = () => {
     if (loading || !userId) return;
