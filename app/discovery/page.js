@@ -72,8 +72,12 @@ export default function ChooseKid() {
         where("connected_penpals_count", "<", 3)
       );
 
-      // Age filter (server-side) using ISO date strings because birthday is stored as yyyy-mm-dd
-      if (age?.min != null && age?.max != null) {
+      const selectedPronouns = pronouns?.trim();
+      const selectedPronounsLower = selectedPronouns?.toLowerCase();
+      const usingAgeFilter = age?.min != null && age?.max != null;
+      const usingPronounsFilter = Boolean(selectedPronouns);
+
+      if (usingAgeFilter) {
         const now = new Date();
         const maxBirthDate = new Date(
           now.getFullYear() - age.min,
@@ -98,11 +102,8 @@ export default function ChooseKid() {
           where("birthday", ">=", formatIsoDate(minBirthDate)),
           where("birthday", "<=", formatIsoDate(maxBirthDate))
         );
-      }
-
-      // Pronouns filter (server-side)
-      if (pronouns?.trim()) {
-        q = query(q, where("pronouns", "==", pronouns.trim()));
+      } else if (usingPronounsFilter) {
+        q = query(q, where("pronouns", "==", selectedPronouns));
       }
 
       if (!reset && cursor) {
@@ -120,14 +121,19 @@ export default function ChooseKid() {
       const filteredDocs = snapshot.docs.filter((d) => {
         const data = d.data();
 
-        // Exclude already connected
         if (data.connected_penpals?.some((ref) => ref?.path === userRef.path)) {
           return false;
         }
 
+        if (usingPronounsFilter && usingAgeFilter) {
+          if (String(data.pronouns || "").trim().toLowerCase() !== selectedPronounsLower) {
+            return false;
+          }
+        }
+
         // ✅ CLEANED hobby handling (supports both but not messy)
         if (selectedHobbies.length > 0) {
-          const hobby = data.hobby;
+          const hobby = data.hobbies ?? data.hobby;
 
           const normalizedHobbies = Array.isArray(hobby)
             ? hobby
