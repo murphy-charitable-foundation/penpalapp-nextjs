@@ -114,9 +114,14 @@ export default function ChooseKid() {
 
       const snapshot = await getDocs(q);
 
-      const selectedHobbies = (hobbies ?? []).map((h) =>
-        String(h).toLowerCase()
-      );
+      const selectedHobbies = (hobbies ?? [])
+        .map((h) =>
+          typeof h === "string"
+            ? h
+            : String(h?.label || h?.id || "")
+        )
+        .map((h) => h.toLowerCase())
+        .filter(Boolean);
 
       const filteredDocs = snapshot.docs.filter((d) => {
         const data = d.data();
@@ -237,13 +242,7 @@ export default function ChooseKid() {
   const handleApplyFilters = ({ age, pronouns, hobbies }) => {
     setAge(age ?? null);
     setPronouns(pronouns ?? "");
-    setHobbies(
-      (hobbies ?? []).map((h) =>
-        typeof h === "string"
-          ? h.toLowerCase()
-          : (h?.label ?? "").toLowerCase()
-      )
-    );
+    setHobbies(hobbies ?? []);
     setFiltersOpen(false);
   };
 
