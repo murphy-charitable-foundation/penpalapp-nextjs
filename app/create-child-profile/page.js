@@ -112,7 +112,7 @@ const handleSubmit = async (e) => {
     try {
       const newErrors = {};
       const formData = new FormData(e.currentTarget);
-      const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
+      const internationalBuddyEmail = (formData.get("internationalbuddyemail") || "").toString();
       let email = formData.get("email");
       const password = formData.get("password");
       const birthday = formData.get("birthday");
@@ -180,7 +180,7 @@ const handleSubmit = async (e) => {
         const token = await auth.currentUser.getIdToken();
         
         // Fetch UID of international buddy only if email is provided
-        if (internationalBuddyEmail.trim()) {
+        if (internationalBuddyEmail?.trim()) {
           const uidRes = await fetch("/api/getUidByEmail", {
             method: "POST",
             headers: { 
