@@ -222,8 +222,10 @@ const handleSubmit = async (e) => {
         const kidId = createJson.uid;
         const kidRef = doc(db, "users", kidId);
 
-        const buddyRef = doc(db, "users", internationalBuddyUid.uid);
-        await createConnection(buddyRef, kidRef);
+        if (internationalBuddyUid?.uid) {
+          const buddyRef = doc(db, "users", internationalBuddyUid.uid);
+          await createConnection(buddyRef, kidRef);
+        }
 
         // Upload profile image if available
         if (croppedBlob) {
