@@ -40,7 +40,7 @@ export default function ChooseKid() {
   const [error, setError] = useState("");
 
   const [age, setAge] = useState(null);
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -72,17 +72,38 @@ export default function ChooseKid() {
         where("connected_penpals_count", "<", 3)
       );
 
-      // Age filter (server-side)
-      if (age?.min != null && age?.max != null) {
-        const now = new Date();
-        const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
-        const minBirthDate = new Date(now.getFullYear() - age.max - 1, now.getMonth(), now.getDate());
-        q = query(q, where("birthday", ">=", minBirthDate), where("birthday", "<=", maxBirthDate));
-      }
+      const selectedPronouns = pronouns?.trim();
+      const selectedPronounsLower = selectedPronouns?.toLowerCase();
+      const usingAgeFilter = age?.min != null && age?.max != null;
+      const usingPronounsFilter = Boolean(selectedPronouns);
 
-      // Gender filter (server-side)
-      if (gender?.trim()) {
-        q = query(q, where("gender", "==", gender.trim()));
+      if (usingAgeFilter) {
+        const now = new Date();
+        const maxBirthDate = new Date(
+          now.getFullYear() - age.min,
+          now.getMonth(),
+          now.getDate()
+        );
+        const minBirthDate = new Date(
+          now.getFullYear() - age.max - 1,
+          now.getMonth(),
+          now.getDate()
+        );
+
+        const formatIsoDate = (date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, "0");
+          const d = String(date.getDate()).padStart(2, "0");
+          return `${y}-${m}-${d}`;
+        };
+
+        q = query(
+          q,
+          where("birthday", ">=", formatIsoDate(minBirthDate)),
+          where("birthday", "<=", formatIsoDate(maxBirthDate))
+        );
+      } else if (usingPronounsFilter) {
+        q = query(q, where("pronouns", "==", selectedPronouns));
       }
 
       if (!reset && cursor) {
@@ -93,21 +114,31 @@ export default function ChooseKid() {
 
       const snapshot = await getDocs(q);
 
-      const selectedHobbies = (hobbies ?? []).map((h) =>
-        String(h).toLowerCase()
-      );
+      const selectedHobbies = (hobbies ?? [])
+        .map((h) =>
+          typeof h === "string"
+            ? h
+            : String(h?.label || h?.id || "")
+        )
+        .map((h) => h.toLowerCase())
+        .filter(Boolean);
 
       const filteredDocs = snapshot.docs.filter((d) => {
         const data = d.data();
 
-        // Exclude already connected
         if (data.connected_penpals?.some((ref) => ref?.path === userRef.path)) {
           return false;
         }
 
+        if (usingPronounsFilter && usingAgeFilter) {
+          if (String(data.pronouns || "").trim().toLowerCase() !== selectedPronounsLower) {
+            return false;
+          }
+        }
+
         // ✅ CLEANED hobby handling (supports both but not messy)
         if (selectedHobbies.length > 0) {
-          const hobby = data.hobby;
+          const hobby = data.hobbies ?? data.hobby;
 
           const normalizedHobbies = Array.isArray(hobby)
             ? hobby
@@ -153,7 +184,7 @@ export default function ChooseKid() {
       setLoading(false);
       setInitialLoad(false);
     }
-  }, [age, gender, hobbies]);
+  }, [age, pronouns, hobbies]);
 
   // Refetch when filters change
   useEffect(() => {
@@ -208,22 +239,16 @@ export default function ChooseKid() {
     logButtonEvent("Load more kids", "/discovery");
   };
 
-  const handleApplyFilters = ({ age, gender, hobbies }) => {
+  const handleApplyFilters = ({ age, pronouns, hobbies }) => {
     setAge(age ?? null);
-    setGender(gender ?? "");
-    setHobbies(
-      (hobbies ?? []).map((h) =>
-        typeof h === "string"
-          ? h.toLowerCase()
-          : (h?.label ?? "").toLowerCase()
-      )
-    );
+    setPronouns(pronouns ?? "");
+    setHobbies(hobbies ?? []);
     setFiltersOpen(false);
   };
 
   const handleClearFilters = () => {
     setAge(null);
-    setGender("");
+    setPronouns("");
     setHobbies([]);
     setFiltersOpen(false);
   };
@@ -263,7 +288,7 @@ export default function ChooseKid() {
 
       <FilterPanel
         open={filtersOpen}
-        initial={{ age, gender, hobbies }}
+        initial={{ age, pronouns, hobbies }}
         onApply={handleApplyFilters}
         onClose={() => setFiltersOpen(false)}
       />
