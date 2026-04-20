@@ -17,6 +17,7 @@ import {
 import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
+  sendNotification,
 } from "../../../app/utils/letterboxFunctions";
 import { formatTimestamp } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -112,6 +113,7 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
+  const [globalLetterboxReference, setGlobalLetterboxReference] = useState(null);
   const [lettersRef, setLettersRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -421,7 +423,15 @@ export default function Page({ params }) {
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
       }
-
+      
+      
+      if (globalLetterboxReference) {
+        sendNotification(globalLetterboxReference, "").catch(error => {
+          console.error("Failed to send notification:", error);
+        });
+      }
+      
+      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -638,6 +648,9 @@ export default function Page({ params }) {
 
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
+        setGlobalLetterboxReference(letterboxRef);
+
+        // ENHANCED: Improved draft fetching with better error handling
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
