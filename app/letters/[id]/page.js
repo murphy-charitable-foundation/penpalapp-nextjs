@@ -67,10 +67,9 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         id: draftDoc.id,
         ...draftDoc.data(),
         created_at:
-          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
+          draftDoc.data().created_at?.toDate?.() || null,
         drafted_at:
-          draftDoc.data().drafted_at?.toDate?.() || 
-          draftDoc.data().drafted_at,
+          draftDoc.data().drafted_at?.toDate?.() || null,
       };
 
       return draftData;
