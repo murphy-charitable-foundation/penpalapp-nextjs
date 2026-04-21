@@ -27,7 +27,11 @@ export default function Header({ activeFilter, setActiveFilter, title, status="s
       />
       <h1 className="text-2xl font-semibold">Admin user</h1>
       <div className="ml-auto">
-        <FilterButton activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+        <FilterButton
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          isLoadingMore={isLoadingMore}
+        />
       </div>
     </div>
   );
