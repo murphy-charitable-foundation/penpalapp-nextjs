@@ -29,7 +29,7 @@ const ReportPopup = ({
       }
     } catch (error) {
       logError(error, {
-        description: "Could not send report request",
+        description: "Could not send request to SendGrid",
       });
     }
   }
