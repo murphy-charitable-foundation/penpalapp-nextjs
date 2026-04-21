@@ -12,7 +12,7 @@ import Dialog from "../../components/general/Dialog";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
-import { useCachedUsers } from "../contexts/CachedUserContext";
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 function normalizeUser(u) {
@@ -33,9 +33,9 @@ export default function ChooseAccountPage() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const router = useRouter();
-  const { cachedUsers, hydrated, clearCachedUsers } = useCachedUsers();
+  const { cachedUserLogins, hydrated, clearCachedUserLogins } = useCachedUserLogins();
   const hasRedirected = useRef(false);
-  const users = (cachedUsers ?? []).map(normalizeUser);
+  const users = (cachedUserLogins ?? []).map(normalizeUser);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -168,7 +168,7 @@ export default function ChooseAccountPage() {
           <button
             type="button"
             onClick={() => {
-              clearCachedUsers();
+              clearCachedUserLogins();
               router.replace("/login?force=1");
             }}
             className="text-sm text-gray-500 hover:text-gray-700 underline"

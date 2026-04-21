@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
-import { CachedUsersProvider } from './contexts/CachedUserContext'
+import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
-        <CachedUsersProvider>
+        <CachedUserLoginsProvider>
           <UserProvider>
             <NavigationProvider>
               <Suspense fallback={<LoadingSpinner />}>
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
               </Suspense>
             </NavigationProvider>
           </UserProvider>      
-        </CachedUsersProvider> 
+        </CachedUserLoginsProvider> 
       </body>
     </html>
   )
