@@ -215,17 +215,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
     
     const draftedSnap = await getDocs(draftedQuery);
     
-    if (!draftedSnap.empty) return draftedSnap;
-
-    // fallback query in case drafted_at is not found, usually for old or existing documents
-    const updatedQuery = query(
-      lRef,
-      ...constraints,
-      orderBy("updated_at", "desc"),
-      limit(1)
-    );
-
-    return getDocs(updatedQuery);
+    return draftedSnap;
   };
 
   // Run both in parallel
@@ -252,10 +242,9 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
       if (doc?.data()?.sent_by?.id !== userRef?.id)
         allLetters.push({ id: doc?.id, ...doc?.data() });
     });
-  // Use drafted_at for new docs, and updated_at for old as fallback
+  // Use drafted_at for new docs, and created_at for old as fallback
   const getLetterDate = (letter) => 
     letter?.drafted_at?.toDate?.() ||
-    letter?.updated_at?.toDate?.() ||
     letter?.created_at?.toDate?.() ||
     new Date(0);
   
