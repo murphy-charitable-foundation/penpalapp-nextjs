@@ -19,7 +19,10 @@ export const DormantLetterboxProvider = ({ children }) => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const newWorker = new Worker("/workers/dormantLetterboxWorker.js");
+      const newWorker = new Worker(
+        
+        new URL("/workers/dormantLetterboxWorker.js", window.location.href)
+      );
       setWorker(newWorker);
       newWorker.onmessage = (e) => {
         if (e.data.success) {
