@@ -73,7 +73,8 @@ export default function Dialog({
         disabled={button.disabled}
         className={combinedClassName}
         style={{ ...variantStyle.style, ...(button.style || {}) }}
-        type={button.type || "button"}>
+        type={button.type || "button"}
+      >
         {button.text}
       </button>
     );
@@ -100,8 +101,8 @@ export default function Dialog({
     const buttonLayout = isCloseDialogStyle
       ? "flex"
       : buttons.length === 1
-         ? "flex justify-center w-full"
-         : "flex justify-between w-full";
+        ? "flex justify-center w-full"
+        : "flex justify-between w-full";
     const contentAlignment =
       variant === "alert" || variant === "confirmation"
         ? "flex flex-col items-center"
@@ -110,16 +111,19 @@ export default function Dialog({
     return (
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}
-        onClick={() => closeOnOverlay && onClose()}>
+        onClick={() => closeOnOverlay && onClose()}
+      >
         <div
           className={`${containerBg} ${containerPadding} ${containerRounding} shadow-lg ${containerWidth} mx-auto ${contentAlignment} ${containerClassName}`}
-          onClick={(e) => e.stopPropagation()}>
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2
             className={`${titleSize} ${titleWeight} mb-1 leading-tight ${titleColor} ${
               variant === "alert" || variant === "confirmation"
                 ? "text-center"
                 : ""
-            }`}>
+            }`}
+          >
             {title}
           </h2>
           {subtitle && <p className="text-gray-600 mb-6 text-sm">{subtitle}</p>}
@@ -129,7 +133,8 @@ export default function Dialog({
                 variant === "alert" || variant === "confirmation"
                   ? "text-gray-700 text-sm text-center"
                   : ""
-              }`}>
+              }`}
+            >
               {content}
             </div>
           )}
@@ -137,7 +142,8 @@ export default function Dialog({
           {buttons.length > 0 && (
             <div
               className={buttonLayout}
-              style={{ gap: isCloseDialogStyle ? "12px" : "8px" }}>
+              style={{ gap: isCloseDialogStyle ? "12px" : "8px" }}
+            >
               {buttons.map(renderButton)}
             </div>
           )}
@@ -156,7 +162,8 @@ export default function Dialog({
 
       <div
         ref={dialogRef}
-        className={`relative ${sizes[width]} bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002] ${containerClassName}`}>
+        className={`relative ${sizes[width]} bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002] ${containerClassName}`}
+      >
         {showCloseButton && (
           <div className="absolute top-1 right-1 text-xl">
             <Button
@@ -171,7 +178,8 @@ export default function Dialog({
 
         {title && (
           <h2
-            className={`text-xl text-center font-semibold mt-6 mb-4 text-dark-green ${titleClassName}`}>
+            className={`text-xl text-center font-semibold mt-6 mb-4 text-dark-green ${titleClassName}`}
+          >
             {title}
           </h2>
         )}
