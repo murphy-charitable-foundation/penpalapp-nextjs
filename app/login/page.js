@@ -11,6 +11,7 @@ import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { initializeNotifications } from '../utils/notification'
 import { PageBackground } from "../../components/general/PageBackground";
 
 export default function Login() {
@@ -40,6 +41,7 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         router.push("/create-acc");

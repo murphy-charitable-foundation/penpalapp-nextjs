@@ -14,9 +14,10 @@ import {
   limit,
   getDocs,
 } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
+  sendNotification,
 } from "../../../app/utils/letterboxFunctions";
 import { formatTimestamp } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -31,7 +32,6 @@ import { PageBackground } from "../../../components/general/PageBackground";
 import { AlertTriangle } from "lucide-react";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
-import React from "react";
 
 
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -95,12 +95,10 @@ export default function Page({ params }) {
 
   const { id } = params;
 
-  const auth = getAuth();
   const router = useRouter();
+  const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
-
-  const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -115,6 +113,7 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
+  const [globalLetterboxReference, setGlobalLetterboxReference] = useState(null);
   const [lettersRef, setLettersRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -424,7 +423,15 @@ export default function Page({ params }) {
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
       }
-
+      
+      
+      if (globalLetterboxReference) {
+        sendNotification(globalLetterboxReference, "").catch(error => {
+          console.error("Failed to send notification:", error);
+        });
+      }
+      
+      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -600,20 +607,14 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
+    setIsLoading(true);
 
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setIsLoading(true);
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
-      if (!currentUser) {
-        router.push("/login");
-        return;
-      }
-
-      setUser(currentUser);
-        
-
-      
-
+    const initializeData = async () => {
       try {
         const letterboxRef = doc(db, "letterbox", id);
         const letterboxDoc = await getDoc(letterboxRef);
@@ -624,7 +625,7 @@ export default function Page({ params }) {
           return;
         }
 
-        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocRef = doc(db, "users", user.uid);
         setUserRef(userDocRef);
 
         const userDoc = await getDoc(userDocRef);
@@ -647,6 +648,9 @@ export default function Page({ params }) {
 
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
+        setGlobalLetterboxReference(letterboxRef);
+
+        // ENHANCED: Improved draft fetching with better error handling
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
@@ -675,7 +679,7 @@ export default function Page({ params }) {
         }
 
         if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", currentUser.uid);
+          const userRefDoc = doc(db, "users", user.uid);
 
           // All messages written BY ME
           const myMessagesQuery = query(
@@ -733,7 +737,7 @@ export default function Page({ params }) {
           const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
-              if (message.sent_by?.id !== currentUser.uid) {
+              if (message.sent_by?.id !== user.uid) {
                 const recipient = fetchedRecipients.find(
                   (r) => r.id === message.sent_by?.id
                 );
@@ -758,10 +762,6 @@ export default function Page({ params }) {
       } finally {
         setIsLoading(false);
       }
-    });
-
-    return () => {
-      unsubscribe();
     };
   }, [id, router, auth]);
 
@@ -808,7 +808,7 @@ export default function Page({ params }) {
   };
 
 return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <PageContainer
       width="compactXS"
       padding="none"

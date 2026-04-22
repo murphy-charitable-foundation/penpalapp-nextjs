@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db, auth } from "../../firebaseConfig";
+import { db } from "../../firebaseConfig";
+import { useUser } from "../../../contexts/UserContext";
+import { logButtonEvent } from "../../utils/analytics";
 
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageHeader } from "../../../components/general/PageHeader";
@@ -38,6 +39,7 @@ export default function Page({ params }) {
   const [pronouns, setPronouns] = useState("");
   const [lastOnline, setLastOnline] = useState("");
   const [hobbies, setHobbies] = useState([]);
+  const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function Page({ params }) {
   }, [router]);
 
 return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <div className="flex-1 min-h-0 flex justify-center">
 
       <PageContainer
@@ -104,7 +106,7 @@ return (
                 className="rounded-full object-cover"
               />
             </div>
-            {auth.currentUser?.uid === id && (
+            {user?.uid === id && (
               <div className="mt-4 flex justify-center">
                 <button
                   type="button"

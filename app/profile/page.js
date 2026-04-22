@@ -3,18 +3,18 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
+import { PageBackground } from "../../components/general/PageBackground";
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
+import { PageContainer } from "../../components/general/PageContainer";
 import Dropdown from "../../components/general/Dropdown";
 import HobbySelect from "../../components/general/HobbySelect";
 import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
-import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import NavBar from "../../components/bottom-nav-bar";
 
@@ -40,13 +40,14 @@ export default function EditProfile() {
   const [photoUri, setPhotoUri] = useState("");
   const [userType, setUserType] = useState("");
 
-  const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [userType, setUserType] = useState("international_buddy");
+  const [notification, setNotification] = useState(null);
 
   // New fields from main
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
@@ -63,21 +64,10 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  const { user, loading } = useUser();
   usePageAnalytics("/profile");
 
-  // Auth source of truth
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
-        setUser(currentUser);
-      }
-    });
-    return () => unsub();
-  }, [router]);
-
-  // Fetch profile
+  // Fetch profile data whenever React `user` changes
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -187,6 +177,9 @@ export default function EditProfile() {
     }
   };
 
+  if (loading) {
+    return <LoadingSpinner />;
+  }
   return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
       <Dialog
