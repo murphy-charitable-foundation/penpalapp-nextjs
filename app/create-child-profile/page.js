@@ -130,7 +130,7 @@ const handleSubmit = async (e) => {
         dream_job: (formData.get("dreamJob") || "").toString(),
 
         // Backward compatible + new schema
-        hobbies: hobbies.map((h) => h.id), 
+        hobbies: hobbies.map((h) => h.label), 
 
         favorite_color: (formData.get("favoriteColor") || "").toString(),
         user_type: "child",
