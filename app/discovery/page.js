@@ -196,7 +196,7 @@ export default function ChooseKid() {
     fetchKids(userId, true, null);
   }, [userId, fetchKids]);
 
-  // ✅ FIXED AGE FUNCTION (no crashes)
+
   const calculateAge = (birthdayTimestamp) => {
   if (!birthdayTimestamp) return null;
 
@@ -210,7 +210,8 @@ export default function ChooseKid() {
     } else if (birthdayTimestamp?._seconds) {
       date = new Date(birthdayTimestamp._seconds * 1000);
     } else if (typeof birthdayTimestamp === "string") {
-      date = new Date(birthdayTimestamp); // ✅ THIS is the missing piece
+    const [year, month, day] = birthdayTimestamp.split("-");
+      date = new Date(year, month - 1, day);
     } else {
       return null;
     }
