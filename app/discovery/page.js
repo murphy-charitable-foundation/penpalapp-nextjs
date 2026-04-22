@@ -89,9 +89,8 @@ export default function ChooseKid() {
           now.getMonth(),
           now.getDate()
         );
-  
+        
         minBirthDate.setDate(minBirthDate.getDate() + 1);
-  
         const formatIsoDate = (date) => {
           const y = date.getFullYear();
           const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -175,7 +174,11 @@ export default function ChooseKid() {
         })
       );
 
-      setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
+    if (reset) {
+        setKids(kidsList);
+      } else {
+        setKids((prev) => [...prev, ...kidsList]);
+      }
       setLastKidDoc(
         snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
       );
