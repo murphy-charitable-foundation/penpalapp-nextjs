@@ -39,6 +39,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
+    // Retain the old query for existing documents
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -47,7 +48,19 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       limit(1)
     );
 
-    const draftSnapshot = await getDocs(draftQuery);
+    let draftSnapshot = await getDocs(draftQuery);
+
+    // Add fallback query for drafts with drafted_at
+    if (draftSnapshot.empty) {
+      const fallbackDraftQuery = query (
+        lettersRef,
+        where("sent_by", "==", userRef),
+        where("status", "==", "draft"),
+        orderBy("drafted_at", "desc"),
+        limit(1)
+      );
+      draftSnapshot = await getDocs(fallbackDraftQuery);
+    }
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
@@ -55,9 +68,9 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         id: draftDoc.id,
         ...draftDoc.data(),
         created_at:
-          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
-        updated_at:
-          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+          draftDoc.data().created_at?.toDate?.() || null,
+        drafted_at:
+          draftDoc.data().drafted_at?.toDate?.() || null,
       };
 
       return draftData;
@@ -69,7 +82,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         content: "",
         status: "draft",
         created_at: new Date(),
-        updated_at: new Date(),
+        drafted_at: new Date(),
         deleted: null,
         unread: true,
       };
@@ -167,7 +180,7 @@ export default function Page({ params }) {
           sent_by: letterUserRef,
           content: trimmedContent,
           status: "draft",
-          updated_at: currentTime,
+          drafted_at: currentTime,
           deleted: null,
           unread: true,
         };
@@ -314,7 +327,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
-        updated_at: currentTime,
+        drafted_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -344,7 +357,7 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
-              updated_at: currentTime,
+              drafted_at: currentTime,
             };
           }
           return msg;
@@ -403,7 +416,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        updated_at: currentTime,
+        drafted_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -713,7 +726,7 @@ export default function Page({ params }) {
                 id: docSnap.id,
                 ...docSnap.data(),
                 created_at: docSnap.data().created_at?.toDate(),
-                updated_at: docSnap.data().updated_at?.toDate(),
+                drafted_at: docSnap.data().drafted_at?.toDate(),
               };
       
               // Normalize Firestore DocumentReference → { id }
