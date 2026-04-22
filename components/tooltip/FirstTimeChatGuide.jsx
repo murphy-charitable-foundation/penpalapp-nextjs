@@ -212,7 +212,6 @@ export default function FirstTimeChatGuide({
   };
 
   const handleUseTemplate = () => {
-    console.log("saasada");
     if (onUseTemplate) {
       onUseTemplate(defaultTemplate);
     }
