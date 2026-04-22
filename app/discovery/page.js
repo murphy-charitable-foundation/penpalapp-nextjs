@@ -85,11 +85,13 @@ export default function ChooseKid() {
           now.getDate()
         );
         const minBirthDate = new Date(
-          now.getFullYear() - age.max - 1,
+          now.getFullYear() - age.max,
           now.getMonth(),
           now.getDate()
         );
-
+  
+        minBirthDate.setDate(minBirthDate.getDate() + 1);
+  
         const formatIsoDate = (date) => {
           const y = date.getFullYear();
           const m = String(date.getMonth() + 1).padStart(2, "0");
