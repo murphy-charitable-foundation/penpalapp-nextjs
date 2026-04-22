@@ -73,6 +73,13 @@ export default function Page({ params }) {
     fetchUserData();
   }, [id]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) router.push("/login");
+    });
+    return () => unsubscribe();
+  }, [router]);
+
 return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <div className="flex-1 min-h-0 flex justify-center">

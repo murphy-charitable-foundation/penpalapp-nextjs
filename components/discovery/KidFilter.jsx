@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import Dropdown from "../general/Dropdown";
 import HobbySelect from "../general/HobbySelect";
 
@@ -13,12 +13,16 @@ const AGE_BRACKETS = [
   { label: "Age 15 - 18", min: 15, max: 18 },
 ];
 
-export default function KidFilter({ filter }) {
-  const genderOptions = ["He/Him", "She/Her", "Other"];
-
-  const [hobbies, setHobbies] = useState([]);
-  const [gender, setGender] = useState(null);
-  const [age, setAge] = useState(null);
+export default function KidFilter({
+  filter,
+  hobbies,
+  setHobbies,
+  age,
+  setAge,
+  pronouns,
+  setPronouns,
+}) {
+  const pronounsOptions = ["He/Him", "She/Her", "Other"];
 
   const ageLabel = useMemo(() => {
     if (!age) return "";
@@ -28,18 +32,18 @@ export default function KidFilter({ filter }) {
     return match ? match.label : "";
   }, [age]);
 
-  const isDirty = hobbies.length > 0 || Boolean(gender) || Boolean(age);
+  const isDirty = hobbies.length > 0 || Boolean(pronouns) || Boolean(age);
 
   const applyFilter = (e) => {
     e.preventDefault();
-    filter?.({ age, gender, hobbies });
+    filter?.({ age, pronouns, hobbies });
   };
 
   const clearFilter = () => {
     setHobbies([]);
-    setGender(null);
+    setPronouns(null);
     setAge(null);
-    filter?.({ age: null, gender: null, hobbies: [] });
+    filter?.({ age: null, pronouns: null, hobbies: [] });
   };
 
   return (
@@ -64,13 +68,13 @@ export default function KidFilter({ filter }) {
 
         <div>
           <label className="block mb-1 text-xs font-medium text-gray-600">
-            Gender
+            Pronouns
           </label>
           <Dropdown
-            options={genderOptions}
-            currentValue={gender || ""}
-            valueChange={(v) => setGender(v || null)}
-            placeholder="Select gender"
+            options={pronounsOptions}
+            currentValue={pronouns || ""}
+            valueChange={(v) => setPronouns(v || null)}
+            placeholder="Select pronouns"
           />
         </div>
 

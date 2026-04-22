@@ -38,7 +38,7 @@ export default function SendMessage({ kid }) {
     };
 
     fetchUserData();
-  }, [auth.currentUser]);
+  }, [router]);
 
   const handleClick = async () => {
     createConnection(userRef, kid.ref).then((letterboxRef) => {

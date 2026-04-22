@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   collection,
   getDocs,
@@ -40,7 +40,7 @@ export default function ChooseKid() {
   const [error, setError] = useState("");
 
   const [age, setAge] = useState(null);
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [hobbies, setHobbies] = useState([]);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -58,18 +58,7 @@ export default function ChooseKid() {
     return () => unsubscribe();
   }, [router]);
 
-  // Refetch when filters change
-  useEffect(() => {
-    if (!userId) return;
-
-    setKids([]);
-    setLastKidDoc(null);
-    setInitialLoad(true);
-
-    fetchKids(userId, true);
-  }, [userId, age, gender, hobbies]);
-
-  const fetchKids = async (uid, reset = false) => {
+  const fetchKids = useCallback(async (uid, reset = false, cursor = null) => {
     setLoading(true);
     setError("");
 
@@ -80,40 +69,96 @@ export default function ChooseKid() {
       let q = query(
         usersRef,
         where("user_type", "==", "child"),
-        where("connected_penpals_count", "<", 3) // Server-side filter
+        where("connected_penpals_count", "<", 3)
       );
 
-      // Client-side filters
-      if (age?.min != null && age?.max != null) {
+      const selectedPronouns = pronouns?.trim();
+      const selectedPronounsLower = selectedPronouns?.toLowerCase();
+      const usingAgeFilter = age?.min != null && age?.max != null;
+      const usingPronounsFilter = Boolean(selectedPronouns);
+
+      if (usingAgeFilter) {
         const now = new Date();
-        const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
-        const minBirthDate = new Date(now.getFullYear() - age.max - 1, now.getMonth(), now.getDate());
-        q = query(q, where("birthday", ">=", minBirthDate), where("birthday", "<=", maxBirthDate));
+        const maxBirthDate = new Date(
+          now.getFullYear() - age.min,
+          now.getMonth(),
+          now.getDate()
+        );
+        const minBirthDate = new Date(
+          now.getFullYear() - age.max,
+          now.getMonth(),
+          now.getDate()
+        );
+        
+        minBirthDate.setDate(minBirthDate.getDate() + 1);
+        const formatIsoDate = (date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, "0");
+          const d = String(date.getDate()).padStart(2, "0");
+          return `${y}-${m}-${d}`;
+        };
+
+        q = query(
+          q,
+          where("birthday", ">=", formatIsoDate(minBirthDate)),
+          where("birthday", "<=", formatIsoDate(maxBirthDate))
+        );
+      } else if (usingPronounsFilter) {
+        q = query(q, where("pronouns", "==", selectedPronouns));
       }
 
-      if (gender?.trim()) {
-        q = query(q, where("gender", "==", gender.trim()));
-      }
-
-      if (hobbies?.length) {
-        q = query(q, where("hobby", "array-contains-any", hobbies));
-      }
-
-      if (!reset && lastKidDoc) {
-        q = query(q, startAfter(lastKidDoc));
+      if (!reset && cursor) {
+        q = query(q, startAfter(cursor));
       }
 
       q = query(q, limit(PAGE_SIZE));
 
       const snapshot = await getDocs(q);
 
-      const availableDocs = snapshot.docs.filter((d) => {
+      const selectedHobbies = (hobbies ?? [])
+        .map((h) =>
+          typeof h === "string"
+            ? h
+            : String(h?.label || h?.id || "")
+        )
+        .map((h) => h.toLowerCase())
+        .filter(Boolean);
+
+      const filteredDocs = snapshot.docs.filter((d) => {
         const data = d.data();
-        return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
+
+        if (data.connected_penpals?.some((ref) => ref?.path === userRef.path)) {
+          return false;
+        }
+
+        if (usingPronounsFilter && usingAgeFilter) {
+          if (String(data.pronouns || "").trim().toLowerCase() !== selectedPronounsLower) {
+            return false;
+          }
+        }
+
+        // ✅ CLEANED hobby handling (supports both but not messy)
+        if (selectedHobbies.length > 0) {
+          const hobby = data.hobbies ?? data.hobby;
+
+          const normalizedHobbies = Array.isArray(hobby)
+            ? hobby
+            : typeof hobby === "string"
+            ? [hobby]
+            : [];
+
+          const lower = normalizedHobbies.map((h) =>
+            String(h).toLowerCase()
+          );
+
+          return lower.some((h) => selectedHobbies.includes(h));
+        }
+
+        return true;
       });
 
       const kidsList = await Promise.all(
-        availableDocs.map(async (d) => {
+        filteredDocs.map(async (d) => {
           const data = d.data();
           try {
             if (data.photo_uri) {
@@ -129,8 +174,14 @@ export default function ChooseKid() {
         })
       );
 
-      setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
-      setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+    if (reset) {
+        setKids(kidsList);
+      } else {
+        setKids((prev) => [...prev, ...kidsList]);
+      }
+      setLastKidDoc(
+        snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
+      );
     } catch (e) {
       setError("Error fetching kids");
       logError(e, { description: "Error fetching kids" });
@@ -138,47 +189,72 @@ export default function ChooseKid() {
       setLoading(false);
       setInitialLoad(false);
     }
-  };
+  }, [age, pronouns, hobbies]);
+
+  // Refetch when filters change
+  useEffect(() => {
+    if (!userId) return;
+
+    setLastKidDoc(null);
+    setInitialLoad(true);
+
+    fetchKids(userId, true, null);
+  }, [userId, fetchKids]);
+
 
   const calculateAge = (birthdayTimestamp) => {
-    if (!birthdayTimestamp) return 0;
+  if (!birthdayTimestamp) return null;
 
-    try {
-      const date =
-        birthdayTimestamp instanceof Date
-          ? birthdayTimestamp
-          : birthdayTimestamp.toDate?.() ?? new Date(birthdayTimestamp._seconds * 1000);
+  try {
+    let date;
 
-      const now = new Date();
-      let years = now.getFullYear() - date.getFullYear();
-      if (
-        now.getMonth() < date.getMonth() ||
-        (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
-      ) {
-        years -= 1;
-      }
-      return years;
-    } catch {
-      return 0;
+    if (birthdayTimestamp instanceof Date) {
+      date = birthdayTimestamp;
+    } else if (birthdayTimestamp?.toDate) {
+      date = birthdayTimestamp.toDate();
+    } else if (birthdayTimestamp?._seconds) {
+      date = new Date(birthdayTimestamp._seconds * 1000);
+    } else if (typeof birthdayTimestamp === "string") {
+    const [year, month, day] = birthdayTimestamp.split("-");
+      date = new Date(year, month - 1, day);
+    } else {
+      return null;
     }
-  };
+
+    if (isNaN(date.getTime())) return null;
+
+    const now = new Date();
+    let years = now.getFullYear() - date.getFullYear();
+
+    if (
+      now.getMonth() < date.getMonth() ||
+      (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
+    ) {
+      years -= 1;
+    }
+
+    return years;
+  } catch {
+    return null;
+  }
+};
 
   const loadMoreKids = () => {
     if (loading || !userId) return;
-    fetchKids(userId);
+    fetchKids(userId, false, lastKidDoc);
     logButtonEvent("Load more kids", "/discovery");
   };
 
-  const handleApplyFilters = ({ age, gender, hobbies }) => {
+  const handleApplyFilters = ({ age, pronouns, hobbies }) => {
     setAge(age ?? null);
-    setGender(gender ?? "");
+    setPronouns(pronouns ?? "");
     setHobbies(hobbies ?? []);
     setFiltersOpen(false);
   };
 
   const handleClearFilters = () => {
     setAge(null);
-    setGender("");
+    setPronouns("");
     setHobbies([]);
     setFiltersOpen(false);
   };
@@ -193,7 +269,6 @@ export default function ChooseKid() {
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           <PageHeader title="Discovery" image={false} showBackButton />
-
           <Header activeFilter={filtersOpen} setActiveFilter={setFiltersOpen} />
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -219,7 +294,7 @@ export default function ChooseKid() {
 
       <FilterPanel
         open={filtersOpen}
-        initial={{ age, gender, hobbies }}
+        initial={{ age, pronouns, hobbies }}
         onApply={handleApplyFilters}
         onClose={() => setFiltersOpen(false)}
       />

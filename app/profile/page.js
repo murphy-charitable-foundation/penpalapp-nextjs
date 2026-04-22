@@ -38,7 +38,6 @@ export default function EditProfile() {
   const [hobbies, setHobbies] = useState([]);
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
-  const [userType, setUserType] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [errors] = useState({});
@@ -152,7 +151,7 @@ export default function EditProfile() {
       guardian,
       dream_job: dreamJob,
       gender,
-      hobbies: hobbies.map((h) => h.id),
+      hobbies: hobbies.map((h) => h.label),
       favorite_color: favoriteColor,
       profession,
       favorite_animal: favoriteAnimal,
