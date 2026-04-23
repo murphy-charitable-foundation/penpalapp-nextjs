@@ -15,8 +15,11 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { fetchRecipients } from "../../../app/utils/letterboxFunctions";
 import { useUser } from "../../../contexts/UserContext";
+import {
+  fetchRecipients,
+  sendNotification,
+} from "../../../app/utils/letterboxFunctions";
 import { formatTimestamp } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -36,6 +39,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
+    // Retain the old query for existing documents
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -44,7 +48,19 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       limit(1)
     );
 
-    const draftSnapshot = await getDocs(draftQuery);
+    let draftSnapshot = await getDocs(draftQuery);
+
+    // Add fallback query for drafts with drafted_at
+    if (draftSnapshot.empty) {
+      const fallbackDraftQuery = query (
+        lettersRef,
+        where("sent_by", "==", userRef),
+        where("status", "==", "draft"),
+        orderBy("drafted_at", "desc"),
+        limit(1)
+      );
+      draftSnapshot = await getDocs(fallbackDraftQuery);
+    }
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
@@ -52,9 +68,9 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         id: draftDoc.id,
         ...draftDoc.data(),
         created_at:
-          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
-        updated_at:
-          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+          draftDoc.data().created_at?.toDate?.() || null,
+        drafted_at:
+          draftDoc.data().drafted_at?.toDate?.() || null,
       };
 
       return draftData;
@@ -66,7 +82,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         content: "",
         status: "draft",
         created_at: new Date(),
-        updated_at: new Date(),
+        drafted_at: new Date(),
         deleted: null,
         unread: true,
       };
@@ -110,6 +126,7 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
+  const [globalLetterboxReference, setGlobalLetterboxReference] = useState(null);
   const [lettersRef, setLettersRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -163,6 +180,15 @@ export default function Page({ params }) {
           existingDraft = await fetchDraft(id, letterUserRef, false);
           if (existingDraft) setDraft(existingDraft);
         }
+
+        const baseDraftData = {
+          sent_by: letterUserRef,
+          content: trimmedContent,
+          status: "draft",
+          drafted_at: currentTime,
+          deleted: null,
+          unread: true,
+        };
 
         if (existingDraft?.id) {
           const draftDocRef = doc(lettersRef, existingDraft.id);
@@ -299,7 +325,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
-        updated_at: currentTime,
+        drafted_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -329,7 +355,7 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
-              updated_at: currentTime,
+              drafted_at: currentTime,
             };
           }
           return msg;
@@ -388,7 +414,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        updated_at: currentTime,
+        drafted_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -408,7 +434,15 @@ export default function Page({ params }) {
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
       }
-
+      
+      
+      if (globalLetterboxReference) {
+        sendNotification(globalLetterboxReference, "").catch(error => {
+          console.error("Failed to send notification:", error);
+        });
+      }
+      
+      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -651,46 +685,70 @@ export default function Page({ params }) {
           const userDocRef = doc(db, "users", currentUser.uid);
           setUserRef(userDocRef);
 
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.location) {
-              setUserLocation(userData.location);
-            }
-            setProfileImage(userData?.photo_uri || "");
-          }
+         const userDoc = await getDoc(userDocRef);
+if (userDoc.exists()) {
+  const userData = userDoc.data();
+  if (userData.location) {
+    setUserLocation(userData.location);
+  }
+  setProfileImage(userData?.photo_url || "");
+}
 
-          const fetchedRecipients = await fetchRecipients(id);
-          setRecipients(fetchedRecipients || []);
+const fetchedRecipients = await fetchRecipients(id);
+setRecipients(fetchedRecipients || []);
 
-          if (fetchedRecipients?.length > 0) {
-            const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
-            setRecipientName(rn);
-          }
+if (fetchedRecipients?.length > 0) {
+  const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
+  setRecipientName(rn);
+}
 
-          const lRef = collection(letterboxRef, "letters");
-          setLettersRef(lRef);
+const lRef = collection(letterboxRef, "letters");
+setLettersRef(lRef);
+setGlobalLetterboxReference(letterboxRef);
 
-          const draftData = await fetchDraft(id, userDocRef, false);
+const draftData = await fetchDraft(id, userDocRef, false);
 
-          if (draftData && draftData.status === "draft") {
-            setDraft(draftData);
-            const draftContent = draftData.content || "";
-            const hasContent = Boolean(draftContent.trim());
+if (draftData && draftData.status === "draft") {
+  setDraft(draftData);
+  const draftContent = draftData.content || "";
+  const hasContent = Boolean(draftContent.trim());
 
-            setMessageContent(draftContent);
-            setHasDraftContent(hasContent);
+  setMessageContent(draftContent);
+  setHasDraftContent(hasContent);
 
-            if (hasContent) {
-              setIsEditing(true);
-              setTimeout(() => {
-                textAreaRef.current?.focus();
-                const length = draftContent.length;
-                textAreaRef.current?.setSelectionRange(length, length);
-              }, 100);
-            } else {
-              setIsEditing(false);
-            }
+  if (hasContent) {
+    setIsEditing(true);
+    setTimeout(() => {
+      textAreaRef.current?.focus();
+      const length = draftContent.length;
+      textAreaRef.current?.setSelectionRange(length, length);
+    }, 100);
+  } else {
+    setIsEditing(false);
+  }
+}
+        const lRef = collection(letterboxRef, "letters");
+        setLettersRef(lRef);
+        setGlobalLetterboxReference(letterboxRef);
+
+        // ENHANCED: Improved draft fetching with better error handling
+        const draftData = await fetchDraft(id, userDocRef, false);
+
+        if (draftData && draftData.status === "draft") {
+          setDraft(draftData);
+          const draftContent = draftData.content || "";
+          const hasContent = Boolean(draftContent.trim());
+
+          setMessageContent(draftContent);
+          setHasDraftContent(hasContent);
+
+          if (hasContent) {
+            setIsEditing(true);
+            setTimeout(() => {
+              textAreaRef.current?.focus();
+              const length = draftContent.length;
+              textAreaRef.current?.setSelectionRange(length, length);
+            }, 100);
           } else {
             setIsEditing(false);
             setMessageContent("");
@@ -698,37 +756,48 @@ export default function Page({ params }) {
             setHasDraftContent(false);
           }
 
-          if (fetchedRecipients?.length > 0) {
-            const currentUserRefDoc = doc(db, "users", currentUser.uid);
+        if (fetchedRecipients?.length > 0) {
+          const userRefDoc = doc(db, "users", user.uid);
 
-            const myMessagesQuery = query(
-              lRef,
-              where("sent_by", "==", currentUserRefDoc),
-              orderBy("created_at", "asc")
-            );
-
-            const sentMessagesQuery = query(
-              lRef,
-              where("status", "==", "sent"),
-              orderBy("created_at", "asc")
-            );
-
-            const [mySnap, sentSnap] = await Promise.all([
-              getDocs(myMessagesQuery),
-              getDocs(sentMessagesQuery),
-            ]);
-
-            const all = [];
-
-            const pushDocs = (snap) => {
-              snap.forEach((docSnap) => {
-                if (docSnap.data().status === "draft") return;
-
-                const msg = {
-                  id: docSnap.id,
-                  ...docSnap.data(),
-                  created_at: docSnap.data().created_at?.toDate(),
-                  updated_at: docSnap.data().updated_at?.toDate(),
+          // All messages written BY ME
+          const myMessagesQuery = query(
+            lRef,
+            where("sent_by", "==", userRefDoc),
+            orderBy("created_at", "asc")
+          );
+      
+          // All messages with status = "sent" (approval by admin)
+          const sentMessagesQuery = query(
+            lRef,
+            where("status", "==", "sent"),
+            orderBy("created_at", "asc")
+          );
+      
+          const [mySnap, sentSnap] = await Promise.all([
+            getDocs(myMessagesQuery),
+            getDocs(sentMessagesQuery),
+          ]);
+      
+          const all = [];
+      
+          const pushDocs = (snap) => {
+            snap.forEach((docSnap) => {
+              // Skip drafts on client side
+              if (docSnap.data().status === "draft") {
+                return;
+              }
+              
+              const msg = {
+                id: docSnap.id,
+                ...docSnap.data(),
+                created_at: docSnap.data().created_at?.toDate(),
+                drafted_at: docSnap.data().drafted_at?.toDate(),
+              };
+      
+              // Normalize Firestore DocumentReference → { id }
+              if (msg.sent_by?.path) {
+                msg.sent_by = {
+                  id: msg.sent_by.path.split("/")[1],
                 };
 
                 if (msg.sent_by?.path) {

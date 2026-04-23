@@ -10,6 +10,8 @@ import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
+import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { initializeNotifications } from '../utils/notification'
 import { PageBackground } from "../../components/general/PageBackground";
 
 export default function Login() {
@@ -44,6 +46,7 @@ export default function Login() {
 
       if (userSnap.exists()) {
         startNavigationSpinner();
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         startNavigationSpinner();
