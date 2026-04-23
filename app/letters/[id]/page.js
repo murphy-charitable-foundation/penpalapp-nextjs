@@ -39,7 +39,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
-    // Retain the old query for existing documents
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -50,39 +49,39 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     let draftSnapshot = await getDocs(draftQuery);
 
-    // Add fallback query for drafts with drafted_at
     if (draftSnapshot.empty) {
-      const fallbackDraftQuery = query (
+      const fallbackDraftQuery = query(
         lettersRef,
         where("sent_by", "==", userRef),
         where("status", "==", "draft"),
         orderBy("drafted_at", "desc"),
         limit(1)
       );
+
       draftSnapshot = await getDocs(fallbackDraftQuery);
     }
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
-      const draftData = {
+
+      return {
         id: draftDoc.id,
         ...draftDoc.data(),
-        created_at:
-          draftDoc.data().created_at?.toDate?.() || null,
-        drafted_at:
-          draftDoc.data().drafted_at?.toDate?.() || null,
+        created_at: draftDoc.data().created_at?.toDate?.() || null,
+        drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
+        updated_at: draftDoc.data().updated_at?.toDate?.() || null,
       };
-
-      return draftData;
     }
 
     if (shouldCreate) {
+      const now = new Date();
       const newDraftData = {
         sent_by: userRef,
         content: "",
         status: "draft",
-        created_at: new Date(),
-        drafted_at: new Date(),
+        created_at: now,
+        drafted_at: now,
+        updated_at: now,
         deleted: null,
         unread: true,
       };
@@ -168,6 +167,7 @@ export default function Page({ params }) {
         sent_by: letterUserRef,
         content: trimmedContent,
         status: "draft",
+        drafted_at: currentTime,
         updated_at: currentTime,
         deleted: null,
         unread: true,
@@ -178,17 +178,10 @@ export default function Page({ params }) {
 
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, letterUserRef, false);
-          if (existingDraft) setDraft(existingDraft);
+          if (existingDraft) {
+            setDraft(existingDraft);
+          }
         }
-
-        const baseDraftData = {
-          sent_by: letterUserRef,
-          content: trimmedContent,
-          status: "draft",
-          drafted_at: currentTime,
-          deleted: null,
-          unread: true,
-        };
 
         if (existingDraft?.id) {
           const draftDocRef = doc(lettersRef, existingDraft.id);
@@ -202,7 +195,6 @@ export default function Page({ params }) {
           setDraft({ ...updateData, id: existingDraft.id });
         } else {
           const newDraftRef = doc(lettersRef);
-
           const newDraftData = {
             ...baseDraftData,
             created_at: currentTime,
@@ -213,8 +205,8 @@ export default function Page({ params }) {
         }
 
         const hasContent = Boolean(trimmedContent);
-
         setHasDraftContent(hasContent);
+
         if (!hasContent && isEditing) {
           setIsEditing(false);
         }
@@ -231,7 +223,10 @@ export default function Page({ params }) {
           if (trimmedContent) {
             try {
               const newDraftRef = doc(lettersRef);
-              const newDraftData = { ...baseDraftData, created_at: currentTime };
+              const newDraftData = {
+                ...baseDraftData,
+                created_at: currentTime,
+              };
 
               await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
@@ -276,6 +271,7 @@ export default function Page({ params }) {
             });
           }
         }, 1000);
+
         setDraftTimer(timer);
       }
     } else {
@@ -293,6 +289,7 @@ export default function Page({ params }) {
           logError(error, {
             description: "Failed to save empty draft:",
           });
+
           setTimeout(() => {
             setIsSendButtonDisabled(false);
           }, 3000);
@@ -326,6 +323,7 @@ export default function Page({ params }) {
       const updateData = {
         content: trimmedContent,
         drafted_at: currentTime,
+        updated_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -350,17 +348,17 @@ export default function Page({ params }) {
       setSelectedMessageId(null);
 
       setAllMessages((prev) => {
-        const updatedMessages = prev.map((msg) => {
+        return prev.map((msg) => {
           if (msg.id === editingMessageId) {
             return {
               ...msg,
               content: trimmedContent,
               drafted_at: currentTime,
+              updated_at: currentTime,
             };
           }
           return msg;
         });
-        return updatedMessages;
       });
 
       setTimeout(() => {
@@ -415,6 +413,7 @@ export default function Page({ params }) {
         status: "pending_review",
         created_at: currentTime,
         drafted_at: currentTime,
+        updated_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -434,15 +433,13 @@ export default function Page({ params }) {
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
       }
-      
-      
+
       if (globalLetterboxReference) {
-        sendNotification(globalLetterboxReference, "").catch(error => {
+        sendNotification(globalLetterboxReference, "").catch((error) => {
           console.error("Failed to send notification:", error);
         });
       }
-      
-      // Clear states
+
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -454,10 +451,7 @@ export default function Page({ params }) {
         sent_by: { id: user.uid },
       };
 
-      setAllMessages((prev) => {
-        const newMessages = [...prev, messageWithId];
-        return newMessages;
-      });
+      setAllMessages((prev) => [...prev, messageWithId]);
 
       setTimeout(() => {
         scrollToBottom(true);
@@ -553,9 +547,11 @@ export default function Page({ params }) {
         await saveDraft(messageContent);
       } catch (error) {
         console.error("❌ Failed to save draft before editing message:", error);
+
         const confirmSwitch = window.confirm(
           "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
         );
+
         if (!confirmSwitch) {
           return;
         }
@@ -628,6 +624,7 @@ export default function Page({ params }) {
       setRecipients([]);
       setRecipientName("");
       setLettersRef(null);
+      setGlobalLetterboxReference(null);
 
       setMessageContent("");
       setDraft(null);
@@ -654,7 +651,9 @@ export default function Page({ params }) {
       setIsLoading(true);
 
       if (!currentUser) {
-        if (redirectTimer) clearTimeout(redirectTimer);
+        if (redirectTimer) {
+          clearTimeout(redirectTimer);
+        }
 
         clearSensitiveState();
 
@@ -685,119 +684,90 @@ export default function Page({ params }) {
           const userDocRef = doc(db, "users", currentUser.uid);
           setUserRef(userDocRef);
 
-         const userDoc = await getDoc(userDocRef);
-if (userDoc.exists()) {
-  const userData = userDoc.data();
-  if (userData.location) {
-    setUserLocation(userData.location);
-  }
-  setProfileImage(userData?.photo_url || "");
-}
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
 
-const fetchedRecipients = await fetchRecipients(id);
-setRecipients(fetchedRecipients || []);
+            if (userData.location) {
+              setUserLocation(userData.location);
+            }
 
-if (fetchedRecipients?.length > 0) {
-  const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
-  setRecipientName(rn);
-}
+            setProfileImage(userData?.photo_url || "");
+          }
 
-const lRef = collection(letterboxRef, "letters");
-setLettersRef(lRef);
-setGlobalLetterboxReference(letterboxRef);
+          const fetchedRecipients = await fetchRecipients(id);
+          setRecipients(fetchedRecipients || []);
 
-const draftData = await fetchDraft(id, userDocRef, false);
+          if (fetchedRecipients?.length > 0) {
+            const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
+            setRecipientName(rn);
+          }
 
-if (draftData && draftData.status === "draft") {
-  setDraft(draftData);
-  const draftContent = draftData.content || "";
-  const hasContent = Boolean(draftContent.trim());
+          const lRef = collection(letterboxRef, "letters");
+          setLettersRef(lRef);
+          setGlobalLetterboxReference(letterboxRef);
 
-  setMessageContent(draftContent);
-  setHasDraftContent(hasContent);
+          const draftData = await fetchDraft(id, userDocRef, false);
 
-  if (hasContent) {
-    setIsEditing(true);
-    setTimeout(() => {
-      textAreaRef.current?.focus();
-      const length = draftContent.length;
-      textAreaRef.current?.setSelectionRange(length, length);
-    }, 100);
-  } else {
-    setIsEditing(false);
-  }
-}
-        const lRef = collection(letterboxRef, "letters");
-        setLettersRef(lRef);
-        setGlobalLetterboxReference(letterboxRef);
+          if (draftData && draftData.status === "draft") {
+            setDraft(draftData);
 
-        // ENHANCED: Improved draft fetching with better error handling
-        const draftData = await fetchDraft(id, userDocRef, false);
+            const draftContent = draftData.content || "";
+            const hasContent = Boolean(draftContent.trim());
 
-        if (draftData && draftData.status === "draft") {
-          setDraft(draftData);
-          const draftContent = draftData.content || "";
-          const hasContent = Boolean(draftContent.trim());
+            setMessageContent(draftContent);
+            setHasDraftContent(hasContent);
 
-          setMessageContent(draftContent);
-          setHasDraftContent(hasContent);
-
-          if (hasContent) {
-            setIsEditing(true);
-            setTimeout(() => {
-              textAreaRef.current?.focus();
-              const length = draftContent.length;
-              textAreaRef.current?.setSelectionRange(length, length);
-            }, 100);
+            if (hasContent) {
+              setIsEditing(true);
+              setTimeout(() => {
+                textAreaRef.current?.focus();
+                const length = draftContent.length;
+                textAreaRef.current?.setSelectionRange(length, length);
+              }, 100);
+            } else {
+              setIsEditing(false);
+            }
           } else {
-            setIsEditing(false);
             setMessageContent("");
             setDraft(null);
             setHasDraftContent(false);
           }
 
-        if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", user.uid);
+          if (fetchedRecipients?.length > 0) {
+            const userRefDoc = doc(db, "users", currentUser.uid);
 
-          // All messages written BY ME
-          const myMessagesQuery = query(
-            lRef,
-            where("sent_by", "==", userRefDoc),
-            orderBy("created_at", "asc")
-          );
-      
-          // All messages with status = "sent" (approval by admin)
-          const sentMessagesQuery = query(
-            lRef,
-            where("status", "==", "sent"),
-            orderBy("created_at", "asc")
-          );
-      
-          const [mySnap, sentSnap] = await Promise.all([
-            getDocs(myMessagesQuery),
-            getDocs(sentMessagesQuery),
-          ]);
-      
-          const all = [];
-      
-          const pushDocs = (snap) => {
-            snap.forEach((docSnap) => {
-              // Skip drafts on client side
-              if (docSnap.data().status === "draft") {
-                return;
-              }
-              
-              const msg = {
-                id: docSnap.id,
-                ...docSnap.data(),
-                created_at: docSnap.data().created_at?.toDate(),
-                drafted_at: docSnap.data().drafted_at?.toDate(),
-              };
-      
-              // Normalize Firestore DocumentReference → { id }
-              if (msg.sent_by?.path) {
-                msg.sent_by = {
-                  id: msg.sent_by.path.split("/")[1],
+            const myMessagesQuery = query(
+              lRef,
+              where("sent_by", "==", userRefDoc),
+              orderBy("created_at", "asc")
+            );
+
+            const sentMessagesQuery = query(
+              lRef,
+              where("status", "==", "sent"),
+              orderBy("created_at", "asc")
+            );
+
+            const [mySnap, sentSnap] = await Promise.all([
+              getDocs(myMessagesQuery),
+              getDocs(sentMessagesQuery),
+            ]);
+
+            const all = [];
+
+            const pushDocs = (snap) => {
+              snap.forEach((docSnap) => {
+                if (docSnap.data().status === "draft") {
+                  return;
+                }
+
+                const msg = {
+                  id: docSnap.id,
+                  ...docSnap.data(),
+                  created_at: docSnap.data().created_at?.toDate(),
+                  drafted_at: docSnap.data().drafted_at?.toDate(),
+                  updated_at: docSnap.data().updated_at?.toDate(),
                 };
 
                 if (msg.sent_by?.path) {
@@ -816,6 +786,7 @@ if (draftData && draftData.status === "draft") {
             const unique = Array.from(
               new Map(all.map((m) => [m.id, m])).values()
             );
+
             const sortedMessages = unique.sort(
               (a, b) => a.created_at - b.created_at
             );
@@ -826,18 +797,25 @@ if (draftData && draftData.status === "draft") {
                   const recipient = fetchedRecipients.find(
                     (r) => r.id === message.sent_by?.id
                   );
+
                   if (recipient) {
                     message.senderLocation = recipient.location || "";
                   }
+
                   if (message?.unread) {
-                    await updateDoc(doc(lRef, message.id), { unread: false });
+                    await updateDoc(doc(lRef, message.id), {
+                      unread: false,
+                    });
                   }
                 }
+
                 return message;
               })
             );
 
             setAllMessages(messagesWithSenderInfo);
+          } else {
+            setAllMessages([]);
           }
         } catch (error) {
           console.error("❌ INITIALIZATION ERROR:", error);
@@ -855,13 +833,18 @@ if (draftData && draftData.status === "draft") {
 
     return () => {
       unsubscribe();
-      if (redirectTimer) clearTimeout(redirectTimer);
+
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
     };
   }, [id, router]);
 
   useEffect(() => {
     return () => {
-      if (draftTimer) clearTimeout(draftTimer);
+      if (draftTimer) {
+        clearTimeout(draftTimer);
+      }
     };
   }, [draftTimer]);
 
@@ -878,7 +861,9 @@ if (draftData && draftData.status === "draft") {
   };
 
   const truncateMessage = (message) => {
-    if (message.length <= 30) return message;
+    if (message.length <= 30) {
+      return message;
+    }
     return `${message.substring(0, 30)}...`;
   };
 
@@ -889,9 +874,9 @@ if (draftData && draftData.status === "draft") {
 
     if (isSenderUser) {
       return userLocation || "";
-    } else {
-      return message.senderLocation || recipients[0]?.location || "";
     }
+
+    return message.senderLocation || recipients[0]?.location || "";
   };
 
   const canSendMessage = () => {
@@ -1050,12 +1035,12 @@ if (draftData && draftData.status === "draft") {
                         <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
+
                         <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-
                                 setReportSender(message.sent_by?.id);
                                 setReportContent(message.content);
                                 setShowReportPopup(true);
@@ -1073,7 +1058,7 @@ if (draftData && draftData.status === "draft") {
 
                           {isSenderUser && (
                             <>
-                              {isSenderUser && message.status === "rejected" && (
+                              {message.status === "rejected" && (
                                 <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
                                   <div className="flex items-start text-red-700 font-semibold">
                                     <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
@@ -1102,7 +1087,6 @@ if (draftData && draftData.status === "draft") {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-
                                         handleEditMessage(message);
                                         logButtonEvent(
                                           "Edit message clicked!",
@@ -1133,6 +1117,7 @@ if (draftData && draftData.status === "draft") {
               </div>
             );
           })}
+
           <div ref={messagesEndRef} />
         </div>
 
