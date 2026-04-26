@@ -1,0 +1,250 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function uidExists(uid) {
+      return exists(userDoc(uid));
+    }
+
+    function getUserType(uid) {
+      return uidExists(uid) ? get(userDoc(uid)).data.user_type : null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserType(request.auth.uid) == 'admin';
+    }
+
+    function isSelfOrAdmin(userId) {
+      return (request.auth.uid == userId) || isAdmin();
+    }
+
+    function isConnected(otherUserId) {
+      return get(userDoc(request.auth.uid)).data.connected_penpals != null &&
+        userDoc(otherUserId) in get(userDoc(request.auth.uid)).data.connected_penpals;
+    }
+
+    match /users/{userId} {
+      function isListingChildren() {
+        return resource.data.user_type == 'child' &&
+          resource.data.connected_penpals_count <= 3;
+      }
+
+      function isCreatedUserDataValid() {
+        return ('first_name' in request.resource.data || 'last_name' in request.resource.data) &&
+          !uidExists(userId) &&
+          (
+            !('user_type' in request.resource.data) ||
+            request.resource.data.user_type in ['child', 'international_buddy']
+          );
+      }
+
+      function isUpdatedUserDataValid() {
+        return !('user_type' in request.resource.data) ||
+          (request.resource.data.user_type == resource.data.user_type) ||
+          (getUserType(request.auth.uid) == 'international_buddy' && resource.data.user_type == 'child');
+      }
+
+      function isConnectionOnlyUpdate() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'connected_penpals',
+          'connected_penpals_count',
+          'updated_at'
+        ]);
+      }
+
+      function isValidChildConnectionUpdate() {
+        return getUserType(request.auth.uid) == 'international_buddy' &&
+          resource.data.user_type == 'child' &&
+          request.resource.data.user_type == resource.data.user_type &&
+          request.resource.data.connected_penpals_count == resource.data.connected_penpals_count + 1 &&
+          request.resource.data.connected_penpals.size() == resource.data.connected_penpals.size() + 1 &&
+          userDoc(request.auth.uid) in request.resource.data.connected_penpals &&
+          !(userDoc(request.auth.uid) in resource.data.connected_penpals);
+      }
+
+      allow create: if isSignedIn() && isSelfOrAdmin(userId) && isCreatedUserDataValid();
+      allow delete: if isSignedIn() && isAdmin();
+      allow read: if isSignedIn() &&
+        (isSelfOrAdmin(userId) || isConnected(userId));
+      allow list: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() &&
+        (
+          isSelfOrAdmin(userId) ||
+          (isListingChildren() && isConnectionOnlyUpdate() && isValidChildConnectionUpdate())
+        ) &&
+        isUpdatedUserDataValid();
+    }
+
+    match /letterbox/{letterboxId} {
+      function isCreatedLetterboxValid() {
+        return (request.resource.data.members.size() == 2) &&
+          (request.resource.data.members[0] != request.resource.data.members[1]) &&
+          exists(request.resource.data.members[0]) &&
+          exists(request.resource.data.members[1]);
+      }
+
+      function isLetterboxMember() {
+        return userDoc(request.auth.uid) in resource.data.members;
+      }
+
+      function isLetterboxMemberOfNewLetterBox() {
+        return userDoc(request.auth.uid) in request.resource.data.members;
+      }
+
+      function otherMemberRef() {
+        return request.resource.data.members[0] == userDoc(request.auth.uid) ?
+          request.resource.data.members[1] :
+          request.resource.data.members[0];
+      }
+
+      function hasExistingConnectionForNewLetterbox() {
+        let meRef = userDoc(request.auth.uid);
+        let otherRef = otherMemberRef();
+        return uidExists(request.auth.uid) &&
+          exists(otherRef) &&
+          get(meRef).data.connected_penpals != null &&
+          otherRef in get(meRef).data.connected_penpals &&
+          get(otherRef).data.connected_penpals != null &&
+          meRef in get(otherRef).data.connected_penpals;
+      }
+
+      allow create: if isSignedIn() &&
+        (isLetterboxMemberOfNewLetterBox() || isAdmin()) &&
+        (isAdmin() || hasExistingConnectionForNewLetterbox()) &&
+        isCreatedLetterboxValid();
+      allow read, list: if isSignedIn() && (isLetterboxMember() || isAdmin());
+      allow delete, update: if isSignedIn() && isAdmin();
+
+      match /letters/{letterId} {
+        function isLetterboxMemberUsingGet() {
+          return userDoc(request.auth.uid) in get(/databases/$(database)/documents/letterbox/$(letterboxId)).data.members ||
+            isAdmin();
+        }
+
+        function isMyLetter() {
+          return resource.data.sent_by == userDoc(request.auth.uid);
+        }
+
+        function isLetterDeleted() {
+          return ('deleted' in resource.data) && resource.data.deleted != null;
+        }
+
+        function isLetterSentOrPendingReviewOrSelfOrAdmin() {
+          return resource.data.status == 'sent' ||
+            (resource.data.status == 'pending_review' && isMyLetter()) ||
+            isMyLetter() ||
+            isAdmin();
+        }
+
+        function isCreatedLetterValid() {
+          return request.resource.data.sent_by == userDoc(request.auth.uid) &&
+            (request.resource.data.status == 'draft' || request.resource.data.status == 'pending_review');
+        }
+
+        function isAuthorStatusUpdate() {
+          return isMyLetter() &&
+            request.resource.data.sent_by == resource.data.sent_by &&
+            request.resource.data.created_at == resource.data.created_at &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status',
+              'content',
+              'updated_at',
+              'drafted_at',
+              'attachments',
+              'unread',
+              'deleted'
+            ]) &&
+            (
+              (resource.data.status == 'draft' &&
+                (
+                  request.resource.data.status == 'draft' ||
+                  request.resource.data.status == 'pending_review'
+                )) ||
+              (resource.data.status == 'pending_review' && request.resource.data.status == 'pending_review')
+            );
+        }
+
+        function isAdminModerationUpdate() {
+          return isAdmin() &&
+            request.resource.data.sent_by == resource.data.sent_by &&
+            request.resource.data.created_at == resource.data.created_at &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status',
+              'updated_at',
+              'reviewed_at',
+              'rejection_reason',
+              'unread'
+            ]) &&
+            (
+              request.resource.data.status == 'pending_review' ||
+              request.resource.data.status == 'sent' ||
+              request.resource.data.status == 'rejected'
+            );
+        }
+
+        function isDraftContentUpdate() {
+          return (
+            resource.data.status == 'draft' &&
+            request.resource.data.status == 'draft' &&
+            request.resource.data.sent_by == resource.data.sent_by &&
+            request.resource.data.created_at == resource.data.created_at &&
+            isMyLetter() &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'content',
+              'updated_at',
+              'drafted_at',
+              'attachments'
+            ])
+          );
+        }
+
+        function isSettingRead() {
+          return (resource.data.status == 'sent' &&
+            !isMyLetter() &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unread']) &&
+            request.resource.data.unread == false);
+        }
+
+        allow create: if isSignedIn() &&
+          (isAdmin() || (isLetterboxMemberUsingGet() && isCreatedLetterValid()));
+        allow read, list: if isSignedIn() &&
+          !isLetterDeleted() &&
+          isLetterboxMemberUsingGet() &&
+          isLetterSentOrPendingReviewOrSelfOrAdmin();
+        allow update: if isSignedIn() &&
+          isLetterboxMemberUsingGet() &&
+          (isAuthorStatusUpdate() || isAdminModerationUpdate() || isSettingRead() || isDraftContentUpdate());
+        allow delete: if isSignedIn() && isAdmin();
+      }
+    }
+
+    match /hobbies/{hobbyId} {
+      function isValidHobbyCreate() {
+        return request.resource.data.keys().hasOnly(['hobby']) &&
+          request.resource.data.hobby is string &&
+          request.resource.data.hobby.size() >= 2 &&
+          request.resource.data.hobby.size() <= 40;
+      }
+
+      allow read, list: if true;
+      allow create: if isSignedIn() && isValidHobbyCreate();
+    }
+
+    match /fcmTokens/{token} {
+      allow read, list, create: if isAdmin();
+    }
+
+    match /subscriptions/{userId} {
+      allow read, create, update, delete: if isSignedIn() &&
+        (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+    }
+  }
+}
