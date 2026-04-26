@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
+import { useCachedUsers } from "../contexts/CachedUserContext";
 import Image from "next/image";
 import logo from "/public/murphylogo.png";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setCachedUsers } = useCachedUsers();
   
   usePageAnalytics(`/login`);
 
@@ -46,6 +48,25 @@ export default function Login() {
         password
       );
       const uid = userCredential.user.uid;
+
+      const existingUsers = JSON.parse(localStorage.getItem("cachedUsers")) || [];
+      const newUser = {
+        id: auth.currentUser?.uid || userCredential.user.uid,
+        email: auth.currentUser?.email || userCredential.user.email || email,
+        first_name:
+          auth.currentUser?.displayName || userCredential.user.displayName || "",
+        photo_uri: auth.currentUser?.photoURL || userCredential.user.photoURL || "",
+      };
+      const updatedUsers = [
+        ...existingUsers.filter(
+          (u) => u.email !== newUser.email && u.id !== newUser.id
+        ),
+        newUser,
+      ];
+
+      setCachedUsers(updatedUsers);
+      localStorage.setItem("cachedUsers", JSON.stringify(updatedUsers));
+
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
 

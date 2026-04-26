@@ -39,6 +39,8 @@ export default function ChooseAccountPage() {
 
   useEffect(() => {
     if (!hydrated) return;
+    console.log("cachedUsers:", cachedUsers);
+    console.log("hydrated:", hydrated);
     if (users.length === 0) {
       if (hasRedirected.current) return;
       hasRedirected.current = true;

@@ -3,26 +3,22 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 const CachedUsersContext = createContext(null);
-const STORAGE_KEY = "cached_users";
+const STORAGE_KEY = "cachedUsers";
 
 export function CachedUsersProvider({ children }) {
-  const [cachedUsers, setCachedUsers] = useState([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [cachedUsers, setCachedUsers] = useState(() => {
+    if (typeof window === "undefined") return [];
 
-  // Load from localStorage after mount
-  useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        setCachedUsers(Array.isArray(parsed) ? parsed : []);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-        setCachedUsers([]);
-      }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
     }
-    setHydrated(true);
-  }, []);
+  });
+  const [hydrated, setHydrated] = useState(true);
 
   // Persist on change
   useEffect(() => {
