@@ -173,6 +173,7 @@ export default function ChooseAccountPage() {
             </div>
           ))}
         </div>
+
         <div className="mt-8 text-center space-y-3">
           <div className="flex justify-center">
             <Button
@@ -181,6 +182,16 @@ export default function ChooseAccountPage() {
               onClick={() => router.push("/login?force=1")}
             />
           </div>
+
+          {/* ✅ Added forgot password here */}
+          <button
+            type="button"
+            onClick={() => router.push("/reset-password")}
+            className="text-sm text-blue-600 hover:text-blue-500 underline"
+          >
+            Forgot password?
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -193,6 +204,7 @@ export default function ChooseAccountPage() {
           </button>
         </div>
       </PageContainer>
+
       <Dialog
         isOpen={!!selectedUser}
         onClose={closeModal}
