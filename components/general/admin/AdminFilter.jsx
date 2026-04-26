@@ -7,7 +7,18 @@ import Button from "../Button";
 import Dropdown from "../Dropdown";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { set } from "nprogress";
+
+/** Match DatePicker local state: a Date, or "" when cleared. Accepts Date, ISO strings, timestamps, or Firestore Timestamp-like objects. */
+function normalizeFilterDate(value) {
+  if (value == null || value === "" || value === 0) return "";
+  if (typeof value?.toDate === "function") {
+    const d = value.toDate();
+    return d instanceof Date && !isNaN(d.getTime()) ? d : "";
+  }
+  if (value instanceof Date) return isNaN(value.getTime()) ? "" : value;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? "" : d;
+}
 
 export default function AdminFilter({
   setStatus,
@@ -17,18 +28,30 @@ export default function AdminFilter({
   setEnd,
   end,
   filter,
+  clearFilters,
   loading,
-  setLoading
+  setLoading,
 }) {
+  const statusOptions = new Map([["Sent", "sent"], ["Pending Review", "pending_review"], ["Rejected", "rejected"]]);
+  const statusLabels = new Map([["sent", "Sent"], ["pending_review", "Pending Review"], ["rejected", "Rejected"]]);
+
   const [statusFilter, setStatusFilter] = useState(status || "");
-  const [startFilter, setStartFilter] = useState(start || "2025-01-01");
-  const [endFilter, setEndFilter] = useState(end || "2025-01-01");
-  const [currentFilter, setCurrentFilter] = useState("");
+  const [startFilter, setStartFilter] = useState(() => normalizeFilterDate(start));
+  const [endFilter, setEndFilter] = useState(() => normalizeFilterDate(end));
+  const [currentFilter, setCurrentFilter] = useState(status ? statusLabels.get(status) : "");
+
+  const toDateOrNull = (value) => {
+    if (value == null || value === "") return null;
+    if (value instanceof Date) return value;
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  };
 
   useEffect(() => {
     setStatusFilter(status || "");
-    setStartFilter(start !== 0 && start !== null ? start : "");
-    setEndFilter(end || "");
+    setStartFilter(normalizeFilterDate(start));
+    setEndFilter(normalizeFilterDate(end));
+    setCurrentFilter(status ? statusLabels.get(status) : "");
   }, [status, start, end]);
 
 
@@ -41,39 +64,32 @@ export default function AdminFilter({
 
 
 
-  const clearFilter = async(e) => {
-    e.preventDefault()
-    setStatusFilter("Sent");
-    setStartFilter("");
-    setEndFilter("");
-    await filter("Sent", null, null);
-  
-  };
+  const clearFilter = (e) => {
+  e.preventDefault();
+  clearFilters();
+};
 
-
-  const statusOptions =  new Map([["Sent", "sent"], ["Pending", "pending_review"], ["Rejected", "rejected"]]);
-;
 
   return (
-    <div className="bg-white flex flex-col my-14 min-h-screen mx-10">
+    <div className="bg-white rounded-xl border border-gray-200 mt-4 px-4 py-6">
       <form className="flex flex-col gap-6">
         <div className=" flex flex-row justify-between">
           <label className="text-black mt-[auto] mb-[auto]">Start date:</label>
 
-          <DatePicker selected={startFilter}
-          placeHolder={"Select A Date"}
-          maxDate={endFilter} 
-          onChange={(date) => setStartFilter(date)} 
+          <DatePicker selected={toDateOrNull(startFilter)}
+          placeholderText={"Select a date"}
+          maxDate={toDateOrNull(endFilter)}
+          onChange={(date) => setStartFilter(date ?? "")} 
           className="w-full px-4 py-2 border rounded-md shadow-sm text-black focus:outline-none focus:ring focus:border-blue-300"
           calendarClassName="rounded-lg shadow-xl bg-white border p-2 text-black" />
         </div>
         <div className="flex flex-row justify-between">
           <label className="text-black  mt-[auto] mb-[auto]" >End date:</label>
 
-          <DatePicker selected={endFilter}
-           placeHolder={"Select A Date"}
-           minDate={startFilter} 
-           onChange={(date) => setEndFilter(date)} 
+          <DatePicker selected={toDateOrNull(endFilter)}
+           placeholderText={"Select a date"}
+           minDate={toDateOrNull(startFilter)}
+           onChange={(date) => setEndFilter(date ?? "")} 
            className="w-full px-4 py-2 text-black border rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300"
            calendarClassName="rounded-lg shadow-xl bg-white border p-2"/>
         </div>
@@ -86,9 +102,9 @@ export default function AdminFilter({
           </label>
           
           <Dropdown
-          options={statusOptions.keys().toArray()}
-          valueChange={(optionValue) => {setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue);}}
-          currentValue={currentFilter}
+          options={Array.from(statusOptions.keys())}
+          valueChange={(optionValue) => { setStatusFilter(statusOptions.get(optionValue)); setCurrentFilter(optionValue); }}
+          currentValue={currentFilter || statusLabels.get(status)}
           text="Status"
           />
         </div>

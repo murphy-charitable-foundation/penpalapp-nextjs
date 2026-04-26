@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig"
@@ -13,10 +13,19 @@ const getUserDoc = async () => {
 };
 
 export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
-  const photoRef = storageRef(storage, path);
-  const downloaded = await getDownloadURL(photoRef)
-  return downloaded;
+  try { 
+    const path = `profile/${uid}/profile-image`;
+    const photoRef = storageRef(storage, path);
+    const downloaded = await getDownloadURL(photoRef)
+    return downloaded;
+  } catch (error) {
+    logError(error, {
+      description: "Error fetching user profile picture: ",
+    });
+    throw error;
+    return null;
+  }
+  
 }
 
 export const fetchLetterboxes = async () => {
@@ -262,6 +271,7 @@ export const fetchRecipients = async (id) => {
         description: "Error fetching user:",
       });
       members.push({ ...selUser.data(), id: selectedUserDocRef.id, pfp: selUser.photo_uri });
+      return null;
     }
   }
   return members;
@@ -283,3 +293,82 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
     return false;
   }
 };
+
+export const createConnection = async (userDocRef, kidDocRef) => {
+    try {
+        const kidSnap = await getDoc(kidDocRef);
+        const buddySnap = await getDoc(userDocRef);
+        
+          if (!kidSnap.exists() && !buddySnap.exists()) {
+            logError(error, {
+              description: "Neither of child nor international buddy exist in the users collection: ",
+            })
+            throw new Error("Neither of child nor international buddy exist in the users collection");
+          }
+          console.log("Kid:", kidSnap);
+          console.log("User:", buddySnap);
+
+          if (kidSnap.exists()) {
+            if (kidSnap.data().connected_penpals_count >= 3) {
+              throw new Error("Kid has exceeded penpal limit");
+            }
+            await updateDoc(kidDocRef, {
+              connected_penpals: arrayUnion(userDocRef),
+              connected_penpals_count: increment(1),
+            });
+          }
+
+          if (buddySnap.exists()) {
+            await updateDoc(userDocRef, {
+              connected_penpals: arrayUnion(kidDocRef),
+              connected_penpals_count: increment(1),
+            });
+          }
+
+          // query DB to check for existing letterbox
+          let letterboxQuery = query(
+            collection(db, "letterbox"),
+            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
+          );
+
+          let querySnapshot = await getDocs(letterboxQuery);
+          
+          if (querySnapshot.empty) {
+            letterboxQuery = query(
+              collection(db, "letterbox"),
+              where("members", "==", [kidDocRef, userDocRef])
+            );
+            querySnapshot = await getDocs(letterboxQuery);
+          }
+
+          let letterboxRef;
+
+          if (querySnapshot.empty) { // if there's no letterbox, create one.
+            letterboxRef = await addDoc(collection(db, "letterbox"), {
+              members: [
+                userDocRef, 
+                kidDocRef   
+              ],
+              created_at: new Date(),
+              archived_at: null,
+            });
+
+            await addDoc(collection(letterboxRef, "letters"), {
+              sent_by: userDocRef,
+              content: "Please complete your first letter here...",
+              status: "draft",
+              updated_at: new Date(),
+              deleted: null
+            });
+
+            console.log(letterboxRef);
+            return letterboxRef;
+          } else {
+            // Penpal and kid are already connected, do nothing
+            return querySnapshot.ref;
+          }
+    } catch (error) {
+      logError("There has been a error creating the connection: " + error.message, { error });
+      throw error; // rethrow so callers can handle it
+    }
+  };

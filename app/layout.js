@@ -3,25 +3,41 @@ import './globals.css'
 import NavigationStateManager from '../components/loading/NavigationStateManager'
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { CachedUsersProvider } from './contexts/CachedUserContext';
+
+import { CachedUsersProvider } from './contexts/CachedUserContext'
+import { DormantLetterboxProvider } from '../context/DormantLetterboxContext'
+import { UserProvider } from '../contexts/UserContext'
+import { NavigationProvider } from '../contexts/NavigationContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Pen Pal Magic App',
+  title: {
+    default: 'Pen Pal Magic App',
+    template: '%s | Pen Pal Magic App',
+  },
   description: 'To connect 2000 rural Ugandan Children to the World',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={inter.className}>
-        <CachedUsersProvider>
-          <Suspense fallback={<LoadingSpinner />}>
-            <NavigationStateManager />
-            {children}
-          </Suspense>
-        </CachedUsersProvider>
+        <DormantLetterboxProvider>
+          <UserProvider>
+            <NavigationProvider>
+              <CachedUsersProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <NavigationStateManager />
+                  {children}
+                </Suspense>
+              </CachedUsersProvider>
+            </NavigationProvider>
+          </UserProvider>
+        </DormantLetterboxProvider>
       </body>
     </html>
   )
