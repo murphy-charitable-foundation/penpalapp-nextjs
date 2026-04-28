@@ -7,7 +7,7 @@
  * Request body:
  * {
  *   sender: object | array,  // Single user object OR array of 2 users (if reason === "admin")
- *   id: string,              // letterbox_id
+ *   id: string,              // conversation_id
  *   emailId: object,         // Firebase document reference
  *   reason: string           // "admin" or other value
  * }
@@ -52,10 +52,10 @@ export async function POST(request) {
     const userRecord = await auth.getUser(uid); // Fetch user record by UID
     let message;
     if (reason == "admin") {
-      message = `Hello Richard, it seems that a chat in a letterbox with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`
+      message = `Hello Richard, it seems that a chat in a conversation with the id: ${id}, involving the user: ${sender[0].first_name} ${sender[0].last_name}, ${sender[1].first_name} ${sender[1].last_name}, has stalled because the user with the email ${userRecord.email} has stopped responding. Consider contacting them to see if the chat can be reignited.`
     }
     else {
-      message = `Hello, it seems that your chat in a letterbox with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
+      message = `Hello, it seems that your chat in a conversation with the id: ${id}, involving the user: ${sender.first_name} ${sender.last_name}, has stalled. Consider contacting them to see if the chat can be reignited.`
     }
     // Remove null values (failed fetches)
     

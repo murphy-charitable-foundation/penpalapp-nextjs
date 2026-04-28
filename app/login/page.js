@@ -42,7 +42,7 @@ export default function Login() {
 
       if (userSnap.exists()) {
         await initializeNotifications()
-        router.push("/letterhome");
+        router.push("/inbox");
       } else {
         router.push("/create-acc");
       }

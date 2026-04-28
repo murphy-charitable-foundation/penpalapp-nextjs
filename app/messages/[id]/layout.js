@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Letter",
+  title: "Message",
 };
 
 export default function Layout({ children }) {

@@ -26,9 +26,9 @@ export default function FirstTimeChatGuide({
 
   const steps = [
     {
-      target: ".first-letter",
-      content: "Tap with your finger to open the letter ",
-      position: "first-letter", // @todo: change this to array?
+      target: ".first-message",
+      content: "Tap with your finger to open the message ",
+      position: "first-message", // @todo: change this to array?
       arrowDirection: "top",
       //advanceOn: 'click', // The event on the target that will advance the tour
     },
@@ -42,22 +42,22 @@ export default function FirstTimeChatGuide({
     },
     // {
     //   target: '#message-input',
-    //   content: 'Draft your response here. Here is a sample template on how to structure a letter response',
+    //   content: 'Draft your response here. Here is a sample template on how to structure a message response',
     //   position: 'typing-box',
     //   arrowDirection: 'bottom',
     //   advanceOn: 'focus',
     //   showTemplateOptions: true,
     // },
     // {
-    //   target: '.send-letter',
+    //   target: '.send-message',
     //   content: 'You can see your message now, how it is send',
-    //   position: 'send-letter',
+    //   position: 'send-message',
     //   arrowDirection: 'topRight',
     // }
     {
-      target: "#send-letter",
-      content: "When you click this button, your letter will be sent",
-      position: "send-letter",
+      target: "#send-message",
+      content: "When you click this button, your message will be sent",
+      position: "send-message",
       arrowDirection: "topRight",
     },
   ];
@@ -67,10 +67,10 @@ export default function FirstTimeChatGuide({
       localStorage.getItem("hasSeenChatGuide") === "true";
 
     if (!isGuideCompleted) {
-      if (page == "letterHome" || params == "/letterhome") {
+      if (page == "inbox" || params == "/inbox") {
         setShowGuide(true);
         setCurrentStep(0);
-      } else if (page == "letterDetail" || params.includes("/letters/")) {
+      } else if (page == "messageDetail" || params.includes("/messages/")) {
         setCurrentStep(1);
         setShowGuide(true);
       }
@@ -166,7 +166,7 @@ export default function FirstTimeChatGuide({
         top = targetRect.top + tooltipRect.height;
         //left = targetRect.right + 10;
         break;
-      case "first-letter":
+      case "first-message":
         top = targetRect.bottom + "px";
         left = targetRect.left + 20 + "px";
         break;
@@ -179,7 +179,7 @@ export default function FirstTimeChatGuide({
         left = 70 + "px";
         bottom = "unset";
         break;
-      case "send-letter":
+      case "send-message":
         top = targetRect.bottom - 10 + "px";
         left = "unset";
         right = 0;

@@ -6,7 +6,7 @@
  * Request body:
  * {
  *   receiver_email: string,  // user_uid who is being reported
- *   currentUrl: string,      // URL of the conversation (e.g., "/letters/123")
+ *   currentUrl: string,      // URL of the conversation (e.g., "/messages/123")
  *   sender: string,          // user_uid who is reporting
  *   excerpt: string          // text excerpt of the reported message
  * }

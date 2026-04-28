@@ -1,8 +1,8 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
-import { auth, db } from "../firebaseConfig"
-import { logError } from "../utils/analytics";
+import { auth, db } from "../firebaseConfig.js"
+import { logError } from "./analytics.js";
 
 const DELAY = 1000;
 
@@ -32,8 +32,8 @@ export const getUserPfp = async(uid) => {
   
 }
 
-export const fetchLetterboxes = async () => {
-  const retryFetch = () => setTimeout(() => fetchLetterboxes(), DELAY);
+export const fetchConversations = async () => {
+  const retryFetch = () => setTimeout(() => fetchConversations(), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -42,18 +42,18 @@ export const fetchLetterboxes = async () => {
   const { userDocRef, userDocSnapshot } = await getUserDoc();
   if (!userDocSnapshot.exists()) return;
 
-  const letterboxQuery = query(
-    collection(db, "letterbox"),
+  const conversationsQuery = query(
+    collection(db, "conversations"),
     where("members", "array-contains", userDocRef)
   );
-  const letterboxQuerySnapshot = await getDocs(letterboxQuery);
-  const letterboxes = letterboxQuerySnapshot.docs;
-  return letterboxes;
+  const conversationsQuerySnapshot = await getDocs(conversationsQuery);
+  const conversations = conversationsQuerySnapshot.docs;
+  return conversations;
 };
 
-export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
+export const fetchConversationbyId = async (id, lim = false, lastVisible = null) => {
   const retryFetch = () =>
-    setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
+    setTimeout(() => fetchConversationbyId(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -63,67 +63,67 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
 
   if (!userDocSnapshot.exists()) return;
 
-  const letterboxRef = doc(collection(db, "letterbox"), id);
-  const lRef = collection(letterboxRef, "letters");
-  let letterboxQuery;
+  const conversationsRef = doc(collection(db, "conversations"), id);
+  const messagesRef = collection(conversationsRef, "messages");
+  let conversationsQuery;
 
   // TODO temporarily disable moderation until it is developed
   if (lim) {
-    letterboxQuery = lastVisible
+    conversationsQuery = lastVisible
       ? query(
-          lRef,
+          messagesRef,
           where("status", "==", "sent"),
           orderBy("created_at", "desc"),
           startAfter(lastVisible),
           limit(lim)
         )
       : query(
-          lRef,
+          messagesRef,
           where("status", "==", "sent"),
           orderBy("created_at", "desc"),
           limit(lim)
         );
   } else {
-    letterboxQuery = lastVisible
+    conversationsQuery = lastVisible
       ? query(
-          lRef,
+          messagesRef,
           where("status", "==", "sent"),
           orderBy("created_at", "desc"),
           startAfter(lastVisible)
         )
       : query(
-          lRef,
+          messagesRef,
           where("status", "==", "sent"),
           orderBy("created_at", "desc")
         );
   }
 
   /*if (lim) {
-    letterboxQuery = lastVisible
+    conversationsQuery = lastVisible
       ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible), limit(lim))
       : query(lRef, orderBy("created_at", "desc"), limit(lim));
   } else {
-    letterboxQuery = lastVisible
+    conversationsQuery = lastVisible
       ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible))
       : query(lRef, orderBy("created_at", "desc"));
   }*/
 
   try {
-    const lettersSnapshot = await getDocs(letterboxQuery);
-    const messages = lettersSnapshot.docs
+    const messagesSnapshot = await getDocs(conversationsQuery);
+    const messages = messagesSnapshot.docs
       .map((doc) => {
         return { id: doc.id, ...doc.data() };
       })
-      .filter((letterboxData) => letterboxData.status != "draft");
+      .filter((conversationsData) => conversationsData.status != "draft");
 
-    const lastDoc = lettersSnapshot.docs[lettersSnapshot.docs.length - 1];
+    const lastDoc = messagesSnapshot.docs[messagesSnapshot.docs.length - 1];
     return {
       messages: messages.length ? messages : [],
       lastVisible: lastDoc,
     };
   } catch (e) {
     logError(e, {
-      description: "Error fetching letterbox: ",
+      description: "Error fetching conversation: ",
     });
     return {
       messages: [],
@@ -133,16 +133,16 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
 };
 
 export const fetchDraft = async (id, userRef, createNew = false) => {
-  const letterboxRef = doc(collection(db, "letterbox"), id);
-  const lRef = collection(letterboxRef, "letters");
-  const letterboxQuery = query(
+  const conversationsRef = doc(collection(db, "conversations"), id);
+  const lRef = collection(conversationsRef, "messages");
+  const conversationsQuery = query(
     lRef,
     where("sent_by", "==", userRef),
     where("status", "==", "draft"),
     where("content", "!=", ""),
     limit(1)
   );
-  const draftSnapshot = await getDocs(letterboxQuery);
+  const draftSnapshot = await getDocs(conversationsQuery);
   if (draftSnapshot.docs?.[0]?.data()) {
     return {
       ...draftSnapshot.docs?.[0].data(),
@@ -176,90 +176,86 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   return draft;
 };
 
-export const fetchLatestLetterFromLetterboxOld = async (
-  letterboxId,
+export const fetchLatestMessageFromConversationOld = async (
+  conversationsId,
   userRef
 ) => {
-  const draft = await fetchDraft(letterboxId, userRef, false);
+  const draft = await fetchDraft(conversationsId, userRef, false);
   if (draft) return draft;
 
-  const lettersRef = collection(db, "letterbox", letterboxId, "letters");
+  const messagesRef = collection(db, "conversations", conversationsId, "messages");
   const q = query(
-    lettersRef,
+    messagesRef,
     where("status", "==", "sent"),
     orderBy("created_at", "desc"),
     limit(1)
   );
-  const letterSnapshot = await getDocs(q);
-  let letter;
-  letterSnapshot.forEach((doc) => {
-    letter = { id: doc.id, ...doc.data() };
+  const messageSnapshot = await getDocs(q);
+  let message;
+  messageSnapshot.forEach((doc) => {
+    message = { id: doc.id, ...doc.data() };
   });
-  return letter;
+  return message;
 };
 
-export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
-  const letterboxRef = doc(collection(db, "letterbox"), letterboxId);
-  const lRef = collection(letterboxRef, "letters");
+export const fetchLatestMessageFromConversations = async (conversationsId, userRef) => {
+  const conversationsRef = doc(collection(db, "conversations"), conversationsId);
+  const messagesRef = collection(conversationsRef, "messages");
 
-  // Query with fallback in case no result for drafted_at
-  const getLatestByFieldFallback = async (constraints) => {
-
-    // initial query to check existence of the new field drafted_at
-    const draftedQuery = query (
-      lRef,
-      ...constraints,
-      orderBy("drafted_at", "desc"),
-      limit(1)
-    );
-    
-    const draftedSnap = await getDocs(draftedQuery);
-    
-    return draftedSnap;
-  };
-
-  // Run both in parallel
-  const [userLettersSnap, sentLettersSnap] = await Promise.all([
-    getLatestByFieldFallback([
+  try {
+    // Query user's latest message
+    const userQuery = query(
+      messagesRef,
       where("sent_by", "==", userRef),
       where("content", "!=", ""),
-    ]),
-    getLatestByFieldFallback([
+      orderBy("created_at", "desc"),
+      limit(1)
+    );
+
+    // Query latest sent message from other members
+    const sentQuery = query(
+      messagesRef,
       where("status", "==", "sent"),
       where("content", "!=", ""),
-    ]),
-  ]);
+      orderBy("created_at", "desc"),
+      limit(1)
+    );
 
-  const allLetters = [];
+    const [userSnap, sentSnap] = await Promise.all([
+      getDocs(userQuery),
+      getDocs(sentQuery),
+    ]);
 
-  if (!userLettersSnap?.empty)
-    userLettersSnap.forEach((doc) => {
-      allLetters.push({ id: doc?.id, ...doc?.data() });
-    });
+    const allMessages = [];
 
-  if (!sentLettersSnap?.empty)
-    sentLettersSnap.forEach((doc) => {
-      if (doc?.data()?.sent_by?.id !== userRef?.id)
-        allLetters.push({ id: doc?.id, ...doc?.data() });
-    });
-  // Use drafted_at for new docs, and created_at for old as fallback
-  const getLetterDate = (letter) => 
-    letter?.drafted_at?.toDate?.() ||
-    letter?.created_at?.toDate?.() ||
-    new Date(0);
-  
+    if (!userSnap.empty) {
+      allMessages.push({ id: userSnap.docs[0].id, ...userSnap.docs[0].data() });
+    }
 
-  if (allLetters.length === 0) return null;
-  if (allLetters.length === 1) return allLetters[0];
-  
-  return getLetterDate(allLetters[0]) > getLetterDate(allLetters[1]) 
-      ? allLetters[0] 
-      : allLetters[1];
+    if (!sentSnap.empty) {
+      const sentMessage = { id: sentSnap.docs[0].id, ...sentSnap.docs[0].data() };
+      if (sentMessage.sent_by?.id !== userRef?.id) {
+        allMessages.push(sentMessage);
+      }
+    }
+
+    if (allMessages.length === 0) return null;
+    if (allMessages.length === 1) return allMessages[0];
+
+    // Return the most recent message
+    const date1 = allMessages[0]?.created_at?.toDate?.() || allMessages[0]?.created_at || new Date(0);
+    const date2 = allMessages[1]?.created_at?.toDate?.() || allMessages[1]?.created_at || new Date(0);
+
+    return date1 > date2 ? allMessages[0] : allMessages[1];
+  } catch (error) {
+    logError(error, { description: "Error fetching latest message from conversation" });
+    return null;
+  }
 };
 
 export const fetchRecipients = async (id) => {
-  const letterboxRef = doc(collection(db, "letterbox"), id);
-  const letterbox = await getDoc(letterboxRef);
+  const conversationsRef = doc(collection(db, "conversations"), id);
+  const conversations = await getDoc(conversationsRef);
 
   const retryFetch = () => setTimeout(() => fetchRecipients(id), DELAY);
   if (!auth.currentUser?.uid) {
@@ -269,7 +265,7 @@ export const fetchRecipients = async (id) => {
 
   const currentUserUid = auth.currentUser.uid;
 
-  const users = letterbox.data().members.filter((m) => m.id !== currentUserUid);
+  const users = conversations.data().members.filter((m) => m.id !== currentUserUid);
   const members = [];
 
   for (const user of users) {
@@ -286,33 +282,33 @@ export const fetchRecipients = async (id) => {
   return members;
 };
 
-let sendingLetter = false;
-export const sendLetter = async (letterData, letterRef, draftId) => {
-  if (sendingLetter) return;
+let sendingMessage = false;
+export const sendMessage = async (messageData, messageRef, draftId) => {
+  if (sendingMessage) return;
   try {
-    sendingLetter = true;
-    await updateDoc(doc(letterRef, draftId), letterData);
-    sendingLetter = false;
+    sendingMessage = true;
+    await updateDoc(doc(messageRef, draftId), messageData);
+    sendingMessage = false;
     return true;
   } catch (e) {
     logError(e, {
-      description: "Failed to send letter: ",
+      description: "Failed to send message: ",
     });
-    sendingLetter = false;
+    sendingMessage = false;
     return false;
   }
 };
 
-export const sendNotification = async (letterboxRef, message) => {
+export const sendNotification = async (conversationsRef, message) => {
   // Verify that the user is authenticated.
   if (!auth.currentUser) {
     console.error("User not authenticated.");
     return;
   }
 
-  // Validate letterboxRef parameter.
-  if (!letterboxRef || !letterboxRef.id) {
-    console.error("Invalid letterboxRef: missing or has no id property.");
+  // Validate conversationRef parameter.
+  if (!conversationsRef || !conversationsRef.id) {
+    console.error("Invalid conversationsRef: missing or has no id property.");
     return;
   }
 
@@ -320,12 +316,12 @@ export const sendNotification = async (letterboxRef, message) => {
     // Retrieve Firebase Auth ID token for authorization.
     const idToken = await auth.currentUser.getIdToken();
 
-    // Retrieve the conversation (letterbox) ID.
-    const conversationId = letterboxRef.id;
+    // Retrieve the conversations (conversations) ID.
+    const conversationsId = conversationsRef.id;
 
     // Build payload.
     const payload = {
-      conversationId: conversationId,
+      conversationsId: conversationsId,
       message: message,
     };
 
@@ -385,26 +381,26 @@ export const createConnection = async (userDocRef, kidDocRef) => {
             });
           }
 
-          // query DB to check for existing letterbox
-          let letterboxQuery = query(
-            collection(db, "letterbox"),
+          // query DB to check for existing conversations
+          let conversationsQuery = query(
+            collection(db, "conversations"),
             where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
           );
 
-          let querySnapshot = await getDocs(letterboxQuery);
+          let querySnapshot = await getDocs(conversationsQuery);
           
           if (querySnapshot.empty) {
-            letterboxQuery = query(
-              collection(db, "letterbox"),
+            conversationsQuery = query(
+              collection(db, "conversations"),
               where("members", "==", [kidDocRef, userDocRef])
             );
-            querySnapshot = await getDocs(letterboxQuery);
+            querySnapshot = await getDocs(conversationsQuery);
           }
 
-          let letterboxRef;
+          let conversationsRef;
 
-          if (querySnapshot.empty) { // if there's no letterbox, create one.
-            letterboxRef = await addDoc(collection(db, "letterbox"), {
+          if (querySnapshot.empty) { // if there's no conversation, create one.
+            conversationsRef = await addDoc(collection(db, "conversations"), {
               members: [
                 userDocRef, 
                 kidDocRef   
@@ -413,17 +409,17 @@ export const createConnection = async (userDocRef, kidDocRef) => {
               archived_at: null,
             });
 
-            await addDoc(collection(letterboxRef, "letters"), {
+            await addDoc(collection(conversationsRef, "messages"), {
               sent_by: userDocRef,
-              content: "Please complete your first letter here...",
+              content: "Please complete your first message here...",
               status: "draft",
               drafted_at: new Date(),
               created_at: new Date(),
               deleted: null
             });
 
-            console.log(letterboxRef);
-            return letterboxRef;
+            console.log(conversationsRef);
+            return conversationsRef;
           } else {
             // Penpal and kid are already connected, do nothing
             return querySnapshot.ref;

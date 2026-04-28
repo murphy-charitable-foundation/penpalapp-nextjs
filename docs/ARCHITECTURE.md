@@ -7,12 +7,12 @@
 - Tailwind CSS.
 
 ## Business idea (short)
-Connects students with pen pals via a safe, moderated letter-style chat.
+Connects students with pen pals via a safe, moderated message-style chat.
 
 ## Where to look
 - Pages: `app/*/page.js`
-- Chat: `app/letters/[id]/page.js`
-- Inbox: `app/letterhome/page.js`
+- Chat: `app/messages/[id]/page.js`
+- Inbox: `app/inbox/page.js`
 - Discovery: `app/discovery/page.js`
 - API: `app/api/*/route.js`
 - Shared UI: `components/general/*`
@@ -23,7 +23,7 @@ Client pages that use hooks or Firebase must include `'use client'`.
 
 ## Data model (chat)
 Firestore structure:
-`letterboxes/{letterboxId}/messages/{messageId}` and `drafts/{userId}`.
+`conversations/{conversationId}/messages/{messageId}` and `drafts/{userId}`.
 Most real-time UI comes from Firestore listeners; no global state library.
 
 ## Analytics & errors (gotcha)

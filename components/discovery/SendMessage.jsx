@@ -5,7 +5,7 @@ import { db, auth } from "../../app/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Button from "../general/Button";
-import { createConnection } from "../../app/utils/letterboxFunctions";
+import { createConnection } from "../../app/utils/conversationsFunctions";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
@@ -41,8 +41,9 @@ export default function SendMessage({ kid }) {
   }, [auth.currentUser]);
 
   const handleClick = async () => {
-    createConnection(userRef, kid.ref).then((letterboxRef) => {
-      router.push("/letters/" + letterboxRef.id);
+
+    createConnection(userRef, kid.ref).then((conversationsRef) => {
+      router.push("/messages/" + conversationsRef.id);
     });
   };
 
