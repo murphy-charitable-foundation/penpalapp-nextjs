@@ -21,21 +21,33 @@
  */
 
 import { NextResponse } from 'next/server';
-import sendgrid from '@sendgrid/mail';
+import nodemailer from "nodemailer";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { logError } from "../../utils/analytics";
 
 export async function POST(request) {
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
     const {receiver_email, currentUrl, sender, excerpt } = body; 
-    const userRef = doc(db, "users", sender);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.data();
-    const message = `Hello, the user with the uid: ${receiver_email} , reported this message: ${currentUrl} sent by a user with the name: ${userData.first_name} ${userData.last_name}. Here is a brief excerpt from the reported message, "${excerpt}"`;
+    let reporterName = sender;
+
+    try {
+      const userRef = doc(db, "users", sender);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+
+      if (userData?.first_name || userData?.last_name) {
+        reporterName = `${userData?.first_name || ""} ${userData?.last_name || ""}`.trim();
+      }
+    } catch (error) {
+      logError(error, {
+        description: "Could not load reporting user profile.",
+      });
+    }
+
+    const message = `Hello, the user with the uid: ${receiver_email} , reported this message: ${currentUrl} sent by a user with the name: ${reporterName}. Here is a brief excerpt from the reported message, "${excerpt}"`;
     const emailHtml = `
       <html>
         <head>
@@ -90,17 +102,47 @@ export async function POST(request) {
     `;
 
 
-    //SendGrid email configuration
+    const senderEmail = process.env.PENPAL_SENDER_EMAIL || "penpal@murphycharity.org";
+    const adminEmail = process.env.PENPAL_ADMIN_EMAIL || "penpal@murphycharity.org";
+    const smtpHost = process.env.CPANEL_SMTP_HOST;
+    const smtpPortRaw = process.env.CPANEL_SMTP_PORT || "465";
+    const smtpPort = Number.parseInt(smtpPortRaw, 10);
+    const smtpPass = process.env.PENPAL_EMAIL_PASSWORD;
+
+    const validPort =
+      Number.isInteger(smtpPort) && smtpPort > 0 && smtpPort <= 65535;
+
+    if (!smtpHost || !smtpPass || !validPort) {
+      return NextResponse.json(
+        { message: "Email service is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: senderEmail,
+        pass: smtpPass,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+      dnsTimeout: 5000,
+    });
+
     const msg = {
-      to: 'penpal@murphycharity.org', 
-      from: 'penpal@murphycharity.org', // Your verified sender email
+      to: adminEmail,
+      from: senderEmail,
       subject: "Message Reported",
       text: message || 'No message provided.',
       html:  emailHtml,
     };
 
     // Send the email
-    await sendgrid.send(msg);
+    await transporter.sendMail(msg);
     return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
     
 
