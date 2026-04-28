@@ -14,9 +14,10 @@ import {
   limit,
   getDocs,
 } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
+  sendNotification,
 } from "../../../app/utils/letterboxFunctions";
 import { formatTimestamp } from "../../../app/utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -31,7 +32,6 @@ import { PageBackground } from "../../../components/general/PageBackground";
 import { AlertTriangle } from "lucide-react";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
-import React from "react";
 
 
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -39,6 +39,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
+    // Retain the old query for existing documents
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -47,7 +48,19 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       limit(1)
     );
 
-    const draftSnapshot = await getDocs(draftQuery);
+    let draftSnapshot = await getDocs(draftQuery);
+
+    // Add fallback query for drafts with drafted_at
+    if (draftSnapshot.empty) {
+      const fallbackDraftQuery = query (
+        lettersRef,
+        where("sent_by", "==", userRef),
+        where("status", "==", "draft"),
+        orderBy("drafted_at", "desc"),
+        limit(1)
+      );
+      draftSnapshot = await getDocs(fallbackDraftQuery);
+    }
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
@@ -55,9 +68,9 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         id: draftDoc.id,
         ...draftDoc.data(),
         created_at:
-          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
-        updated_at:
-          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+          draftDoc.data().created_at?.toDate?.() || null,
+        drafted_at:
+          draftDoc.data().drafted_at?.toDate?.() || null,
       };
 
       return draftData;
@@ -69,7 +82,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         content: "",
         status: "draft",
         created_at: new Date(),
-        updated_at: new Date(),
+        drafted_at: new Date(),
         deleted: null,
         unread: true,
       };
@@ -95,12 +108,10 @@ export default function Page({ params }) {
 
   const { id } = params;
 
-  const auth = getAuth();
   const router = useRouter();
+  const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
-
-  const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -115,6 +126,7 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
+  const [globalLetterboxReference, setGlobalLetterboxReference] = useState(null);
   const [lettersRef, setLettersRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -168,7 +180,7 @@ export default function Page({ params }) {
           sent_by: letterUserRef,
           content: trimmedContent,
           status: "draft",
-          updated_at: currentTime,
+          drafted_at: currentTime,
           deleted: null,
           unread: true,
         };
@@ -315,7 +327,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
-        updated_at: currentTime,
+        drafted_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -345,7 +357,7 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
-              updated_at: currentTime,
+              drafted_at: currentTime,
             };
           }
           return msg;
@@ -404,7 +416,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        updated_at: currentTime,
+        drafted_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -424,7 +436,15 @@ export default function Page({ params }) {
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
       }
-
+      
+      
+      if (globalLetterboxReference) {
+        sendNotification(globalLetterboxReference, "").catch(error => {
+          console.error("Failed to send notification:", error);
+        });
+      }
+      
+      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -600,20 +620,14 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
+    setIsLoading(true);
 
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setIsLoading(true);
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
-      if (!currentUser) {
-        router.push("/login");
-        return;
-      }
-
-      setUser(currentUser);
-        
-
-      
-
+    const initializeData = async () => {
       try {
         const letterboxRef = doc(db, "letterbox", id);
         const letterboxDoc = await getDoc(letterboxRef);
@@ -624,7 +638,7 @@ export default function Page({ params }) {
           return;
         }
 
-        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocRef = doc(db, "users", user.uid);
         setUserRef(userDocRef);
 
         const userDoc = await getDoc(userDocRef);
@@ -647,6 +661,9 @@ export default function Page({ params }) {
 
         const lRef = collection(letterboxRef, "letters");
         setLettersRef(lRef);
+        setGlobalLetterboxReference(letterboxRef);
+
+        // ENHANCED: Improved draft fetching with better error handling
         const draftData = await fetchDraft(id, userDocRef, false);
 
         if (draftData && draftData.status === "draft") {
@@ -675,7 +692,7 @@ export default function Page({ params }) {
         }
 
         if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", currentUser.uid);
+          const userRefDoc = doc(db, "users", user.uid);
 
           // All messages written BY ME
           const myMessagesQuery = query(
@@ -709,7 +726,7 @@ export default function Page({ params }) {
                 id: docSnap.id,
                 ...docSnap.data(),
                 created_at: docSnap.data().created_at?.toDate(),
-                updated_at: docSnap.data().updated_at?.toDate(),
+                drafted_at: docSnap.data().drafted_at?.toDate(),
               };
       
               // Normalize Firestore DocumentReference → { id }
@@ -733,7 +750,7 @@ export default function Page({ params }) {
           const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
-              if (message.sent_by?.id !== currentUser.uid) {
+              if (message.sent_by?.id !== user.uid) {
                 const recipient = fetchedRecipients.find(
                   (r) => r.id === message.sent_by?.id
                 );
@@ -758,12 +775,10 @@ export default function Page({ params }) {
       } finally {
         setIsLoading(false);
       }
-    });
-
-    return () => {
-      unsubscribe();
     };
-  }, [id, router]);
+
+    initializeData();
+  }, [id, user]);
 
   useEffect(() => {
     return () => {
@@ -808,7 +823,7 @@ export default function Page({ params }) {
   };
 
 return (
-  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <PageContainer
       width="compactXS"
       padding="none"

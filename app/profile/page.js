@@ -3,18 +3,18 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
+import { useUser } from "../../contexts/UserContext";
+import { PageBackground } from "../../components/general/PageBackground";
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
+import { PageContainer } from "../../components/general/PageContainer";
 import Dropdown from "../../components/general/Dropdown";
 import HobbySelect from "../../components/general/HobbySelect";
 import Dialog from "../../components/general/Dialog";
 import { PageHeader } from "../../components/general/PageHeader";
-import { PageContainer } from "../../components/general/PageContainer";
-import { PageBackground } from "../../components/general/PageBackground";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import NavBar from "../../components/bottom-nav-bar";
 
@@ -40,13 +40,13 @@ export default function EditProfile() {
   const [photoUri, setPhotoUri] = useState("");
   const [userType, setUserType] = useState("");
 
-  const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errors] = useState({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [notification, setNotification] = useState(null);
 
   // New fields from main
   const [favoriteAnimal, setFavoriteAnimal] = useState("");
@@ -63,21 +63,10 @@ export default function EditProfile() {
   const [tempBio, setTempBio] = useState("");
 
   const router = useRouter();
+  const { user, loading } = useUser();
   usePageAnalytics("/profile");
 
-  // Auth source of truth
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
-        setUser(currentUser);
-      }
-    });
-    return () => unsub();
-  }, [router]);
-
-  // Fetch profile
+  // Fetch profile data whenever React `user` changes
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -108,9 +97,7 @@ export default function EditProfile() {
       if (Array.isArray(userData.hobbies)) {
         setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
       } else if (userData.hobby) {
-        setHobbies([
-          { id: userData.hobby.toLowerCase(), label: userData.hobby },
-        ]);
+        setHobbies([{ id: userData.hobby.toLowerCase(), label: userData.hobby }]);
       } else {
         setHobbies([]);
       }
@@ -187,6 +174,9 @@ export default function EditProfile() {
     }
   };
 
+  if (loading) {
+    return <LoadingSpinner />;
+  }
   return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
       <Dialog
@@ -276,9 +266,7 @@ export default function EditProfile() {
           <div className="space-y-6 mt-6">
             {/* Personal Info */}
             <div className="rounded-2xl bg-white p-4">
-              <h3 className="text-sm font-semibold text-secondary mb-4">
-                Personal Information
-              </h3>
+              <h3 className="text-sm font-semibold text-secondary mb-4">Personal Information</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
@@ -347,9 +335,7 @@ export default function EditProfile() {
                     onClick={handleOpenBioModal}
                     className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
                   >
-                    <span className="truncate">
-                      {bio || "Add your bio or challenges..."}
-                    </span>
+                    <span className="truncate">{bio || "Add your bio or challenges..."}</span>
                   </button>
                 </div>
 
@@ -372,9 +358,7 @@ export default function EditProfile() {
                 <div className="rounded-2xl bg-white p-4">
                   <h3 className="text-sm font-semibold text-secondary mb-4">
                     Education{" "}
-                    {(userType === "child" || userType === "local_volunteer") && (
-                      <>{"& Family"}</>
-                    )}
+                    {(userType === "child" || userType === "local_volunteer") && <>{"& Family"}</>}
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -441,9 +425,7 @@ export default function EditProfile() {
 
                 {/* Interests */}
                 <div className="rounded-2xl bg-white p-4">
-                  <h3 className="text-sm font-semibold text-secondary mb-4">
-                    Interests
-                  </h3>
+                  <h3 className="text-sm font-semibold text-secondary mb-4">Interests</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {userType === "international_buddy" && (

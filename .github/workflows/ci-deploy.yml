@@ -34,17 +34,20 @@ jobs:
           set -euo pipefail
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            mapfile -t changed_files < <(
-              git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- \
-                "*.css" "*.js" "*.json" "*.jsx" "*.md" "*.yml" "*.yaml" || true
-            )
+            base_repo="${{ github.event.pull_request.base.repo.clone_url }}"
+            base_ref="${{ github.base_ref }}"
           else
-            mapfile -t changed_files < <(
-              git diff --name-only --diff-filter=ACMR "${{ github.event.before }}..HEAD" -- \
-                "*.css" "*.js" "*.json" "*.jsx" "*.md" "*.yml" "*.yaml" || true
-            )
+            base_repo="https://github.com/murphy-charitable-foundation/penpalapp-nextjs.git"
+            base_ref="main"
           fi
+
+          git fetch --no-tags --depth=1 "$base_repo" "$base_ref"
+          base_sha="$(git rev-parse FETCH_HEAD)"
+
+          mapfile -t changed_files < <(
+            git diff --name-only --diff-filter=ACMR "$base_sha...HEAD" -- \
+              "*.css" "*.js" "*.json" "*.jsx" "*.md" "*.yml" "*.yaml" || true
+          )
 
           if [ "${#changed_files[@]}" -eq 0 ]; then
             echo "No changed files require Prettier checks."
