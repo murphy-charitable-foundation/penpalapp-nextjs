@@ -75,16 +75,11 @@ export default function Home() {
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
-              name: `${recipient.first_name ?? "Unknown"} ${
-                recipient.last_name ?? ""
-              }`,
               country: recipient.country ?? "Unknown",
               lastMessage: message.content || "",
               lastMessageDate: message.created_at || "",
               status: message.status || "",
               conversationsId: id || "",
-              isRecipient: message?.sent_by?.id !== uid,
-              unread: message?.unread || false,
               isRecipient: message?.sent_by?.id !== uid,
               unread: message?.unread || false,
             };
@@ -201,41 +196,46 @@ export default function Home() {
   // }, []);
 
   return (
-    <PageBackground>
-      <PageContainer maxWidth="lg">
-        <>
-          {isLoading ? (
-            <InboxSkeleton />
-          ) : (
-            <>
-              <div className="w-full bg-gray-100 h-screen overflow-y-auto fixed top-0 left-0 z-[100]">
+    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {isLoading ? (
+          <InboxSkeleton />
+        ) : (
+          <>
+            <div className="shrink-0 border-b">
+              <div className="px-4 pt-4">
                 <BackButton />
-                <div className="max-w-lg mx-auto bg-white shadow-md rounded-lg py-24">
-                  <ProfileHeader
-                    userName={userName}
-                    country={country}
-                    profileImage={profileImage}
-                    id={userId}
-                  />
-                  <main className="p-6 bg-white">
-                    <section className="mt-8">
-                      {conversations.length > 0 ? (
-                        <ConversationList conversations={conversations} />
-                      ) : (
-                        <EmptyState
-                          title="New friends are coming!"
-                          description="Many friends are coming hang tight!"
-                        />
-                      )}
-                    </section>
-                  </main>
+              </div>
+              <ProfileHeader
+                userName={userName}
+                country={country}
+                profileImage={profileImage}
+                id={userId}
+              />
+            </div>
 
-                </div>
-              </div>
-              <div className="fixed bottom-0 left-0 right-0 z-[101]">
-                <NavBar />
-              </div>
-              {userType === "admin" && (
+            <div className="flex-1 min-h-0 overflow-y-auto px-3">
+              <main className="p-6 bg-white">
+                <section className="mt-8">
+                  {conversations.length > 0 ? (
+                    <ConversationList conversations={conversations} />
+                  ) : (
+                    <EmptyState
+                      title="New friends are coming!"
+                      description="Many friends are coming hang tight!"
+                    />
+                  )}
+                </section>
+              </main>
+            </div>
+
+            {userType === "admin" && (
+              <div className="px-3 pt-4">
                 <Button
                   btnText="Check For Inactive Chats"
                   color="bg-black"
@@ -249,10 +249,14 @@ export default function Home() {
                     iterateConversations();
                   }}
                 />
-              )}
-            </>
-          )}
-        </>
+              </div>
+            )}
+
+            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+              <NavBar />
+            </div>
+          </>
+        )}
         {/* Add animation keyframes */}
         <style jsx global>{`
           @keyframes slideIn {
