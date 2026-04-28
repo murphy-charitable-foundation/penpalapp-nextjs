@@ -31,10 +31,23 @@ export async function POST(request) {
     const body = await request.json();
     //Grab Message Information
     const {receiver_email, currentUrl, sender, excerpt } = body; 
-    const userRef = doc(db, "users", sender);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.data();
-    const message = `Hello, the user with the uid: ${receiver_email} , reported this message: ${currentUrl} sent by a user with the name: ${userData.first_name} ${userData.last_name}. Here is a brief excerpt from the reported message, "${excerpt}"`;
+    let reporterName = sender;
+
+    try {
+      const userRef = doc(db, "users", sender);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+
+      if (userData?.first_name || userData?.last_name) {
+        reporterName = `${userData?.first_name || ""} ${userData?.last_name || ""}`.trim();
+      }
+    } catch (error) {
+      logError(error, {
+        description: "Could not load reporting user profile.",
+      });
+    }
+
+    const message = `Hello, the user with the uid: ${receiver_email} , reported this message: ${currentUrl} sent by a user with the name: ${reporterName}. Here is a brief excerpt from the reported message, "${excerpt}"`;
     const emailHtml = `
       <html>
         <head>
