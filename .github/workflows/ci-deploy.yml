@@ -2,7 +2,7 @@ name: CI + Deploy (prebuilt)
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
     branches: [main]
 
@@ -12,10 +12,52 @@ permissions:
 
 env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  VERCEL_ORG:   ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_ORG: ${{ secrets.VERCEL_ORG_ID }}
 
 jobs:
+  format_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting on changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_repo="${{ github.event.pull_request.base.repo.clone_url }}"
+            base_ref="${{ github.base_ref }}"
+          else
+            base_repo="https://github.com/murphy-charitable-foundation/penpalapp-nextjs.git"
+            base_ref="main"
+          fi
+
+          git fetch --no-tags --depth=1 "$base_repo" "$base_ref"
+          base_sha="$(git rev-parse FETCH_HEAD)"
+
+          mapfile -t changed_files < <(
+            git diff --name-only --diff-filter=ACMR "$base_sha...HEAD" -- \
+              "*.css" "*.js" "*.json" "*.jsx" "*.md" "*.yml" "*.yaml" || true
+          )
+
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "No changed files require Prettier checks."
+            exit 0
+          fi
+
+          npx prettier --check "${changed_files[@]}"
+
   build_and_deploy:
+    needs: format_check
     runs-on: ubuntu-latest
     steps:
       # Checkout
@@ -25,7 +67,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       # Vercel CLI
       - name: Setup Vercel CLI
@@ -57,7 +99,7 @@ jobs:
         id: deploy
         env:
           VC_TOKEN: ${{ env.VERCEL_TOKEN }}
-          VC_TEAM:  ${{ env.VERCEL_ORG }}
+          VC_TEAM: ${{ env.VERCEL_ORG }}
         run: |
           set -e
           if [ "${{ github.ref_name }}" = "main" ]; then

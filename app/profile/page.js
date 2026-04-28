@@ -46,7 +46,6 @@ export default function EditProfile() {
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");
   const [isSaved, setIsSaved] = useState(false);
-  const [userType, setUserType] = useState("international_buddy");
   const [notification, setNotification] = useState(null);
 
   // New fields from main
@@ -98,9 +97,7 @@ export default function EditProfile() {
       if (Array.isArray(userData.hobbies)) {
         setHobbies(userData.hobbies.map((id) => ({ id, label: id })));
       } else if (userData.hobby) {
-        setHobbies([
-          { id: userData.hobby.toLowerCase(), label: userData.hobby },
-        ]);
+        setHobbies([{ id: userData.hobby.toLowerCase(), label: userData.hobby }]);
       } else {
         setHobbies([]);
       }
@@ -269,9 +266,7 @@ export default function EditProfile() {
           <div className="space-y-6 mt-6">
             {/* Personal Info */}
             <div className="rounded-2xl bg-white p-4">
-              <h3 className="text-sm font-semibold text-secondary mb-4">
-                Personal Information
-              </h3>
+              <h3 className="text-sm font-semibold text-secondary mb-4">Personal Information</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
@@ -340,9 +335,7 @@ export default function EditProfile() {
                     onClick={handleOpenBioModal}
                     className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
                   >
-                    <span className="truncate">
-                      {bio || "Add your bio or challenges..."}
-                    </span>
+                    <span className="truncate">{bio || "Add your bio or challenges..."}</span>
                   </button>
                 </div>
 
@@ -365,9 +358,7 @@ export default function EditProfile() {
                 <div className="rounded-2xl bg-white p-4">
                   <h3 className="text-sm font-semibold text-secondary mb-4">
                     Education{" "}
-                    {(userType === "child" || userType === "local_volunteer") && (
-                      <>{"& Family"}</>
-                    )}
+                    {(userType === "child" || userType === "local_volunteer") && <>{"& Family"}</>}
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -434,9 +425,7 @@ export default function EditProfile() {
 
                 {/* Interests */}
                 <div className="rounded-2xl bg-white p-4">
-                  <h3 className="text-sm font-semibold text-secondary mb-4">
-                    Interests
-                  </h3>
+                  <h3 className="text-sm font-semibold text-secondary mb-4">Interests</h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {userType === "international_buddy" && (
