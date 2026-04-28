@@ -1,7 +1,21 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  updateDoc,
+  where,
+  arrayUnion,
+  increment,
+} from "firebase/firestore";
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
-import { auth, db } from "../firebaseConfig"
+import { auth, db } from "../firebaseConfig";
 import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
@@ -12,15 +26,15 @@ const getUserDoc = async () => {
   return { userDocRef, userDocSnapshot };
 };
 
-export const getUserPfp = async(uid) => {
+export const getUserPfp = async (uid) => {
   const path = `profile/${uid}/profile-image`;
   try {
     const photoRef = storageRef(storage, path);
-    const downloaded = await getDownloadURL(photoRef)
+    const downloaded = await getDownloadURL(photoRef);
     return downloaded;
   } catch (error) {
     // Return null if there is no profile; default should be handled by UI
-    if (error.code === 'storage/object-not-found') {
+    if (error.code === "storage/object-not-found") {
       return null;
     }
     logError(error, {
@@ -29,8 +43,7 @@ export const getUserPfp = async(uid) => {
     // Returns null for all other errors so it only has one fallback mechanism
     return null;
   }
-  
-}
+};
 
 export const fetchLetterboxes = async () => {
   const retryFetch = () => setTimeout(() => fetchLetterboxes(), DELAY);
@@ -52,8 +65,7 @@ export const fetchLetterboxes = async () => {
 };
 
 export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
-  const retryFetch = () =>
-    setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
+  const retryFetch = () => setTimeout(() => fetchLetterbox(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -77,12 +89,7 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
           startAfter(lastVisible),
           limit(lim)
         )
-      : query(
-          lRef,
-          where("status", "==", "sent"),
-          orderBy("created_at", "desc"),
-          limit(lim)
-        );
+      : query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"), limit(lim));
   } else {
     letterboxQuery = lastVisible
       ? query(
@@ -91,11 +98,7 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
           orderBy("created_at", "desc"),
           startAfter(lastVisible)
         )
-      : query(
-          lRef,
-          where("status", "==", "sent"),
-          orderBy("created_at", "desc")
-        );
+      : query(lRef, where("status", "==", "sent"), orderBy("created_at", "desc"));
   }
 
   /*if (lim) {
@@ -176,10 +179,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
   return draft;
 };
 
-export const fetchLatestLetterFromLetterboxOld = async (
-  letterboxId,
-  userRef
-) => {
+export const fetchLatestLetterFromLetterboxOld = async (letterboxId, userRef) => {
   const draft = await fetchDraft(letterboxId, userRef, false);
   if (draft) return draft;
 
@@ -241,10 +241,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
 
   if (allLetters.length === 0) return null;
   else if (allLetters.length === 1) return allLetters[0];
-  else if (
-    allLetters[0]?.updated_at?.toDate?.() >
-    allLetters[1]?.updated_at?.toDate?.()
-  )
+  else if (allLetters[0]?.updated_at?.toDate?.() > allLetters[1]?.updated_at?.toDate?.())
     return allLetters[0];
   else return allLetters[1];
 };
@@ -267,7 +264,7 @@ export const fetchRecipients = async (id) => {
   for (const user of users) {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
-    const userData = selUser.data();    // utility/helper variable
+    const userData = selUser.data(); // utility/helper variable
 
     // Call the only source of profile
     const pfpUrl = await getUserPfp(user.id);
@@ -296,81 +293,79 @@ export const sendLetter = async (letterData, letterRef, draftId) => {
 };
 
 export const createConnection = async (userDocRef, kidDocRef) => {
-    try {
-        const kidSnap = await getDoc(kidDocRef);
-        const buddySnap = await getDoc(userDocRef);
-        
-          if (!kidSnap.exists() && !buddySnap.exists()) {
-            logError(error, {
-              description: "Neither of child nor international buddy exist in the users collection: ",
-            })
-            throw new Error("Neither of child nor international buddy exist in the users collection");
-          }
-          console.log("Kid:", kidSnap);
-          console.log("User:", buddySnap);
+  try {
+    const kidSnap = await getDoc(kidDocRef);
+    const buddySnap = await getDoc(userDocRef);
 
-          if (kidSnap.exists()) {
-            if (kidSnap.data().connected_penpals_count >= 3) {
-              throw new Error("Kid has exceeded penpal limit");
-            }
-            await updateDoc(kidDocRef, {
-              connected_penpals: arrayUnion(userDocRef),
-              connected_penpals_count: increment(1),
-            });
-          }
-
-          if (buddySnap.exists()) {
-            await updateDoc(userDocRef, {
-              connected_penpals: arrayUnion(kidDocRef),
-              connected_penpals_count: increment(1),
-            });
-          }
-
-          // query DB to check for existing letterbox
-          let letterboxQuery = query(
-            collection(db, "letterbox"),
-            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
-          );
-
-          let querySnapshot = await getDocs(letterboxQuery);
-          
-          if (querySnapshot.empty) {
-            letterboxQuery = query(
-              collection(db, "letterbox"),
-              where("members", "==", [kidDocRef, userDocRef])
-            );
-            querySnapshot = await getDocs(letterboxQuery);
-          }
-
-          let letterboxRef;
-
-          if (querySnapshot.empty) { // if there's no letterbox, create one.
-            letterboxRef = await addDoc(collection(db, "letterbox"), {
-              members: [
-                userDocRef, 
-                kidDocRef   
-              ],
-              created_at: new Date(),
-              archived_at: null,
-            });
-
-            await addDoc(collection(letterboxRef, "letters"), {
-              sent_by: userDocRef,
-              content: "Please complete your first letter here...",
-              status: "draft",
-              updated_at: new Date(),
-              created_at: new Date(),
-              deleted: null
-            });
-
-            console.log(letterboxRef);
-            return letterboxRef;
-          } else {
-            // Penpal and kid are already connected, do nothing
-            return querySnapshot.ref;
-          }
-    } catch (error) {
-      logError("There has been a error creating the connection: " + error.message, { error });
-      throw error; // rethrow so callers can handle it
+    if (!kidSnap.exists() && !buddySnap.exists()) {
+      logError(error, {
+        description: "Neither of child nor international buddy exist in the users collection: ",
+      });
+      throw new Error("Neither of child nor international buddy exist in the users collection");
     }
-  };
+    console.log("Kid:", kidSnap);
+    console.log("User:", buddySnap);
+
+    // query DB to check for existing letterbox
+    let letterboxQuery = query(
+      collection(db, "letterbox"),
+      where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
+    );
+
+    let querySnapshot = await getDocs(letterboxQuery);
+
+    if (querySnapshot.empty) {
+      letterboxQuery = query(
+        collection(db, "letterbox"),
+        where("members", "==", [kidDocRef, userDocRef])
+      );
+      querySnapshot = await getDocs(letterboxQuery);
+    }
+
+    let letterboxRef;
+
+    if (querySnapshot.empty) {
+      // if there's no letterbox, create one.
+      if (kidSnap.exists()) {
+        if (kidSnap.data().connected_penpals_count >= 3) {
+          throw new Error("Kid has exceeded penpal limit");
+        }
+        await updateDoc(kidDocRef, {
+          connected_penpals: arrayUnion(userDocRef),
+          connected_penpals_count: increment(1),
+        });
+      }
+
+      if (buddySnap.exists()) {
+        await updateDoc(userDocRef, {
+          connected_penpals: arrayUnion(kidDocRef),
+          connected_penpals_count: increment(1),
+        });
+      }
+
+      letterboxRef = await addDoc(collection(db, "letterbox"), {
+        members: [userDocRef, kidDocRef],
+        created_at: new Date(),
+        archived_at: null,
+      });
+
+      await addDoc(collection(letterboxRef, "letters"), {
+        sent_by: userDocRef,
+        content: "Please complete your first letter here...",
+        status: "draft",
+        updated_at: new Date(),
+        created_at: new Date(),
+        deleted: null,
+      });
+
+      console.log(letterboxRef);
+      return letterboxRef;
+    } else {
+      // Penpal and kid are already connected, do nothing
+      return querySnapshot.docs[0].ref;
+    }
+  } catch (error) {
+    logError("There has been a error creating the connection: " + error.message, { error });
+    throw error; // rethrow so callers can handle it
+  }
+};

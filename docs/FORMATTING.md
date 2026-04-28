@@ -36,5 +36,5 @@ npm run format:check
 
 ## 4. CI behavior
 
-CI runs `npm run format:check`.
-If files are not formatted, the check fails.
+CI checks Prettier formatting only for files changed in the current push or pull request.
+This prevents legacy formatting differences from blocking unrelated work while still enforcing formatting on new edits.
