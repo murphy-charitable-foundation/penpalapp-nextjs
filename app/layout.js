@@ -3,13 +3,11 @@ import './globals.css'
 import NavigationStateManager from '../components/loading/NavigationStateManager'
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { NotificationHandler } from '../components/NotificationHandler'
+import { CachedUsersProvider } from './contexts/CachedUserContext'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
-import { CachedUsersProvider } from './contexts/CachedUserContext'
 
 const inter = Inter({ subsets: ['latin'] })
-
 export const metadata = {
   title: {
     default: 'Pen Pal Magic App',
@@ -17,7 +15,6 @@ export const metadata = {
   },
   description: 'To connect 2000 rural Ugandan Children to the World',
 }
-
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -26,17 +23,15 @@ export default function RootLayout({ children }) {
       </head>
       <body className={inter.className}>
         <CachedUsersProvider>
-          <UserProvider>
-            <NotificationHandler>
+            <UserProvider>
               <NavigationProvider>
                 <Suspense fallback={<LoadingSpinner />}>
                   <NavigationStateManager />
                   {children}
                 </Suspense>
               </NavigationProvider>
-            </NotificationHandler>
-          </UserProvider>
-        </CachedUsersProvider>
+            </UserProvider> 
+        </CachedUsersProvider>     
       </body>
     </html>
   )
