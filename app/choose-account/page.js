@@ -12,7 +12,7 @@ import Dialog from "../../components/general/Dialog";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
-import { useCachedUsers } from "../contexts/CachedUserContext";
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 function normalizeUser(u) {
@@ -33,14 +33,12 @@ export default function ChooseAccountPage() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const router = useRouter();
-  const { cachedUsers, hydrated, clearCachedUsers, setCachedUsers } = useCachedUsers();
+  const { cachedUserLogins, hydrated, clearCachedUserLogins } = useCachedUserLogins();
   const hasRedirected = useRef(false);
-  const users = (cachedUsers ?? []).map(normalizeUser);
+  const users = (cachedUserLogins ?? []).map(normalizeUser);
 
   useEffect(() => {
     if (!hydrated) return;
-    console.log("cachedUsers:", cachedUsers);
-    console.log("hydrated:", hydrated);
     if (users.length === 0) {
       if (hasRedirected.current) return;
       hasRedirected.current = true;
@@ -182,7 +180,6 @@ export default function ChooseAccountPage() {
               onClick={() => router.push("/login?force=1")}
             />
           </div>
-
           {/* ✅ Added forgot password here */}
           <button
             type="button"

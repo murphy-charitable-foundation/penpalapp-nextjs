@@ -59,7 +59,7 @@ export default function NavBar() {
     setIsNavigating(true);
     try {
       await signOut(auth);
-      router.push("/login");
+      router.push("/choose-profile");
     } catch (err) {
       console.error(err);
     } finally {

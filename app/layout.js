@@ -8,6 +8,7 @@ import { CachedUsersProvider } from './contexts/CachedUserContext'
 import { DormantLetterboxProvider } from '../context/DormantLetterboxContext'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
+import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,16 +28,16 @@ export default function RootLayout({ children }) {
       </head>
       <body className={inter.className}>
         <DormantLetterboxProvider>
-          <UserProvider>
-            <NavigationProvider>
-              <CachedUsersProvider>
+          <CachedUserLoginsProvider>
+            <UserProvider>
+              <NavigationProvider>
                 <Suspense fallback={<LoadingSpinner />}>
                   <NavigationStateManager />
                   {children}
                 </Suspense>
-              </CachedUsersProvider>
-            </NavigationProvider>
-          </UserProvider>
+              </NavigationProvider>
+            </UserProvider>      
+          </CachedUserLoginsProvider> 
         </DormantLetterboxProvider>
       </body>
     </html>
