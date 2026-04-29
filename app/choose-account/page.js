@@ -1,3 +1,5 @@
+//choose-account/page.js
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -33,7 +35,12 @@ export default function ChooseAccountPage() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const router = useRouter();
-  const { cachedUsers, hydrated, clearCachedUsers } = useCachedUsers();
+  const {
+    cachedUsers,
+    hydrated,
+    clearCachedUsers,
+    removeCachedUser,
+  } = useCachedUsers();
   const hasRedirected = useRef(false);
   const users = (cachedUsers ?? []).map(normalizeUser);
 
@@ -87,6 +94,10 @@ export default function ChooseAccountPage() {
     setError("");
   };
 
+  const handleDeleteUser = (id) => {
+    removeCachedUser(id);
+  };
+
   if (isLoading) return <LoadingSpinner />;
 
   const modalContent = selectedUser ? (
@@ -130,30 +141,40 @@ export default function ChooseAccountPage() {
   return (
     <PageBackground>
       <PageContainer maxWidth="md">
-        <PageHeader title="Choose a profile to log in..." image={false} showBackButton={false} />
-
+        <PageHeader title="Choose Account" subtitle="Select a profile to sign in" />
         <div className="grid grid-cols-2 gap-4 px-6 mt-3">
           {users.map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => openModal(user)}
-              className="bg-white rounded-lg p-4 shadow-md border border-gray-200 flex flex-col items-center hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-dark-green focus:ring-offset-2"
-            >
-              <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
-                <ProfileImage
-                  photo_uri={user.photo_uri}
-                  first_name={user.first_name}
-                  size={20}
-                />
-              </div>
-              <p className="mt-3 font-semibold text-gray-900 text-sm text-center line-clamp-2">
-                {user.first_name} {user.last_name}
-              </p>
-              <span className="text-xs text-gray-500 mt-1">
-                Tap to sign in
-              </span>
-            </button>
+            <div key={user.id} className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteUser(user.id);
+                }}
+                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-white shadow text-gray-400 hover:text-red-500"
+              >
+                ✕
+              </button>
+              <button
+                type="button"
+                onClick={() => openModal(user)}
+                className="bg-white rounded-lg p-4 shadow-md border border-gray-200 flex flex-col items-center hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-dark-green focus:ring-offset-2 w-full"
+              >
+                <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
+                  <ProfileImage
+                    photo_uri={user.photo_uri}
+                    first_name={user.first_name}
+                    size={20}
+                  />
+                </div>
+                <p className="mt-3 font-semibold text-gray-900 text-sm text-center line-clamp-2">
+                  {user.first_name} {user.last_name}
+                </p>
+                <span className="text-xs text-gray-500 mt-1">
+                  Tap to sign in
+                </span>
+              </button>
+            </div>
           ))}
         </div>
 
@@ -165,6 +186,15 @@ export default function ChooseAccountPage() {
               onClick={() => router.push("/login?force=1")}
             />
           </div>
+          {/* Added forgot password here */}
+          <button
+            type="button"
+            onClick={() => router.push("/reset-password")}
+            className="text-sm text-blue-600 hover:text-blue-500 underline"
+          >
+            Forgot password?
+          </button>
+
           <button
             type="button"
             onClick={() => {
