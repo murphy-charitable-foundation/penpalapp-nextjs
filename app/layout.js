@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/loading/LoadingSpinner'
 import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
+import { CachedUsersProvider } from './contexts/CachedUserContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,16 +25,18 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
-        <UserProvider>
-          <NotificationHandler>
-            <NavigationProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <NavigationStateManager />
-                {children}
-              </Suspense>
-            </NavigationProvider>
-          </NotificationHandler>
-        </UserProvider>       
+        <CachedUsersProvider>
+          <UserProvider>
+            <NotificationHandler>
+              <NavigationProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <NavigationStateManager />
+                  {children}
+                </Suspense>
+              </NavigationProvider>
+            </NotificationHandler>
+          </UserProvider>
+        </CachedUsersProvider>
       </body>
     </html>
   )

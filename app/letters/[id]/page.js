@@ -14,7 +14,7 @@ import {
   limit,
   getDocs,
 } from "firebase/firestore";
-import { useUser } from "../../../contexts/UserContext";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   fetchRecipients,
   sendNotification,
@@ -32,6 +32,7 @@ import { PageBackground } from "../../../components/general/PageBackground";
 import { AlertTriangle } from "lucide-react";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
+import React from "react";
 
 
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -108,10 +109,12 @@ export default function Page({ params }) {
 
   const { id } = params;
 
+  const auth = getAuth();
   const router = useRouter();
-  const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
+
+  const [user, setUser] = useState(null);
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -620,14 +623,20 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
-    setIsLoading(true);
 
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setIsLoading(true);
 
-    const initializeData = async () => {
+      if (!currentUser) {
+        router.push("/login");
+        return;
+      }
+
+      setUser(currentUser);
+        
+
+      
+
       try {
         const letterboxRef = doc(db, "letterbox", id);
         const letterboxDoc = await getDoc(letterboxRef);
@@ -638,7 +647,7 @@ export default function Page({ params }) {
           return;
         }
 
-        const userDocRef = doc(db, "users", user.uid);
+        const userDocRef = doc(db, "users", currentUser.uid);
         setUserRef(userDocRef);
 
         const userDoc = await getDoc(userDocRef);
@@ -692,7 +701,7 @@ export default function Page({ params }) {
         }
 
         if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", user.uid);
+          const userRefDoc = doc(db, "users", currentUser.uid);
 
           // All messages written BY ME
           const myMessagesQuery = query(
@@ -750,7 +759,7 @@ export default function Page({ params }) {
           const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
-              if (message.sent_by?.id !== user.uid) {
+              if (message.sent_by?.id !== currentUser.uid) {
                 const recipient = fetchedRecipients.find(
                   (r) => r.id === message.sent_by?.id
                 );
@@ -775,10 +784,12 @@ export default function Page({ params }) {
       } finally {
         setIsLoading(false);
       }
-    };
+    });
 
-    initializeData();
-  }, [id, user]);
+    return () => {
+      unsubscribe();
+    };
+  }, [id, router]);
 
   useEffect(() => {
     return () => {
@@ -823,7 +834,7 @@ export default function Page({ params }) {
   };
 
 return (
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+  <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <PageContainer
       width="compactXS"
       padding="none"

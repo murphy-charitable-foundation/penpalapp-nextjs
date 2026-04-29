@@ -5,6 +5,7 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { useRouter } from "next/navigation";
 
+import Image from "next/image";
 import Button from "../../components/general/Button";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent } from "../utils/analytics";
