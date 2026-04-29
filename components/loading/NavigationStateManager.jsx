@@ -5,174 +5,165 @@ import { usePathname, useSearchParams } from "next/navigation";
 import LoadingSpinner from "../loading/LoadingSpinner";
 
 export default function NavigationStateManager() {
+  // Get current route and query params from Next.js
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Spinner visibility and exit animation state
   const [showSpinner, setShowSpinner] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  // Stores the current URL (path + query)
+  // Store current URL to detect route changes
   const currentUrlRef = useRef("");
-
-  // Tracks whether a navigation has started
-  const navigationStartedRef = useRef(false);
-
-  // Stores navigation start time
-  const startTimeRef = useRef(0);
-
-  // Used to skip logic on initial mount
   const mountedRef = useRef(false);
 
-  // Timer references for controlling spinner behavior
-  const minTimerRef = useRef(null);
+  // Track navigation start time for timing control
+  const startTimeRef = useRef(0);
+
+  // Two timers only: one for controlling visibility, one for exit animation
+  const hideTimerRef = useRef(null);
   const exitTimerRef = useRef(null);
-  const safetyTimerRef = useRef(null);
 
-  // Minimum time the spinner should stay visible
-  const MIN_DISPLAY_TIME = 600;
+  // Timing configuration for UX smoothing
+  const MIN_DISPLAY_TIME = 450;       // Minimum spinner visibility
+  const POST_ROUTE_HOLD_TIME = 500;   // Extra delay after route change
+  const FADE_OUT_TIME = 180;          // Fade-out animation duration
+  const MAX_DISPLAY_TIME = 5000;      // Safety timeout to prevent stuck spinner
 
-  // Duration of exit animation
-  const FADE_OUT_TIME = 200;
-
-  // Fallback timeout in case navigation never finishes
-  const MAX_WAIT_TIME = 4000;
-
-  // Clear all active timers
+  // Clear all active timers to avoid conflicts
   const clearTimers = useCallback(() => {
-    if (minTimerRef.current) {
-      clearTimeout(minTimerRef.current);
-      minTimerRef.current = null;
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
     }
 
     if (exitTimerRef.current) {
       clearTimeout(exitTimerRef.current);
       exitTimerRef.current = null;
     }
-
-    if (safetyTimerRef.current) {
-      clearTimeout(safetyTimerRef.current);
-      safetyTimerRef.current = null;
-    }
   }, []);
 
-  // Reset spinner state and navigation tracking
-  const reset = useCallback(() => {
-    clearTimers();
-    navigationStartedRef.current = false;
-    startTimeRef.current = 0;
-    setShowSpinner(false);
-    setIsExiting(false);
-  }, [clearTimers]);
+  // Trigger fade-out animation and fully hide spinner after delay
+  const hideSpinner = useCallback(() => {
+    setIsExiting(true);
 
-  // Triggered when navigation starts
+    exitTimerRef.current = setTimeout(() => {
+      setShowSpinner(false);
+      setIsExiting(false);
+    }, FADE_OUT_TIME);
+  }, []);
+
+  // Called when navigation starts
   const startNavigation = useCallback(() => {
-    // Prevent duplicate triggers
-    if (navigationStartedRef.current) return;
+    clearTimers();
 
-    navigationStartedRef.current = true;
+    // Record start time to control minimum display duration
     startTimeRef.current = Date.now();
 
     setIsExiting(false);
     setShowSpinner(true);
 
-    // Safety timeout in case finishNavigation is never called
-    safetyTimerRef.current = setTimeout(() => {
-      reset();
-    }, MAX_WAIT_TIME);
-  }, [reset]);
+    // Fallback: auto-hide spinner if something goes wrong
+    hideTimerRef.current = setTimeout(() => {
+      hideSpinner();
+    }, MAX_DISPLAY_TIME);
+  }, [clearTimers, hideSpinner]);
 
-  // Triggered when navigation finishes (route change detected)
+  // Called when navigation finishes (URL actually changes)
   const finishNavigation = useCallback(() => {
-    if (!navigationStartedRef.current) return;
-
-    const elapsed = Date.now() - startTimeRef.current;
+    clearTimers();
 
     // Ensure spinner stays visible for at least MIN_DISPLAY_TIME
-    const remaining = Math.max(0, MIN_DISPLAY_TIME - elapsed);
+    const elapsed = Date.now() - startTimeRef.current;
+    const remainingMinTime = Math.max(0, MIN_DISPLAY_TIME - elapsed);
 
-    minTimerRef.current = setTimeout(() => {
-      setIsExiting(true);
+    // Add extra hold time to smooth transition
+    hideTimerRef.current = setTimeout(() => {
+      hideSpinner();
+    }, remainingMinTime + POST_ROUTE_HOLD_TIME);
+  }, [clearTimers, hideSpinner]);
 
-      // Allow exit animation before fully hiding spinner
-      exitTimerRef.current = setTimeout(() => {
-        reset();
-      }, FADE_OUT_TIME);
-    }, remaining);
-  }, [reset]);
-
-  // Track route changes and mark navigation as finished
+  // Detect route changes using pathname + query string
   useEffect(() => {
-    const qs = searchParams?.toString?.() || "";
-    currentUrlRef.current = pathname + (qs ? `?${qs}` : "");
+    const qs = searchParams?.toString() || "";
+    const newUrl = pathname + (qs ? `?${qs}` : "");
 
-    // Skip first render
+    // Skip initial mount
     if (!mountedRef.current) {
       mountedRef.current = true;
+      currentUrlRef.current = newUrl;
       return;
     }
 
-    finishNavigation();
+    // If URL changed, navigation is considered finished
+    if (newUrl !== currentUrlRef.current) {
+      currentUrlRef.current = newUrl;
+      finishNavigation();
+    }
   }, [pathname, searchParams, finishNavigation]);
 
+  // Global click listener to handle both <Link> and <a> navigation
   useEffect(() => {
-    // Detect clicks on <a> (including Next.js Link)
-    const handleClick = (e) => {
-      const link = e.target.closest?.("a");
-      if (!link) return;
+    const handleLinkClick = (event) => {
+      const anchor = event.target.closest("a");
 
-      // Ignore modified clicks or non-navigation cases
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+
+      // Ignore links without href
+      if (!href) return;
+
+      // Ignore external links
+      if (href.startsWith("http")) return;
+
+      // Ignore hash-only navigation
+      if (href.startsWith("#")) return;
+
+      // Ignore modified clicks (new tab, etc.)
       if (
-        e.defaultPrevented ||
-        e.button !== 0 ||
-        link.target === "_blank" ||
-        link.hasAttribute("download") ||
-        e.metaKey ||
-        e.ctrlKey ||
-        e.shiftKey ||
-        e.altKey
+        anchor.target === "_blank" ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
       ) {
         return;
       }
 
-      const href = link.getAttribute("href");
-      if (!href || href.startsWith("#")) return;
+      const currentUrl =
+        window.location.pathname + window.location.search;
 
-      let nextUrl;
-      try {
-        nextUrl = new URL(link.href, window.location.origin);
-      } catch {
-        return;
-      }
+      // Ignore navigation to the same URL
+      if (href === currentUrl || href === window.location.pathname) return;
 
-      // Ignore external links
-      if (nextUrl.origin !== window.location.origin) return;
-
-      const nextPath = nextUrl.pathname + nextUrl.search;
-
-      // Only trigger navigation if URL actually changes
-      if (nextPath !== currentUrlRef.current) {
-        startNavigation();
-      }
-    };
-
-    // Handle browser back/forward navigation
-    const handlePopState = () => {
+      // Start spinner for valid internal navigation
       startNavigation();
     };
 
-    // Handle manual navigation (e.g., router.push via custom hook)
+    document.addEventListener("click", handleLinkClick);
+
+    return () => {
+      document.removeEventListener("click", handleLinkClick);
+    };
+  }, [startNavigation]);
+
+  // Handle manual navigation triggers and browser back/forward
+  useEffect(() => {
     const handleManualStart = () => {
       startNavigation();
     };
 
-    document.addEventListener("click", handleClick, true);
-    window.addEventListener("popstate", handlePopState);
+    const handlePopState = () => {
+      startNavigation();
+    };
+
     window.addEventListener("app:navigation-start", handleManualStart);
+    window.addEventListener("popstate", handlePopState);
 
     return () => {
-      document.removeEventListener("click", handleClick, true);
-      window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("app:navigation-start", handleManualStart);
+      window.removeEventListener("popstate", handlePopState);
       clearTimers();
     };
   }, [startNavigation, clearTimers]);
@@ -180,5 +171,6 @@ export default function NavigationStateManager() {
   // Do not render anything if spinner is not active
   if (!showSpinner) return null;
 
+  // Render full-screen spinner with optional exit animation
   return <LoadingSpinner exiting={isExiting} />;
 }

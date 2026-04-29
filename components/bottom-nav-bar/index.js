@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
   FaUserAlt,
@@ -19,12 +19,13 @@ import { useUser } from "../../contexts/UserContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const router = useRouter();
+  const pathname = usePathname();
   const { userType } = useUser();
 
   const containerRef = useRef(null);
 
-  // close menu when clicking outside
   useEffect(() => {
     const handleOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -33,18 +34,27 @@ export default function NavBar() {
     };
 
     document.addEventListener("pointerdown", handleOutside);
-    return () =>
+
+    return () => {
       document.removeEventListener("pointerdown", handleOutside);
+    };
   }, []);
 
   if (userType === null) return null;
 
   const startGlobalNavSpinner = () => {
-    window.dispatchEvent(new Event("pp:navigation:start"));
+    window.dispatchEvent(new Event("app:navigation-start"));
+  };
+
+  const finishGlobalNavSpinner = () => {
+    window.dispatchEvent(new Event("app:navigation-finish"));
   };
 
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
+
+    if (pathname === href) return;
+
     startGlobalNavSpinner();
     router.push(href);
   };
@@ -55,9 +65,10 @@ export default function NavBar() {
 
     try {
       await signOut(auth);
-      router.push("/login");
+      router.replace("/login");
     } catch (err) {
       console.error(err);
+      finishGlobalNavSpinner();
     }
   };
 
