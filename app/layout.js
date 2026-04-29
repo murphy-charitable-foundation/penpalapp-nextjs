@@ -3,6 +3,7 @@ import './globals.css'
 import NavigationStateManager from '../components/loading/NavigationStateManager'
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
+import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 import { CachedUsersProvider } from './contexts/CachedUserContext'
@@ -26,14 +27,16 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <CachedUsersProvider>
           <UserProvider>
-            <NavigationProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <NavigationStateManager />
-                {children}
-              </Suspense>
-            </NavigationProvider>
-          </UserProvider>      
-        </CachedUsersProvider> 
+            <NotificationHandler>
+              <NavigationProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <NavigationStateManager />
+                  {children}
+                </Suspense>
+              </NavigationProvider>
+            </NotificationHandler>
+          </UserProvider>
+        </CachedUsersProvider>
       </body>
     </html>
   )

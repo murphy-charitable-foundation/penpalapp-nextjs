@@ -21,6 +21,7 @@ import {
   logLoadingTime,
 } from "../utils/analytics";
 import { useCachedUsers } from "../contexts/CachedUserContext";
+import { initializeNotifications } from '../utils/notification'
 import { PageBackground } from "../../components/general/PageBackground";
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -74,6 +75,7 @@ export default function Login() {
           last_name: data.last_name ?? "",
           photo_uri: data?.photo_uri ?? "",
         });
+        await initializeNotifications()
         router.push("/letterhome");
       } else {
         router.push("/create-acc");
