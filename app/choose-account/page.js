@@ -186,7 +186,7 @@ export default function ChooseAccountPage() {
               onClick={() => router.push("/login?force=1")}
             />
           </div>
-          {/* Added forgot password here */}
+         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => router.push("/reset-password")}
@@ -206,6 +206,7 @@ export default function ChooseAccountPage() {
             Forget saved logins
           </button>
         </div>
+  </div>
       </PageContainer>
 
       <Dialog
