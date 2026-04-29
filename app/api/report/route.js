@@ -21,14 +21,13 @@
  */
 
 import { NextResponse } from 'next/server';
-import sendgrid from '@sendgrid/mail';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { logError } from "../../utils/analytics";
 
 export async function POST(request) {
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
+    //sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
     const body = await request.json();
     //Grab Message Information
     const {receiver_email, currentUrl, sender, excerpt } = body; 
@@ -100,8 +99,13 @@ export async function POST(request) {
     };
 
     // Send the email
-    await sendgrid.send(msg);
-    return NextResponse.json({ message: 'Email sent successfully!' }, { status: 200 });
+    //await sendgrid.send(msg);
+    console.log("Email disabled - SendGrid removed:", msg);
+
+    return NextResponse.json(
+      { message: "Email sending disabled because SendGrid was removed." },
+      { status: 200 }
+    );
     
 
   } catch (error) {

@@ -1,9 +1,9 @@
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
-
 
 const MessagePreview = ({
   profileImage,
@@ -20,11 +20,12 @@ const MessagePreview = ({
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
 
+  
   const handleProfileClick = (e) => {
     e.preventDefault();
     router.push(`/profile-view/${id}`);
   };
-
+// Returns the appropriate status icon based on letter status
   const getStatusIcon = () => {
     if (status === "rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
@@ -43,18 +44,18 @@ const MessagePreview = ({
     return null;
   };
 
-  return (
-    <a
-      href={`/letters/${letterboxId}`}
-      className={`block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
-        status === "rejected"
-          ? "bg-red-50"
-          : isRecipient && unread
-          ? "bg-green-50"
-          : status === "pending_review"
-          ? "bg-gray-50"
-          : "bg-white"
-      }`}>
+  const containerClassName = `block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
+    status === "rejected"
+      ? "bg-red-50"
+      : isRecipient && unread
+      ? "bg-green-50"
+      : status === "pending_review"
+      ? "bg-gray-50"
+      : "bg-white"
+  }`;
+
+  const content = (
+    <>
       <div className="flex items-start">
         <div
           onClick={handleProfileClick}
@@ -87,10 +88,12 @@ const MessagePreview = ({
           </div>
         </div>
       </div>
+
       <div
         className={`mt-2 text-sm text-gray-700 truncate ${
           isRecipient && unread ? "font-semibold" : ""
-        }`}>
+        }`}
+      >
         {lastMessage ? (
           <div className="flex">
             {getStatusIcon() && (
@@ -116,7 +119,23 @@ const MessagePreview = ({
           </div>
         )}
       </div>
-    </a>
+    </>
+  );
+
+  // If there is no valid letterboxId, render a non-clickable container
+  if (!letterboxId) {
+    return (
+      <div className={containerClassName} role="button" aria-disabled="true">
+        {content}
+      </div>
+    );
+  }
+
+  // Use Next.js Link for proper client-side navigation
+  return (
+    <Link href={`/letters/${letterboxId}`} className={containerClassName}>
+      {content}
+    </Link>
   );
 };
 

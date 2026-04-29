@@ -1,13 +1,14 @@
+import "./globals.css";
+import { Suspense } from "react";
 import { Inter } from 'next/font/google'
-import './globals.css'
+
 import NavigationStateManager from '../components/loading/NavigationStateManager'
-import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
 import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: {
@@ -24,17 +25,17 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
-        <UserProvider>
-          <NotificationHandler>
-            <NavigationProvider>
-              <Suspense fallback={<LoadingSpinner />}>
+       <UserProvider>
+         <NotificationHandler>
+           <NavigationProvider>
+             <Suspense fallback={<LoadingSpinner />}>
                 <NavigationStateManager />
                 {children}
-              </Suspense>
-            </NavigationProvider>
-          </NotificationHandler>
-        </UserProvider>       
-      </body>
+             </Suspense>
+           </NavigationProvider>
+         </NotificationHandler>
+       </UserProvider>
+     </body>
     </html>
-  )
+  );
 }
