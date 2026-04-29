@@ -7,7 +7,6 @@
  * {
  *   receiver_email: string,  // user_uid who is being reported
  *   currentUrl: string,      // URL of the conversation (e.g., "/letters/123")
- *   sender: string,          // user_uid who is reporting
  *   excerpt: string          // text excerpt of the reported message
  * }
  * 
@@ -15,27 +14,67 @@
  * { message: "Message reported successfully!" }
  * 
  * Response (error):
- * { message: "Failed to send email.", error: "..." }
- * 
+ * { message: "Failed to send email." }
+ *
  * Sends email to: admin (penpal@murphycharity.org)
  */
 
 import { NextResponse } from 'next/server';
 import sendgrid from '@sendgrid/mail';
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+import { auth, db } from "../../firebaseAdmin";
 import { logError } from "../../utils/analytics";
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export async function POST(request) {
   try {
-    sendgrid.setApiKey(process.env.SENDGRID_KEY); //Set api Key
+    if (!auth || !db) {
+      return NextResponse.json(
+        { message: "Server auth is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { message: "Missing or invalid authorization header." },
+        { status: 401 }
+      );
+    }
+
+    const idToken = authHeader.substring(7);
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const reporterUid = decodedToken.uid;
+
+    sendgrid.setApiKey(process.env.SENDGRID_KEY); // Set api key
     const body = await request.json();
-    //Grab Message Information
-    const {receiver_email, currentUrl, sender, excerpt } = body; 
-    const userRef = doc(db, "users", sender);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.data();
-    const message = `Hello, the user with the uid: ${receiver_email} , reported this message: ${currentUrl} sent by a user with the name: ${userData.first_name} ${userData.last_name}. Here is a brief excerpt from the reported message, "${excerpt}"`;
+    // Grab message information (never trust reporter identity from request body)
+    const { receiver_email, currentUrl, excerpt } = body;
+    if (!receiver_email || !currentUrl || !excerpt) {
+      return NextResponse.json(
+        { message: "Missing required report fields." },
+        { status: 400 }
+      );
+    }
+
+    const userSnap = await db.collection("users").doc(reporterUid).get();
+    const userData = userSnap.exists ? userSnap.data() : {};
+
+    const safeReceiverUid = escapeHtml(receiver_email);
+    const safeCurrentUrl = escapeHtml(currentUrl);
+    const safeExcerpt = escapeHtml(excerpt);
+    const safeReporterFirstName = escapeHtml(userData.first_name || "");
+    const safeReporterLastName = escapeHtml(userData.last_name || "");
+
+    const message = `Hello, the user with the uid: ${safeReceiverUid}, reported this message: ${safeCurrentUrl} sent by a user with the name: ${safeReporterFirstName} ${safeReporterLastName}. Here is a brief excerpt from the reported message, "${safeExcerpt}"`;
     const emailHtml = `
       <html>
         <head>
@@ -89,8 +128,7 @@ export async function POST(request) {
       </html>
     `;
 
-
-    //SendGrid email configuration
+    // Email configuration
     const msg = {
       to: 'penpal@murphycharity.org', 
       from: 'penpal@murphycharity.org', // Your verified sender email
@@ -109,9 +147,6 @@ export async function POST(request) {
       description: "Failed to send email.",
     });
 
-    return NextResponse.json(
-        { message: 'Failed to send email.', error: error.message },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({ message: "Failed to send email." }, { status: 500 });
   }
+}
