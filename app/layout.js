@@ -6,7 +6,7 @@ import LoadingSpinner from '../components/loading/LoadingSpinner'
 import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
-import { CachedUsersProvider } from './contexts/CachedUserContext'
+import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,7 +25,7 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
-        <CachedUsersProvider>
+        <CachedUserLoginsProvider>
           <UserProvider>
             <NotificationHandler>
               <NavigationProvider>
@@ -36,7 +36,7 @@ export default function RootLayout({ children }) {
               </NavigationProvider>
             </NotificationHandler>
           </UserProvider>
-        </CachedUsersProvider>
+        </CachedUserLoginsProvider>
       </body>
     </html>
   )
