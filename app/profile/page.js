@@ -38,7 +38,6 @@ export default function EditProfile() {
   const [hobbies, setHobbies] = useState([]);
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
-  const [userType, setUserType] = useState("");
 
   const [user, setUser] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
