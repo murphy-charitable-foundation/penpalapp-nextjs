@@ -20,8 +20,8 @@ import {
   logButtonEvent,
   logLoadingTime,
 } from "../utils/analytics";
-import { useCachedUsers } from "../contexts/CachedUserContext";
 import { initializeNotifications } from '../utils/notification'
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -29,17 +29,17 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { hydrated, addCachedUser, cachedUsers, clearCachedUsers } = useCachedUsers();
+  const { hydrated, addCachedUserLogin, cachedUserLogins, clearCachedUserLogins } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
   usePageAnalytics(`/login`);
 
-  // Only depend on [hydrated]. Do NOT add searchParams or cachedUsers - searchParams
+  // Only depend on [hydrated]. Do NOT add searchParams or cachedUserLogins - searchParams
   // gets a new reference every render and causes this effect to run 20+ times/sec.
   useEffect(() => {
     if (!hydrated || hasRedirected.current) return;
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("force")) return;
-    if (cachedUsers?.length > 0) {
+    if (cachedUserLogins?.length > 0) {
       hasRedirected.current = true;
       router.replace("/choose-account");
     }
@@ -68,7 +68,7 @@ export default function Login() {
       const data = userSnap.data()
 
       if (userSnap.exists()) {
-        addCachedUser({
+        addCachedUserLogin({
           id: uid,
           email,
           first_name: data.first_name ?? "",
@@ -172,11 +172,11 @@ export default function Login() {
           />
         </div>
 
-        {cachedUsers?.length > 0 && (
+        {cachedUserLogins?.length > 0 && (
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => clearCachedUsers()}
+              onClick={() => clearCachedUserLogins()}
               className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
               Forget saved logins
