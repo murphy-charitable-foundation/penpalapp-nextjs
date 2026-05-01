@@ -208,9 +208,6 @@ export default function Home() {
         ) : (
           <>
             <div className="shrink-0 border-b">
-              <div className="px-4 pt-4">
-                <BackButton />
-              </div>
               <ProfileHeader
                 userName={userName}
                 country={country}
@@ -220,8 +217,8 @@ export default function Home() {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto px-3">
-              <main className="p-6 bg-white">
-                <section className="mt-8">
+              <main className="p-4 bg-white">
+                <section className="mt-4">
                   {conversations.length > 0 ? (
                     <ConversationList conversations={conversations} />
                   ) : (
