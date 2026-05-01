@@ -1,5 +1,5 @@
 // Give your cache a version name
-const CACHE_NAME = 'offline-cache-v1';//'my-pwa-cache-v1';
+const CACHE_NAME = 'offline-cache-v1';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = ['/offline.html','/murphylogo.png'];
 
@@ -15,45 +15,9 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// When the browser requests a resource: serve from cache first, fallback to network
-self.addEventListener('fetch', (event) => {
-
-  event.respondWith(
-    (async () => {
-      
-      const cachedResponse = await caches.match(event.request);
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      try {
-
-        return await fetch(event.request);
-
-      } catch(error) {
-
-        if (event.request.mode === 'navigate') {
-          const cachedOfflinePage = await caches.match(OFFLINE_URL);
-          if (cachedOfflinePage){
-            return cachedOfflinePage;
-          }
-        }
-
-        return new Response('Resource unavailable offline.', {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: { 'Content-Type': 'text/plain' },
-        });
-      }
-    }) ()
-  );
-});
-
-// (Optional) On activation: clean up old caches if you have versioning
 self.addEventListener('activate', (event) => {
-  //const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     (async () => {
-      // Clean up of old cache
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
@@ -67,3 +31,50 @@ self.addEventListener('activate', (event) => {
     })()
   );
 });
+
+// Handle GET requests only: return cached static assets when available, 
+// and serve the offline page if a navigation request fails.
+self.addEventListener('fetch', (event) => {
+
+  const { request } = event;
+
+  // Allow the non-GET requests to go to the network normally
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  event.respondWith(
+    (async () => {
+
+      const cacheOffline = await caches.open(CACHE_NAME);
+      
+      // For navigation, network first, then fallback to offline page
+      if (request.mode === 'navigate') {
+        try {
+          return await fetch(request);
+        } catch {
+          const cachedOfflinePage = await cacheOffline.match(OFFLINE_URL);
+          if (cachedOfflinePage){
+            return cachedOfflinePage;
+          }
+
+          return new Response('Offline page unavailable.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        } 
+      }
+
+      // For other GET requests (like the logo), use cache first
+      const cachedResponse = await cacheOffline.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      
+      // For the rest, try network first, and let error messages display normally
+      return fetch(request); 
+    }) ()
+  );
+});
+
