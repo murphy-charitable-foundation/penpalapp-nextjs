@@ -32,7 +32,7 @@ reviews:
     - "!components/general/**"
     - "!components/loading/**"
     - "!components/tooltip/**"
-    - "!components/letter/**"
+    - "!components/message/**"
     - "!app/utils/dateHelpers.js"
     - "!app/utils/timestampToDate.js"
     - "!app/utils/deadChat.js"

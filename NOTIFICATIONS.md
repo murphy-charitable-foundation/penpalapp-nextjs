@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project implements a push notification system using **Firebase Cloud Messaging (FCM)** for the Letterbox messaging feature. The system allows users in a conversation to receive notifications when new messages are sent.
+This project implements a push notification system using **Firebase Cloud Messaging (FCM)** for the Conversation messaging feature. The system allows users in a conversation to receive notifications when new messages are sent.
 
 The notification system has three primary responsibilities:
 
@@ -139,7 +139,7 @@ The token is verified using Firebase Admin authentication before any notificatio
 ### Fields
 
 conversationId  
-The ID of the conversation in the `letterbox` collection.
+The ID of the conversation in the `conversation` collection.
 
 message  
 Optional notification body text.
@@ -171,7 +171,7 @@ The decoded token provides the sender's UID.
 
 ### 3. Conversation Authorization
 
-The server confirms the sender belongs to the conversation by checking the `members` array in the `letterbox` document.
+The server confirms the sender belongs to the conversation by checking the `members` array in the `conversation` document.
 
 If the sender is not a member, the request is rejected.
 
@@ -196,7 +196,7 @@ For each token, Firebase Cloud Messaging sends a notification containing:
 Title:
 ```
 
-New Letterbox Message
+New Conversation Message
 
 ```
 
@@ -249,11 +249,11 @@ The `fcmToken` identifies the device used for notifications.
 
 ---
 
-## Letterbox Conversations
+## Conversations
 
 ```
 
-letterbox/{conversationId}
+conversation/{conversationId}
 
 ```
 

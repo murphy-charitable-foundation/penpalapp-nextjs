@@ -1,17 +1,17 @@
-import MessagePreview from "./MessagePreview";
+import ConversationPreview from "./ConversationPreview";
 
 const ConversationList = ({ conversations }) => {
   return (
-    <ul className="w-full space-y-5 px-2 py-2">
+    <ul className="w-full space-y-4 px-0 py-0">
       {conversations.map((c, i) => (
-        <li key={c.letterboxId || c.id || i}>
-          <MessagePreview
+        <li key={c.conversationId || c.id || i}>
+          <ConversationPreview
             profileImage={c.profileImage}
             name={c.name}
             country={c.country}
             lastMessage={c.lastMessage}
             lastMessageDate={c.lastMessageDate}
-            letterboxId={c.letterboxId}
+            conversationsId={c.conversationsId}
             status={c.status}
             isRecipient={c.isRecipient}
             unread={c.unread}

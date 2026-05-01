@@ -127,8 +127,8 @@ return (
                   minLength: "Must be at least 7 characters.",
                   specialChar: "Must contain at least 1 special character.",
                   number: "Must contain at least 1 number.",
-                  capital: "Must contain at least 1 uppercase letter.",
-                  lowercase: "Must contain at least 1 lowercase letter.",
+                  capital: "Must contain at least 1 uppercase message.",
+                  lowercase: "Must contain at least 1 lowercase message.",
                   match: "Passwords do not match.",
                 }}
                 onChange={(isValid) => setisValidPassword(isValid)}

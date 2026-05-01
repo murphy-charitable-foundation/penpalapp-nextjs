@@ -41,7 +41,7 @@ const ReportPopup = ({
         
         <div className="bg-white space-y-4 shadow-md w-full rounded-md p-4 flex flex-col items-center">
           <h1 className="font-semibold text-sm text-red-500">
-            Are you sure that you want to report this letter?
+            Are you sure that you want to report this message?
           </h1>
           <p className="text-gray-700 text-sm">
             This action will not be undone afterwards.

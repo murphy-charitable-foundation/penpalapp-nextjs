@@ -37,7 +37,7 @@ const db = !envError ? getFirestore() : null;
  * Verify user belongs in conversation
  */
 async function isInConversation(senderUid, conversationId) {
-  const convoRef = db.collection("letterbox").doc(conversationId);
+  const convoRef = db.collection("conversations").doc(conversationId);
   const convoSnap = await convoRef.get();
   if (!convoSnap.exists) return false;
 
@@ -48,7 +48,7 @@ async function isInConversation(senderUid, conversationId) {
  * Fetch all tokens for all users in the same "device group"
  */
 async function getConversationTokens(conversationId, senderUid) {
-  const convoRef = db.collection("letterbox").doc(conversationId);
+  const convoRef = db.collection("conversations").doc(conversationId);
   const convoSnap = await convoRef.get();
   if (!convoSnap.exists) return [];
 
@@ -124,7 +124,7 @@ export async function POST(req) {
       admin.messaging().send({
         token,
         notification: {
-          title: "New Letterbox Message",
+          title: "New Conversation Message",
           body: message || `New message for ${name}`,
         },
       })
