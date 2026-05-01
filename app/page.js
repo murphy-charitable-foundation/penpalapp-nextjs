@@ -28,7 +28,7 @@ export default function Home() {
       router.push(href);
     });
   };
-
+  
 return (
   <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
   {showSpinner && (

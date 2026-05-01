@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/loading/LoadingSpinner'
 import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
+import ServiceWorkerHandler from '@/components/ServiceWorkerHandler'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
+        <ServiceWorkerHandler />
         <UserProvider>
           <NotificationHandler>
             <NavigationProvider>
