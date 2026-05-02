@@ -58,138 +58,135 @@ export default function ChooseKid() {
     return () => unsubscribe();
   }, [router]);
 
-  const fetchKids = useCallback(async (uid, reset = false, cursor = null) => {
-    setLoading(true);
-    setError("");
+  const fetchKids = useCallback(
+    async (uid, reset = false, cursor = null) => {
+      setLoading(true);
+      setError("");
 
-    try {
-      const userRef = doc(db, "users", uid);
-      const usersRef = collection(db, "users");
+      try {
+        const userRef = doc(db, "users", uid);
+        const usersRef = collection(db, "users");
 
-      let q = query(
-        usersRef,
-        where("user_type", "==", "child"),
-        where("connected_penpals_count", "<", 3)
-      );
-
-      const selectedPronouns = pronouns?.trim();
-      const selectedPronounsLower = selectedPronouns?.toLowerCase();
-      const usingAgeFilter = age?.min != null && age?.max != null;
-      const usingPronounsFilter = Boolean(selectedPronouns);
-
-      if (usingAgeFilter) {
-        const now = new Date();
-        const maxBirthDate = new Date(
-          now.getFullYear() - age.min,
-          now.getMonth(),
-          now.getDate()
+        let q = query(
+          usersRef,
+          where("user_type", "==", "child"),
+          where("connected_penpals_count", "<", 3),
         );
-        const minBirthDate = new Date(
-          now.getFullYear() - age.max,
-          now.getMonth(),
-          now.getDate()
-        );
-        
-        minBirthDate.setDate(minBirthDate.getDate() + 1);
-        const formatIsoDate = (date) => {
-          const y = date.getFullYear();
-          const m = String(date.getMonth() + 1).padStart(2, "0");
-          const d = String(date.getDate()).padStart(2, "0");
-          return `${y}-${m}-${d}`;
-        };
 
-        q = query(
-          q,
-          where("birthday", ">=", formatIsoDate(minBirthDate)),
-          where("birthday", "<=", formatIsoDate(maxBirthDate))
-        );
-      } else if (usingPronounsFilter) {
-        q = query(q, where("pronouns", "==", selectedPronouns));
-      }
+        const selectedPronouns = pronouns?.trim();
+        const selectedPronounsLower = selectedPronouns?.toLowerCase();
+        const usingAgeFilter = age?.min != null && age?.max != null;
+        const usingPronounsFilter = Boolean(selectedPronouns);
 
-      if (!reset && cursor) {
-        q = query(q, startAfter(cursor));
-      }
-
-      q = query(q, limit(PAGE_SIZE));
-
-      const snapshot = await getDocs(q);
-
-      const selectedHobbies = (hobbies ?? [])
-        .map((h) =>
-          typeof h === "string"
-            ? h
-            : String(h?.label || h?.id || "")
-        )
-        .map((h) => h.toLowerCase())
-        .filter(Boolean);
-
-      const filteredDocs = snapshot.docs.filter((d) => {
-        const data = d.data();
-
-        if (data.connected_penpals?.some((ref) => ref?.path === userRef.path)) {
-          return false;
+        if (!reset && cursor) {
+          q = query(q, startAfter(cursor));
         }
 
-        if (usingPronounsFilter && usingAgeFilter) {
-          if (String(data.pronouns || "").trim().toLowerCase() !== selectedPronounsLower) {
+        q = query(q, limit(PAGE_SIZE));
+
+        const snapshot = await getDocs(q);
+
+        const selectedHobbies = (hobbies ?? [])
+          .map((h) =>
+            typeof h === "string" ? h : String(h?.label || h?.id || ""),
+          )
+          .map((h) => h.toLowerCase())
+          .filter(Boolean);
+
+        const filteredDocs = snapshot.docs.filter((d) => {
+          const data = d.data();
+
+          if (
+            data.connected_penpals?.some((ref) => ref?.path === userRef.path)
+          ) {
             return false;
           }
-        }
 
-        // ✅ CLEANED hobby handling (supports both but not messy)
-        if (selectedHobbies.length > 0) {
-          const hobby = data.hobbies ?? data.hobby;
-
-          const normalizedHobbies = Array.isArray(hobby)
-            ? hobby
-            : typeof hobby === "string"
-            ? [hobby]
-            : [];
-
-          const lower = normalizedHobbies.map((h) =>
-            String(h).toLowerCase()
-          );
-
-          return lower.some((h) => selectedHobbies.includes(h));
-        }
-
-        return true;
-      });
-
-      const kidsList = await Promise.all(
-        filteredDocs.map(async (d) => {
-          const data = d.data();
-          try {
-            if (data.photo_uri) {
-              const storage = getStorage();
-              const photoRef = ref(storage, data.photo_uri);
-              const photoURL = await getDownloadURL(photoRef);
-              return { id: d.id, ref: d.ref, ...data, photoURL };
+          if (usingPronounsFilter) {
+            if (
+              String(data.pronouns || "")
+                .trim()
+                .toLowerCase() !== selectedPronounsLower
+            ) {
+              return false;
             }
-            return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
-          } catch {
-            return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
           }
-        })
-      );
 
-    if (reset) {
-        setKids(kidsList);
-      } else {
-        setKids((prev) => [...prev, ...kidsList]);
+          if (usingAgeFilter) {
+            const calculatedAge = calculateAge(data.birthday);
+
+            if (
+              calculatedAge == null ||
+              calculatedAge < age.min ||
+              calculatedAge > age.max
+            ) {
+              return false;
+            }
+          }
+
+          // CLEANED hobby handling (supports both but not messy)
+          if (selectedHobbies.length > 0) {
+            const hobby = data.hobbies ?? data.hobby;
+
+            const normalizedHobbies = Array.isArray(hobby)
+              ? hobby
+              : typeof hobby === "string"
+                ? [hobby]
+                : [];
+
+            const lower = normalizedHobbies.map((h) => String(h).toLowerCase());
+
+            return lower.some((h) => selectedHobbies.includes(h));
+          }
+
+          return true;
+        });
+
+        const kidsList = await Promise.all(
+          filteredDocs.map(async (d) => {
+            const data = d.data();
+            try {
+              if (data.photo_uri) {
+                const storage = getStorage();
+                const photoRef = ref(storage, data.photo_uri);
+                const photoURL = await getDownloadURL(photoRef);
+                return { id: d.id, ref: d.ref, ...data, photoURL };
+              }
+              return {
+                id: d.id,
+                ref: d.ref,
+                ...data,
+                photoURL: "/usericon.png",
+              };
+            } catch {
+              return {
+                id: d.id,
+                ref: d.ref,
+                ...data,
+                photoURL: "/usericon.png",
+              };
+            }
+          }),
+        );
+
+        if (reset) {
+          setKids(kidsList);
+        } else {
+          setKids((prev) => [...prev, ...kidsList]);
+        }
+        setLastKidDoc(
+          snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
+        );
+      } catch (e) {
+        setError("Error fetching kids");
+        logError(e, { description: "Error fetching kids" });
+      } finally {
+        setLoading(false);
+        setInitialLoad(false);
       }
-      setLastKidDoc(
-        snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
-      );
-    } catch (e) {
-      setError("Error fetching kids");
-      logError(e, { description: "Error fetching kids" });
-    } finally {
-      setLoading(false);
-      setInitialLoad(false);
-    }
-  }, [age, pronouns, hobbies]);
+    },
+    [age, pronouns, hobbies],
+  );
 
   // Refetch when filters change
   useEffect(() => {
@@ -201,43 +198,42 @@ export default function ChooseKid() {
     fetchKids(userId, true, null);
   }, [userId, fetchKids]);
 
-
   const calculateAge = (birthdayTimestamp) => {
-  if (!birthdayTimestamp) return null;
+    if (!birthdayTimestamp) return null;
 
-  try {
-    let date;
+    try {
+      let date;
 
-    if (birthdayTimestamp instanceof Date) {
-      date = birthdayTimestamp;
-    } else if (birthdayTimestamp?.toDate) {
-      date = birthdayTimestamp.toDate();
-    } else if (birthdayTimestamp?._seconds) {
-      date = new Date(birthdayTimestamp._seconds * 1000);
-    } else if (typeof birthdayTimestamp === "string") {
-    const [year, month, day] = birthdayTimestamp.split("-");
-      date = new Date(year, month - 1, day);
-    } else {
+      if (birthdayTimestamp instanceof Date) {
+        date = birthdayTimestamp;
+      } else if (birthdayTimestamp?.toDate) {
+        date = birthdayTimestamp.toDate();
+      } else if (birthdayTimestamp?._seconds) {
+        date = new Date(birthdayTimestamp._seconds * 1000);
+      } else if (typeof birthdayTimestamp === "string") {
+        const [year, month, day] = birthdayTimestamp.split("-");
+        date = new Date(year, month - 1, day);
+      } else {
+        return null;
+      }
+
+      if (isNaN(date.getTime())) return null;
+
+      const now = new Date();
+      let years = now.getFullYear() - date.getFullYear();
+
+      if (
+        now.getMonth() < date.getMonth() ||
+        (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
+      ) {
+        years -= 1;
+      }
+
+      return years;
+    } catch {
       return null;
     }
-
-    if (isNaN(date.getTime())) return null;
-
-    const now = new Date();
-    let years = now.getFullYear() - date.getFullYear();
-
-    if (
-      now.getMonth() < date.getMonth() ||
-      (now.getMonth() === date.getMonth() && now.getDate() < date.getDate())
-    ) {
-      years -= 1;
-    }
-
-    return years;
-  } catch {
-    return null;
-  }
-};
+  };
 
   const loadMoreKids = () => {
     if (loading || !userId) return;
