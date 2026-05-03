@@ -34,6 +34,7 @@ import Dialog from "../../../components/general/Dialog";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 import React from "react";
+import { formatTimestamp } from "../../../app/utils/dateHelpers";
 
 // FIXED: Enhanced fetchDraft function that prevents duplicate drafts
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
@@ -786,7 +787,7 @@ return (
 
         {/* Keep header layout stable (no mount/unmount jumps) */}
         <div className="w-10 h-10 flex items-center justify-center">
-          {isSendButtonDisabled || isUpdatingFirebase ? (
+          {isSending || isUpdatingFirebase ? (
             <div className="w-6 h-6 flex items-center justify-center">
               <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
