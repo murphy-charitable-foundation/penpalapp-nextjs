@@ -71,8 +71,7 @@ export default function Login() {
         addCachedUserLogin({
           id: uid,
           email,
-          first_name: data.first_name ?? "",
-          last_name: data.last_name ?? "",
+          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
           photo_uri: data?.photo_uri ?? "",
         });
         await initializeNotifications()
