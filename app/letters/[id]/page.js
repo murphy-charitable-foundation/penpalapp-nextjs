@@ -953,7 +953,7 @@ return (
                         photo_uri={
                           isSenderUser ? profileImage : recipients[0]?.photo_uri
                         }
-                        first_name={
+                        name={
                           isSenderUser ? "Me" : recipients[0]?.first_name
                         }
                         size={12}

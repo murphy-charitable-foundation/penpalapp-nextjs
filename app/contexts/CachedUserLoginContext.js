@@ -42,7 +42,7 @@ export function CachedUserLoginsProvider({ children }) {
     setCachedUserLogins((prev) => prev.filter((u) => u.id !== id));
   };
 
-  const clearCachedUserLogins = () => {
+  const clearAllCachedUserLogins = () => {
     setCachedUserLogins([]);
   };
 
@@ -56,7 +56,7 @@ export function CachedUserLoginsProvider({ children }) {
         cachedUserLogins,
         addCachedUserLogin,
         removeCachedUserLogin,
-        clearCachedUserLogins,
+        clearAllCachedUserLogins,
         getCachedUserLogin,
         hydrated,
       }}
