@@ -141,7 +141,7 @@ export default function Home() {
     }
   };
 
-  const getConversations = async (uid, avatarUrl) => {
+  const getConversations = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
       if (letterboxes && letterboxes.length > 0) {
@@ -157,7 +157,7 @@ export default function Home() {
 
             return {
               id: letter?.id,
-              profileImage: avatarUrl || profileImage || "",
+              profileImage: recipient?.photo_uri || "",
               name: `${recipient.first_name ?? "Unknown"} ${
                 recipient.last_name ?? ""
               }`,
@@ -201,10 +201,9 @@ export default function Home() {
           const userData = await getUserData(uid);
           setUserName(userData.first_name || "Unknown User");
           const downloaded = await getUserPfp(uid);
-          const avatarUrl = downloaded || "";
-          setProfileImage(avatarUrl);
+          setProfileImage(downloaded || "");
 
-          const userConversations = await getConversations(uid, avatarUrl);
+          const userConversations = await getConversations(uid);
           setConversations(userConversations);
         } catch (err) {
           logError(err, {
