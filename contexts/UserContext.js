@@ -11,6 +11,8 @@ const UserContext = createContext();
 
 const PUBLIC_PATHS = [
   '/login',
+  '/choose-profile',
+  '/choose-account',
   '/',
   '/about',
   '/contact',
