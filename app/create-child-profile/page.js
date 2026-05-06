@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, Timestamp, getDoc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
@@ -16,13 +16,11 @@ import TextArea from "../../components/general/TextArea";
 import Dialog from "../../components/general/Dialog";
 import Dropdown from "../../components/general/Dropdown";
 
-import * as Sentry from "@sentry/nextjs";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/letterboxFunctions";
 import Image from "next/image";
-import logo from "../../public/murphylogo.png";
 import EditProfileImage from "../../components/edit-profile-image";
 import { uploadFile } from "../lib/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
@@ -114,7 +112,7 @@ const handleSubmit = async (e) => {
     try {
       const newErrors = {};
       const formData = new FormData(e.currentTarget);
-      const internationalBuddyEmail = formData.get("internationalbuddyemail"); 
+      const internationalBuddyEmail = (formData.get("internationalbuddyemail") || "").toString();
       let email = formData.get("email");
       const password = formData.get("password");
       const birthday = formData.get("birthday");
@@ -182,7 +180,7 @@ const handleSubmit = async (e) => {
         const token = await auth.currentUser.getIdToken();
         
         // Fetch UID of international buddy only if email is provided
-        if (internationalBuddyEmail.trim()) {
+        if (internationalBuddyEmail?.trim()) {
           const uidRes = await fetch("/api/getUidByEmail", {
             method: "POST",
             headers: { 
@@ -224,8 +222,10 @@ const handleSubmit = async (e) => {
         const kidId = createJson.uid;
         const kidRef = doc(db, "users", kidId);
 
-        const buddyRef = doc(db, "users", internationalBuddyUid.uid);
-        await createConnection(buddyRef, kidRef);
+        if (internationalBuddyUid?.uid) {
+          const buddyRef = doc(db, "users", internationalBuddyUid.uid);
+          await createConnection(buddyRef, kidRef);
+        }
 
         // Upload profile image if available
         if (croppedBlob) {

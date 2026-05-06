@@ -22,7 +22,7 @@ import { db } from "../../app/firebaseConfig";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(null);
   const { userType } = useUser();
@@ -59,7 +59,7 @@ export default function NavBar() {
     setIsNavigating(true);
     try {
       await signOut(auth);
-      router.push("/login");
+      router.push("/choose-profile");
     } catch (err) {
       console.error(err);
     } finally {

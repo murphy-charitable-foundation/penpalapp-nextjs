@@ -3,9 +3,11 @@ import './globals.css'
 import NavigationStateManager from '../components/loading/NavigationStateManager'
 import { Suspense } from 'react'
 import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { DormantLetterboxProvider } from '../context/DormantLetterboxContext';
+import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
+import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
+import { DormantLetterboxProvider } from './contexts/DormantLetterboxContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,17 +26,20 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
-      <DormantLetterboxProvider>
-        <UserProvider>
-          <NavigationProvider>
-            <Suspense fallback={<LoadingSpinner />}>
-              <NavigationStateManager />
-              {children}
-            </Suspense>
-
-        </NavigationProvider>
-        </UserProvider>       
-        </DormantLetterboxProvider>
+        <CachedUserLoginsProvider>
+          <UserProvider>
+            <DormantLetterboxProvider>
+              <NotificationHandler>
+                <NavigationProvider>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NavigationStateManager />
+                    {children}
+                  </Suspense>
+                </NavigationProvider>
+              </NotificationHandler>
+            </DormantLetterboxProvider>
+          </UserProvider>
+        </CachedUserLoginsProvider>
       </body>
     </html>
   )

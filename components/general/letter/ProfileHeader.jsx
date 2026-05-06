@@ -5,7 +5,6 @@ export default function ProfileHeader({
   userName,
   country,
   profileImage,
-  id,
   showCountry = true, 
 }) {
   return (
@@ -16,7 +15,7 @@ export default function ProfileHeader({
       >
         <ProfileImage
           photo_uri={profileImage}
-          first_name={userName}
+          name={userName}
           className="w-10 h-10 sm:w-11 sm:h-11 rounded-full ring-2 ring-white"
         />
 

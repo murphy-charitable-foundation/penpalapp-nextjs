@@ -152,6 +152,7 @@ export default function EditProfileUserImage() {
                     router.push("/profile")
                   )
                 }
+                showBorder={false}
               />
 
             <div className="flex flex-col items-center gap-6 mt-6">
@@ -163,8 +164,6 @@ export default function EditProfileUserImage() {
                 handleCrop={handleCrop}
                 cropperRef={cropperRef}
               />
-
-              <i>Click to edit</i>
 
               <Button
                 btnType="button"

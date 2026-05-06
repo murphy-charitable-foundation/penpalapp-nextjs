@@ -35,7 +35,7 @@ import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
-import { useDormantLetterbox } from "../../context/DormantLetterboxContext";
+import { useDormantLetterbox } from "../../contexts/DormantLetterboxContext";
 
 export default function Admin() {
   const { isDormantLetterboxLoading, handleDormantLetterboxWorker } =
