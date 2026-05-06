@@ -1,53 +1,52 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { PageBackground } from "../../components/general/PageBackground";
-import { PageContainer } from "../../components/general/PageContainer";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
+// app/welcome/WelcomeClient.js
 
-import Button from "../../components/general/Button";
-import { usePageAnalytics } from "../useAnalytics";
-import { logButtonEvent } from "../utils/analytics";
-
-export default function Welcome() {
-  const [firstName, setFirstName] = useState("");
+export default function WelcomeClient() {
+  const { user } = useUser();
   const router = useRouter();
 
-  usePageAnalytics("/welcome");
+  // First name is derived from Firebase Auth displayName via UserContext
+  const firstName = user?.displayName?.split(" ")[0] ?? "";
 
-  useEffect(() => {
-    const value = localStorage.getItem("userFirstName");
-
-    if (value) {
-      setFirstName(value);
-    }
-  }, []);
+  const handleContinue = () => {
+    router.push("/onboarding-avatar");
+  };
 
   return (
-    <PageBackground className="min-h-screen !bg-primary">
-      <PageContainer className="max-w-lg mx-auto text-white flex flex-col min-h-screen">
-        <div className="relative w-full h-[50vh] bg-[url('/welcome.png')] bg-cover bg-center"></div>
+    <div className="min-h-screen bg-[#034792] flex flex-col max-w-lg mx-auto">
+      {/* Hero image */}
+      <div
+        className="w-full h-[50vh] bg-cover bg-center flex-shrink-0"
+        style={{ backgroundImage: "url('/welcome.png')" }}
+        role="img"
+        aria-label="Community photo"
+      />
 
-        <h3 className="pt-16 text-center w-full font-[700] text-2xl">
-          Welcome, {firstName}
-        </h3>
+      {/* Content */}
+      <div className="flex flex-col flex-1 text-white px-6">
+        <h1 className="pt-16 text-center font-bold text-2xl">
+          Welcome{firstName ? `, ${firstName}` : ""}
+        </h1>
 
-        <div className="text-center w-full pt-5 flex-1">
+        <p className="text-center pt-5 flex-1 leading-relaxed opacity-90">
           We are so happy to be here, thanks for your support. Now you are part
           of the family.
-        </div>
+        </p>
 
-        <div className="text-center w-full pt-10 pb-20">
-          <Button
-            btnText="Continue"
-            color="white"
-            onClick={() => {
-              logButtonEvent("Continue button clicked!", "/welcome");
-              router.push("/edit-profile-user-image");
-            }}
-          />
+        {/* CTA */}
+        <div className="text-center pt-10 pb-20">
+          <button
+            type="button"
+            onClick={handleContinue}
+            className="bg-white text-[#111111] px-16 py-2 rounded-full font-semibold hover:bg-opacity-90 transition-opacity"
+          >
+            Continue
+          </button>
         </div>
-      </PageContainer>
-    </PageBackground>
+      </div>
+    </div>
   );
 }
