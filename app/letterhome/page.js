@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
+import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import NavBar from "../../components/bottom-nav-bar";
 import ConversationList from "../../components/general/ConversationList";
@@ -31,6 +32,9 @@ export default function Home() {
   const [inactivityWarning, setInactivityWarning] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState(0);
   const router = useRouter();
+  const { user, userDocRef } = useUser();
+  
+  usePageAnalytics("/letterhome");
 
   function startInactivityWatcher(timeoutMinutes = 20, warningSeconds = 30) {
     if (typeof window === "undefined") return; // server-side safety
@@ -120,8 +124,6 @@ export default function Home() {
     };
   }
 
-  usePageAnalytics("/letterhome");
-
   useEffect(() => {
     const stopWatcher = startInactivityWatcher(20, 30);
     return () => {
@@ -141,35 +143,32 @@ export default function Home() {
     }
   };
 
+  const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
+
   const getConversations = async (uid) => {
     try {
       const letterboxes = await fetchLetterboxes();
 
-      if (!letterboxes || letterboxes.length === 0) {
+      if (!letterboxes?.length) {
         setError("No conversations found.");
-        throw new Error("No letterboxes found.");
+        return [];
       }
 
-      const letterboxIds = letterboxes.map((l) => l.id);
-
       const fetchedConversations = await Promise.all(
-        letterboxIds.map(async (id) => {
-          const userRef = doc(db, "users", uid);
+        letterboxes.map(async ({ id }) => {
           const letter =
-            (await fetchLatestLetterFromLetterbox(id, userRef)) || {};
+            (await fetchLatestLetterFromLetterbox(id, userDocRef)) || {};
           const rec = await fetchRecipients(id);
           const recipient = rec?.[0] ?? {};
 
           return {
             id: letter?.id,
             profileImage: recipient?.photo_uri || "",
-            name: `${recipient.first_name ?? "Unknown"} ${
-              recipient.last_name ?? ""
-            }`.trim(),
+            name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""
+              }`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: letter.content || "",
-            lastMessageDate:
-              letter.drafted_at || letter.updated_at || letter.created_at || "",
+            lastMessageDate: letter.drafted_at || letter.created_at || "",
             status: letter.status || "",
             letterboxId: id || "",
             isRecipient: letter?.sent_by?.id !== uid,
@@ -178,16 +177,9 @@ export default function Home() {
         })
       );
 
-      fetchedConversations.sort((a, b) => {
-        const dateA =
-          a.lastMessageDate?.toDate?.() || a.lastMessageDate || new Date(0);
-        const dateB =
-          b.lastMessageDate?.toDate?.() || b.lastMessageDate || new Date(0);
-
-        return dateB - dateA;
-      });
-
-      return fetchedConversations;
+      return fetchedConversations.sort(
+        (a, b) => toDateValue(b.lastMessageDate) - toDateValue(a.lastMessageDate)
+      );
     } catch (err) {
       logError(err, {
         description: "Error fetching conversations",
@@ -198,40 +190,36 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setIsLoading(true);
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        // TODO: redirect if everything is loaded and still no user
-        setError("No user logged in.");
-        router.push("/login");
-        return;
-      } else {
-        try {
-          const uid = user.uid;
-          setUserId(uid)
+    const fetchData = async () => {
+      if (!user) return;
 
-          const userData = await getUserData(uid);
-          setUserName(userData.first_name || "Unknown User");
-          const downloaded = await getUserPfp(uid);
-          setProfileImage(downloaded || "");
+      setIsLoading(true);
 
-          const userConversations = await getConversations(uid);
-          setConversations(userConversations);
-        } catch (err) {
-          logError(err, {
-            description: "Error fetching conversations",
-          });
-          setError("Failed to load data.");
-          throw err;
-        } finally {
-          setIsLoading(false);
-        }
+      try {
+        const uid = user.uid;
+        setUserId(uid);
+
+        const userData = await getUserData(uid);
+        setUserName(userData.first_name || "Unknown User");
+
+        const downloaded = await getUserPfp(uid);
+        setProfileImage(downloaded || "");
+
+        const userConversations = await getConversations(uid);
+        setConversations(userConversations);
+      } catch (err) {
+        logError(err, {
+          description: "Error loading user data and conversations",
+        });
+        setError("Failed to load data.");
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
 
-    return unsubscribe;
-  }, []);
-
+    fetchData();
+  }, [user]);
+  
   return (
   <>
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
