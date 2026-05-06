@@ -38,7 +38,6 @@ export default function EditProfile() {
   const [hobbies, setHobbies] = useState([]);
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
-  const [userType, setUserType] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [errors] = useState({});
@@ -46,6 +45,8 @@ export default function EditProfile() {
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [userType, setUserType] = useState("international_buddy");
+  const [notification, setNotification] = useState(null);
 
   // New fields from main
   const [favoriteAnimal, setFavoriteAnimal] = useState("");

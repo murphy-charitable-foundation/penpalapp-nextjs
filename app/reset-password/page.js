@@ -63,7 +63,7 @@ export default function ResetPassword() {
     <PageBackground>
       <PageContainer maxWidth="lg">
         <div className="p-0 bg-white">
-          <PageHeader title="Reset Your Password" />
+          <PageHeader title="Reset Your Password" showBorder={false} />
 
           <form
             method="post"

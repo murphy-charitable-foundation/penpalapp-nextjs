@@ -10,14 +10,16 @@ import LoadingSpinner from "../components/loading/LoadingSpinner";
 const UserContext = createContext();
 
 const PUBLIC_PATHS = [
-  "/login",
-  "/",
-  "/about",
-  "/contact",
-  "/donate",
-  "/welcome",
-  "/create-acc",
-  "/reset-password",
+  '/login',
+  '/choose-profile',
+  '/choose-account',
+  '/',
+  '/about',
+  '/contact',
+  '/donate',
+  '/welcome',
+  '/create-acc',
+  '/reset-password',
 ];
 
 export function UserProvider({ children }) {
