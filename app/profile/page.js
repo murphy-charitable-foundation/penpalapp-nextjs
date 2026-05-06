@@ -151,7 +151,7 @@ export default function EditProfile() {
       guardian,
       dream_job: dreamJob,
       gender,
-      hobbies: hobbies.map((h) => h.id),
+      hobbies: hobbies.map((h) => h.label),
       favorite_color: favoriteColor,
       profession,
       favorite_animal: favoriteAnimal,
