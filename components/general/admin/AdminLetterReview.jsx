@@ -14,14 +14,14 @@ export default function AdminLetterReview({
   if (!letter) return null;
 
   const status =
-    letter.status === "sent" || letter.status === "approved"
-      ? "approved"
+    letter.status === "sent" || letter.status === "sent"
+      ? "sent"
       : letter.status === "rejected"
       ? "rejected"
       : "pending_review";
 
   const headerColor =
-    status === "approved"
+    status === "sent"
       ? "bg-dark-green"
       : status === "rejected"
       ? "bg-red-600"
@@ -113,7 +113,7 @@ export default function AdminLetterReview({
 
               <div className="flex justify-center gap-3 mt-4">
                 <Button
-                  btnText="Clear the review status"
+                  btnText="Clear status"
                   color="blue"
                   onClick={() => onRevert(letter)}
                 />
@@ -129,10 +129,10 @@ export default function AdminLetterReview({
 
         {/* STICKY ACTION BAR */}
         <div className="bg-gray-50 border-t px-6 py-4">
-          {status === "approved" && (
+          {status === "sent" && (
             <div className="flex justify-center">
               <Button
-                btnText="Clear the review status"
+                btnText="Clear status"
                 color="blue"
                 onClick={() => onRevert(letter)}
               />
