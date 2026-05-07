@@ -7,6 +7,7 @@ import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
+import { DormantLetterboxProvider } from '../contexts/DormantLetterboxContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,14 +28,16 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <CachedUserLoginsProvider>
           <UserProvider>
-            <NotificationHandler>
-              <NavigationProvider>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <NavigationStateManager />
-                  {children}
-                </Suspense>
-              </NavigationProvider>
-            </NotificationHandler>
+            <DormantLetterboxProvider>
+              <NotificationHandler>
+                <NavigationProvider>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NavigationStateManager />
+                    {children}
+                  </Suspense>
+                </NavigationProvider>
+              </NotificationHandler>
+            </DormantLetterboxProvider>
           </UserProvider>
         </CachedUserLoginsProvider>
       </body>

@@ -1,0 +1,220 @@
+import { NextResponse } from "next/server";
+import { FieldPath } from "firebase-admin/firestore";
+
+import { db, auth } from "../../firebaseAdmin";
+import { sendEmail } from "../../utils/dormantLetterboxHelpers";
+
+export async function POST(request) {
+  if (auth == null) {
+    return NextResponse.json({ message: "Admin is null." }, { status: 500 });
+  }
+  try {
+    const authHeader = request.headers.get("Authorization");
+    const idToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+    if (!idToken) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Missing or invalid Authorization header" },
+        { status: 401 }
+      );
+    }
+    let decodedToken;
+    try {
+      decodedToken = await auth.verifyIdToken(idToken);
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+    const uid = decodedToken.uid;
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not initialized" },
+        { status: 500 }
+      );
+    }
+    const userDoc = await db.collection("users").doc(uid).get();
+    const userData = userDoc.data();
+    if (!userDoc.exists || userData?.user_type !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden", message: "Only admin users can use this endpoint" },
+        { status: 403 }
+      );
+    }
+
+    const letterboxSnapshot = await db.collection("letterbox").get();
+    const letterBoxesPromises = letterboxSnapshot.docs.map(async (doc) => {
+      const docData = doc.data();
+      let latestLetter = null;
+
+      const denormalizedAt = docData.latest_letter_created_at;
+      if (denormalizedAt != null) {
+        latestLetter = {
+          id: docData.latest_letter_id ?? null,
+          created_at: typeof denormalizedAt.toDate === "function" ? denormalizedAt.toDate() : denormalizedAt,
+          sent_by: docData.latest_letter_sent_by ?? null,
+        };
+      }
+
+      if (latestLetter === null) {
+        const latestLetterSnapshot = await doc.ref
+          .collection("letters")
+          .orderBy("created_at", "desc")
+          .limit(1)
+          .get();
+
+        if (!latestLetterSnapshot.empty) {
+          const letterDoc = latestLetterSnapshot.docs[0];
+          const letterData = letterDoc.data();
+          const createdAt = letterData.created_at?.toDate?.();
+          const sentById = letterData.sent_by?.id ?? (typeof letterData.sent_by === "string" ? letterData.sent_by : null);
+          latestLetter = {
+            id: letterDoc.id,
+            created_at: createdAt,
+            sent_by: sentById,
+          };
+          try {
+            await doc.ref.update({
+              latest_letter_created_at: letterData.created_at,
+              latest_letter_id: letterDoc.id,
+              latest_letter_sent_by: sentById,
+            });
+          } catch (err) {
+            // Non-fatal: next run will query again
+          }
+        }
+      }
+
+      return {
+        id: doc.id,
+        members: docData.members.map((member) => member.id),
+        latestLetter,
+        user_reminded_at: docData.user_reminded_at?.toDate?.(),
+        admin_reminded_at: docData.admin_reminded_at?.toDate?.(),
+      };
+    });
+    const letterBoxes = await Promise.all(letterBoxesPromises);
+
+    const emailPromises = [];
+
+    for (const letterBox of letterBoxes) {
+      const latestMessageTimestamp = letterBox?.latestLetter?.created_at;
+      const latestAdminDormantLetterboxTimestamp = letterBox?.admin_reminded_at;
+      const latestUserDormantLetterboxTimestamp = letterBox?.user_reminded_at;
+      const now = new Date();
+      let adminDiffDays = 0;
+      let userDiffDays = 0;
+
+      if (latestMessageTimestamp) {
+        const latestMessageTimestampDate = new Date(latestMessageTimestamp);
+        const diffMs = now - latestMessageTimestampDate;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        adminDiffDays = diffDays;
+        userDiffDays = diffDays;
+      }
+
+      if (latestAdminDormantLetterboxTimestamp) {
+        const latestAdminDormantLetterboxTimestampDate = new Date(
+          latestAdminDormantLetterboxTimestamp
+        );
+        const diffMs = Math.floor(
+          (now - latestAdminDormantLetterboxTimestampDate) / (1000 * 60 * 60 * 24)
+        );
+        if (adminDiffDays === 0 || diffMs < adminDiffDays) {
+          adminDiffDays = diffMs;
+        }
+      }
+      if (latestUserDormantLetterboxTimestamp) {
+        const latestUserDormantLetterboxTimestampDate = new Date(
+          latestUserDormantLetterboxTimestamp
+        );
+        const diffMs = Math.floor(
+          (now - latestUserDormantLetterboxTimestampDate) / (1000 * 60 * 60 * 24)
+        );
+        if (userDiffDays === 0 || diffMs < userDiffDays) {
+          userDiffDays = diffMs;
+        }
+      }
+
+      if (userDiffDays >= 14 || adminDiffDays >= 28) {
+        const usersRef = db.collection("users");
+        const membersSnapshot = await usersRef
+          .where(FieldPath.documentId(), "in", letterBox.members)
+          .get();
+        const allMembers = membersSnapshot.docs.map((doc) => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            firstName: docData.first_name,
+            lastName: docData.last_name,
+          };
+        });
+
+        const userPromises = letterBox.members.map((uid) =>
+          auth.getUser(uid).catch((err) => {
+            return null; // Handle missing users gracefully
+          })
+        );
+        const userRecords = await Promise.all(userPromises);
+        const emails = userRecords
+          .filter((record) => record !== null)
+          .map((record) => record.email);
+
+
+        if (userDiffDays >= 14) {
+          emailPromises.push(
+            sendEmail(letterBox.id, allMembers, emails, "user").catch(
+              (err) => err
+            )
+          );
+        }
+
+        if (adminDiffDays >= 28) {
+          emailPromises.push(
+            sendEmail(letterBox.id, allMembers, emails, "admin").catch(
+              (err) => err
+            )
+          );
+        }
+      }
+    }
+
+    const emailResults = await Promise.allSettled(emailPromises);
+    const successEmails = [];
+    const failedEmails = [];
+
+    emailResults.forEach((result) => {
+      if (result.status === "fulfilled") {
+        const value = result.value;
+        if (value && value.success) {
+          successEmails.push(value);
+        } else if (value && value.error) {
+          failedEmails.push(value);
+        }
+      } else {
+        failedEmails.push(result);
+      }
+    });
+
+    return NextResponse.json(
+      {
+        message: "DormantLetterbox Request Success!",
+        successEmails: successEmails,
+        failedEmails: failedEmails,
+        letterBoxes: letterBoxes,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    // Handle errors
+    return NextResponse.json(
+      {
+        error: "Failed to process request",
+        message: error.message,
+      },
+      { status: 500 }
+    );
+  }
+}

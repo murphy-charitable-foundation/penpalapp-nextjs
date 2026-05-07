@@ -88,7 +88,7 @@ export default function ChooseKid() {
         const now = new Date();
         const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
         const minBirthDate = new Date(now.getFullYear() - age.max - 1, now.getMonth(), now.getDate());
-        q = query(q, where("birthday", ">=", minBirthDate), where("birthday", "<=", maxBirthDate));
+        q = query(q, where("date_of_birth", ">=", minBirthDate), where("date_of_birth", "<=", maxBirthDate));
       }
 
       if (gender?.trim()) {
