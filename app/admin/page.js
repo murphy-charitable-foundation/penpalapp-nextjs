@@ -325,7 +325,7 @@ const currentLetter =
                     const previousActiveView = activeView;
 
                     updateLocalLetter(id, {
-                      status: "approved",
+                      status: "sent",
                       moderator_id: userId,
                     });
 
@@ -336,7 +336,7 @@ const currentLetter =
                     try {
                       const ref = doc(db, "letterbox", letterboxId, "letters", id);
                       await updateDoc(ref, {
-                        status: "approved",
+                        status: "sent",
                         moderator_id: userId,
                         updated_at: serverTimestamp(),
                       });

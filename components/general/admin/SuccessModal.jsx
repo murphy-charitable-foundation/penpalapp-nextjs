@@ -6,7 +6,7 @@ export default function SuccessModal({
   onClose = () => {},
   onRevert = () => {},
 }) {
-  if (type === "approved") {
+  if (type === "sent") {
     return <ApproveSuccessModal onClose={onClose} onRevert={onRevert} />;
   }
 
