@@ -1,7 +1,7 @@
 import { db } from "../firebaseAdmin";
 import nodemailer from "nodemailer";
 import { logError } from "./analytics";
-import generateDormantLetterboxEmailTemplate from "../api/dormantletterbox/emailTemplate";
+import generateDormantLetterboxEmailTemplate from "../api/dormantLetterBox/emailTemplate";
 
 
 const transporter = nodemailer.createTransport({
