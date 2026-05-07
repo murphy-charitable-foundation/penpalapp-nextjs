@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
-
+import Link from "next/link";
 
 const MessagePreview = ({
   profileImage,

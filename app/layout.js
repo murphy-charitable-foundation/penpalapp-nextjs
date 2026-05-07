@@ -7,7 +7,7 @@ import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
-import { DormantLetterboxProvider } from './contexts/DormantLetterboxContext'
+import { DormantLetterboxProvider } from '../contexts/DormantLetterboxContext'
 
 const inter = Inter({ subsets: ['latin'] })
 

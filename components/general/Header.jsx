@@ -52,6 +52,7 @@ function FilterButton({ activeFilter, setActiveFilter, isLoadingMore }) {
         <Button
           btnText={`${!activeFilter ? "Filters" : "Back"}`}
           color="white"
+          textColor="text-black"
           size="xs"
           onClick={() => {
             setActiveFilter(!activeFilter);
