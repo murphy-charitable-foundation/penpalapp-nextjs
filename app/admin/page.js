@@ -38,6 +38,7 @@ import { dateToTimestamp } from "../utils/dateHelpers";
 import { useDormantLetterbox } from "../../contexts/DormantLetterboxContext";
 
 export default function Admin() {
+  const PAGE_SIZE = 5;
   const { isDormantLetterboxLoading, handleDormantLetterboxWorker } =
     useDormantLetterbox();
 
@@ -65,8 +66,7 @@ export default function Admin() {
 
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [activeView, setActiveView] = useState("inbox");
-const [reviewAction, setReviewAction] = useState(null);
-
+  const [reviewAction, setReviewAction] = useState(null);
 
   const router = useRouter();
 
@@ -143,12 +143,14 @@ const currentLetter =
     const constraints = [
       where("status", "==", selectedStatus),
       orderBy("created_at", "desc"),
-      limit(5),
+      limit(PAGE_SIZE),
     ];
 
     if (nextPage && lastDoc) constraints.push(startAfter(lastDoc));
+
     if (startDate)
       constraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
+
     if (endDate)
       constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
 
@@ -190,6 +192,10 @@ const currentLetter =
 
     setDocuments((prev) => [...prev, ...newDocs]);
     setLastDoc(snap.docs[snap.docs.length - 1]);
+
+    // If fewer than PAGE_SIZE docs came back, this was the last page.
+    setHasMore(snap.docs.length === PAGE_SIZE);
+
     setIsLoadingMore(false);
   };
 
