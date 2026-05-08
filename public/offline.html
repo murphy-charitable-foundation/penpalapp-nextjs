@@ -43,6 +43,10 @@
             <h1>You are offline.</h1>
             <p>Please check your network connection.</p>
         </div>
-        
+        <script>
+            window.addEventListener('online', () => {
+                window.location.reload();
+            });
+        </script>
     </body>
 </html>

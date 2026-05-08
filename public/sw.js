@@ -52,17 +52,13 @@ self.addEventListener('fetch', (event) => {
       if (request.mode === 'navigate') {
         try {
           return await fetch(request);
-        } catch {
+        } catch (error) {
           const cachedOfflinePage = await cacheOffline.match(OFFLINE_URL);
-          if (cachedOfflinePage){
+          if (!self.navigator.onLine && cachedOfflinePage){
             return cachedOfflinePage;
           }
 
-          return new Response('Offline page unavailable.', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'text/plain' },
-          });
+          throw error; 
         } 
       }
 
