@@ -134,5 +134,13 @@ export function InactivityProvider({ children }) {
 }
 
 export function useInactivity() {
-  return useContext(InactivityContext);
+  const ctx = useContext(InactivityContext);
+
+  if (!ctx) {
+    throw new Error(
+      "useInactivity must be used within an InactivityProvider"
+    );
+  }
+
+  return ctx;
 }
