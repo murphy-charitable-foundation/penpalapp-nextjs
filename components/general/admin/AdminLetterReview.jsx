@@ -14,7 +14,7 @@ export default function AdminLetterReview({
   if (!letter) return null;
 
   const status =
-    letter.status === "sent" || letter.status === "sent"
+    letter.status === "sent"
       ? "sent"
       : letter.status === "rejected"
       ? "rejected"
@@ -28,17 +28,20 @@ export default function AdminLetterReview({
       : "bg-primary";
 
   const sentAt = letter.lastMessageDate
-    ? new Date(letter.lastMessageDate.seconds * 1000).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+    ? typeof letter.lastMessageDate.toDate === "function"
+      ? letter.lastMessageDate.toDate().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : new Date(letter.lastMessageDate.seconds * 1000).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
     : "";
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-start justify-center bg-gray-100">
-      <div className="w-full max-w-lg bg-white flex flex-col h-full rounded-lg shadow-xl overflow-hidden">
-
-        {/* HEADER */}
+      <div className="w-full max-w-lg bg-white flex flex-col h-full shadow-xl overflow-hidden">
         <div className={`flex items-center px-4 h-14 text-white ${headerColor}`}>
           <button
             onClick={onClose}
@@ -54,38 +57,40 @@ export default function AdminLetterReview({
           <div className="w-10 h-10" />
         </div>
 
-        {/* CONTENT */}
         <div className="flex-1 overflow-y-auto px-8 pt-6 pb-0 flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <Image
                 src={letter.profileImage || "/usericon.png"}
                 alt="sender"
                 width={36}
                 height={36}
-                className="rounded-full"
+                className="rounded-full object-cover"
               />
-              <div>
-                <div className="font-semibold text-gray-900">
+              <div className="min-w-0">
+                <div className="font-semibold text-gray-900 truncate">
                   {letter.name}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 truncate">
                   To {letter.recipientName}
                 </div>
               </div>
             </div>
-            <div className="text-sm text-gray-500">{sentAt}</div>
+
+            <div className="text-sm text-gray-500 whitespace-nowrap ml-3">
+              {sentAt}
+            </div>
           </div>
 
-          <p className="text-gray-700 whitespace-pre-wrap">
-            {letter.lastMessage}
-          </p>
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
+            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+              {letter.lastMessage}
+            </p>
+          </div>
 
-          {/* spacer pushes rejected card to bottom */}
           <div className="flex-grow" />
 
-          {/* Rejected banner (kept mounted, smooth fade) */}
-          <div className="mt-8 min-h-[150px]">
+          <div className="mt-8">
             <div
               className={`relative rounded-lg bg-red-50 p-4 transition-opacity duration-150 ${
                 status === "rejected"
@@ -117,17 +122,12 @@ export default function AdminLetterReview({
                   color="blue"
                   onClick={() => onRevert(letter)}
                 />
-                <Button
-                  btnText="Edit"
-                  color="green"
-                  onClick={onReject}
-                />
+                <Button btnText="Edit" color="green" onClick={onReject} />
               </div>
             </div>
           </div>
-        </div> 
+        </div>
 
-        {/* STICKY ACTION BAR */}
         <div className="bg-gray-50 border-t px-6 py-4">
           {status === "sent" && (
             <div className="flex justify-center">
