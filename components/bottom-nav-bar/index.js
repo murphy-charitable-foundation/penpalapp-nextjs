@@ -65,7 +65,7 @@ export default function NavBar() {
 
     try {
       await signOut(auth);
-      router.replace("/login");
+      router.push("/choose-profile");
     } catch (err) {
       console.error(err);
       finishGlobalNavSpinner();

@@ -4,16 +4,25 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
-import { initializeNotifications } from "../utils/notification";
+import { usePageAnalytics } from "../useAnalytics";
+import { useEffect, useRef } from "react";
+import {
+  logInEvent,
+  logButtonEvent,
+  logLoadingTime,
+} from "../utils/analytics";
+import { initializeNotifications } from '../utils/notification'
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +31,22 @@ export default function Login() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const router = useRouter();
+  const { hydrated, addCachedUserLogin, cachedUserLogins, clearCachedUserLogins } = useCachedUserLogins();
+  const hasRedirected = useRef(false);
+
+  usePageAnalytics(`/login`);
+
+  // Only depend on [hydrated]. Do NOT add searchParams or cachedUserLogins - searchParams
+  // gets a new reference every render and causes this effect to run 20+ times/sec.
+  useEffect(() => {
+    if (!hydrated || hasRedirected.current) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("force")) return;
+    if (cachedUserLogins?.length > 0) {
+      hasRedirected.current = true;
+      router.replace("/choose-account");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]); 
 
   const startNavigationSpinner = () => {
     window.dispatchEvent(new Event("app:navigation-start"));
@@ -42,19 +67,27 @@ export default function Login() {
         password
       );
 
+
       const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
+      const data = userSnap.data()
 
       setIsNavigating(true);
       startNavigationSpinner();
 
       if (userSnap.exists()) {
         router.replace("/letterhome");
-
-        initializeNotifications().catch((err) => {
+        addCachedUserLogin({
+          id: uid,
+          email,
+          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+          photo_uri: data?.photo_uri ?? "",
+        });
+        await initializeNotifications().catch((err) => {
           console.error("Notification setup failed:", err);
         });
+        router.push("/letterhome");
       } else {
         router.replace("/create-acc");
       }
@@ -88,6 +121,7 @@ export default function Login() {
 
   const handleForgotPassword = () => {
     startNavigationSpinner();
+    clearCachedUserLogins();
     router.push("/reset-password");
   };
 
@@ -141,9 +175,9 @@ export default function Login() {
             <button
               type="button"
               onClick={handleForgotPassword}
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
-              Forgot your password?
+              Forget saved logins
             </button>
           </div>
 
