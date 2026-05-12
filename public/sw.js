@@ -1,5 +1,6 @@
 // Give your cache a version name
 const CACHE_NAME = 'offline-cache-v2';
+const CACHE_PREFIX = 'offline-cache-';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = ['/offline.html','/murphylogo.png'];
 
@@ -21,9 +22,10 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME) {
             return caches.delete(key);
           }
+          return Promise.resolve(false);
         })
       );
       // Optional but recommended: Ensure that the Service Worker takes control immediately
@@ -54,7 +56,7 @@ self.addEventListener('fetch', (event) => {
           return await fetch(request);
         } catch (error) {
           const cachedOfflinePage = await cacheOffline.match(OFFLINE_URL);
-          
+
           if (cachedOfflinePage){
             return cachedOfflinePage;
           }
