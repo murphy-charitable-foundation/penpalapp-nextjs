@@ -18,6 +18,7 @@ import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
+import { InactivityProvider } from "../contexts/InactivityContext";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
@@ -29,7 +30,8 @@ export default function Home() {
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
   const { user, userDocRef } = useUser();
-  
+
+
   usePageAnalytics("/letterhome");
 
   const getUserData = async (uid) => {
@@ -122,14 +124,14 @@ export default function Home() {
   }, [user]);
   
   return (
-  <>
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
+    <InactivityProvider>
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
         {isLoading && <LetterHomeSkeleton />}
         {!isLoading && (
           <>
@@ -159,8 +161,7 @@ export default function Home() {
           </>
         )}
       </PageContainer>
-
-    </PageBackground>
-  </>
-);
+      </PageBackground>
+    </InactivityProvider>
+  );
 }
