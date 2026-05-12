@@ -39,10 +39,26 @@ export async function POST(request) {
     }
 
     const idToken = authHeader.substring(7);
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const reporterUid = decodedToken.uid;
+    let reporterUid = null;
+    try {
+      const decodedToken = await auth.verifyIdToken(idToken);
+      reporterUid = decodedToken.uid;
+    } catch (_authError) {
+      return NextResponse.json(
+        { message: "Invalid or expired token." },
+        { status: 401 }
+      );
+    }
 
-    const body = await request.json();
+    let body = null;
+    try {
+      body = await request.json();
+    } catch (_jsonError) {
+      return NextResponse.json(
+        { message: "Invalid JSON payload." },
+        { status: 400 }
+      );
+    }
     // Grab message information (never trust reporter identity from request body)
     const { receiver_email, currentUrl, excerpt } = body;
     if (!receiver_email || !currentUrl || !excerpt) {
