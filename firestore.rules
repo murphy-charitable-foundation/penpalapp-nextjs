@@ -47,8 +47,7 @@ service cloud.firestore {
 
       function isUpdatedUserDataValid() {
         return !('user_type' in request.resource.data) ||
-          (request.resource.data.user_type == resource.data.user_type) ||
-          (getUserType(request.auth.uid) == 'international_buddy' && resource.data.user_type == 'child');
+          (request.resource.data.user_type == resource.data.user_type);
       }
 
       function isSelfSafeUpdate() {
@@ -118,11 +117,15 @@ service cloud.firestore {
         let meRef = userDoc(request.auth.uid);
         let otherRef = otherMemberRef();
         return uidExists(request.auth.uid) &&
-          exists(otherRef) &&
           get(meRef).data.connected_penpals != null &&
           otherRef in get(meRef).data.connected_penpals &&
-          get(otherRef).data.connected_penpals != null &&
-          meRef in get(otherRef).data.connected_penpals;
+          (
+            !exists(otherRef) ||
+            (
+              get(otherRef).data.connected_penpals != null &&
+              meRef in get(otherRef).data.connected_penpals
+            )
+          );
       }
 
       allow create: if isSignedIn() &&
