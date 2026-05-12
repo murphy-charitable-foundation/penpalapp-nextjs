@@ -44,7 +44,7 @@ export function InactivityProvider({ children }) {
 
       localStorage.removeItem("child");
 
-      window.location.href = "/choose-profile";
+      router.replace("/choose-profile");
     }
 
     function resetTimer() {
