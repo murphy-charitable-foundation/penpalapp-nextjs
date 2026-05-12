@@ -51,6 +51,14 @@ service cloud.firestore {
           (getUserType(request.auth.uid) == 'international_buddy' && resource.data.user_type == 'child');
       }
 
+      function isSelfSafeUpdate() {
+        return request.auth.uid == userId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'connected_penpals',
+            'connected_penpals_count'
+          ]);
+      }
+
       function isConnectionOnlyUpdate() {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'connected_penpals',
@@ -76,7 +84,8 @@ service cloud.firestore {
       allow list: if isSignedIn() && isAdmin();
       allow update: if isSignedIn() &&
         (
-          isSelfOrAdmin(userId) ||
+          isAdmin() ||
+          isSelfSafeUpdate() ||
           (isListingChildren() && isConnectionOnlyUpdate() && isValidChildConnectionUpdate())
         ) &&
         isUpdatedUserDataValid();
