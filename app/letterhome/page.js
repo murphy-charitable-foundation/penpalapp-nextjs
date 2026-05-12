@@ -20,7 +20,6 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import { useInactivity } from "../contexts/InactivityContext";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -30,11 +29,6 @@ export default function Home() {
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
   const { user, userDocRef } = useUser();
-
-  const {
-    inactivityWarning,
-    inactivitySecondsLeft,
-  } = useInactivity();
   
   usePageAnalytics("/letterhome");
 
