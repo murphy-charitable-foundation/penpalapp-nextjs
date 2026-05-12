@@ -6,10 +6,13 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 const InactivityContext = createContext();
 
 export function InactivityProvider({ children }) {
+  const router = useRouter();
+
   const [inactivityWarning, setInactivityWarning] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState(0);
 
@@ -95,7 +98,7 @@ export function InactivityProvider({ children }) {
         window.removeEventListener(event, resetTimer);
       });
     };
-  }, []);
+  }, [router]);
 
   return (
     <InactivityContext.Provider
@@ -105,10 +108,14 @@ export function InactivityProvider({ children }) {
       }}
     >
       {children}
+
       {inactivityWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-lg p-5 w-[90%] max-w-sm text-center space-y-3">
-            <p className="font-semibold text-gray-900">Are you still there?</p>
+            <p className="font-semibold text-gray-900">
+              Are you still there?
+            </p>
+
             <p className="text-sm text-gray-600">
               Logging out in{" "}
               <span className="font-semibold text-gray-900">
@@ -116,10 +123,11 @@ export function InactivityProvider({ children }) {
               </span>
               .
             </p>
+
             <button
               type="button"
               onClick={() => {
-                // Confirm response: trigger activity so the watcher resets the timer.
+                // Trigger activity to reset timer
                 window.dispatchEvent(new Event("mousemove"));
               }}
               className="w-full rounded-full bg-primary hover:bg-primary-light text-white py-3 font-bold"
