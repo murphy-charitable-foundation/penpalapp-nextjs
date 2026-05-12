@@ -33,7 +33,7 @@ service cloud.firestore {
     match /users/{userId} {
       function isListingChildren() {
         return resource.data.user_type == 'child' &&
-          resource.data.connected_penpals_count <= 3;
+          resource.data.connected_penpals_count < 3;
       }
 
       function isCreatedUserDataValid() {
