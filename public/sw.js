@@ -1,5 +1,5 @@
 // Give your cache a version name
-const CACHE_NAME = 'offline-cache-v1';
+const CACHE_NAME = 'offline-cache-v2';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = ['/offline.html','/murphylogo.png'];
 
@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Handle GET requests only: return cached static assets when available, 
+// Handle GET requests only: return cached static assets when available,
 // and serve the offline page if a navigation request fails.
 self.addEventListener('fetch', (event) => {
 
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
 
-      const cacheOffline = await caches.open(CACHE_NAME);
+      const cacheOffline = await caches.open(CACHE_NAME);      
       
       // For navigation, network first, then fallback to offline page
       if (request.mode === 'navigate') {
@@ -54,11 +54,16 @@ self.addEventListener('fetch', (event) => {
           return await fetch(request);
         } catch (error) {
           const cachedOfflinePage = await cacheOffline.match(OFFLINE_URL);
-          if (!self.navigator.onLine && cachedOfflinePage){
+          
+          if (cachedOfflinePage){
             return cachedOfflinePage;
           }
 
-          throw error; 
+          return new Response('Offline page unavailable.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' },
+          });
         } 
       }
 
