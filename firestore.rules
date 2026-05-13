@@ -93,11 +93,19 @@ service cloud.firestore {
     }
 
     match /letterbox/{letterboxId} {
+      function isDeterministicLetterboxId() {
+        let memberA = request.resource.data.members[0];
+        let memberB = request.resource.data.members[1];
+        return memberA.id < memberB.id &&
+          letterboxId == (memberA.id + '_' + memberB.id);
+      }
+
       function isCreatedLetterboxValid() {
         return (request.resource.data.members.size() == 2) &&
           (request.resource.data.members[0] != request.resource.data.members[1]) &&
           exists(request.resource.data.members[0]) &&
-          exists(request.resource.data.members[1]);
+          exists(request.resource.data.members[1]) &&
+          isDeterministicLetterboxId();
       }
 
       function isLetterboxMember() {
