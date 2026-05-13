@@ -174,20 +174,27 @@ service cloud.firestore {
           return isMyLetter() &&
             request.resource.data.sent_by == resource.data.sent_by &&
             request.resource.data.created_at == resource.data.created_at &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              'status',
-              'content',
-              'updated_at',
-              'drafted_at',
-              'attachments'
-            ]) &&
             (
               (resource.data.status == 'draft' &&
+                request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'status',
+                  'content',
+                  'updated_at',
+                  'drafted_at',
+                  'attachments'
+                ]) &&
                 (
                   request.resource.data.status == 'draft' ||
                   request.resource.data.status == 'pending_review'
                 )) ||
-              (resource.data.status == 'pending_review' && request.resource.data.status == 'pending_review')
+              (
+                resource.data.status == 'pending_review' &&
+                request.resource.data.status == 'pending_review' &&
+                request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'status',
+                  'updated_at'
+                ])
+              )
             );
         }
 
