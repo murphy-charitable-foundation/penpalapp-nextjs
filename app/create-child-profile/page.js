@@ -357,7 +357,7 @@ const handleSubmit = async (e) => {
                   <Input type="date" name="birthday" label="Birthday" error={errors.birthday} onChange={(e) => setBirthday(e.target.value)}/>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Pronouns
                     </label>
                     <Dropdown
@@ -419,7 +419,7 @@ const handleSubmit = async (e) => {
                   <Input name="village" label="Village" />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Education Level
                     </label>
                     <Dropdown
@@ -437,7 +437,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Is Orphan
                     </label>
                     <Dropdown
@@ -449,7 +449,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Guardian
                     </label>
                     <Dropdown
@@ -481,7 +481,7 @@ const handleSubmit = async (e) => {
                   <Input name="favoriteColor" label="Favorite Color" />
                   <Input name="favoriteAnimal" label="Favorite Animal" />
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Hobby
                     </label>
                     <HobbySelect
