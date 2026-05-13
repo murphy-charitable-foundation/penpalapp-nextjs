@@ -72,6 +72,7 @@ service cloud.firestore {
           request.resource.data.user_type == resource.data.user_type &&
           request.resource.data.connected_penpals_count == resource.data.connected_penpals_count + 1 &&
           request.resource.data.connected_penpals.size() == resource.data.connected_penpals.size() + 1 &&
+          request.resource.data.connected_penpals.hasAll(resource.data.connected_penpals) &&
           request.resource.data.connected_penpals_count == request.resource.data.connected_penpals.size() &&
           userDoc(request.auth.uid) in request.resource.data.connected_penpals &&
           !(userDoc(request.auth.uid) in resource.data.connected_penpals);
