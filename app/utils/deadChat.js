@@ -63,13 +63,13 @@ const apiRequest = async (conversations, emailId, reason) => {
     const oneMonthAgoTimestamp = dateToTimestamp(oneMonthAgo);
 
     //Two indexes needed for this query but keeps read calls down.
-    const allLettersQuery = query(
-        collectionGroup(db, "letters"), 
+    const allMessagesQuery = query(
+        collectionGroup(db, "messages"), 
         where("status", "==", "sent"),
         where("created_at", ">=", oneMonthAgoTimestamp), // Use Firestore Timestamp here
     );
 
-    const querySnapshot = await getDocs(allLettersQuery);
+    const querySnapshot = await getDocs(allMessagesQuery);
     const conversations = {}; 
 
     const documents = querySnapshot.docs.map(doc => ({
@@ -110,9 +110,9 @@ const apiRequest = async (conversations, emailId, reason) => {
       const activityMap = conversationses[id] || {};
   
       for (const member of members) {
-        const lettersByMember = activityMap[member] || [];
+        const messagesByMember = activityMap[member] || [];
   
-        const lastSentDate = lettersByMember
+        const lastSentDate = messagesByMember
           .map((letter) => letter.created_at?.toDate?.())
           .filter((d) => !!d)
           .sort((a, b) => b - a)[0]; // Most recent

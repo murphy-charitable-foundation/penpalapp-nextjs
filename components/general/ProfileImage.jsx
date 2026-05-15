@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 
-export default function ProfileImage({ photo_uri, first_name, size = 16}) {
+export default function ProfileImage({ photo_uri, name, size = 16}) {
     const pixelSize = size * 4;
     const [imageError, setImageError] = useState(false);
 
@@ -22,7 +22,7 @@ export default function ProfileImage({ photo_uri, first_name, size = 16}) {
             onError={() => setImageError(true)}
           />
         ) : (
-          <span className="text-xl text-gray-600">{first_name?.[0]}</span>
+          <span className="text-xl text-gray-600">{name}</span>
         )}
       </div>
     </div>
