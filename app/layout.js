@@ -7,7 +7,7 @@ import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
-import { InactivityProvider } from './contexts/InactivityContext'
+import ServiceWorkerHandler from '@/components/ServiceWorkerHandler'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,18 +26,17 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>
+        <ServiceWorkerHandler />
         <CachedUserLoginsProvider>
           <UserProvider>
-            <InactivityProvider>
-              <NotificationHandler>
-                <NavigationProvider>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <NavigationStateManager />
-                    {children}
-                  </Suspense>
-                </NavigationProvider>
-              </NotificationHandler>
-            </InactivityProvider>
+            <NotificationHandler>
+              <NavigationProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <NavigationStateManager />
+                  {children}
+                </Suspense>
+              </NavigationProvider>
+            </NotificationHandler>
           </UserProvider>
         </CachedUserLoginsProvider>
       </body>
