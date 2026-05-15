@@ -117,7 +117,8 @@ service cloud.firestore {
       }
 
       function otherMemberRef() {
-        return request.resource.data.members[0] == userDoc(request.auth.uid) ?
+        let meRef = userDoc(request.auth.uid);
+        return request.resource.data.members[0] == meRef ?
           request.resource.data.members[1] :
           request.resource.data.members[0];
       }
@@ -125,7 +126,8 @@ service cloud.firestore {
       function hasExistingConnectionForNewLetterbox() {
         let meRef = userDoc(request.auth.uid);
         let otherRef = otherMemberRef();
-        return uidExists(request.auth.uid) &&
+        return isLetterboxMemberOfNewLetterBox() &&
+          uidExists(request.auth.uid) &&
           get(meRef).data.connected_penpals != null &&
           otherRef in get(meRef).data.connected_penpals &&
           (
