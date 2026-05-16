@@ -28,7 +28,7 @@ import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import ConversationList from "../../components/general/ConversationList";
-import Header from "../../components/general/Header";
+import AdminHeader from "../../components/general/admin/AdminHeader";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
 import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
@@ -266,34 +266,34 @@ export default function Admin() {
   };
 
   const handleApprove = async () => {
-  if (!currentLetter) return;
+    if (!currentLetter) return;
 
-  setIsReviewSubmitting(true);
+    setIsReviewSubmitting(true);
 
-  const { id, letterboxId } = currentLetter;
+    const { id, letterboxId } = currentLetter;
 
-  try {
-    const ref = doc(db, "letterbox", letterboxId, "letters", id);
+    try {
+      const ref = doc(db, "letterbox", letterboxId, "letters", id);
 
-    await updateDoc(ref, {
-      status: "sent",
-      moderator_id: userId,
-      updated_at: serverTimestamp(),
-    });
+      await updateDoc(ref, {
+        status: "sent",
+        moderator_id: userId,
+        updated_at: serverTimestamp(),
+      });
 
-    updateLocalLetter(id, {
-      status: "sent",
-      moderator_id: userId,
-    });
+      updateLocalLetter(id, {
+        status: "sent",
+        moderator_id: userId,
+      });
 
-    setReviewAction("sent");
-  } catch (err) {
-    console.warn("Approve blocked", err);
-    setError("Approve failed. Please check your permissions and try again.");
-  } finally {
-    setIsReviewSubmitting(false);
-  }
-};
+      setReviewAction("sent");
+    } catch (err) {
+      console.warn("Approve blocked", err);
+      setError("Approve failed. Please check your permissions and try again.");
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  };
 
   const handleRejectSubmit = async (reason, feedback) => {
     if (!selectedLetter?.letterboxId || !selectedLetter?.id) {
@@ -351,10 +351,9 @@ export default function Admin() {
           className="h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           {activeView === "inbox" && (
-            <Header
+            <AdminHeader
               activeFilter={activeFilter}
               setActiveFilter={setActiveFilter}
-              title="Select message types"
               status={selectedStatus}
               isLoadingMore={isLoadingMore}
             />
@@ -414,7 +413,7 @@ export default function Admin() {
                 )}
 
                 {activeView === "review" && selectedLetter && !reviewAction && (
-                  <div className="h-full overflow-y-auto overscroll-contain px-6 pt-3 pb-4">
+                  <div className="h-full overflow-hidden">
                     <AdminLetterReview
                       letter={currentLetter}
                       isSubmitting={isReviewSubmitting}
@@ -436,7 +435,7 @@ export default function Admin() {
                 )}
 
                 {activeView === "reject" && selectedLetter && !reviewAction && (
-                  <div className="h-full overflow-y-auto overscroll-contain px-6 pt-3 pb-4">
+                  <div className="h-full overflow-hidden">
                     <AdminRejectModal
                       letter={selectedLetter}
                       onClose={() => setActiveView("review")}
@@ -446,15 +445,17 @@ export default function Admin() {
                 )}
 
                 {reviewAction === "sent" && (
-                  <SuccessModal
-                    type="sent"
-                    onClose={() => {
-                      setReviewAction(null);
-                      setSelectedLetter(null);
-                      setActiveView("inbox");
-                    }}
-                    onRevert={() => revertToPending(selectedLetter)}
-                  />
+                  <div className="h-full overflow-hidden">
+                    <SuccessModal
+                      type="sent"
+                      onClose={() => {
+                        setReviewAction(null);
+                        setSelectedLetter(null);
+                        setActiveView("inbox");
+                      }}
+                      onRevert={() => revertToPending(selectedLetter)}
+                    />
+                  </div>
                 )}
 
                 {reviewAction === "rejected" && (

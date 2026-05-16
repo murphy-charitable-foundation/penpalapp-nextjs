@@ -22,7 +22,7 @@ import PageBackground from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import FilterPanel from "../../components/discovery/FilterPanel";
-import Header from "../../components/general/Header";
+import DiscoveryHeader from "../../components/discovery/DiscoveryHeader";
 import NavBar from "../../components/bottom-nav-bar";
 import KidsList from "../../components/discovery/KidsList";
 
@@ -80,15 +80,27 @@ export default function ChooseKid() {
       let q = query(
         usersRef,
         where("user_type", "==", "child"),
-        where("connected_penpals_count", "<", 3) // Server-side filter
+        where("connected_penpals_count", "<", 3), // Server-side filter
       );
 
       // Client-side filters
       if (age?.min != null && age?.max != null) {
         const now = new Date();
-        const maxBirthDate = new Date(now.getFullYear() - age.min, now.getMonth(), now.getDate());
-        const minBirthDate = new Date(now.getFullYear() - age.max - 1, now.getMonth(), now.getDate());
-        q = query(q, where("date_of_birth", ">=", minBirthDate), where("date_of_birth", "<=", maxBirthDate));
+        const maxBirthDate = new Date(
+          now.getFullYear() - age.min,
+          now.getMonth(),
+          now.getDate(),
+        );
+        const minBirthDate = new Date(
+          now.getFullYear() - age.max - 1,
+          now.getMonth(),
+          now.getDate(),
+        );
+        q = query(
+          q,
+          where("date_of_birth", ">=", minBirthDate),
+          where("date_of_birth", "<=", maxBirthDate),
+        );
       }
 
       if (gender?.trim()) {
@@ -109,7 +121,9 @@ export default function ChooseKid() {
 
       const availableDocs = snapshot.docs.filter((d) => {
         const data = d.data();
-        return !data.connected_penpals?.some((ref) => ref?.path === userRef.path);
+        return !data.connected_penpals?.some(
+          (ref) => ref?.path === userRef.path,
+        );
       });
 
       const kidsList = await Promise.all(
@@ -126,11 +140,13 @@ export default function ChooseKid() {
           } catch {
             return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
           }
-        })
+        }),
       );
 
       setKids((prev) => (reset ? kidsList : [...prev, ...kidsList]));
-      setLastKidDoc(snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+      setLastKidDoc(
+        snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
+      );
     } catch (e) {
       setError("Error fetching kids");
       logError(e, { description: "Error fetching kids" });
@@ -147,7 +163,8 @@ export default function ChooseKid() {
       const date =
         birthdayTimestamp instanceof Date
           ? birthdayTimestamp
-          : birthdayTimestamp.toDate?.() ?? new Date(birthdayTimestamp._seconds * 1000);
+          : (birthdayTimestamp.toDate?.() ??
+            new Date(birthdayTimestamp._seconds * 1000));
 
       const now = new Date();
       let years = now.getFullYear() - date.getFullYear();
@@ -194,21 +211,33 @@ export default function ChooseKid() {
         >
           <PageHeader title="Discovery" image={false} showBackButton />
 
-          <Header activeFilter={filtersOpen} setActiveFilter={setFiltersOpen} />
+          <DiscoveryHeader
+            activeFilter={filtersOpen}
+            setActiveFilter={setFiltersOpen}
+          />
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {error && <div className="text-red-600 mb-3">{error}</div>}
 
-            <KidsList
-              kids={kids}
-              calculateAge={calculateAge}
-              loadMoreKids={loadMoreKids}
-              lastKidDoc={lastKidDoc}
-              loading={loading}
-              showEmpty={!initialLoad}
-              onClearFilters={handleClearFilters}
-              onEditFilters={() => setFiltersOpen(true)}
-            />
+            {filtersOpen ? (
+              <FilterPanel
+                open={filtersOpen}
+                initial={{ age, gender, hobbies }}
+                onApply={handleApplyFilters}
+                onClose={() => setFiltersOpen(false)}
+              />
+            ) : (
+              <KidsList
+                kids={kids}
+                calculateAge={calculateAge}
+                loadMoreKids={loadMoreKids}
+                lastKidDoc={lastKidDoc}
+                loading={loading}
+                showEmpty={!initialLoad}
+                onClearFilters={handleClearFilters}
+                onEditFilters={() => setFiltersOpen(true)}
+              />
+            )}
           </div>
 
           <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
@@ -216,13 +245,6 @@ export default function ChooseKid() {
           </div>
         </PageContainer>
       </div>
-
-      <FilterPanel
-        open={filtersOpen}
-        initial={{ age, gender, hobbies }}
-        onApply={handleApplyFilters}
-        onClose={() => setFiltersOpen(false)}
-      />
     </PageBackground>
   );
 }
