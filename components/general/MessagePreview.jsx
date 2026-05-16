@@ -89,7 +89,7 @@ const MessagePreview = ({
 
   const cardContent = (
     <div
-      className={`w-full p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
+      className={`w-full p-2 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer ${
         status === "rejected"
           ? "bg-red-50"
           : isRecipient && unread

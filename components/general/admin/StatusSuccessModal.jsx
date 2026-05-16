@@ -62,7 +62,7 @@ export default function StatusSuccessModal({
               <div className="w-[320px]">
                 <Button
                   btnText="Revert to review"
-                  color="gray"
+                  color="grayBlue"
                   rounded="rounded-full"
                   onClick={onRevert}
                 />

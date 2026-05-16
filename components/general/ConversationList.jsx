@@ -6,7 +6,7 @@ const ConversationList = ({
   onSelectConversation = () => {},
 }) => {
   return (
-    <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1 mb-4">
+    <div className="space-y-4 pr-1 mb-4">
       {conversations.map((conversation, i) => (
         <div key={`${conversation.letterboxId}-${conversation.id}-${i}`}>
           <MessagePreview
