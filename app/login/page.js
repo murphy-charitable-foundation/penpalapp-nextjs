@@ -28,6 +28,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+
   const router = useRouter();
   const { hydrated, addCachedUserLogin, cachedUserLogins, clearCachedUserLogins } = useCachedUserLogins();
   const hasRedirected = useRef(false);
@@ -45,6 +47,10 @@ export default function Login() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]); 
+
+  const startNavigationSpinner = () => {
+    window.dispatchEvent(new Event("app:navigation-start"));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,21 +73,30 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
       const data = userSnap.data()
 
+      setIsNavigating(true);
+      startNavigationSpinner();
+
       if (userSnap.exists()) {
+        router.replace("/letterhome");
         addCachedUserLogin({
           id: uid,
           email,
           name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
           photo_uri: data?.photo_uri ?? "",
         });
-        await initializeNotifications()
+        await initializeNotifications().catch((err) => {
+          console.error("Notification setup failed:", err);
+        });
         router.push("/letterhome");
       } else {
-        router.push("/create-acc");
+        router.replace("/create-acc");
       }
     } catch (err) {
       setLoading(false);
+      setIsNavigating(false);
+
       console.error("Authentication error:", err.message);
+
       switch (err.code) {
         case "auth/user-not-found":
           setError("No user found with this email.");
@@ -100,90 +115,88 @@ export default function Login() {
     }
   };
 
-  const handleInputChange = () => setError("");
+  const handleInputChange = () => {
+    setError("");
+  };
 
   const handleForgotPassword = () => {
+    startNavigationSpinner();
+    clearCachedUserLogins();
     router.push("/reset-password");
   };
 
+  if (loading || isNavigating) {
+    return (
+      <PageBackground>
+        <PageContainer maxWidth="md" padding="p-8">
+          <LoadingSpinner />
+        </PageContainer>
+      </PageBackground>
+    );
+  }
+
   return (
-  <PageBackground>
-    <PageContainer maxWidth="md" padding="p-8">
-      {loading && <LoadingSpinner />}
+    <PageBackground>
+      <PageContainer maxWidth="md" padding="p-8">
+        <PageHeader title="Login" />
 
-      <PageHeader title="Login" />
-
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            handleInputChange();
-          }}
-          placeholder="Ex. user@gmail.com"
-          id="email"
-          name="email"
-          label="Email"
-          error={error && error.toLowerCase().includes("email") ? error : ""}
-        />
-
-        <Input
-          type="password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            handleInputChange();
-          }}
-          placeholder="******"
-          id="password"
-          name="password"
-          label="Password"
-          error={
-            error && error.toLowerCase().includes("password") ? error : ""
-          }
-        />
-
-        {/* Forgot password */}
-        <div className="block text-md text-center">
-          <button
-            type="button"
-            onClick={handleForgotPassword}
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Forgot your password?
-          </button>
-        </div>
-
-        {/* Other errors */}
-        {error &&
-          !error.toLowerCase().includes("email") &&
-          !error.toLowerCase().includes("password") && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
-          )}
-
-        <div className="flex justify-center pt-2">
-          <Button
-            btnType="submit"
-            btnText="Log in"
-            color="green"
-            disabled={loading}
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="Ex. user@gmail.com"
+            id="email"
+            name="email"
+            label="Email"
+            error={error && error.toLowerCase().includes("email") ? error : ""}
           />
-        </div>
 
-        {cachedUserLogins?.length > 0 && (
-          <div className="mt-4 text-center">
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              handleInputChange();
+            }}
+            placeholder="******"
+            id="password"
+            name="password"
+            label="Password"
+            error={
+              error && error.toLowerCase().includes("password") ? error : ""
+            }
+          />
+
+          <div className="block text-md text-center">
             <button
               type="button"
-              onClick={() => clearCachedUserLogins()}
+              onClick={handleForgotPassword}
               className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
               Forget saved logins
             </button>
           </div>
-        )}
-      </form>
-    </PageContainer>
-  </PageBackground>
-);
+
+          {error &&
+            !error.toLowerCase().includes("email") &&
+            !error.toLowerCase().includes("password") && (
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            )}
+
+          <div className="flex justify-center pt-2">
+            <Button
+              btnType="submit"
+              btnText="Log in"
+              color="green"
+              disabled={loading}
+            />
+          </div>
+        </form>
+      </PageContainer>
+    </PageBackground>
+  );
 }
