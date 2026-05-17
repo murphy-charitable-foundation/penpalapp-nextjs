@@ -10,7 +10,6 @@ import {
   startAfter,
   limit,
 } from "firebase/firestore";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -145,13 +144,17 @@ export default function ChooseKid() {
         const kidsList = await Promise.all(
           filteredDocs.map(async (d) => {
             const data = d.data();
+
             try {
               if (data.photo_uri) {
-                const storage = getStorage();
-                const photoRef = ref(storage, data.photo_uri);
-                const photoURL = await getDownloadURL(photoRef);
-                return { id: d.id, ref: d.ref, ...data, photoURL };
+                return {
+                  id: d.id,
+                  ref: d.ref,
+                  ...data,
+                  photoURL: data.photo_uri,
+                };
               }
+
               return {
                 id: d.id,
                 ref: d.ref,
