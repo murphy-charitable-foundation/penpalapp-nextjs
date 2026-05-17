@@ -14,9 +14,16 @@ export default function Home() {
     window.dispatchEvent(new Event("app:navigation-start"));
     router.push(href);
   };
+  
+return (
+      <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
+      {showSpinner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+         <LoadingSpinner />
+        </div>
+      )}
 
-  return (
-    <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
+
       <PageContainer
         width="compactXS"
         padding="none"
@@ -33,7 +40,7 @@ export default function Home() {
           z-20
         "
       >
-        {/* Logo */}
+        {/* LOGO */}
         <div className="flex justify-center pt-10">
           <Image
             src={logo}
@@ -44,14 +51,14 @@ export default function Home() {
           />
         </div>
 
-        {/* Title */}
+        {/* TITLE */}
         <div className="px-10 pt-14 text-center">
           <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
             Welcome to Pen Pal App
           </h1>
         </div>
 
-        {/* Subtitle */}
+        {/* SUBTITLE */}
         <div className="px-10 mt-3 text-center">
           <p className="text-gray-700 text-base md:text-lg leading-relaxed">
             Write, connect, and inspire children in Uganda
