@@ -54,6 +54,8 @@ export default function CreateChildProfile() {
   const auth = getAuth();
   const fileInputRef = useRef(null);
   const cropperRef = useRef(null);
+  const avatarPreviewUrlRef = useRef(null);
+
   const { userType, loading: userLoading } = useUser();
   usePageAnalytics("/user-data-import");
 
@@ -73,6 +75,13 @@ export default function CreateChildProfile() {
     }
   }, [userType, userLoading, router]);
 
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrlRef.current) {
+        URL.revokeObjectURL(avatarPreviewUrlRef.current);
+      }
+    };
+  }, []);
 
 
   const handleImageClick = () => {
@@ -91,9 +100,16 @@ export default function CreateChildProfile() {
 
     // Handle avatar selection from AvatarUploadModal
   const handleAvatarSelected = (blob) => {
+    if (avatarPreviewUrlRef.current) {
+      URL.revokeObjectURL(avatarPreviewUrlRef.current);
+    }
+    const nextUrl = URL.createObjectURL(blob);
+    avatarPreviewUrlRef.current = nextUrl;
     setCroppedBlob(blob);
     // Generate preview URL from blob
-    setCroppedImage(URL.createObjectURL(blob));
+    //setCroppedImage(URL.createObjectURL(blob));
+    setCroppedImage(nextUrl);
+
     setShowAvatarModal(false);  
   };
 
@@ -102,8 +118,15 @@ export default function CreateChildProfile() {
     if (cropper) {
       const canvas = cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
+        if (avatarPreviewUrlRef.current) {
+          URL.revokeObjectURL(avatarPreviewUrlRef.current);
+        }
+        const nextUrl = URL.createObjectURL(blob);
+        avatarPreviewUrlRef.current = nextUrl;
         setCroppedBlob(blob);
-        setCroppedImage(URL.createObjectURL(blob));
+        //setCroppedImage(URL.createObjectURL(blob));
+        setCroppedImage(nextUrl);
+
         setShowCropper(false);
       });
     }
