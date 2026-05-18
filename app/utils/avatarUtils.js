@@ -44,7 +44,16 @@ export const saveAvatar = async ({
   }
 
   setLoading(true);
+  let avatarBlob;
+  try {
+    avatarBlob = base64ToBlob(avatar);
+  } catch (error) {
+    setLoading(false);
+    onError?.(error);
+    return;
+  }
 
+  /*
   uploadFile(
     base64ToBlob(avatar),
     `profile/${uid}/profile-image`,
@@ -67,7 +76,37 @@ export const saveAvatar = async ({
         setLoading(false);
       }
     },
-  );
+  ); */
+    try {
+    uploadFile(
+      avatarBlob,
+      `profile/${uid}/profile-image`,
+      () => {}, // optional progress callback
+     (error) => {
+        setLoading(false);
+        onError(new Error("Upload error"));
+      },
+      async (url) => {
+        if (!url) {
+          setLoading(false);
+          onError?.(new Error("Upload returned empty URL"));
+          return;
+        }
+        try {
+          await updateDoc(doc(db, "users", uid), { photo_uri: url });
+          setStorageUrl?.(url);
+          onSuccess(url);
+        } catch (e) {
+          onError?.(new Error("Save Error!"));
+        } finally {
+          setLoading(false);
+        }
+      },
+    );
+  } catch (error) {
+    setLoading(false);
+    onError?.(error);
+  }
 };
 
 export const confirmDeleteAvatar = async ({
