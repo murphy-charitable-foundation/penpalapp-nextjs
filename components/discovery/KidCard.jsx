@@ -21,6 +21,10 @@ export default function KidCard({ kid, calculateAge }) {
     ? [kid.hobby.trim()]
     : [];
 
+  const visibleHobbies = hobbies.slice(0, 3);
+  const extraHobbies = hobbies.length - 3;
+  const age = calculateAge(kid?.birthday);
+
   return (
     <div
       className="w-full mx-auto my-2 p-4 rounded-2xl shadow-md bg-white ring-1 ring-gray-100"
@@ -46,9 +50,14 @@ export default function KidCard({ kid, calculateAge }) {
         {kid?.first_name} {kid?.last_name}
       </h2>
 
-      <p className="text-xs mb-2 text-center" style={{ color: BRAND.subtext }}>
-        {calculateAge(kid?.birthday)} years old
-      </p>
+      {age != null && (
+        <p
+          className="text-xs mb-2 text-center"
+          style={{ color: BRAND.subtext }}
+        >
+          {age} years old
+        </p>
+      )}
 
       {kid?.bio && (
         <p
@@ -61,7 +70,7 @@ export default function KidCard({ kid, calculateAge }) {
 
       {hobbies.length > 0 && (
         <div className="flex justify-center flex-wrap gap-2 mb-4">
-          {hobbies.map((hobby, idx) => (
+          {visibleHobbies.map((hobby, idx) => (
             <span
               key={idx}
               className="px-3 py-1 text-[11px] rounded-full border"
@@ -74,6 +83,18 @@ export default function KidCard({ kid, calculateAge }) {
               {hobby}
             </span>
           ))}
+          {extraHobbies > 0 && (
+            <span
+              className="px-3 py-1 text-[11px] rounded-full border"
+              style={{
+                backgroundColor: BRAND.chipBg,
+                borderColor: BRAND.primarySoft,
+                color: BRAND.text,
+              }}
+            >
+              +{extraHobbies} more
+            </span>
+          )}
         </div>
       )}
 
