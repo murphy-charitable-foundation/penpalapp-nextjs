@@ -12,7 +12,7 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { PageHeader } from "../../components/general/PageHeader";
 import Dialog from "../../components/general/Dialog";
 
-import { uploadFile } from "../lib/uploadFile";
+import { uploadFile } from "../utils/uploadFile";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 

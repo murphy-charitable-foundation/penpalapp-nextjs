@@ -22,7 +22,8 @@ import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/letterboxFunctions";
 import Image from "next/image";
 import EditProfileImage from "../../components/edit-profile-image";
-import { uploadFile } from "../lib/uploadFile";
+import AvatarUploadModal from "../../components/general/AvatarUploadModal";
+import { uploadFile } from "../utils/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function CreateChildProfile() {
@@ -45,6 +46,7 @@ export default function CreateChildProfile() {
   const [croppedImage, setCroppedImage] = useState(null);
   const [croppedBlob, setCroppedBlob] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -85,6 +87,14 @@ export default function CreateChildProfile() {
       // Reset the input value to allow selecting the same file again
       fileInputRef.current.value = '';
     }
+  };
+
+    // Handle avatar selection from AvatarUploadModal
+  const handleAvatarSelected = (blob) => {
+    setCroppedBlob(blob);
+    // Generate preview URL from blob
+    setCroppedImage(URL.createObjectURL(blob));
+    setShowAvatarModal(false);  
   };
 
   const handleCrop = () => {
@@ -252,6 +262,7 @@ const handleSubmit = async (e) => {
       setHobbies([]);
       setCroppedBlob(null);
       setCroppedImage(null);
+      setShowAvatarModal(false);
       e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
@@ -278,7 +289,30 @@ const handleSubmit = async (e) => {
         title={dialogTitle}
         content={dialogMessage}
       />
-
+      {showAvatarModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-[#4E802A] z-[998]"
+            onClick={() => setShowAvatarModal(false)}
+          />
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <div
+              className="w-full max-w-md bg-white rounded-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AvatarUploadModal
+                autoSave={false}
+                onContinue={handleAvatarSelected}
+                onBackClick={() => setShowAvatarModal(false)}
+                continueText="Select"
+                skipText=""
+                colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
+                pageAnalyticsPath="/create-child-profile"
+              />
+            </div>
+          </div>
+        </>
+      )}
       <div className="flex-1 min-h-0 flex justify-center">
         <PageContainer
           width="compactXS"
@@ -302,7 +336,7 @@ const handleSubmit = async (e) => {
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
-                onClick={handleImageClick}
+                onClick={() => setShowAvatarModal(true)}
                 className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
               >
                 Upload Photo
