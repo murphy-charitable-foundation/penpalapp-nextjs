@@ -6,17 +6,17 @@ import Dropdown from "../Dropdown";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const statusOptions = new Map([
-  ["Sent", "sent"],
-  ["Pending Review", "pending_review"],
-  ["Rejected", "rejected"],
-]);
+const statusOptions = [
+  { label: "Sent", value: "sent" },
+  { label: "Pending Review", value: "pending_review" },
+  { label: "Rejected", value: "rejected" },
+];
 
-const statusLabels = new Map([
-  ["sent", "Sent"],
-  ["pending_review", "Pending Review"],
-  ["rejected", "Rejected"],
-]);
+const getStatusLabel = (value) =>
+  statusOptions.find((option) => option.value === value)?.label || "";
+
+const getStatusValue = (label) =>
+  statusOptions.find((option) => option.label === label)?.value || "";
 
 function normalizeFilterDate(value) {
   if (value == null || value === "" || value === 0) return "";
@@ -51,18 +51,17 @@ export default function AdminFilter({
 }) {
   const [statusFilter, setStatusFilter] = useState(status || "");
   const [startFilter, setStartFilter] = useState(() =>
-    normalizeFilterDate(start)
+    normalizeFilterDate(start),
   );
   const [endFilter, setEndFilter] = useState(() => normalizeFilterDate(end));
   const [currentFilter, setCurrentFilter] = useState(
-    status ? statusLabels.get(status) : ""
+    status ? getStatusLabel(status) : "",
   );
-
   useEffect(() => {
     setStatusFilter(status || "");
     setStartFilter(normalizeFilterDate(start));
     setEndFilter(normalizeFilterDate(end));
-    setCurrentFilter(status ? statusLabels.get(status) : "");
+    setCurrentFilter(status ? getStatusLabel(status) : "");
   }, [status, start, end]);
 
   const applyFilter = async (e) => {
@@ -94,9 +93,7 @@ export default function AdminFilter({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">
-            End date:
-          </label>
+          <label className="text-sm font-medium text-gray-700">End date:</label>
 
           <DatePicker
             selected={toDateOrNull(endFilter)}
@@ -117,12 +114,12 @@ export default function AdminFilter({
           </label>
 
           <Dropdown
-            options={Array.from(statusOptions.keys())}
-            valueChange={(optionValue) => {
-              setStatusFilter(statusOptions.get(optionValue));
-              setCurrentFilter(optionValue);
+            options={statusOptions.map((option) => option.label)}
+            valueChange={(optionLabel) => {
+              setStatusFilter(getStatusValue(optionLabel));
+              setCurrentFilter(optionLabel);
             }}
-            currentValue={currentFilter || statusLabels.get(status)}
+            currentValue={currentFilter || getStatusLabel(status)}
             text="Status"
           />
         </div>
