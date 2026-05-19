@@ -12,8 +12,9 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { ref, getDownloadURL } from "firebase/storage";
 
-import { db, auth } from "../firebaseConfig";
+import { db, auth, storage } from "../firebaseConfig";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
@@ -147,27 +148,13 @@ export default function ChooseKid() {
 
             try {
               if (data.photo_uri) {
-                return {
-                  id: d.id,
-                  ref: d.ref,
-                  ...data,
-                  photoURL: data.photo_uri,
-                };
+                const photoRef = ref(storage, data.photo_uri);
+                const photoURL = await getDownloadURL(photoRef);
+                return { id: d.id, ref: d.ref, ...data, photoURL };
               }
-
-              return {
-                id: d.id,
-                ref: d.ref,
-                ...data,
-                photoURL: "/usericon.png",
-              };
+              return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
             } catch {
-              return {
-                id: d.id,
-                ref: d.ref,
-                ...data,
-                photoURL: "/usericon.png",
-              };
+              return { id: d.id, ref: d.ref, ...data, photoURL: "/usericon.png" };
             }
           }),
         );

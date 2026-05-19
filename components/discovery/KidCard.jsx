@@ -15,14 +15,13 @@ const BRAND = {
 export default function KidCard({ kid, calculateAge }) {
   const imgSrc = kid?.photoURL || "/usericon.png";
 
-  const hobbies = Array.isArray(kid?.hobby)
-    ? kid.hobby
-    : typeof kid?.hobby === "string" && kid.hobby.trim()
-    ? [kid.hobby.trim()]
+  const hobbyData = kid?.hobbies ?? kid?.hobby;
+  const hobbies = Array.isArray(hobbyData)
+    ? hobbyData
+    : typeof hobbyData === "string" && hobbyData.trim()
+    ? [hobbyData.trim()]
     : [];
 
-  const visibleHobbies = hobbies.slice(0, 3);
-  const extraHobbies = hobbies.length - 3;
   const age = calculateAge(kid?.birthday);
 
   return (
@@ -70,7 +69,7 @@ export default function KidCard({ kid, calculateAge }) {
 
       {hobbies.length > 0 && (
         <div className="flex justify-center flex-wrap gap-2 mb-4">
-          {visibleHobbies.map((hobby, idx) => (
+          {hobbies.map((hobby, idx) => (
             <span
               key={idx}
               className="px-3 py-1 text-[11px] rounded-full border"
@@ -83,18 +82,6 @@ export default function KidCard({ kid, calculateAge }) {
               {hobby}
             </span>
           ))}
-          {extraHobbies > 0 && (
-            <span
-              className="px-3 py-1 text-[11px] rounded-full border"
-              style={{
-                backgroundColor: BRAND.chipBg,
-                borderColor: BRAND.primarySoft,
-                color: BRAND.text,
-              }}
-            >
-              +{extraHobbies} more
-            </span>
-          )}
         </div>
       )}
 
