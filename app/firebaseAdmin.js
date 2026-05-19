@@ -3,14 +3,18 @@ import { logError } from "./utils/analytics";
 
 // Trying to different approaches to get Firebase credentials
 let serviceAccount;
+const firebasePrivateKey =
+  process.env.FIREBASE_PRIVATE_KEY || process.env.private_key;
+const firebaseClientEmail =
+  process.env.FIREBASE_CLIENT_EMAIL || process.env.client_email;
 
 // First trying to use individual environment variables
-if (process.env.private_key && process.env.client_email) {
+if (firebasePrivateKey && firebaseClientEmail) {
   serviceAccount = {
     projectId: "penpalmagicapp",
-    clientEmail: process.env.client_email,
+    clientEmail: firebaseClientEmail,
     // Make sure to properly handle newlines in the private key
-    privateKey: process.env.private_key.replace(/\\n/g, "\n"),
+    privateKey: firebasePrivateKey.replace(/\\n/g, "\n"),
   };
 }
 // Fallback to service account JSON if available
