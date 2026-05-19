@@ -220,8 +220,12 @@ export default function Home() {
 
     fetchData();
   }, [user]);
-  
-  return (
+
+if (isLoading) {
+  return <LetterHomeSkeleton />;
+}
+
+return (
   <>
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
       <PageContainer
@@ -230,40 +234,38 @@ export default function Home() {
         center={false}
         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
-        {isLoading && <LetterHomeSkeleton />}
-        {!isLoading && (
-          <>
-            <div className="shrink-0 border-b">
-              <ProfileHeader
-                userName={userName}
-                profileImage={profileImage}
-                id={userId}
-                showCountry={false}
-              />
-            </div>
+        <div className="shrink-0 border-b">
+          <ProfileHeader
+            userName={userName}
+            profileImage={profileImage}
+            id={userId}
+            showCountry={false}
+          />
+        </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto px-3">
-              {conversations.length > 0 ? (
-                <ConversationList conversations={conversations} />
-              ) : (
-                <EmptyState
-                  title="New friends are coming!"
-                  description="Many friends are coming — hang tight!"
-                />
-              )}
-            </div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-2">
+          {conversations.length > 0 ? (
+            <ConversationList conversations={conversations} />
+          ) : (
+            <EmptyState
+              title="New friends are coming!"
+              description="Many friends are coming — hang tight!"
+            />
+          )}
+        </div>
 
-            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-              <NavBar />
-            </div>
-          </>
-        )}
+        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+          <NavBar />
+        </div>
       </PageContainer>
 
       {inactivityWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-lg p-5 w-[90%] max-w-sm text-center space-y-3">
-            <p className="font-semibold text-gray-900">Are you still there?</p>
+            <p className="font-semibold text-gray-900">
+              Are you still there?
+            </p>
+
             <p className="text-sm text-gray-600">
               Logging out in{" "}
               <span className="font-semibold text-gray-900">
@@ -271,10 +273,10 @@ export default function Home() {
               </span>
               .
             </p>
+
             <button
               type="button"
               onClick={() => {
-                // Confirm response: trigger activity so the watcher resets the timer.
                 window.dispatchEvent(new Event("mousemove"));
               }}
               className="w-full rounded-full bg-primary hover:bg-primary-light text-white py-3 font-bold"
