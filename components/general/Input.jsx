@@ -34,10 +34,10 @@ export default function Input({
           border-b
           ${error ? "border-red-500" : "border-gray-300"}
           w-full
-          px-4 py-2
+          px-0 py-2
           font-semibold
           outline-none
-          text-gray-900 
+          text-gray-500
           placeholder:text-gray-400 focus:border-black
           transition-colors
           disabled:opacity-50

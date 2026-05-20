@@ -24,7 +24,7 @@ export default function TextArea({
       {label && (
         <label
           htmlFor={id}
-          className={`block text-sm font-medium mb-1 text-black`}
+          className={`block text-sm font-medium mb-1 text-gray-500`}
         >
           {label}
         </label>
