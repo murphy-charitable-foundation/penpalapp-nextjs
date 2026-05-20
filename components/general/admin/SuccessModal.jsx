@@ -1,17 +1,34 @@
-import ApproveSuccessModal from "./ApproveSuccessModal";
-import RejectSuccessModal from "./RejectSuccessModal";
+import StatusSuccessModal from "./StatusSuccessModal";
 
 export default function SuccessModal({
   type,
   onClose = () => {},
   onRevert = () => {},
 }) {
-  if (type === "sent") {
-    return <ApproveSuccessModal onClose={onClose} onRevert={onRevert} />;
+  if (type === "approved") {
+    return (
+      <StatusSuccessModal
+        type="approved"
+        title="Letter Approved"
+        description="The letter has been approved and sent."
+        primaryButtonText="Back to letters"
+        onClose={onClose}
+        onRevert={onRevert}
+      />
+    );
   }
 
   if (type === "rejected") {
-    return <RejectSuccessModal onClose={onClose} onRevert={onRevert} />;
+    return (
+      <StatusSuccessModal
+        type="rejected"
+        title="Rejection Feedback"
+        description={`We sent the feedback to the user.\nThanks for your feedback.`}
+        primaryButtonText="Go to letters"
+        onClose={onClose}
+        onRevert={onRevert}
+      />
+    );
   }
 
   return null;

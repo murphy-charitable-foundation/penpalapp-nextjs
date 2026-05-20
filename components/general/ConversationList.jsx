@@ -5,9 +5,8 @@ const ConversationList = ({
   isAdmin = false,
   onSelectConversation = () => {},
 }) => {
-
   return (
-    <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1 mb-4">
+    <div className="space-y-4 pr-1 mb-4">
       {conversations.map((conversation, i) => (
         <div key={`${conversation.letterboxId}-${conversation.id}-${i}`}>
           <MessagePreview
@@ -22,6 +21,7 @@ const ConversationList = ({
             isRecipient={conversation.isRecipient}
             unread={conversation.unread}
             isAdmin={isAdmin}
+            id={conversation.sent_by?.id}
             onClick={() => onSelectConversation(conversation)}
           />
         </div>

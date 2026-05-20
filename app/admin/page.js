@@ -28,7 +28,7 @@ import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import ConversationList from "../../components/general/ConversationList";
-import Header from "../../components/general/Header";
+import AdminHeader from "../../components/general/admin/AdminHeader";
 import AdminFilter from "../../components/general/admin/AdminFilter";
 import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
 import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
@@ -36,34 +36,28 @@ import Button from "../../components/general/Button";
 import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
 import { useDormantLetterbox } from "../../contexts/DormantLetterboxContext";
+import { fetchRecipients } from "../utils/letterboxFunctions";
 
 export default function Admin() {
   const PAGE_SIZE = 5;
-  const { isDormantLetterboxLoading, handleDormantLetterboxWorker } =
-    useDormantLetterbox();
+  const { handleDormantLetterboxWorker } = useDormantLetterbox();
 
-  const [userName, setUserName] = useState("");
   const [userId, setUserId] = useState("");
-  const [userType, setUserType] = useState("");
-  const [country, setCountry] = useState("");
-  const [letters, setLetters] = useState([]); // intentionally kept
-  const [profileImage, setProfileImage] = useState(""); // intentionally kept
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState("");
-
   const [documents, setDocuments] = useState([]);
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLettersLoading, setIsLettersLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const [selectedStatus, setSelectedStatus] = useState("pending_review");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
-  const [showWelcome, setShowWelcome] = useState(false);
   const [activeFilter, setActiveFilter] = useState(false);
-
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [activeView, setActiveView] = useState("inbox");
   const [reviewAction, setReviewAction] = useState(null);
@@ -71,19 +65,98 @@ export default function Admin() {
   const router = useRouter();
 
   const updateLocalLetter = (id, updates) => {
-  setDocuments(prev =>
-    prev.map(l => (l.id === id ? { ...l, ...updates } : l))
-  );
-};
+    setDocuments((prev) =>
+      prev.map((letter) =>
+        letter.id === id ? { ...letter, ...updates } : letter,
+      ),
+    );
+  };
 
-const currentLetter =
-  selectedLetter &&
-  documents.find(d => d.id === selectedLetter.id) ||
-  selectedLetter;
+  const currentLetter =
+    (selectedLetter && documents.find((d) => d.id === selectedLetter.id)) ||
+    selectedLetter;
+
+  const fetchLetters = async (nextPage = false, pageCursor = null) => {
+    try {
+      setError("");
+
+      const constraints = [
+        where("status", "==", selectedStatus),
+        orderBy("created_at", "desc"),
+        limit(PAGE_SIZE),
+      ];
+
+      if (nextPage && pageCursor) {
+        constraints.push(startAfter(pageCursor));
+      }
+
+      if (startDate) {
+        constraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
+      }
+
+      if (endDate) {
+        constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
+      }
+
+      const q = query(collectionGroup(db, "letters"), ...constraints);
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        setHasMore(false);
+        return;
+      }
+
+      const newDocs = await Promise.all(
+        snap.docs.map(async (d) => {
+          const data = d.data();
+          const letterboxId = d.ref.parent.parent?.id || "";
+          let pfp = "/usericon.png";
+
+          try {
+            if (data.sent_by?.id) {
+              const imgRef = storageRef(
+                storage,
+                `profile/${data.sent_by.id}/profile-image`,
+              );
+              pfp = await getDownloadURL(imgRef);
+            }
+          } catch {
+            pfp = "/usericon.png";
+          }
+
+          const rec = letterboxId ? await fetchRecipients(letterboxId) : [];
+          const recipient = rec?.[0] ?? {};
+
+          return {
+            id: d.id,
+            letterboxId,
+            ...data,
+            profileImage: recipient?.photo_uri || pfp,
+            name: `${recipient.first_name ?? "Unknown"} ${
+              recipient.last_name ?? ""
+            }`.trim(),
+            country: recipient.country ?? "Unknown",
+            lastMessage: data.content,
+            lastMessageDate: data.created_at,
+          };
+        }),
+      );
+
+      setDocuments((prev) => (nextPage ? [...prev, ...newDocs] : newDocs));
+      setLastDoc(snap.docs[snap.docs.length - 1]);
+      setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.warn("Failed to fetch admin letters", err);
+      setError("Failed to load letters. Please try again.");
+    } finally {
+      setIsLettersLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoading(true);
+      setIsAuthLoading(true);
 
       if (!user) {
         router.push("/login");
@@ -92,112 +165,43 @@ const currentLetter =
 
       setUserId(user.uid);
 
-      const userRef = doc(collection(db, "users"), user.uid);
-      const snap = await getDoc(userRef);
-
-      if (!snap.exists() || snap.data()?.user_type !== "admin") {
-        router.push("/login");
-        return;
-      }
-
-      const data = snap.data();
-      setUserType(data.user_type);
-      setCountry(data.country);
-      setUserName(`${data.first_name} ${data.last_name}`);
-
       try {
-        const imgRef = storageRef(
-          storage,
-          `profile/${user.uid}/profile-image`
-        );
-        setProfileImage(await getDownloadURL(imgRef));
-      } catch {
-        setProfileImage("/usericon.png");
+        const userRef = doc(collection(db, "users"), user.uid);
+        const snap = await getDoc(userRef);
+
+        if (!snap.exists() || snap.data()?.user_type !== "admin") {
+          router.push("/login");
+          return;
+        }
+
+        handleDormantLetterboxWorker();
+      } catch (err) {
+        console.warn("Admin auth check failed", err);
+        setError("Something went wrong. Please refresh and try again.");
+      } finally {
+        setIsAuthLoading(false);
       }
-
-      // Run dormant worker once after auth/admin validation.
-      handleDormantLetterboxWorker();
-
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, [router, handleDormantLetterboxWorker]);
 
   useEffect(() => {
-  if (activeView !== "inbox") return;
+    if (activeView !== "inbox") return;
+    if (!userId) return;
+    if (isAuthLoading) return;
 
-  const load = async () => {
-    setIsLoading(true);
-    setDocuments([]);
-    setLastDoc(null);
-    setHasMore(true);
-    await fetchLetters();
-    setIsLoading(false);
-  };
+    const loadLetters = async () => {
+      setIsLettersLoading(true);
+      setDocuments([]);
+      setLastDoc(null);
+      setHasMore(true);
 
-  load();
-}, [selectedStatus, startDate, endDate, activeView]);
+      await fetchLetters(false, null);
+    };
 
-  const fetchLetters = async (nextPage = false) => {
-    const constraints = [
-      where("status", "==", selectedStatus),
-      orderBy("created_at", "desc"),
-      limit(PAGE_SIZE),
-    ];
-
-    if (nextPage && lastDoc) constraints.push(startAfter(lastDoc));
-
-    if (startDate)
-      constraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
-
-    if (endDate)
-      constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
-
-    const q = query(collectionGroup(db, "letters"), ...constraints);
-    const snap = await getDocs(q);
-
-    if (snap.empty) {
-      setHasMore(false);
-      setIsLoadingMore(false);
-      return;
-    }
-
-    const newDocs = await Promise.all(
-      snap.docs.map(async (d) => {
-        const data = d.data();
-        let pfp = "/usericon.png";
-
-        try {
-          if (data.sent_by) {
-            const imgRef = storageRef(
-              storage,
-              `profile/${data.sent_by.id}/profile-image`
-            );
-            pfp = await getDownloadURL(imgRef);
-          }
-        } catch {}
-
-        return {
-          id: d.id,
-          letterboxId: d.ref.parent.parent?.id,
-          ...data,
-          profileImage: pfp,
-          name: data?.name || "",
-          lastMessage: data.content,
-          lastMessageDate: data.created_at,
-        };
-      })
-    );
-
-    setDocuments((prev) => [...prev, ...newDocs]);
-    setLastDoc(snap.docs[snap.docs.length - 1]);
-
-    // If fewer than PAGE_SIZE docs came back, this was the last page.
-    setHasMore(snap.docs.length === PAGE_SIZE);
-
-    setIsLoadingMore(false);
-  };
+    loadLetters();
+  }, [selectedStatus, startDate, endDate, activeView, userId, isAuthLoading]);
 
   const filter = (status, start, end) => {
     setSelectedStatus(status);
@@ -207,218 +211,273 @@ const currentLetter =
   };
 
   const clearFilters = () => {
-  setSelectedStatus("pending_review");
-  setStartDate(null);
-  setEndDate(null);
-  setActiveFilter(false);
-};
-
-  if (isLoading) return <LetterHomeSkeleton />;
+    setSelectedStatus("pending_review");
+    setStartDate(null);
+    setEndDate(null);
+    setActiveFilter(false);
+  };
 
   const revertToPending = async (letter) => {
-  if (!letter) return;
+    if (!letter) return;
 
-  try {
-    const ref = doc(
-      db,
-"letterbox",
-      letter.letterboxId,
-      "letters",
-      letter.id
-    );
+    setIsReviewSubmitting(true);
 
-    await updateDoc(ref, {
-      status: "pending_review",
-      moderator_id: deleteField(),
-      rejection_reason: deleteField(),
-      rejection_feedback: deleteField(),
-      updated_at: deleteField(),
-    });
-  } catch (err) {
-    console.warn("Revert blocked by Firestore rules", err);
+    try {
+      const ref = doc(
+        db,
+        "letterbox",
+        letter.letterboxId,
+        "letters",
+        letter.id,
+      );
+
+      await updateDoc(ref, {
+        status: "pending_review",
+        moderator_id: deleteField(),
+        rejection_reason: deleteField(),
+        rejection_feedback: deleteField(),
+        updated_at: deleteField(),
+      });
+
+      updateLocalLetter(letter.id, {
+        status: "pending_review",
+        moderator_id: undefined,
+        rejection_reason: undefined,
+        rejection_feedback: undefined,
+        updated_at: undefined,
+      });
+
+      setReviewAction(null);
+      setSelectedLetter(null);
+      setActiveView("inbox");
+    } catch (err) {
+      console.warn("Revert blocked by Firestore rules", err);
+      setError("Revert failed. Please try again.");
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    await fetchLetters(true, lastDoc);
+  };
+
+  const handleApprove = async () => {
+    if (!currentLetter) return;
+
+    setIsReviewSubmitting(true);
+
+    const { id, letterboxId } = currentLetter;
+
+    try {
+      const ref = doc(db, "letterbox", letterboxId, "letters", id);
+
+      await updateDoc(ref, {
+        status: "approved",
+        moderator_id: userId,
+        updated_at: serverTimestamp(),
+      });
+
+      updateLocalLetter(id, {
+        status: "approved",
+        moderator_id: userId,
+      });
+
+      setReviewAction("approved");
+    } catch (err) {
+      console.warn("Approve blocked", err);
+      setError("Approve failed. Please check your permissions and try again.");
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  };
+
+  const handleRejectSubmit = async (reason, feedback) => {
+    if (!selectedLetter?.letterboxId || !selectedLetter?.id) {
+      setError("Could not reject this letter. Please refresh and try again.");
+      throw new Error("Missing letter reference for rejection.");
+    }
+
+    setIsReviewSubmitting(true);
+
+    try {
+      const ref = doc(
+        db,
+        "letterbox",
+        selectedLetter.letterboxId,
+        "letters",
+        selectedLetter.id,
+      );
+
+      await updateDoc(ref, {
+        status: "rejected",
+        moderator_id: userId,
+        rejection_reason: reason,
+        rejection_feedback: feedback,
+        updated_at: serverTimestamp(),
+      });
+
+      updateLocalLetter(selectedLetter.id, {
+        status: "rejected",
+        moderator_id: userId,
+        rejection_reason: reason,
+        rejection_feedback: feedback,
+      });
+
+      setReviewAction("rejected");
+    } catch (err) {
+      console.warn("Reject blocked by Firestore rules", err);
+      setError("Reject failed. Please check your permissions and try again.");
+      throw err;
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  };
+
+  if (isAuthLoading || isLettersLoading) {
+    return <LetterHomeSkeleton />;
   }
 
-  // 🔑 RESET FLOW (order matters)
-  setReviewAction(null);
-  setSelectedLetter(null);
-  setActiveView("inbox");
-};
-
   return (
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-      <PageContainer className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden px-0 pt-0 pb-0">
-        {/* Header */}
-        <div className="shrink-0 px-6 pt-6">
+    <PageBackground className="bg-gray-100 h-screen flex flex-col">
+      <div className="flex-1 min-h-0 flex justify-center">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
           {activeView === "inbox" && (
-            <Header
+            <AdminHeader
               activeFilter={activeFilter}
               setActiveFilter={setActiveFilter}
-              title="Select message types"
               status={selectedStatus}
               isLoadingMore={isLoadingMore}
             />
           )}
-        </div>
 
-        {/* Main scrollable area */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-4 pt-2 space-y-4">
-          {activeFilter ? (
-            <AdminFilter
-              filter={filter}
-              clearFilters={clearFilters}
-              status={selectedStatus}
-              setStatus={setSelectedStatus}
-              start={startDate}
-              setStart={setStartDate}
-              end={endDate}
-              setEnd={setEndDate}
-            />
-          ) : (
-            <>
-              {activeView === "inbox" && (
-                <>
-                  <div className="bg-white border border-gray-200 rounded-xl flex flex-col flex-1 min-h-0">
-                    <div className="flex-1 min-h-0">
-                      <main className="overflow-y-auto p-4">
-                        <ConversationList
-                          conversations={documents}
-                          isAdmin
-                          onSelectConversation={(c) => {
-                            setSelectedLetter(c);
-                            setActiveView("review");
-                          }}
-                        />
-                      </main>
-                    </div>
-
-                    {activeView === "inbox" && hasMore && (
-                      <div className="flex justify-center py-4">
-                        {isLoadingMore ? (
-                          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Button
-                            btnText="Load More"
-                            color="blue"
-                            rounded="rounded-md"
-                            onClick={() => {
-                              setIsLoadingMore(true);
-                              fetchLetters(true);
-                            }}
-                          />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {activeView === "review" && selectedLetter && !reviewAction && (
-                <AdminLetterReview
-                  letter={currentLetter}
-                  reviewAction={reviewAction}
-                  onClose={() => {
-                    setReviewAction(null);
-                    setActiveView("inbox");
-                    setSelectedLetter(null);
-                  }}
-                  onApprove={async () => {
-                    if (!currentLetter) return;
-
-                    const { id, letterboxId } = currentLetter;
-                    const previousStatus = currentLetter.status;
-                    const previousModeratorId = currentLetter.moderator_id;
-                    const previousSelectedLetter = selectedLetter;
-                    const previousActiveView = activeView;
-
-                    updateLocalLetter(id, {
-                      status: "sent",
-                      moderator_id: userId,
-                    });
-
-                    setReviewAction(null);
-                    setSelectedLetter(null);
-                    setActiveView("inbox");
-
-                    try {
-                      const ref = doc(db, "letterbox", letterboxId, "letters", id);
-                      await updateDoc(ref, {
-                        status: "sent",
-                        moderator_id: userId,
-                        updated_at: serverTimestamp(),
-                      });
-                    } catch (err) {
-                      console.warn("Approve blocked", err);
-                      updateLocalLetter(id, {
-                        status: previousStatus,
-                        moderator_id: previousModeratorId,
-                      });
-                      setReviewAction(null);
-                      setSelectedLetter(previousSelectedLetter);
-                      setActiveView(previousActiveView);
-                    }
-                  }}
-                  onReject={() => setActiveView("reject")}
-                  onRevert={revertToPending}
-                />
-              )}
-
-              {activeView === "reject" && selectedLetter && !reviewAction && (
-                <AdminRejectModal
-                  letter={selectedLetter}
-                  onClose={() => setActiveView("review")}
-                  onSubmit={async (reason, feedback) => {
-                    if (!selectedLetter?.letterboxId || !selectedLetter?.id) {
-                      const refError = new Error(
-                        "Missing letter reference for rejection."
-                      );
-                      setError("Could not reject this letter. Please refresh and try again.");
-                      throw refError;
-                    }
-                    try {
-                      const ref = doc(
-                        db,
-                        "letterbox",
-                        selectedLetter.letterboxId,
-                        "letters",
-                        selectedLetter.id
-                      );
-                      await updateDoc(ref, {
-                        status: "rejected",
-                        moderator_id: userId,
-                        rejection_reason: reason,
-                        rejection_feedback: feedback,
-                        updated_at: new Date(),
-                      });
-                      setReviewAction("rejected");
-                    } catch (err) {
-                      console.warn("Reject blocked by Firestore rules", err);
-                      setError("Reject failed. Please check your permissions and try again.");
-                      throw err;
-                    }
-                  }}
-                />
-              )}
-
-              {reviewAction === "rejected" && (
-                <SuccessModal
-                  type="rejected"
-                  onClose={() => {
-                    setReviewAction(null);
-                    setSelectedLetter(null);
-                    setActiveView("inbox");
-                  }}
-                  onRevert={() => revertToPending(selectedLetter)}
-                />
-              )}
-            </>
+          {error && (
+            <div className="mx-6 mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+              {error}
+            </div>
           )}
-        </div>
 
-        {/* Bottom navbar, attached to bottom of the page container */}
-        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-          <BottomNavBar />
-        </div>
-      </PageContainer>
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {activeFilter ? (
+              <div className="h-full overflow-y-auto overscroll-contain px-6 pt-3 pb-4">
+                <AdminFilter
+                  filter={filter}
+                  clearFilters={clearFilters}
+                  status={selectedStatus}
+                  setStatus={setSelectedStatus}
+                  start={startDate}
+                  setStart={setStartDate}
+                  end={endDate}
+                  setEnd={setEndDate}
+                />
+              </div>
+            ) : (
+              <>
+                {activeView === "inbox" && (
+                  <div className="h-full flex flex-col min-h-0 px-6 pt-3 pb-4">
+                    <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain pt-2">
+                      <ConversationList
+                        conversations={documents}
+                        isAdmin
+                        onSelectConversation={(conversation) => {
+                          setSelectedLetter(conversation);
+                          setActiveView("review");
+                        }}
+                      />
+
+                      {hasMore && (
+                        <div className="flex justify-center pt-4 pb-6">
+                          {isLoadingMore ? (
+                            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Button
+                              btnText="Load More"
+                              color="blue"
+                              size="sm"
+                              rounded="rounded-full"
+                              onClick={handleLoadMore}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </main>
+                  </div>
+                )}
+
+                {activeView === "review" && selectedLetter && !reviewAction && (
+                  <div className="h-full overflow-hidden">
+                    <AdminLetterReview
+                      letter={currentLetter}
+                      isSubmitting={isReviewSubmitting}
+                      onClose={() => {
+                        if (isReviewSubmitting) return;
+
+                        setReviewAction(null);
+                        setActiveView("inbox");
+                        setSelectedLetter(null);
+                      }}
+                      onApprove={handleApprove}
+                      onReject={() => {
+                        if (isReviewSubmitting) return;
+                        setActiveView("reject");
+                      }}
+                      onRevert={revertToPending}
+                    />
+                  </div>
+                )}
+
+                {activeView === "reject" && selectedLetter && !reviewAction && (
+                  <div className="h-full overflow-hidden">
+                    <AdminRejectModal
+                      letter={selectedLetter}
+                      onClose={() => setActiveView("review")}
+                      onSubmit={handleRejectSubmit}
+                    />
+                  </div>
+                )}
+
+                {reviewAction === "approved" && (
+                  <div className="h-full overflow-hidden">
+                    <SuccessModal
+                      type="approved"
+                      onClose={() => {
+                        setReviewAction(null);
+                        setSelectedLetter(null);
+                        setActiveView("inbox");
+                      }}
+                      onRevert={() => revertToPending(selectedLetter)}
+                    />
+                  </div>
+                )}
+
+                {reviewAction === "rejected" && (
+                  <SuccessModal
+                    type="rejected"
+                    onClose={() => {
+                      setReviewAction(null);
+                      setSelectedLetter(null);
+                      setActiveView("inbox");
+                    }}
+                    onRevert={() => revertToPending(selectedLetter)}
+                  />
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <BottomNavBar />
+          </div>
+        </PageContainer>
+      </div>
     </PageBackground>
   );
 }
