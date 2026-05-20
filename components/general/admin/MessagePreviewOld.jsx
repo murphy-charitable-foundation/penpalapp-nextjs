@@ -18,7 +18,7 @@ const MessagePreview = ({
   rejectionFeedback,
   moderatorId,
   deleted,
-  updatedAt,
+  draftedAt,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const imageSrc = profileImage || "/usericon.png";
@@ -35,7 +35,7 @@ const MessagePreview = ({
         await updateDoc(letterRef, {
             status: "sent",
             moderator_id: moderatorId,
-            updated_at: serverTimestamp(),
+            drafted_at: serverTimestamp(),
             unread: true, // Mark as unread for recipient
         });
         
@@ -63,7 +63,7 @@ const MessagePreview = ({
             moderator_id: moderatorId,
             rejection_reason: rejectionReason,
             rejection_feedback: rejectionFeedback,
-            updated_at: serverTimestamp(),
+            drafted_at: serverTimestamp(),
             unread: false, // Rejected letters don't need to be unread
         });
         
@@ -260,10 +260,10 @@ const MessagePreview = ({
                 <div className="text-xs text-gray-500">
                   Letter ID: {letterboxId}
                 </div>
-                {updatedAt && (
+                {draftedAt && (
                   <div className="text-xs text-gray-500">
-                    Last Updated: {formatDate(updatedAt)}
-                  </div>
+                    Drafted At: {formatDate(draftedAt)}
+                  </div>  
                 )}
                 {moderatorId && (
                   <div className="text-xs text-gray-500">

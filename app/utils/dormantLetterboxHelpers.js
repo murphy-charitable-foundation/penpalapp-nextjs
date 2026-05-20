@@ -30,7 +30,7 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
   const membersNames = members.map(({ firstName = "", lastName = "" }) =>
     [firstName, lastName].filter((s) => s !== "").join(" ")
   );
-  if (reason == "admin") {
+  if (reason === "admin") {
     message = `It seems that a chat in a letterbox with the id: ${letterboxId}, involving the user/s: [${formatListWithAnd(
       membersNames
     )}] has stalled because the user/s with the email/s: [${formatListWithAnd(
