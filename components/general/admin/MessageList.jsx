@@ -20,7 +20,8 @@ const MessageList = ({ conversations }) => {
               rejectionFeedback={conversation.rejection_feedback}
               moderatorId={conversation.moderator_id}
               deleted={conversation.deleted}
-              updatedAt={conversation.updated_at}
+              //updatedAt={conversation.updated_at}
+              draftedAt={conversation.drafted_at }
             />
           </div>
         ))}
