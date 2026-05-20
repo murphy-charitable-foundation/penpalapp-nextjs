@@ -33,7 +33,7 @@ const MessagePreview = ({
         const letterRef = doc(db, "letters", letterboxId); // Adjust collection name if needed
         
         await updateDoc(letterRef, {
-            status: "sent",
+            status: "approved",
             moderator_id: moderatorId,
             drafted_at: serverTimestamp(),
             unread: true, // Mark as unread for recipient
@@ -108,7 +108,7 @@ const MessagePreview = ({
     if (status === "rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
-    if (status === "sent") {
+    if (status === "approved") {
       return <CheckCircle className="text-green-500 w-6 h-6" />;
     }
     if (status === "pending_review") {

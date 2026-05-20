@@ -5,10 +5,10 @@ export default function SuccessModal({
   onClose = () => {},
   onRevert = () => {},
 }) {
-  if (type === "sent") {
+  if (type === "approved") {
     return (
       <StatusSuccessModal
-        type="sent"
+        type="approved"
         title="Letter Approved"
         description="The letter has been approved and sent."
         primaryButtonText="Back to letters"

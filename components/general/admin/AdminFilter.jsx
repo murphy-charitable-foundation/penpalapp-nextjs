@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const statusOptions = [
-  { label: "Sent", value: "sent" },
+  { label: "Approved", value: "approved" },
   { label: "Pending Review", value: "pending_review" },
   { label: "Rejected", value: "rejected" },
 ];

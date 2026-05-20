@@ -276,17 +276,17 @@ export default function Admin() {
       const ref = doc(db, "letterbox", letterboxId, "letters", id);
 
       await updateDoc(ref, {
-        status: "sent",
+        status: "approved",
         moderator_id: userId,
         updated_at: serverTimestamp(),
       });
 
       updateLocalLetter(id, {
-        status: "sent",
+        status: "approved",
         moderator_id: userId,
       });
 
-      setReviewAction("sent");
+      setReviewAction("approved");
     } catch (err) {
       console.warn("Approve blocked", err);
       setError("Approve failed. Please check your permissions and try again.");
@@ -444,10 +444,10 @@ export default function Admin() {
                   </div>
                 )}
 
-                {reviewAction === "sent" && (
+                {reviewAction === "approved" && (
                   <div className="h-full overflow-hidden">
                     <SuccessModal
-                      type="sent"
+                      type="approved"
                       onClose={() => {
                         setReviewAction(null);
                         setSelectedLetter(null);

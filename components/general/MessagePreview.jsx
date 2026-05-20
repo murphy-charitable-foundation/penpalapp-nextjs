@@ -67,7 +67,7 @@ const MessagePreview = ({
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
 
-    if (status === "sent") {
+    if (status === "approved") {
       return <CheckCircle className="text-green-500 w-6 h-6" />;
     }
 

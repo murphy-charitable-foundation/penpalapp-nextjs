@@ -16,14 +16,14 @@ export default function AdminLetterReview({
   if (!letter) return null;
 
   const status =
-    letter.status === "sent"
-      ? "sent"
+    letter.status === "approved"
+      ? "approved"
       : letter.status === "rejected"
       ? "rejected"
       : "pending_review";
 
   const headerColor =
-    status === "sent"
+    status === "approved"
       ? "bg-dark-green"
       : status === "rejected"
       ? "bg-red-600"
@@ -155,7 +155,7 @@ export default function AdminLetterReview({
           </div>
 
           <div className="shrink-0 bg-white border-t px-6 py-4">
-            {status === "sent" && (
+            {status === "approved" && (
               <div className="flex justify-center">
                 <Button
                   btnText="Clear status"

@@ -696,10 +696,10 @@ export default function Page({ params }) {
             orderBy("created_at", "asc"),
           );
 
-          // All messages with status = "sent" (approval by admin)
+          // All messages with status = "approved" (approval by admin)
           const sentMessagesQuery = query(
             lRef,
-            where("status", "==", "sent"),
+            where("status", "==", "approved"),
             orderBy("created_at", "asc"),
           );
 
@@ -1038,8 +1038,8 @@ export default function Page({ params }) {
                                   </div>
                                 )}
 
-                              {/* SENT → GREEN CHECK */}
-                              {message.status === "sent" && (
+                              {/* APPROVED → GREEN CHECK */}
+                              {message.status === "approved" && (
                                 <span className="text-green-500 text-lg font-bold flex justify-end w-full">
                                   ✓
                                 </span>

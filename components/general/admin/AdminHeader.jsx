@@ -4,7 +4,7 @@ import Header from "../Header";
 import Button from "../Button";
 
 const statusLabels = {
-  sent: "Sent",
+  approved: "Approved",
   pending_review: "Pending",
   rejected: "Rejected",
 };
@@ -14,7 +14,7 @@ const headerStyles = {
     bg: "bg-[#034078]",
     badge: "bg-white/15 text-white",
   },
-  sent: {
+  approved: {
     bg: "bg-green-700",
     badge: "bg-white/15 text-white",
   },
@@ -53,7 +53,7 @@ export default function AdminHeader({
           btnText={activeFilter ? "Hide" : "Filters"}
           color="white"
           textColor={
-            status === "sent" 
+            status === "approved" 
               ? "text-[#4B7F2A]"
               : status === "rejected"
                 ? "text-red-600"

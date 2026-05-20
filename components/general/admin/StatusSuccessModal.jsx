@@ -9,7 +9,7 @@ export default function StatusSuccessModal({
   primaryButtonText,
   onClose = () => {},
   onRevert = () => {},
-  type = "sent",
+  type = "approved",
 }) {
   const isRejected = type === "rejected";
 
