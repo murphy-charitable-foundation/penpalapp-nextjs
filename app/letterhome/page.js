@@ -18,7 +18,6 @@ import ProfileHeader from "../../components/general/letter/ProfileHeader";
 import EmptyState from "../../components/general/letterhome/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { InactivityProvider } from "../contexts/InactivityContext";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
@@ -124,7 +123,6 @@ export default function Home() {
   }, [user]);
   
   return (
-    <InactivityProvider>
       <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
         <PageContainer
           width="compactXS"
@@ -162,6 +160,5 @@ export default function Home() {
         )}
       </PageContainer>
       </PageBackground>
-    </InactivityProvider>
   );
 }

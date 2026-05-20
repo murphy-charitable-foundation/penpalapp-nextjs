@@ -6,17 +6,30 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const InactivityContext = createContext();
 
 export function InactivityProvider({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const publicPaths = [
+    "/",
+    "/login",
+    "/create-acc",
+    "/reset-password",
+    "/choose-profile",
+    "/choose-account",
+  ];
+
+  const isPublicPath = publicPaths.includes(pathname);
 
   const [inactivityWarning, setInactivityWarning] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState(0);
 
   useEffect(() => {
+    if (isPublicPath) return;
     if (typeof window === "undefined") return;
 
     const INACTIVITY_LIMIT = 20 * 60 * 1000;
@@ -98,7 +111,7 @@ export function InactivityProvider({ children }) {
         window.removeEventListener(event, resetTimer);
       });
     };
-  }, [router]);
+  }, [router, isPublicPath]);
 
   return (
     <InactivityContext.Provider
@@ -127,7 +140,6 @@ export function InactivityProvider({ children }) {
             <button
               type="button"
               onClick={() => {
-                // Trigger activity to reset timer
                 window.dispatchEvent(new Event("mousemove"));
               }}
               className="w-full rounded-full bg-primary hover:bg-primary-light text-white py-3 font-bold"
