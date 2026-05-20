@@ -4,24 +4,24 @@ import KidFilter from "../discovery/KidFilter";
 
 export default function FilterPanel({
   open,
-  initial, // { age, gender, hobbies }
+  initial, // { age, pronouns, hobbies }
   onApply,
   onClose,
 }) {
   const [hobbies, setHobbies] = useState([]);
   const [age, setAge] = useState(null);
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
 
   useEffect(() => {
     setHobbies(initial?.hobbies || []);
     setAge(initial?.age ?? null);
-    setGender(initial?.gender || "");
+    setPronouns(initial?.pronouns || "");
   }, [initial, open]);
 
   const handleApplyFromKidFilter = (payload) => {
     onApply?.({
       age: payload?.age ?? null,
-      gender: payload?.gender ?? "",
+      pronouns: payload?.pronouns ?? "",
       hobbies: payload?.hobbies ?? [],
     });
     onClose?.();
@@ -71,8 +71,8 @@ export default function FilterPanel({
               setHobbies={setHobbies}
               age={age}
               setAge={setAge}
-              gender={gender}
-              setGender={setGender}
+              pronouns={pronouns}
+              setPronouns={setPronouns}
               filter={handleApplyFromKidFilter}
             />
           </div>

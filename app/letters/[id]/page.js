@@ -776,9 +776,7 @@ export default function Page({ params }) {
         setIsLoading(false);
       }
     };
-
-    initializeData();
-  }, [id, user]);
+  }, [id, router, auth]);
 
   useEffect(() => {
     return () => {

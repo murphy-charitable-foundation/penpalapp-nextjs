@@ -130,7 +130,7 @@ const handleSubmit = async (e) => {
         dream_job: (formData.get("dreamJob") || "").toString(),
 
         // Backward compatible + new schema
-        hobbies: hobbies.map((h) => h.id), 
+        hobbies: hobbies.map((h) => h.label), 
 
         favorite_color: (formData.get("favoriteColor") || "").toString(),
         user_type: "child",
@@ -293,7 +293,14 @@ const handleSubmit = async (e) => {
             {/* Upload profile image */}
             <div className="flex justify-center">
               {croppedImage ? (
-                <img src={croppedImage} alt="Profile" width={200} className="rounded-full" />
+                <Image
+                  src={croppedImage}
+                  alt="Profile"
+                  width={200}
+                  height={200}
+                  className="rounded-full"
+                  unoptimized
+                />
               ) : (
                <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} />
               )}

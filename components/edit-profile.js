@@ -35,9 +35,6 @@ const EditProfileImage = ({ router }) => {
       setCountries(data.data);
     };
     fetchCountries();
-    if (stage === null) {
-      updateStage(0);
-    }
   }, [stage]);
 
   useEffect(() => {
@@ -133,6 +130,7 @@ const EditProfileImage = ({ router }) => {
           <Image
             className="absolute top-0 left-0 bottom-0 right-0 h-full w-full object-cover"
             src="/welcomebackground.jpeg"
+            alt="Welcome background"
           />
           <div className="min-h-[50%] bg-[#034792] absolute top-[50%] left-0 bottom-0 right-0 flex flex-col p-4 text-white text-center">
             <h2 className="text-[32px]">Welcome {user?.firstName}</h2>
