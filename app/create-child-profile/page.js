@@ -147,7 +147,7 @@ const handleSubmit = async (e) => {
           const firstNameLetter = userData.first_name.charAt(0).toLowerCase();
           const lastName = userData.last_name.toLowerCase();
           const yearLastTwoDigits = birthday.toString().slice(2,4);
-          email = `rez+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
+          email = `penpal+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
         }
       }
 
@@ -378,7 +378,7 @@ const handleSubmit = async (e) => {
                       name="email"
                       id="email"
                       label="Child's Email"
-                      placeholder={`rez+${firstName?.slice(0, 1) || ""}${lastName || ""}${birthday?.slice(2, 4) || ""}@murphycharity.org`}
+                      placeholder={`penpal+${firstName?.slice(0, 1) || ""}${lastName || ""}${birthday?.slice(2, 4) || ""}@murphycharity.org`}
                       error={errors.email ? errors.email : ""}
                     />
                   </div>
