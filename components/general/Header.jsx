@@ -1,38 +1,32 @@
 "use client";
 
-import React from "react";
-
-const DIVIDER = "#E5E7EB";
-
-
-export default function Header({ activeFilter, setActiveFilter }) {
+export default function Header({
+  title,
+  subtitle,
+  children,
+  className = "",
+}) {
   return (
-    <div className="sticky top-0 z-10 bg-white w-full max-w-full">
-      
+    <header
+      className={`sticky top-0 z-10 border-b border-gray-200 ${className}`}
+    >
+      <div className="px-5 py-4">
+        {children || (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+                {title}
+              </h1>
 
-      {/* ===== FILTER TOGGLE ===== */}
-      <button
-        type="button"
-        onClick={() => setActiveFilter(!activeFilter)}
-        className="w-full h-12 px-4 flex items-center justify-between border-b bg-[#E6EDF4]"
-        style={{ borderColor: DIVIDER }}
-      >
-        <span className="text-md font-medium text-gray-700 p-4">
-          Choose a kid to write to
-        </span>
-
-        <svg
-          className="w-5 h-5 text-[#034792] transition-transform"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          {activeFilter ? (
-            <path d="M14 13l-4-4-4 4" />
-          ) : (
-            <path d="M6 7l4 4 4-4" />
-          )}
-        </svg>
-      </button>
-    </div>
+              {subtitle && (
+                <p className="mt-1 text-sm text-gray-500">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
   );
 }

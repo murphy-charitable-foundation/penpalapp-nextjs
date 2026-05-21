@@ -50,7 +50,7 @@ export const fetchData = async () => {
           lRef,
           where("content", "!=", ''), // Exclude empty messages
           where("deleted", "==", false),
-          where("status", "==", "sent"),
+          where("status", "==", "approved"),
           orderBy("created_at")
         );
   
@@ -93,7 +93,7 @@ export const fetchLetters = async (id) => {
     const lRef = collection(letterboxRef, "letters");
     const letterboxQuery = query(
       lRef,
-      // where("status", "==", "sent"),
+      // where("status", "==", "approved"),
       orderBy("created_at")
     );
 
