@@ -19,15 +19,15 @@ export default function AdminLetterReview({
     letter.status === "approved"
       ? "approved"
       : letter.status === "rejected"
-      ? "rejected"
-      : "pending_review";
+        ? "rejected"
+        : "pending_review";
 
   const headerColor =
     status === "approved"
       ? "bg-dark-green"
       : status === "rejected"
-      ? "bg-red-600"
-      : "bg-primary";
+        ? "bg-red-600"
+        : "bg-primary";
 
   const sentAt = letter.lastMessageDate
     ? typeof letter.lastMessageDate.toDate === "function"
@@ -55,7 +55,13 @@ export default function AdminLetterReview({
             isSubmitting ? "pointer-events-none opacity-60" : ""
           }`}
         >
-          <div className={`flex items-center px-4 h-16 text-black ${headerColor}`}>
+          <div
+            className={`flex items-center px-4 h-16 ${
+              headerColor === "bg-white" || headerColor === "bg-gray-50"
+                ? "text-black"
+                : "text-white"
+            } ${headerColor}`}
+          >
             <button
               type="button"
               onClick={onClose}
