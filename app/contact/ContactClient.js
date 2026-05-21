@@ -33,7 +33,7 @@ export default function Contact() {
     },
     {
       name: "Email",
-      url: "mailto:rez@murphycharity.org",
+      url: "mailto:info@murphycharity.org",
       icon: <FaEnvelope className="h-5 w-5" />,
       accent: "from-[#3A9B3A] to-[#67C23A]",
     },
