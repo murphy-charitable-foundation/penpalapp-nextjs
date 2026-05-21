@@ -1,23 +1,25 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-import NavigationStateManager from '../components/loading/NavigationStateManager'
-import { Suspense } from 'react'
-import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { NotificationHandler } from '../components/NotificationHandler'
-import { UserProvider } from '../contexts/UserContext'
-import { NavigationProvider } from '../contexts/NavigationContext'
-import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
-import ServiceWorkerHandler from '@/components/ServiceWorkerHandler'
+import { Inter } from "next/font/google";
+import "./globals.css";
+import NavigationStateManager from "../components/loading/NavigationStateManager";
+import { Suspense } from "react";
+import LoadingSpinner from "../components/loading/LoadingSpinner";
+import { NotificationHandler } from "../components/NotificationHandler";
+import { UserProvider } from "../contexts/UserContext";
+import { NavigationProvider } from "../contexts/NavigationContext";
+import { CachedUserLoginsProvider } from "./contexts/CachedUserLoginContext";
+import { InactivityProvider } from "./contexts/InactivityContext";
+import ServiceWorkerHandler from "@/components/ServiceWorkerHandler";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: {
-    default: 'Pen Pal Magic App',
-    template: '%s | Pen Pal Magic App',
+    default: "Pen Pal Magic App",
+    template: "%s | Pen Pal Magic App",
   },
-  description: 'To connect 2000 rural Ugandan Children to the World',
-}
+  description:
+    "To connect 2000 rural Ugandan Children to the World",
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -25,21 +27,32 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
+
       <body className={inter.className}>
         <ServiceWorkerHandler />
+
         <CachedUserLoginsProvider>
           <UserProvider>
-            <NotificationHandler>
-              <NavigationProvider>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <NavigationStateManager />
-                  {children}
-                </Suspense>
-              </NavigationProvider>
-            </NotificationHandler>
+
+            <InactivityProvider>
+
+              <NotificationHandler>
+
+                <NavigationProvider>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NavigationStateManager />
+                    {children}
+                  </Suspense>
+                </NavigationProvider>
+
+              </NotificationHandler>
+
+            </InactivityProvider>
+
           </UserProvider>
         </CachedUserLoginsProvider>
+
       </body>
     </html>
-  )
+  );
 }

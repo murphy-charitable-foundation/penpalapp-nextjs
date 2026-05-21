@@ -58,6 +58,7 @@ export default function ChooseAccountPage() {
     try {
       await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
       setSelectedUser(null);
+      setIsLoading(true);
       setPasswordInput("");
       router.push("/letterhome");
     } catch (err) {

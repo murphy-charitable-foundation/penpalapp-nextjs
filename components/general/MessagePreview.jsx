@@ -26,22 +26,41 @@ const MessagePreview = ({
   };
 
   const getStatusIcon = () => {
-    if (status === "rejected") {
-      return <AlertTriangle className="text-red-500 w-6 h-6" />;
-    }
-    if (status === "sent") {
-      return <CheckCircle className="text-green-500 w-6 h-6" />;
-    }
-    if (status === "pending_review") {
-      return (
-        <div className="relative w-6 h-6">
-          <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
-          <CheckCircle className="absolute inset-0 m-auto w-4 h-4 text-gray-400" />
-        </div>
-      );
-    }
-    return null;
-  };
+  if (status === "rejected") {
+    return (
+      <AlertTriangle
+        className="text-red-500 w-6 h-6"
+        title="Rejected"
+        aria-label="Rejected"
+      />
+    );
+  }
+
+  if (status === "sent") {
+    return (
+      <CheckCircle
+        className="text-green-500 w-6 h-6"
+        title="Approved"
+        aria-label="Approved"
+      />
+    );
+  }
+
+  if (status === "pending_review") {
+    return (
+      <div
+        className="relative w-6 h-6"
+        title="Pending review"
+        aria-label="Pending review"
+      >
+        <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
+        <CheckCircle className="absolute inset-0 m-auto w-4 h-4 text-gray-400" />
+      </div>
+    );
+  }
+
+  return null;
+};
 
   return (
     <a
@@ -75,8 +94,14 @@ const MessagePreview = ({
             <div>
               <div className="font-semibold text-gray-900">
                 {status === "draft" && lastMessage !== "" && (
-                  <span className="text-red-500 mr-1">[Draft]</span>
-                )}
+                  <span
+                  className="text-red-500 mr-1"
+                  title="Draft"
+                  aria-label="Draft"
+                >
+                  [Draft]
+                </span>
+                        )}
                 {name}
               </div>
               <div className="text-sm text-gray-500">{country}</div>

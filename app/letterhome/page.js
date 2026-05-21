@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
-import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import NavBar from "../../components/bottom-nav-bar";
 import ConversationList from "../../components/general/ConversationList";
@@ -29,107 +28,10 @@ export default function Home() {
   const [, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
-  const [inactivityWarning, setInactivityWarning] = useState(false);
-  const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState(0);
-  const router = useRouter();
   const { user, userDocRef } = useUser();
-  
+
+
   usePageAnalytics("/letterhome");
-
-  function startInactivityWatcher(timeoutMinutes = 20, warningSeconds = 30) {
-    if (typeof window === "undefined") return; // server-side safety
-
-    const INACTIVITY_LIMIT = timeoutMinutes * 60 * 1000;
-    let timer;
-    let countdownInterval;
-    let isInWarning = false;
-
-    const activityEvents = [
-      "mousemove",
-      "keydown",
-      "click",
-      "scroll",
-      "touchstart",
-    ];
-
-    function clearStoredData() {
-      localStorage.removeItem("child");
-      router.push("/choose-profile");
-      console.log("Removed 'child' from localStorage due to inactivity");
-    }
-
-    function cleanupTimers() {
-      if (timer) clearTimeout(timer);
-      if (countdownInterval) clearInterval(countdownInterval);
-      timer = undefined;
-      countdownInterval = undefined;
-    }
-
-    function proceedLogout() {
-      cleanupTimers();
-      activityEvents.forEach((event) =>
-        window.removeEventListener(event, resetTimer)
-      );
-      setInactivityWarning(false);
-      setInactivitySecondsLeft(0);
-      clearStoredData();
-    }
-
-    function resetTimer() {
-      // If the warning UI is showing, treat activity as "still there".
-      if (isInWarning) {
-        isInWarning = false;
-        setInactivityWarning(false);
-        setInactivitySecondsLeft(0);
-        if (countdownInterval) clearInterval(countdownInterval);
-        countdownInterval = undefined;
-      }
-
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        isInWarning = true;
-        setInactivityWarning(true);
-
-        let remaining = warningSeconds;
-        setInactivitySecondsLeft(remaining);
-
-        countdownInterval = setInterval(() => {
-          remaining -= 1;
-          setInactivitySecondsLeft(remaining);
-
-          if (remaining <= 0) {
-            clearInterval(countdownInterval);
-            countdownInterval = undefined;
-            proceedLogout();
-          }
-        }, 1000);
-      }, INACTIVITY_LIMIT);
-    };
-
-    activityEvents.forEach((event) =>
-      window.addEventListener(event, resetTimer)
-    );
-
-    // Start timer immediately
-    resetTimer();
-
-    return function stopWatcher() {
-      cleanupTimers();
-      isInWarning = false;
-      setInactivityWarning(false);
-      setInactivitySecondsLeft(0);
-      activityEvents.forEach((event) =>
-        window.removeEventListener(event, resetTimer)
-      );
-    };
-  }
-
-  useEffect(() => {
-    const stopWatcher = startInactivityWatcher(20, 30);
-    return () => {
-      if (typeof stopWatcher === "function") stopWatcher();
-    };
-  }, [router]);
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -221,14 +123,13 @@ export default function Home() {
   }, [user]);
   
   return (
-  <>
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
         {isLoading && <LetterHomeSkeleton />}
         {!isLoading && (
           <>
@@ -258,32 +159,6 @@ export default function Home() {
           </>
         )}
       </PageContainer>
-
-      {inactivityWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-lg p-5 w-[90%] max-w-sm text-center space-y-3">
-            <p className="font-semibold text-gray-900">Are you still there?</p>
-            <p className="text-sm text-gray-600">
-              Logging out in{" "}
-              <span className="font-semibold text-gray-900">
-                {inactivitySecondsLeft}s
-              </span>
-              .
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                // Confirm response: trigger activity so the watcher resets the timer.
-                window.dispatchEvent(new Event("mousemove"));
-              }}
-              className="w-full rounded-full bg-primary hover:bg-primary-light text-white py-3 font-bold"
-            >
-              I&apos;m still here
-            </button>
-          </div>
-        </div>
-      )}
-    </PageBackground>
-  </>
-);
+      </PageBackground>
+  );
 }
