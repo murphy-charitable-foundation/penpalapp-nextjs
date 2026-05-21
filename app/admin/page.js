@@ -39,7 +39,7 @@ import { useDormantLetterbox } from "../../contexts/DormantLetterboxContext";
 import { fetchRecipients } from "../utils/letterboxFunctions";
 
 export default function Admin() {
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 5;
   const { handleDormantLetterboxWorker } = useDormantLetterbox();
 
   const [userId, setUserId] = useState("");
