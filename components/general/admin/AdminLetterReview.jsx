@@ -55,7 +55,7 @@ export default function AdminLetterReview({
             isSubmitting ? "pointer-events-none opacity-60" : ""
           }`}
         >
-          <div className={`flex items-center px-4 h-16 text-white ${headerColor}`}>
+          <div className={`flex items-center px-4 h-16 text-black ${headerColor}`}>
             <button
               type="button"
               onClick={onClose}
