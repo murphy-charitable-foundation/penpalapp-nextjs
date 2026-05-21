@@ -53,7 +53,7 @@ export default function CreateChildProfile() {
   const fileInputRef = useRef(null);
   const cropperRef = useRef(null);
   const { userType, loading: userLoading } = useUser();
-  usePageAnalytics("/user-data-import");
+  usePageAnalytics("/create-child-profile");
 
   // Check if user is admin
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function CreateChildProfile() {
 const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    logButtonEvent("/user-data-import", "Import User Data button clicked!");
+    logButtonEvent("/create-child-profile", "Create Child Profile button clicked!");
 
     try {
       const newErrors = {};
