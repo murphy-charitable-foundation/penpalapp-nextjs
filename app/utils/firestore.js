@@ -81,7 +81,7 @@ export const fetchMessages = async (id) => {
   if (!auth.currentUser?.uid) {
     console.warn("error loading auth")
     setTimeout(() => {
-      fetchMessages()
+      fetchMessages(id)
     }, 2000)
     return
   }
