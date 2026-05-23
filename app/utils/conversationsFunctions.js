@@ -360,9 +360,6 @@ export const createConnection = async (userDocRef, kidDocRef) => {
         const buddySnap = await getDoc(userDocRef);
         
           if (!kidSnap.exists() && !buddySnap.exists()) {
-            logError(error, {
-              description: "Neither of child nor international buddy exist in the users collection: ",
-            })
             throw new Error("Neither of child nor international buddy exist in the users collection");
           }
           console.log("Kid:", kidSnap);
