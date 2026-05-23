@@ -5,17 +5,7 @@ import { logError } from "./utils/analytics.js";
 // Trying to different approaches to get Firebase credentials
 let serviceAccount;
 
-// First trying to use individual environment variables
-if (process.env.private_key && process.env.client_email) {
-  serviceAccount = {
-    projectId: "penpalmagicapp",
-    clientEmail: process.env.client_email,
-    // Make sure to properly handle newlines in the private key
-    privateKey: process.env.private_key.replace(/\\n/g, "\n"),
-  };
-}
-// Fallback to service account JSON if available
-else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   try {
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   } catch (error) {
