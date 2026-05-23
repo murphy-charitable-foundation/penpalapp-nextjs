@@ -138,6 +138,7 @@ export default function CreateAccount() {
         birthday,
         connected_penpals: connectedPenpals,
         connected_penpals_count: connectedPenpals.length,
+        user_type: "international_buddy",
       });
 
       localStorage.setItem("userFirstName", firstName);
