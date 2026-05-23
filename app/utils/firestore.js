@@ -112,7 +112,7 @@ export const fetchMessages = async (id) => {
 
 export const fetchRecipients = async (id) => {
   const conversationsRef = doc(collection(db, "conversations"), id);
-  const conversations = await getDoc(query(conversationsRef))
+  const conversations = await getDoc(conversationsRef)
   const users = conversations.data().members.filter(m => m.id !== auth.currentUser.uid)
   const members = [];
   for (const user of users) {
