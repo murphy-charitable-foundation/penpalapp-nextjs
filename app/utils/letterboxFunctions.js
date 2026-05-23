@@ -32,8 +32,8 @@ export const getUserPfp = async(uid) => {
   
 }
 
-export const fetchConversations = async () => {
-  const retryFetch = () => setTimeout(() => fetchConversations(), DELAY);
+export const fetchConversationes = async () => {
+  const retryFetch = () => setTimeout(() => fetchConversationes(), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -47,8 +47,8 @@ export const fetchConversations = async () => {
     where("members", "array-contains", userDocRef)
   );
   const conversationQuerySnapshot = await getDocs(conversationQuery);
-  const conversations = conversationQuerySnapshot.docs;
-  return conversations;
+  const conversationes = conversationQuerySnapshot.docs;
+  return conversationes;
 };
 
 export const fetchConversation = async (id, lim = false, lastVisible = null) => {

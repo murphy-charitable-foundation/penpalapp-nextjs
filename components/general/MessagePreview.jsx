@@ -4,7 +4,7 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-const ConversationPreview = ({
+const MessagePreview = ({
   profileImage,
   name,
   country,
@@ -182,4 +182,4 @@ const ConversationPreview = ({
   return <Link href={`/conversation/${conversationId}`}>{cardContent}</Link>;
 };
 
-export default ConversationPreview;
+export default MessagePreview;

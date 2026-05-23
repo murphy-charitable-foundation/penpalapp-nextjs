@@ -13,38 +13,47 @@ import {
   FaBars,
   FaSignOutAlt,
 } from "react-icons/fa";
-
+import Link from "next/link";
 import { auth } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { useNavigation } from "../../contexts/NavigationContext";
+import { collection, doc, getDoc } from "firebase/firestore";
+import { db } from "../../app/firebaseConfig";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(null);
   const { userType } = useUser();
   const { setIsNavigating } = useNavigation();
-
   const containerRef = useRef(null);
-
-  // Close menu when clicking outside
+  
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
+    const grabUser = async () => {
+      if (!auth.currentUser) return;
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnapshot = await getDoc(userRef);
+      const userData = userSnapshot.data();
+  
+      if (userData?.user_type === "admin") {
+        setIsAdmin(true);
+      } else { 
+        setIsAdmin(false);
       }
     }
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+  
+    grabUser();
   }, []);
-
-  if (userType === null) return null;
 
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
-    startTransition(() => router.push(href));
+    startTransition(() => {
+      setIsNavigating(true);
+      router.push(href);
+    });
   };
-
+  
   const handleLogout = async () => {
     setIsMenuOpen(false);
     setIsNavigating(true);
@@ -63,6 +72,16 @@ export default function NavBar() {
     userType !== "child" && { href: "/discovery", icon: <FaCompass />, label: "Discover" },
     { href: "/about", icon: <FaInfo />, label: "About" },
     { href: "/contact", icon: <FaEnvelopeOpenText />, label: "Contact" },
+    // 👇 conditionally add admin link
+    ...(isAdmin
+      ? [
+          {
+            href: "/admin",
+            icon: <FaUserAlt className="h-4 w-4" />, // choose any admin icon
+            label: "Admin",
+          },
+        ]
+      : []),
     { onClick: handleLogout, icon: <FaSignOutAlt />, label: "Logout" },
   ].filter(Boolean);
 

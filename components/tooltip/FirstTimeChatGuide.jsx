@@ -70,7 +70,7 @@ export default function FirstTimeChatGuide({
       if (page == "inbox" || params == "/inbox") {
         setShowGuide(true);
         setCurrentStep(0);
-      } else if (page == "messageDetail" || params.includes("/messages/")) {
+      } else if (page == "messageDetail" || params.includes("/conversation/")) {
         setCurrentStep(1);
         setShowGuide(true);
       }

@@ -11,7 +11,7 @@ Connects students with pen pals via a safe, moderated message-style chat.
 
 ## Where to look
 - Pages: `app/*/page.js`
-- Chat: `app/messages/[id]/page.js`
+- Chat: `app/conversation/[id]/page.js`
 - Inbox: `app/inbox/page.js`
 - Discovery: `app/discovery/page.js`
 - API: `app/api/*/route.js`

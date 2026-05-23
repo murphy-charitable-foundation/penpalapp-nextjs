@@ -43,7 +43,7 @@ export default function SendMessage({ kid }) {
   const handleClick = async () => {
 
     createConnection(userRef, kid.ref).then((conversationsRef) => {
-      router.push("/messages/" + conversationsRef.id);
+      router.push("/conversation/" + conversationsRef.id);
     });
   };
 

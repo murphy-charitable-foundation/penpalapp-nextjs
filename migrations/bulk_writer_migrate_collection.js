@@ -1,7 +1,7 @@
 /**
  * Recursive Firestore copy using BulkWriter with:
  * - top-level rename via args: <srcTop> <dstTop>
- * - nested subcollection renames via JSON map arg: '{"letters":"messages"}'
+ * - nested subcollection renames via JSON map arg: '{"messages":"messages"}'
  *
  * DRY_RUN=true  → only logs (default)
  * DRY_RUN=false → actually writes
@@ -14,7 +14,7 @@
  * 
  *   DRY_RUN=true   node bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
  *   DRY_RUN=false  node bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
- *  Ex:  node bulk_writer_migrate_collection.js letterbox conversations '{"letters":"messages"}'
+ *  Ex:  node bulk_writer_migrate_collection.js conversation conversations '{"messages":"messages"}'
  * 
  * Optional:
  *   PAGE_SIZE=250 (default)
@@ -31,7 +31,7 @@ const [,, srcTop, dstTop, renameMapJson] = process.argv;
 
 if (!srcTop || !dstTop) {
   console.error("Usage: node dry_run_migrate_collections.js <srcTopCollection> <dstTopCollection> [renameMapJson]");
-  console.error(`Example: node dry_run_migrate_collections.js letterbox inbox '{"letters":"messages"}'`);
+  console.error(`Example: node dry_run_migrate_collections.js conversation inbox '{"messages":"messages"}'`);
   process.exit(1);
 }
 
@@ -43,12 +43,12 @@ if (renameMapJson) {
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       SUBCOL_RENAMES = parsed;
     } else {
-      throw new Error("renameMapJson must be a JSON object like {'letters':'messages'}");
+      throw new Error("renameMapJson must be a JSON object like {'messages':'messages'}");
     }
   } catch (e) {
     console.error("Failed to parse renameMapJson. Provide valid JSON.");
     console.error(`Got: ${renameMapJson}`);
-    console.error(`Example: '{"letters":"messages"}'`);
+    console.error(`Example: '{"messages":"messages"}'`);
     console.error(e.message);
     process.exit(1);
   }

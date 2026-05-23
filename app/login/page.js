@@ -75,7 +75,11 @@ export default function Login() {
           photo_uri: data?.photo_uri ?? "",
         });
         await initializeNotifications()
-        router.push("/inbox");
+        if (data.user_type === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/inbox");
+        }
       } else {
         router.push("/create-acc");
       }

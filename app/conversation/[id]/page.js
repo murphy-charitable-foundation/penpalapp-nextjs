@@ -34,9 +34,9 @@ import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 
 
-const fetchDraft = async (conversationsId, userRef, shouldCreate = false) => {
+const fetchDraft = async (conversationId, userRef, shouldCreate = false) => {
   try {
-    const conversationsRef = doc(db, "conversations", conversationsId);
+    const conversationsRef = doc(db, "conversations", conversationId);
     const messagesRef = collection(conversationsRef, "messages");
 
     // Retain the old query for existing documents
@@ -45,7 +45,7 @@ const fetchDraft = async (conversationsId, userRef, shouldCreate = false) => {
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
       orderBy("updated_at", "desc"),
-      limit(1)
+      limit(1),
     );
 
     let draftSnapshot = await getDocs(draftQuery);
@@ -57,7 +57,7 @@ const fetchDraft = async (conversationsId, userRef, shouldCreate = false) => {
         where("sent_by", "==", userRef),
         where("status", "==", "draft"),
         orderBy("drafted_at", "desc"),
-        limit(1)
+        limit(1),
       );
       draftSnapshot = await getDocs(fallbackDraftQuery);
     }
@@ -67,10 +67,8 @@ const fetchDraft = async (conversationsId, userRef, shouldCreate = false) => {
       const draftData = {
         id: draftDoc.id,
         ...draftDoc.data(),
-        created_at:
-          draftDoc.data().created_at?.toDate?.() || null,
-        drafted_at:
-          draftDoc.data().drafted_at?.toDate?.() || null,
+        created_at: draftDoc.data().created_at?.toDate?.() || null,
+        drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
       };
 
       return draftData;
@@ -104,8 +102,6 @@ const fetchDraft = async (conversationsId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
-
-
   const { id } = params;
 
   const router = useRouter();
@@ -121,7 +117,8 @@ export default function Page({ params }) {
   const [hasDraftContent, setHasDraftContent] = useState(false);
 
   const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editingMessageOriginalContent, setEditingMessageOriginalContent] = useState("");
+  const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
+    useState("");
 
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
@@ -144,7 +141,6 @@ export default function Page({ params }) {
   const [reportSender, setReportSender] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
-
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -373,7 +369,7 @@ export default function Page({ params }) {
 
       if (error.code === "permission-denied") {
         alert(
-          "Permission denied. Please check your access rights to this conversations."
+          "Permission denied. Please check your access rights to this conversation.",
         );
       } else if (error.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
@@ -437,13 +433,12 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageData);
       }
       
-      
       if (globalConversationReference) {
         sendNotification(globalConversationReference, "").catch(error => {
           console.error("Failed to send notification:", error);
         });
       }
-      
+
       // Clear states
       setMessageContent("");
       setDraft(null);
@@ -468,7 +463,7 @@ export default function Page({ params }) {
     } catch (error) {
       if (error.code === "permission-denied") {
         alert(
-          "Permission denied. Please check your access rights to this conversations."
+          "Permission denied. Please check your access rights to this conversation.",
         );
       } else if (error.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
@@ -542,7 +537,7 @@ export default function Page({ params }) {
       textAreaRef.current?.focus();
     }, 100);
   };
-  
+
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
@@ -558,7 +553,7 @@ export default function Page({ params }) {
       } catch (error) {
         console.error("❌ Failed to save draft before editing message:", error);
         const confirmSwitch = window.confirm(
-          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
+          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
         );
         if (!confirmSwitch) {
           return;
@@ -617,7 +612,7 @@ export default function Page({ params }) {
     }, 100);
   };
 
-  usePageAnalytics(`/messages/[id]`);
+  usePageAnalytics(`/conversation/[id]`);
 
   useEffect(() => {
     setIsLoading(true);
@@ -701,61 +696,65 @@ export default function Page({ params }) {
           const myMessagesQuery = query(
             lRef,
             where("sent_by", "==", userRefDoc),
-            orderBy("created_at", "asc")
+            orderBy("created_at", "asc"),
           );
-      
-          // All messages with status = "sent" (approval by admin)
+
+          // All messages with status = "approved" (approval by admin)
           const sentMessagesQuery = query(
             lRef,
-            where("status", "==", "sent"),
-            orderBy("created_at", "asc")
+            where("status", "==", "approved"),
+            orderBy("created_at", "asc"),
           );
-      
+
           const [mySnap, sentSnap] = await Promise.all([
             getDocs(myMessagesQuery),
             getDocs(sentMessagesQuery),
           ]);
-      
+
           const all = [];
-      
+
           const pushDocs = (snap) => {
             snap.forEach((docSnap) => {
               // Skip drafts on client side
               if (docSnap.data().status === "draft") {
                 return;
               }
-              
+
               const msg = {
                 id: docSnap.id,
                 ...docSnap.data(),
                 created_at: docSnap.data().created_at?.toDate(),
                 drafted_at: docSnap.data().drafted_at?.toDate(),
               };
-      
+
               // Normalize Firestore DocumentReference → { id }
               if (msg.sent_by?.path) {
                 msg.sent_by = {
                   id: msg.sent_by.path.split("/")[1],
                 };
               }
-      
+
               all.push(msg);
             });
           };
-      
+
           pushDocs(mySnap);
           pushDocs(sentSnap);
-      
+
           // remove duplicates
-          const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
-      
+          const unique = Array.from(
+            new Map(all.map((m) => [m.id, m])).values(),
+          );
+
           // sort chronologically
-          const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
+          const sortedMessages = unique.sort(
+            (a, b) => a.created_at - b.created_at,
+          );
           const messagesWithSenderInfo = await Promise.all(
             sortedMessages.map(async (message) => {
               if (message.sent_by?.id !== user.uid) {
                 const recipient = fetchedRecipients.find(
-                  (r) => r.id === message.sent_by?.id
+                  (r) => r.id === message.sent_by?.id,
                 );
                 if (recipient) {
                   message.senderLocation = recipient.location || "";
@@ -765,7 +764,7 @@ export default function Page({ params }) {
                 }
               }
               return message;
-            })
+            }),
           );
 
           setAllMessages(messagesWithSenderInfo);
@@ -810,8 +809,8 @@ export default function Page({ params }) {
 
   const getSenderLocation = (message) => {
     const isSenderUser =
-  message.sent_by?.id === user?.uid ||
-  message.sent_by?.path === `users/${user?.uid}`;
+      message.sent_by?.id === user?.uid ||
+      message.sent_by?.path === `users/${user?.uid}`;
 
     if (isSenderUser) {
       return userLocation || "";
@@ -825,339 +824,357 @@ export default function Page({ params }) {
     return canSend;
   };
 
-return (
+  return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-    <PageContainer
-      width="compactXS"
-      padding="none"
-      center={false}
-      className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-    >
-      {/* ===== HEADER ===== */}
-      <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
-        <button
-          onClick={handleCloseMessage}
-          className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
-          title="Close conversations"
-        >
-          X
-        </button>
-
-        {/* Keep header layout stable (no mount/unmount jumps) */}
-        <div className="w-10 h-10 flex items-center justify-center">
-          {isSendButtonDisabled || isUpdatingFirebase ? (
-            <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <button
-              onClick={handleSendMessage}
-              disabled={!isEditing || !canSendMessage()}
-              className={`p-1 ${
-                !isEditing || !canSendMessage()
-                  ? "cursor-not-allowed opacity-50"
-                  : "hover:bg-blue-200 rounded"
-              }`}
-              style={{ visibility: isEditing ? "visible" : "hidden" }}
-            >
-              <Image
-                src="/send-message-icon.png"
-                alt={editingMessageId ? "Update message" : "Send message"}
-                width={30}
-                height={30}
-                className="object-contain"
-                id="send-message"
-              />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ===== EDITING BANNER ===== */}
-      {editingMessageId && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
-          <div className="flex items-center text-amber-800 text-sm min-w-0">
-            <span className="mr-2 shrink-0" aria-hidden="true">
-              ✏️
-            </span>
-            <span className="whitespace-nowrap truncate">Editing message</span>
-          </div>
-
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {/* ===== HEADER ===== */}
+        <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
           <button
-            onClick={async () => {
-              const messageUserRef = userRef || doc(db, "users", user.uid);
+            onClick={handleCloseMessage}
+            className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
+            title="Close conversation"
+          >
+            X
+          </button>
 
-              try {
-                const existingDraft = await fetchDraft(id, messageUserRef, false);
+          {/* Keep header layout stable (no mount/unmount jumps) */}
+          <div className="w-10 h-10 flex items-center justify-center">
+            {isSendButtonDisabled || isUpdatingFirebase ? (
+              <div className="w-6 h-6 flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <button
+                onClick={handleSendMessage}
+                disabled={!isEditing || !canSendMessage()}
+                className={`p-1 ${
+                  !isEditing || !canSendMessage()
+                    ? "cursor-not-allowed opacity-50"
+                    : "hover:bg-blue-200 rounded"
+                }`}
+                style={{ visibility: isEditing ? "visible" : "hidden" }}
+              >
+                <Image
+                  src="/send-message-icon.png"
+                  alt={editingMessageId ? "Update message" : "Send message"}
+                  width={30}
+                  height={30}
+                  className="object-contain"
+                  id="send-message"
+                />
+              </button>
+            )}
+          </div>
+        </div>
 
-                if (existingDraft && existingDraft.content?.trim()) {
-                  setDraft(existingDraft);
-                  setMessageContent(existingDraft.content);
-                  setHasDraftContent(true);
-                  setIsEditing(true);
-                } else {
+        {/* ===== EDITING BANNER ===== */}
+        {editingMessageId && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
+            <div className="flex items-center text-amber-800 text-sm min-w-0">
+              <span className="mr-2 shrink-0" aria-hidden="true">
+                ✏️
+              </span>
+              <span className="whitespace-nowrap truncate">
+                Editing message
+              </span>
+            </div>
+
+            <button
+              onClick={async () => {
+                try {
+                  const existingDraft = await fetchDraft(
+                    id,
+                    userRef || doc(db, "users", user.uid),
+                    false,
+                  );
+
+                  if (existingDraft && existingDraft.content?.trim()) {
+                    setDraft(existingDraft);
+                    setMessageContent(existingDraft.content);
+                    setHasDraftContent(true);
+                    setIsEditing(true);
+                  } else {
+                    setMessageContent("");
+                    setDraft(null);
+                    setHasDraftContent(false);
+                    setIsEditing(false);
+                  }
+                } catch {
                   setMessageContent("");
                   setDraft(null);
                   setHasDraftContent(false);
                   setIsEditing(false);
                 }
-              } catch {
-                setMessageContent("");
-                setDraft(null);
-                setHasDraftContent(false);
-                setIsEditing(false);
-              }
 
-              setEditingMessageId(null);
-              setEditingMessageOriginalContent("");
-              setSelectedMessageId(null);
-            }}
-            className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
-          >
-            {/* Keep banner height consistent while editing */}
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* ===== MESSAGES ===== */}
-      <div className="flex-1 overflow-y-auto bg-gray-100">
-        {allMessages.map((message, index) => {
-          const messageId = message.id;
-          const isSelected = selectedMessageId === messageId;
-          const isSenderUser = message.sent_by?.id === user?.uid;
-          const location = getSenderLocation(message);
-
-          return (
-            <div key={messageId}>
-              <div
-                className={`border-b border-gray-200 ${
-                  isSelected ? "bg-white" : "bg-gray-50"
-                } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-              >
-                <div
-                  className="px-4 py-3"
-                  onClick={() => selectMessage(messageId)}
-                >
-                  <div className="flex items-center">
-                    <div className="shrink-0">
-                      <ProfileImage
-                        photo_uri={
-                          isSenderUser ? profileImage : recipients[0]?.photo_uri
-                        }
-                        name={
-                          isSenderUser ? "Me" : recipients[0]?.first_name
-                        }
-                        size={12}
-                      />
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <span className="font-bold text-black">
-                          {isSenderUser
-                            ? "Me"
-                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                        </span>
-                        {location && (
-                          <span className="text-black ml-2 text-sm">
-                            {location}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-gray-800">
-                        {isSelected ? "" : truncateMessage(message.content)}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="text-gray-500 text-sm">
-                        {formatTimestamp(message.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div className="px-4 pb-3">
-                    <div className="ml-16 relative">
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                      <div className="flex items-center justify-end w-full">
-                        {!isSenderUser && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-
-                              setReportSender(message.sent_by?.id);
-                              setReportContent(message.content);
-                              setShowReportPopup(true);
-                              logButtonEvent(
-                                "Report message clicked!",
-                                "/messages/[id]"
-                              );
-                            }}
-                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                          >
-                            <FaExclamationCircle className="mr-1" size={10} />
-                            Report
-                          </button>
-                        )}
-
-                        {/* STATUS BANNER */}
-                        {isSenderUser && (
-                          <>
-                            {/* REJECTED */}
-                            {isSenderUser && message.status === "rejected" && (
-                              <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
-                                <div className="flex items-start text-red-700 font-semibold">
-                                  <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
-                                  <div>
-                                    <div>Your message was not sent.</div>
-
-                                    {message.rejection_reason && (
-                                      <div className="text-sm text-red-600 mt-1">
-                                        {message.rejection_reason}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* SENT → GREEN CHECK */}
-                            {message.status === "sent" && (
-                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">
-                                ✓
-                              </span>
-                            )}
-
-                            {/* PENDING REVIEW → GRAY DASHED CHECK */}
-                            {message.status === "pending_review" && (
-                              <div className="flex items-center justify-end w-full">
-                                {/* Wrapper so the check can stick to the button */}
-                                <div className="relative inline-flex">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-
-                                      handleEditMessage(message);
-                                      logButtonEvent(
-                                        "Edit message clicked!",
-                                        "/messages/[id]"
-                                      );
-                                    }}
-                                    className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
-                                    title="Edit message"
-                                  >
-                                    Edit
-                                  </button>
-
-                                  {/* Check badge in bottom-right of the button */}
-                                  <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                    <span className="text-gray-400 text-xs font-bold">
-                                      ✓
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* ===== REPLY ===== */}
-      <div className="bg-white">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center">
-            <Image
-              src="/arrow-left.png"
-              alt="Back"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <span className="text-gray-700">To {recipientName}</span>
-          </div>
-        </div>
-
-        {!isEditing ? (
-          <div className="p-4">
-            <div
-              className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-              onClick={handleReplyClick}
+                setEditingMessageId(null);
+                setEditingMessageOriginalContent("");
+                setSelectedMessageId(null);
+              }}
+              className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
             >
-              {hasDraftContent ? "Continue draft..." : "Reply to the message..."}
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 relative" style={{ height: "40vh" }}>
-            <textarea
-              ref={textAreaRef}
-              className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-              placeholder={
-                editingMessageId ? "Edit your message..." : "Write your message..."
-              }
-              value={messageContent}
-              onChange={handleMessageChange}
-            />
+              {/* Keep banner height consistent while editing */}
+              Cancel
+            </button>
           </div>
         )}
-      </div>
 
-      {/* ===== POPUPS ===== */}
-      {showCloseDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-          <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
-            <h2 className="text-xl font-semibold mb-1 text-black">
-              {editingMessageId ? "Discard changes?" : "Close this message?"}
-            </h2>
-            <p className="text-gray-600 mb-6 text-sm">
-              {editingMessageId
-                ? "Your changes will not be saved."
-                : "Your message will be saved as a draft."}
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleContinueEditing}
-                className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
-              >
-                Stay on page
-              </button>
-              <button
-                onClick={handleConfirmClose}
-                className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
-              >
-                {editingMessageId ? "Discard" : "Close"}
-              </button>
+        {/* ===== MESSAGES ===== */}
+        <div className="flex-1 overflow-y-auto bg-gray-100">
+          {allMessages.map((message, index) => {
+            const messageId = message.id;
+            const isSelected = selectedMessageId === messageId;
+            const isSenderUser = message.sent_by?.id === user?.uid;
+            const location = getSenderLocation(message);
+
+            return (
+              <div key={messageId}>
+                <div
+                  className={`border-b border-gray-200 ${
+                    isSelected ? "bg-white" : "bg-gray-50"
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                >
+                  <div
+                    className="px-4 py-3"
+                    onClick={() => selectMessage(messageId)}
+                  >
+                    <div className="flex items-center">
+                      <div className="shrink-0">
+                        <ProfileImage
+                          photo_uri={
+                            isSenderUser
+                              ? profileImage
+                              : recipients[0]?.photo_uri
+                          }
+                          name={isSenderUser ? "Me" : recipients[0]?.first_name}
+                          size={12}
+                        />
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <span className="font-bold text-black">
+                            {isSenderUser
+                              ? "Me"
+                              : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                          </span>
+                          {location && (
+                            <span className="text-black ml-2 text-sm">
+                              {location}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-gray-800">
+                          {isSelected ? "" : truncateMessage(message.content)}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="text-gray-500 text-sm">
+                          {formatTimestamp(message.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16 relative">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div className="flex items-center justify-end w-full">
+                          {!isSenderUser && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                setReportSender(message.sent_by?.id);
+                                setReportContent(message.content);
+                                setShowReportPopup(true);
+                                logButtonEvent(
+                                  "Report message clicked!",
+                                  "/conversation/[id]",
+                                );
+                              }}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                            >
+                              <FaExclamationCircle className="mr-1" size={10} />
+                              Report
+                            </button>
+                          )}
+
+                          {/* STATUS BANNER */}
+                          {isSenderUser && (
+                            <>
+                              {/* REJECTED */}
+                              {isSenderUser &&
+                                message.status === "rejected" && (
+                                  <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
+                                    <div className="flex items-start text-red-700 font-semibold">
+                                      <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                      <div>
+                                        <div>
+                                          Your message was not sent for the
+                                          following reason:
+                                        </div>
+
+                                        {message.rejection_reason && (
+                                          <div className="text-sm font-semibold mt-2">
+                                            {message.rejection_reason}
+                                          </div>
+                                        )}
+
+                                        {message.rejection_feedback && (
+                                          <div className="text-sm text-red-500 mt-1 whitespace-pre-wrap">
+                                            {message.rejection_feedback}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* APPROVED → GREEN CHECK */}
+                              {message.status === "approved" && (
+                                <span className="text-green-500 text-lg font-bold flex justify-end w-full">
+                                  ✓
+                                </span>
+                              )}
+
+                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
+                              {message.status === "pending_review" && (
+                                <div className="flex items-center justify-end w-full">
+                                  {/* Wrapper so the check can stick to the button */}
+                                  <div className="relative inline-flex">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+
+                                        handleEditMessage(message);
+                                        logButtonEvent(
+                                          "Edit message clicked!",
+                                          "/conversation/[id]",
+                                        );
+                                      }}
+                                      className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
+                                      title="Edit message"
+                                    >
+                                      Edit
+                                    </button>
+
+                                    {/* Check badge in bottom-right of the button */}
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                      <span className="text-gray-400 text-xs font-bold">
+                                        ✓
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* ===== REPLY ===== */}
+        <div className="bg-white">
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center">
+              <Image
+                src="/arrow-left.png"
+                alt="Back"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
+              <span className="text-gray-700">To {recipientName}</span>
             </div>
           </div>
+
+          {!isEditing ? (
+            <div className="p-4">
+              <div
+                className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
+                onClick={handleReplyClick}
+              >
+                {hasDraftContent
+                  ? "Continue draft..."
+                  : "Reply to the message..."}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 relative" style={{ height: "40vh" }}>
+              <textarea
+                ref={textAreaRef}
+                className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
+                placeholder={
+                  editingMessageId
+                    ? "Edit your message..."
+                    : "Write your message..."
+                }
+                value={messageContent}
+                onChange={handleMessageChange}
+              />
+            </div>
+          )}
         </div>
-      )}
 
-      {showReportPopup && (
-        <ReportPopup
-          setShowPopup={setShowReportPopup}
-          setShowConfirmReportPopup={setShowConfirmReportPopup}
-          sender={reportSender}
-          content={reportContent}
-        />
-      )}
+        {/* ===== POPUPS ===== */}
+        {showCloseDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
+              <h2 className="text-xl font-semibold mb-1 text-black">
+                {editingMessageId ? "Discard changes?" : "Close this message?"}
+              </h2>
+              <p className="text-gray-600 mb-6 text-sm">
+                {editingMessageId
+                  ? "Your changes will not be saved."
+                  : "Your message will be saved as a draft."}
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleContinueEditing}
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
+                >
+                  Stay on page
+                </button>
+                <button
+                  onClick={handleConfirmClose}
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
+                >
+                  {editingMessageId ? "Discard" : "Close"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {showConfirmReportPopup && (
-        <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
-      )}
-    </PageContainer>
-  </PageBackground>
-);
+        {showReportPopup && (
+          <ReportPopup
+            setShowPopup={setShowReportPopup}
+            setShowConfirmReportPopup={setShowConfirmReportPopup}
+            sender={reportSender}
+            content={reportContent}
+          />
+        )}
+
+        {showConfirmReportPopup && (
+          <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+        )}
+      </PageContainer>
+    </PageBackground>
+  );
 }

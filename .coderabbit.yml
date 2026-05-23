@@ -35,4 +35,4 @@ reviews:
     - "!components/message/**"
     - "!app/utils/dateHelpers.js"
     - "!app/utils/timestampToDate.js"
-    - "!app/utils/deadChat.js"
+    - "!app/utils/dormantConversationHelpers.js"

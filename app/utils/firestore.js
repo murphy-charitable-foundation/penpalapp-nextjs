@@ -37,7 +37,7 @@ export const fetchData = async () => {
         const queryDocumentSnapshots = draftSnapshot.docs;
         const latestMessage = queryDocumentSnapshots[0].data();
         messages.push({
-          conversationsId: document.id,
+          conversationId: document.id,
           collectionId: queryDocumentSnapshots[0].id,
           receiver: conversationsData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
           content: latestMessage.content,
@@ -50,7 +50,7 @@ export const fetchData = async () => {
           lRef,
           where("content", "!=", ''), // Exclude empty messages
           where("deleted", "==", false),
-          where("status", "==", "sent"),
+          where("status", "==", "approved"),
           orderBy("created_at")
         );
   
@@ -60,7 +60,7 @@ export const fetchData = async () => {
           const queryDocumentSnapshots = snapshot.docs;
           const latestMessage = queryDocumentSnapshots[0].data();
           messages.push({
-            conversationsId: document.id,
+            conversationId: document.id,
             collectionId: queryDocumentSnapshots[0].id,
             receiver: conversationsData.members.find(memberRef => memberRef.id !== auth.currentUser.uid).id,
             content: latestMessage.content,
@@ -93,7 +93,7 @@ export const fetchMessages = async (id) => {
     const lRef = collection(conversationsRef, "messages");
     const conversationsQuery = query(
       lRef,
-      // where("status", "==", "sent"),
+      // where("status", "==", "approved"),
       orderBy("created_at")
     );
 
