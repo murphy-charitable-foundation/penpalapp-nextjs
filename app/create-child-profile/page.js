@@ -314,15 +314,7 @@ const handleSubmit = async (e) => {
       />
       {showAvatarModal && (
         <>
-          <div
-            className="fixed inset-0 bg-[#4E802A] z-[998]"
-            onClick={() => setShowAvatarModal(false)}
-          />
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <div
-              className="w-full max-w-md bg-white rounded-2xl"
-              onClick={(event) => event.stopPropagation()}
-            >
+
               <AvatarUploadModal
                 autoSave={false}
                 onContinue={handleAvatarSelected}
@@ -332,8 +324,7 @@ const handleSubmit = async (e) => {
                 colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
                 pageAnalyticsPath="/create-child-profile"
               />
-            </div>
-          </div>
+
         </>
       )}
       <div className="flex-1 min-h-0 flex justify-center">
