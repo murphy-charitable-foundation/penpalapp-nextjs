@@ -3,10 +3,12 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { PageBackground } from "../../components/general/PageBackground";
+import AvatarUploadModal from "../../components/general/AvatarUploadModal";
+import { uploadFile } from "../utils/uploadFile";
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
@@ -38,6 +40,8 @@ export default function EditProfile() {
   const [hobbies, setHobbies] = useState([]);
   const [favoriteColor, setFavoriteColor] = useState("");
   const [photoUri, setPhotoUri] = useState("");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [errors] = useState({});
@@ -135,6 +139,42 @@ export default function EditProfile() {
     setIsBioModalOpen(true);
   };
 
+  const handleAvatarSelected = async (blob) => {
+    if (!user?.uid) return;
+
+    setShowAvatarModal(false);
+    setIsPhotoUploading(true);
+    uploadFile(
+      blob,
+      `profile/${user.uid}/profile-image`,
+      () => {},
+      (error) => {
+        logError(error, { description: "Profile image upload error" });
+        setIsPhotoUploading(false);
+        setDialogTitle("Oops!");
+        setDialogMessage("Unable to upload profile photo. Please try again.");
+        setIsDialogOpen(true);
+      },
+      async (url) => {
+        try {
+          await updateDoc(doc(db, "users", user.uid), { photo_uri: url });
+          setPhotoUri(url);
+          setShowAvatarModal(false);
+          setDialogTitle("Success!");
+          setDialogMessage("Profile photo updated successfully.");
+          setIsDialogOpen(true);
+        } catch (e) {
+          logError(e, { description: "Firestore update error" });
+          setDialogTitle("Oops!");
+          setDialogMessage("Unable to save profile photo. Please try again.");
+          setIsDialogOpen(true);
+        } finally {
+          setIsPhotoUploading(false);
+        }
+      }
+    );
+  };
+
   const saveProfileData = async () => {
     if (!user?.uid) return;
 
@@ -190,6 +230,20 @@ export default function EditProfile() {
         title={dialogTitle}
         content={dialogMessage}
       />
+
+      {isPhotoUploading && <LoadingSpinner />}
+
+      {showAvatarModal && (
+        <AvatarUploadModal
+          title="Update profile photo"
+          autoSave={false}
+          onContinue={handleAvatarSelected}
+          onBackClick={() => setShowAvatarModal(false)}
+          continueText="Save"
+          skipText=""
+          pageAnalyticsPath="/profile"
+        />
+      )}
 
       <Dialog
         isOpen={showLeaveDialog}
@@ -257,7 +311,7 @@ export default function EditProfile() {
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
-                onClick={() => attemptNavigate(() => router.push("/edit-profile-user-image"))}
+                onClick={() => setShowAvatarModal(true)}
                 className="px-4 py-2 border border-gray-400 text-green-700 rounded-full hover:bg-gray-100 transition"
               >
                 Edit Photo
