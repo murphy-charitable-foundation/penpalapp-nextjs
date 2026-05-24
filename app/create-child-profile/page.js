@@ -124,7 +124,6 @@ export default function CreateChildProfile() {
         const nextUrl = URL.createObjectURL(blob);
         avatarPreviewUrlRef.current = nextUrl;
         setCroppedBlob(blob);
-        //setCroppedImage(URL.createObjectURL(blob));
         setCroppedImage(nextUrl);
 
         setShowCropper(false);
@@ -313,19 +312,15 @@ const handleSubmit = async (e) => {
         content={dialogMessage}
       />
       {showAvatarModal && (
-        <>
-
-              <AvatarUploadModal
-                autoSave={false}
-                onContinue={handleAvatarSelected}
-                onBackClick={() => setShowAvatarModal(false)}
-                continueText="Select"
-                skipText=""
-                colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
-                pageAnalyticsPath="/create-child-profile"
-              />
-
-        </>
+          <AvatarUploadModal
+            autoSave={false}
+            onContinue={handleAvatarSelected}
+            onBackClick={() => setShowAvatarModal(false)}
+            continueText="Select"
+            skipText=""
+            colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
+            pageAnalyticsPath="/create-child-profile"
+          />
       )}
       <div className="flex-1 min-h-0 flex justify-center">
         <PageContainer
