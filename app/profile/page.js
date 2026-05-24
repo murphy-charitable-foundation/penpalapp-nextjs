@@ -157,6 +157,12 @@ export default function EditProfile() {
       },
       async (url) => {
         try {
+          if (!url) {
+            setDialogTitle("Oops!");
+            setDialogMessage("Unable to upload profile photo. Please try again.");
+            setIsDialogOpen(true);
+            return;
+          }
           await updateDoc(doc(db, "users", user.uid), { photo_uri: url });
           setPhotoUri(url);
           setShowAvatarModal(false);

@@ -318,7 +318,6 @@ const handleSubmit = async (e) => {
             onBackClick={() => setShowAvatarModal(false)}
             continueText="Select"
             skipText=""
-            colors={{ primary: "#4E802A", dark: "#034792", bg: "#f3f4f6" }}
             pageAnalyticsPath="/create-child-profile"
           />
       )}
