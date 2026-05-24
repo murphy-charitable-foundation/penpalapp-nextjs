@@ -351,27 +351,6 @@ const handleSubmit = async (e) => {
                 Upload Photo
               </button>
             </div>
-            {showCropper && (
-              <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
-                <div
-                  className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
-                  onClick={() => handleCancelCrop()}                
-                  />
-                <div className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
-                  <div className="flex justify-center">
-                    <EditProfileImage
-                      image={URL.createObjectURL(selectedFile)}
-                      newProfileImage={null}
-                      previewURL={null}
-                      handleDrop={() => {}}
-                      handleCrop={() => {}}
-                      cropperRef={cropperRef}
-                      onDone={handleCrop}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
