@@ -213,13 +213,13 @@ export default function EditProfile() {
       <Dialog
         isOpen={isBioModalOpen}
         onClose={() => setIsBioModalOpen(false)}
-        title="Edit Bio / Challenges"
+        title="Edit Bio"
         content={
           <textarea
             className="w-full border border-gray-300 rounded-lg p-3 min-h-[150px] resize-none"
             value={tempBio}
             onChange={(e) => setTempBio(e.target.value)}
-            placeholder="Tell us about yourself or any challenges you face..."
+            placeholder="Tell us about yourself..."
           />
         }
         buttons={[
@@ -306,6 +306,18 @@ export default function EditProfile() {
                   }}
                 />
 
+                {(userType === "child") && (
+                  <Input
+                    id="village"
+                    label="Village"
+                    value={village}
+                    onChange={(e) => {
+                      setVillage(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
+                  />
+                )}
+
                 {/* Pronouns */}
                 <div className="md:col-span-2">
                   <p className="text-sm text-gray-500 mb-1">Pronouns</p>
@@ -320,27 +332,15 @@ export default function EditProfile() {
                   />
                 </div>
 
-                {(userType === "child" || userType === "local_volunteer") && (
-                  <Input
-                    id="village"
-                    label="Village"
-                    value={village}
-                    onChange={(e) => {
-                      setVillage(e.target.value);
-                      setHasUnsavedChanges(true);
-                    }}
-                  />
-                )}
-
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Bio / Challenges</p>
+                  <p className="text-sm text-gray-500 mb-1">Bio</p>
                   <button
                     type="button"
                     onClick={handleOpenBioModal}
                     className="w-full border-b border-gray-300 p-2 text-left flex justify-between items-center"
                   >
                     <span className="truncate">
-                      {bio || "Add your bio or challenges..."}
+                      {bio || "Add your bio..."}
                     </span>
                   </button>
                 </div>
@@ -358,18 +358,16 @@ export default function EditProfile() {
               </div>
             </div>
 
-            {userType !== "admin" && (
+            {userType === "child" && (
               <>
                 {/* Education */}
                 <div className="rounded-2xl bg-white p-4">
                   <h3 className="text-sm font-semibold text-secondary mb-4">
-                    Education{" "}
-                    {(userType === "child" || userType === "local_volunteer") && (
-                      <>{"& Family"}</>
-                    )}
+                    Education & Family
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Education Level */}
                     <div className="md:col-span-2">
                       <p className="text-sm text-gray-500 mb-1">Education Level</p>
                       <Dropdown
@@ -387,9 +385,8 @@ export default function EditProfile() {
                         }}
                         text="Education Level"
                       />
+                    </div>
 
-                      {(userType === "child" || userType === "local_volunteer") && (
-                        <>
                           {/* Guardian */}
                           <div className="md:col-span-2 pt-6">
                             <p className="text-sm text-gray-500 mb-1">Guardian</p>
@@ -425,11 +422,10 @@ export default function EditProfile() {
                               text="Is Orphan"
                             />
                           </div>
-                        </>
-                      )}
                     </div>
                   </div>
-                </div>
+                </>
+                )}
 
                 {/* Interests */}
                 <div className="rounded-2xl bg-white p-4">
@@ -461,7 +457,7 @@ export default function EditProfile() {
                       </>
                     )}
 
-                    {(userType === "child" || userType === "local_volunteer") && (
+                    {(userType === "child") && (
                       <>
                         <Input
                           id="dreamjob"
@@ -508,8 +504,6 @@ export default function EditProfile() {
                     </div>
                   </div>
                 </div>
-              </>
-            )}
 
             {/* Save */}
             <div className="flex justify-center py-4">

@@ -506,7 +506,7 @@ const handleSubmit = async (e) => {
                     name="bio"
                     rows={3}
                     maxLength={50}
-                    label="Bio / Challenges Faced"
+                    label="Bio"
                   />
                 </div>
               </div>
