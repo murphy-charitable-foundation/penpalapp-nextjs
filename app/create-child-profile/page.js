@@ -21,7 +21,6 @@ import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/letterboxFunctions";
 import Image from "next/image";
-import EditProfileImage from "../../components/edit-profile-image";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
 import { uploadFile } from "../utils/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
