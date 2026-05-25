@@ -46,6 +46,11 @@ export default function Page() {
       },
       async (url) => {
         try {
+          if (!url) {
+            console.error("Profile image upload returned empty URL");
+            setIsUploading(false);
+            return;
+          }
           await updateDoc(doc(db, "users", user.uid), { photo_uri: url });
         } catch (error) {
           console.error("Failed to update user photo_uri", error);
