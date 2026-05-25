@@ -21,10 +21,6 @@ import { useAvatarUpload } from "@/app/utils/useAvatarUpload";
  *   - If autoSave=true: receives data URL string and uploads to Firebase automatically
  *   - If autoSave=false: receives Blob object for manual upload (e.g., form submission)
  * - onSkip: () => void - Optional callback for skip button
- * - circleBgColor: string - Tailwind bg color for avatar circle (default: "bg-[#4E802A]")
- * - primaryColor: string - Tailwind color for primary elements (default: "#4E802A")
- * - primaryColorBg: string - Tailwind bg color for primary button (default: "bg-[#4E802A]")
- * - primaryColorDark: string - Tailwind color for darker primary variant (default: "#034792")
  * - autoSave: bool - If true, auto-uploads to Firebase. If false, returns blob for form submission (default: true)
  * - showBackButton: bool - Whether to show the back button (default: true)
  * - pageAnalyticsPath: string - Path for analytics logging (optional)
@@ -36,10 +32,6 @@ export default function AvatarUploadModal({
   onBackClick,
   onContinue,
   onSkip,
-  circleBgColor = "bg-[#4E802A]",
-  primaryColor = "#4E802A",
-  primaryColorBg = "bg-[#4E802A]",
-  primaryColorDark = "#034792",
   autoSave = true,
   showBackButton = true,
   pageAnalyticsPath = "/avatar-upload",
@@ -115,7 +107,7 @@ export default function AvatarUploadModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-[#4E802A] z-[998]"/>
+      <div className="fixed inset-0 bg-gray-100 z-[998]"/>
         <div 
           className="fixed inset-0 z-[999] flex items-center justify-center p-4" 
           onClick={onBackClick}
@@ -169,7 +161,7 @@ export default function AvatarUploadModal({
               <div className="relative">
                 <button
                   onClick={openSheet}
-                  className={`w-48 h-48 rounded-full overflow-hidden ${circleBgColor} flex items-center justify-center focus:outline-none active:opacity-80 transition-opacity`}
+                  className={`w-48 h-48 rounded-full overflow-hidden bg-primary flex items-center justify-center focus:outline-none active:opacity-80 transition-opacity`}
                   aria-label="Select profile picture"
                 >
                   {croppedUrl ? (
@@ -179,8 +171,8 @@ export default function AvatarUploadModal({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className={`w-full h-full ${circleBgColor} flex items-center justify-center`}>
-                      <Camera size={40} className="text-white/50" />
+                    <div className={`w-full h-full bg-primary flex items-center justify-center`}>
+                      <Camera size={80} className="text-white" />
                     </div>
                   )}
                 </button>
@@ -190,7 +182,7 @@ export default function AvatarUploadModal({
                   <button
                     onClick={openSheet}
                     className={`absolute bottom-2 right-2 w-9 h-9 rounded-full flex items-center justify-center shadow-md`}
-                    style={{ backgroundColor: primaryColorDark }}
+                    style={{ backgroundColor: "#034792" }}
                     aria-label="Edit photo"
                   >
                     <svg
@@ -223,7 +215,7 @@ export default function AvatarUploadModal({
                 disabled={!croppedUrl || loading}
                 className={`w-full max-w-xs py-3 rounded-full font-semibold text-sm transition-colors ${
                   croppedUrl && !loading
-                    ? `${primaryColorBg} text-white hover:opacity-90`
+                    ? "bg-[#4E802A] text-white hover:opacity-90"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
@@ -344,7 +336,7 @@ export default function AvatarUploadModal({
                   <button
                     onClick={handleCropConfirm}
                     className="font-bold text-sm"
-                    style={{ color: primaryColor }}
+                    style={{ color: "white" }}
                   >
                     Choose
                   </button>
