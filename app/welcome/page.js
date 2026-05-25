@@ -189,7 +189,7 @@ const COUNTRIES = [
 ];
 
 export default function Page() {
-  const { user } = useUser();
+  const { user, displayName } = useUser();
   const router = useRouter();
   const dropdownRef = useRef(null);
   const avatarUploadPromiseRef = useRef(null);
@@ -206,8 +206,8 @@ export default function Page() {
   const [search, setSearch] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // First name is derived from Firebase Auth displayName via UserContext
-  const firstName = user?.displayName?.split(" ")[0] ?? "";
+  // First name is extracted from displayName via UserContext
+  const firstName = displayName?.split(" ")[0] ?? "";
 
   const filteredCountries = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
