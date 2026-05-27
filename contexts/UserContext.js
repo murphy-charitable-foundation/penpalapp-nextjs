@@ -28,6 +28,7 @@ export function UserProvider({ children }) {
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState('');
   const [userDocRef, setUserDocRef] = useState(null);
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -44,11 +45,12 @@ export function UserProvider({ children }) {
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
-
+          
           if (userDoc.exists()) {
             const fetchedUserData = userDoc.data();
             setUserData(fetchedUserData);
             setUserType(fetchedUserData.user_type || 'Unknown Type');
+            setDisplayName(fetchedUserData.first_name || '');
 
             try {
               const pfp = await getUserPfp(authUser.uid);
@@ -96,6 +98,7 @@ export function UserProvider({ children }) {
     userType,
     userData,
     profileImage,
+    displayName,
     userDocRef,
     loading
   };
