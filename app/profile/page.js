@@ -231,7 +231,7 @@ export default function EditProfile() {
         isOpen={isDialogOpen}
         onClose={() => {
           setIsDialogOpen(false);
-          if (isSaved) router.push("/letterhome");
+          if (isSaved) router.push("/inbox");
         }}
         title={dialogTitle}
         content={dialogMessage}
@@ -299,7 +299,7 @@ export default function EditProfile() {
         <PageHeader
           title="Profile"
           image={false}
-          onBack={() => attemptNavigate(() => router.push("/letterhome"))}
+          onBack={() => attemptNavigate(() => router.push("/inbox"))}
         />
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">

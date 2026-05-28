@@ -1,6 +1,6 @@
-import { auth } from "../../app/firebaseAdmin";
-import { requireAdmin } from "../../app/utils/requireAdmin";
-import { logError } from "../../app/utils/analytics";
+import { auth } from "../../firebaseAdmin";
+import { requireAdmin } from "../../utils/requireAdmin";
+import { logError } from "../../utils/analytics";
 
 export default async function handler(req, res) {
   

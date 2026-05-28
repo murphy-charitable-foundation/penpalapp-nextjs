@@ -2,7 +2,7 @@ import React from "react";
 import { PageBackground } from "@/components/general/PageBackground";
 import { PageContainer } from "@/components/general/PageContainer";
 
-export default function LetterHomeSkeleton() {
+export default function InboxSkeleton() {
   return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 flex justify-center">

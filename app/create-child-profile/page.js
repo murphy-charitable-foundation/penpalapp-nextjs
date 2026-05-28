@@ -19,7 +19,7 @@ import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
-import { createConnection } from "../utils/letterboxFunctions";
+import { createConnection } from "../utils/conversationsFunctions";
 import Image from "next/image";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
 import { uploadFile } from "../utils/uploadFile";
@@ -175,10 +175,10 @@ const handleSubmit = async (e) => {
         if (!birthday) {
           newErrors.birthday = "Birthday is required to generate email";
         } else {
-          const firstNameLetter = userData.first_name.charAt(0).toLowerCase();
+          const firstNameMessage = userData.first_name.charAt(0).toLowerCase();
           const lastName = userData.last_name.toLowerCase();
           const yearLastTwoDigits = birthday.toString().slice(2,4);
-          email = `rez+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
+          email = `rez+${firstNameMessage}${lastName}${yearLastTwoDigits}@murphycharity.org`;
         }
       }
 

@@ -1,6 +1,6 @@
-import { auth, db } from "../../app/firebaseAdmin";
-import { logError } from "../../app/utils/analytics";
-import { requireAdmin } from "../../app/utils/requireAdmin";
+import { auth, db } from "../../firebaseAdmin";
+import { logError } from "../../utils/analytics";
+import { requireAdmin } from "../../utils/requireAdmin";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

@@ -29,7 +29,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { hydrated, addCachedUserLogin, cachedUserLogins, clearCachedUserLogins } = useCachedUserLogins();
+  const { hydrated, addCachedUserLogin, cachedUserLogins, clearAllCachedUserLogins } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
   usePageAnalytics(`/login`);
@@ -78,7 +78,7 @@ export default function Login() {
         if (data.user_type === "admin") {
           router.push("/admin");
         } else {
-          router.push("/letterhome");
+          router.push("/inbox");
         }
       } else {
         router.push("/create-acc");
@@ -179,7 +179,7 @@ export default function Login() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => clearCachedUserLogins()}
+              onClick={() => clearAllCachedUserLogins()}
               className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
               Forget saved logins

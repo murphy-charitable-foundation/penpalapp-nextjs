@@ -1,24 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import Button from "../../general/Button";
+import Button from "../Button";
 import LoadingSpinner from "../../loading/LoadingSpinner";
 import { ChevronLeft, AlertTriangle } from "lucide-react";
 
-export default function AdminLetterReview({
-  letter,
+export default function AdminMessageReview({
+  message,
   onApprove,
   onReject,
   onRevert,
   onClose,
   isSubmitting = false,
 }) {
-  if (!letter) return null;
+  if (!message) return null;
 
   const status =
-    letter.status === "approved"
+    message.status === "approved"
       ? "approved"
-      : letter.status === "rejected"
+      : message.status === "rejected"
         ? "rejected"
         : "pending_review";
 
@@ -29,13 +29,13 @@ export default function AdminLetterReview({
         ? "bg-red-600"
         : "bg-primary";
 
-  const sentAt = letter.lastMessageDate
-    ? typeof letter.lastMessageDate.toDate === "function"
-      ? letter.lastMessageDate.toDate().toLocaleTimeString([], {
+  const sentAt = message.lastMessageDate
+    ? typeof message.lastMessageDate.toDate === "function"
+      ? message.lastMessageDate.toDate().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })
-      : new Date(letter.lastMessageDate.seconds * 1000).toLocaleTimeString([], {
+      : new Date(message.lastMessageDate.seconds * 1000).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -72,7 +72,7 @@ export default function AdminLetterReview({
             </button>
 
             <h2 className="flex-1 text-center text-lg font-semibold truncate">
-              {letter.name}
+              {message.name}
             </h2>
 
             <div className="w-10 h-10" />
@@ -83,7 +83,7 @@ export default function AdminLetterReview({
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Image
-                    src={letter.profileImage || "/usericon.png"}
+                    src={message.profileImage || "/usericon.png"}
                     alt="sender"
                     width={44}
                     height={44}
@@ -92,11 +92,11 @@ export default function AdminLetterReview({
 
                   <div className="min-w-0">
                     <div className="font-semibold text-gray-900 truncate">
-                      {letter.name}
+                      {message.name}
                     </div>
 
                     <div className="text-sm text-gray-500 truncate">
-                      To {letter.recipientName || "recipient"}
+                      To {message.recipientName || "recipient"}
                     </div>
                   </div>
                 </div>
@@ -108,7 +108,7 @@ export default function AdminLetterReview({
 
               <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
                 <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {letter.lastMessage}
+                  {message.lastMessage}
                 </p>
               </div>
             </div>
@@ -120,18 +120,18 @@ export default function AdminLetterReview({
 
                   <div>
                     <h4 className="font-semibold text-red-700">
-                      Your letter was disapproved.
+                      Your message was disapproved.
                     </h4>
 
-                    {letter.rejection_reason && (
+                    {message.rejection_reason && (
                       <p className="text-sm text-red-700 mt-1">
-                        {letter.rejection_reason}
+                        {message.rejection_reason}
                       </p>
                     )}
 
-                    {letter.rejection_feedback && (
+                    {message.rejection_feedback && (
                       <p className="text-sm text-red-700 mt-1">
-                        {letter.rejection_feedback}
+                        {message.rejection_feedback}
                       </p>
                     )}
                   </div>
@@ -142,7 +142,7 @@ export default function AdminLetterReview({
                     btnText="Clear status"
                     color="blue"
                     size="small"
-                    onClick={() => onRevert(letter)}
+                    onClick={() => onRevert(message)}
                     disabled={isSubmitting}
                   />
 
@@ -167,7 +167,7 @@ export default function AdminLetterReview({
                   btnText="Clear status"
                   color="blue"
                   size="small"
-                  onClick={() => onRevert(letter)}
+                  onClick={() => onRevert(message)}
                   disabled={isSubmitting}
                 />
               </div>

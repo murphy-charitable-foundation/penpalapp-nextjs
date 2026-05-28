@@ -41,7 +41,7 @@ const ReportPopup = ({
       isOpen={true}
       onClose={() => setShowPopup(false)}
       variant="confirmation"
-      title="Are you sure that you want to report this letter?"
+      title="Are you sure that you want to report this message?"
       content="This action will not be undone afterwards."
       titleClassName="text-red-500"
       buttons={[

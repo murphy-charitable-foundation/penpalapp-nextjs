@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '../app/firebaseConfig';
-import { getUserPfp } from '../app/utils/letterboxFunctions';
+import { getUserPfp } from '../app/utils/conversationsFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 
 const UserContext = createContext();

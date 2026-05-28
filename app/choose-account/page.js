@@ -71,7 +71,7 @@ export default function ChooseAccountPage() {
         if (userSnap.data().user_type === "admin") {
           router.push("/admin");
         } else {
-          router.push("/letterhome");
+          router.push("/inbox");
         }
       } else {
         router.push("/create-acc");

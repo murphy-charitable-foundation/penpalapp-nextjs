@@ -5,7 +5,7 @@ import rejectionReasons from "./rejectionReasons";
 import { ChevronLeft } from "lucide-react";
 import LoadingSpinner from "../../loading/LoadingSpinner";
 
-export default function AdminRejectModal({ letter, onSubmit, onClose }) {
+export default function AdminRejectModal({ message, onSubmit, onClose }) {
   const [reason, setReason] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +44,7 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
     }
   };
 
-  if (!letter) return null;
+  if (!message) return null;
 
   return (
     <div className="h-full bg-gray-100">
@@ -71,7 +71,7 @@ export default function AdminRejectModal({ letter, onSubmit, onClose }) {
             </button>
 
             <h2 className="flex-1 text-center text-lg font-semibold truncate">
-              {letter.name}
+              {message.name}
             </h2>
 
             <div className="w-10 h-10" />
