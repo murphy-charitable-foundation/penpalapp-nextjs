@@ -22,6 +22,10 @@ const MessagePreview = ({
 
   const handleProfileClick = (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    if (!id) return;
+
     router.push(`/profile-view/${id}`);
   };
 

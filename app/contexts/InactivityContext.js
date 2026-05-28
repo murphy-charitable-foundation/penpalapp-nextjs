@@ -35,6 +35,8 @@ export function InactivityProvider({ children }) {
     const INACTIVITY_LIMIT = 20 * 60 * 1000;
     const WARNING_SECONDS = 30;
 
+    const activityChannel = new BroadcastChannel("inactivity-sync");
+
     let timer;
     let countdownInterval;
     let isInWarning = false;
@@ -63,7 +65,11 @@ export function InactivityProvider({ children }) {
       router.replace("/choose-profile");
     }
 
-    function resetTimer() {
+    function resetTimer(shouldBroadcast = true) {
+      if (shouldBroadcast) {
+        activityChannel.postMessage("active");
+      }
+
       if (isInWarning) {
         isInWarning = false;
 
@@ -72,6 +78,7 @@ export function InactivityProvider({ children }) {
 
         if (countdownInterval) {
           clearInterval(countdownInterval);
+          countdownInterval = null;
         }
       }
 
@@ -98,14 +105,21 @@ export function InactivityProvider({ children }) {
       }, INACTIVITY_LIMIT);
     }
 
+    activityChannel.onmessage = () => {
+      resetTimer(false);
+    };
+
     activityEvents.forEach((event) => {
       window.addEventListener(event, resetTimer);
     });
 
-    resetTimer();
+    resetTimer(false);
 
     return () => {
       cleanupTimers();
+
+      activityChannel.onmessage = null;
+      activityChannel.close();
 
       activityEvents.forEach((event) => {
         window.removeEventListener(event, resetTimer);
