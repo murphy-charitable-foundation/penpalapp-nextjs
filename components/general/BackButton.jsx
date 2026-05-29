@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 
 export function BackButton({
   onBack,
+  fallbackHref = "/",
   size = "sm",
   className = "",
 }) {
@@ -15,7 +16,11 @@ export function BackButton({
       onBack();
       return;
     }
-    router.back();
+    if (window.history.length > 1) {  
+      router.back();
+    } else {
+      router.replace(fallbackHref);
+    }
   };
 
   return (
