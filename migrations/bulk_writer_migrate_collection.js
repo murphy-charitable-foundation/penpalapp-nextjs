@@ -19,7 +19,7 @@
  *   PAGE_SIZE=250 (default)
  */
 
-import { db, FieldPath } from "../app/firebaseAdmin.js";
+import { db, getOrInitApp, FieldPath } from "../app/firebaseAdmin.js";
 
 console.log("DRY_RUN env:", process.env.DRY_RUN);
 
@@ -138,7 +138,13 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
   let writer = null;
 
   if (!DRY_RUN) {
-    writer = db.bulkWriter();
+    const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
+    const devDb = devApp.firestore();
+    if (!devDb || !db) {
+      console.error("Firestore database not initialized. Check your Firebase environment variables.");
+      process.exit(1);
+    }
+    writer = devDb.bulkWriter();
 
     // Track per-write success/failure
     writer.onWriteResult((documentRef, result) => {
