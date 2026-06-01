@@ -14,20 +14,6 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     });
   }
 }
-// Last resort for local development
-else {
-  try {
-    // Attempt to load from a local file for development only
-    if (process.env.NODE_ENV === "development") {
-      serviceAccount = require("../penpalmagicapp-firebase-adminsdk.json");
-    }
-  } catch (error) {
-    logError(error, {
-      description: "Failed to load Firebase credentials:",
-    });
-    serviceAccount = { projectId: "penpalmagicapp" }; // Will fail gracefully later
-  }
-}
 
 // Validate the service account
 if (!serviceAccount?.privateKey) {
