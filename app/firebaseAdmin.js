@@ -20,9 +20,9 @@ export function getOrInitApp(name='[DEFAULT]', envVar='FIREBASE_SERVICE_ACCOUNT_
 const app = getOrInitApp();
 
 // Existing imports still work
-export const auth = app.auth();
-export const db = app.firestore();
-export const storage = app.storage();
+export const auth = app?.auth();
+export const db = app?.firestore();
+export const storage = app?.storage();
 
 export const FieldPath = admin.firestore.FieldPath;
 export const FieldValue = admin.firestore.FieldValue;
