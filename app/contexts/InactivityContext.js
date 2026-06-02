@@ -32,7 +32,7 @@ export function InactivityProvider({ children }) {
     if (isPublicPath) return;
     if (typeof window === "undefined") return;
 
-    const INACTIVITY_LIMIT = 20 * 60 * 1000;
+    const INACTIVITY_LIMIT_IN_MINS = 20;
     const WARNING_SECONDS = 30;
 
     const activityChannel = new BroadcastChannel("inactivity-sync");
@@ -102,7 +102,7 @@ export function InactivityProvider({ children }) {
             proceedLogout();
           }
         }, 1000);
-      }, INACTIVITY_LIMIT);
+      }, INACTIVITY_LIMIT_IN_MINS * 60 * 1000);
     }
 
     activityChannel.onmessage = () => {
