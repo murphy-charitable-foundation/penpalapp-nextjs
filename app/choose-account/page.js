@@ -5,7 +5,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 import ProfileImage from "../../components/general/ProfileImage";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
@@ -15,6 +16,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
+import { initializeNotifications } from '../utils/notification'
 
 export default function ChooseAccountPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -56,11 +58,25 @@ export default function ChooseAccountPage() {
     setSigningIn(true);
 
     try {
-      await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
+      const userCredential =await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
       setSelectedUser(null);
       setIsLoading(true);
       setPasswordInput("");
-      router.push("/letterhome");
+      setIsLoading(true);
+
+      const uid = userCredential.user.uid;
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        await initializeNotifications()
+        if (userSnap.data().user_type === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/letterhome");
+        }
+      } else {
+        router.push("/create-acc");
+      }
     } catch (err) {
       console.error(err);
 

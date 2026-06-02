@@ -23,13 +23,13 @@ import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
+  const [userType, setUserType] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
   const { user, userDocRef } = useUser();
-
 
   usePageAnalytics("/letterhome");
 
@@ -66,8 +66,7 @@ export default function Home() {
           return {
             id: letter?.id,
             profileImage: recipient?.photo_uri || "",
-            name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""
-              }`.trim(),
+            name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: letter.content || "",
             lastMessageDate: letter.drafted_at || letter.created_at || "",
@@ -121,8 +120,13 @@ export default function Home() {
 
     fetchData();
   }, [user]);
-  
+
+  if (isLoading) {
+    return <LetterHomeSkeleton />;
+  }
+
   return (
+    <>
       <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
         <PageContainer
           width="compactXS"
@@ -130,35 +134,31 @@ export default function Home() {
           center={false}
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
-        {isLoading && <LetterHomeSkeleton />}
-        {!isLoading && (
-          <>
-            <div className="shrink-0 border-b">
-              <ProfileHeader
-                userName={userName}
-                profileImage={profileImage}
-                id={userId}
-                showCountry={false}
+          <div className="shrink-0 border-b">
+            <ProfileHeader
+              userName={userName}
+              profileImage={profileImage}
+              id={userId}
+              showCountry={false}
+            />
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-2">
+            {conversations.length > 0 ? (
+              <ConversationList conversations={conversations} />
+            ) : (
+              <EmptyState
+                title="New friends are coming!"
+                description="Many friends are coming — hang tight!"
               />
-            </div>
+            )}
+          </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto px-3">
-              {conversations.length > 0 ? (
-                <ConversationList conversations={conversations} />
-              ) : (
-                <EmptyState
-                  title="New friends are coming!"
-                  description="Many friends are coming — hang tight!"
-                />
-              )}
-            </div>
-
-            <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-              <NavBar />
-            </div>
-          </>
-        )}
-      </PageContainer>
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
+        </PageContainer>
       </PageBackground>
+    </>
   );
 }

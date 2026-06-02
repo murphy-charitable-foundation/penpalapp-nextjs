@@ -72,14 +72,14 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     letterboxQuery = lastVisible
       ? query(
           lRef,
-          where("status", "==", "sent"),
+          where("status", "==", "approved"),
           orderBy("created_at", "desc"),
           startAfter(lastVisible),
           limit(lim)
         )
       : query(
           lRef,
-          where("status", "==", "sent"),
+          where("status", "==", "approved"),
           orderBy("created_at", "desc"),
           limit(lim)
         );
@@ -87,13 +87,13 @@ export const fetchLetterbox = async (id, lim = false, lastVisible = null) => {
     letterboxQuery = lastVisible
       ? query(
           lRef,
-          where("status", "==", "sent"),
+          where("status", "==", "approved"),
           orderBy("created_at", "desc"),
           startAfter(lastVisible)
         )
       : query(
           lRef,
-          where("status", "==", "sent"),
+          where("status", "==", "approved"),
           orderBy("created_at", "desc")
         );
   }
@@ -186,7 +186,7 @@ export const fetchLatestLetterFromLetterboxOld = async (
   const lettersRef = collection(db, "letterbox", letterboxId, "letters");
   const q = query(
     lettersRef,
-    where("status", "==", "sent"),
+    where("status", "==", "approved"),
     orderBy("created_at", "desc"),
     limit(1)
   );
@@ -225,7 +225,7 @@ export const fetchLatestLetterFromLetterbox = async (letterboxId, userRef) => {
       where("content", "!=", ""),
     ]),
     getLatestByFieldFallback([
-      where("status", "==", "sent"),
+      where("status", "==", "approved"),
       where("content", "!=", ""),
     ]),
   ]);
