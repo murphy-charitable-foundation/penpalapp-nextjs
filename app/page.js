@@ -14,16 +14,9 @@ export default function Home() {
     window.dispatchEvent(new Event("app:navigation-start"));
     router.push(href);
   };
-  
-return (
-      <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
-      {showSpinner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-         <LoadingSpinner />
-        </div>
-      )}
 
-
+  return (
+    <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
       <PageContainer
         width="compactXS"
         padding="none"
@@ -65,7 +58,7 @@ return (
           </p>
         </div>
 
-        {/* Buttons */}
+        {/* BUTTONS */}
         <div className="text-center w-full pt-20 pb-10 px-10">
           <div className="mx-auto max-w-sm space-y-5">
             <Button

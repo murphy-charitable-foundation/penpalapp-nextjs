@@ -5,104 +5,86 @@ import { usePathname, useSearchParams } from "next/navigation";
 import LoadingSpinner from "../loading/LoadingSpinner";
 
 export default function NavigationStateManager() {
-  // Get current route and query params from Next.js
+  // Current route and query parameters
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Spinner visibility and exit animation state
+  // Controls spinner visibility
   const [showSpinner, setShowSpinner] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
 
-  // Store current URL to detect route changes
+  // Tracks the current URL to detect completed navigations
   const currentUrlRef = useRef("");
   const mountedRef = useRef(false);
 
-  // Track navigation start time for timing control
+  // Records when navigation starts for timing calculations
   const startTimeRef = useRef(0);
 
-  // Two timers only: one for controlling visibility, one for exit animation
+  // Single timer used to control spinner visibility
   const hideTimerRef = useRef(null);
-  const exitTimerRef = useRef(null);
 
-  // Timing configuration for UX smoothing
-  const MIN_DISPLAY_TIME = 450;       // Minimum spinner visibility
-  const POST_ROUTE_HOLD_TIME = 500;   // Extra delay after route change
-  const FADE_OUT_TIME = 180;          // Fade-out animation duration
-  const MAX_DISPLAY_TIME = 5000;      // Safety timeout to prevent stuck spinner
+  // Timing configuration for smoother navigation UX
+  const MIN_DISPLAY_TIME = 450; // Minimum spinner display time
+  const POST_ROUTE_HOLD_TIME = 500; // Additional delay after route completion
+  const MAX_DISPLAY_TIME = 5000; // Safety timeout to prevent stuck spinner
 
-  // Clear all active timers to avoid conflicts
+  // Clears any active timer before creating a new one
   const clearTimers = useCallback(() => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-
-    if (exitTimerRef.current) {
-      clearTimeout(exitTimerRef.current);
-      exitTimerRef.current = null;
-    }
   }, []);
 
-  // Trigger fade-out animation and fully hide spinner after delay
+  // Hides the spinner
   const hideSpinner = useCallback(() => {
-    setIsExiting(true);
-
-    exitTimerRef.current = setTimeout(() => {
-      setShowSpinner(false);
-      setIsExiting(false);
-    }, FADE_OUT_TIME);
+    setShowSpinner(false);
   }, []);
 
-  // Called when navigation starts
+  // Starts navigation loading state
   const startNavigation = useCallback(() => {
     clearTimers();
 
-    // Record start time to control minimum display duration
     startTimeRef.current = Date.now();
-
-    setIsExiting(false);
     setShowSpinner(true);
 
-    // Fallback: auto-hide spinner if something goes wrong
+    // Fallback timeout in case navigation never completes
     hideTimerRef.current = setTimeout(() => {
       hideSpinner();
     }, MAX_DISPLAY_TIME);
   }, [clearTimers, hideSpinner]);
 
-  // Called when navigation finishes (URL actually changes)
+  // Completes navigation and ensures smooth spinner timing
   const finishNavigation = useCallback(() => {
     clearTimers();
 
-    // Ensure spinner stays visible for at least MIN_DISPLAY_TIME
     const elapsed = Date.now() - startTimeRef.current;
     const remainingMinTime = Math.max(0, MIN_DISPLAY_TIME - elapsed);
 
-    // Add extra hold time to smooth transition
     hideTimerRef.current = setTimeout(() => {
       hideSpinner();
     }, remainingMinTime + POST_ROUTE_HOLD_TIME);
   }, [clearTimers, hideSpinner]);
 
-  // Detect route changes using pathname + query string
+  // Detects route changes and treats them as navigation completion
   useEffect(() => {
     const qs = searchParams?.toString() || "";
     const newUrl = pathname + (qs ? `?${qs}` : "");
 
-    // Skip initial mount
+    // Skip initial render
     if (!mountedRef.current) {
       mountedRef.current = true;
       currentUrlRef.current = newUrl;
       return;
     }
 
-    // If URL changed, navigation is considered finished
+    // Route change detected
     if (newUrl !== currentUrlRef.current) {
       currentUrlRef.current = newUrl;
       finishNavigation();
     }
   }, [pathname, searchParams, finishNavigation]);
 
-  // Global click listener to handle both <Link> and <a> navigation
+  // Handles navigation triggered by internal links
   useEffect(() => {
     const handleLinkClick = (event) => {
       const anchor = event.target.closest("a");
@@ -111,16 +93,11 @@ export default function NavigationStateManager() {
 
       const href = anchor.getAttribute("href");
 
-      // Ignore links without href
       if (!href) return;
-
-      // Ignore external links
       if (href.startsWith("http")) return;
-
-      // Ignore hash-only navigation
       if (href.startsWith("#")) return;
 
-      // Ignore modified clicks (new tab, etc.)
+      // Ignore modified clicks and new tab actions
       if (
         anchor.target === "_blank" ||
         event.metaKey ||
@@ -134,10 +111,9 @@ export default function NavigationStateManager() {
       const currentUrl =
         window.location.pathname + window.location.search;
 
-      // Ignore navigation to the same URL
+      // Ignore navigation to the current page
       if (href === currentUrl || href === window.location.pathname) return;
 
-      // Start spinner for valid internal navigation
       startNavigation();
     };
 
@@ -148,7 +124,7 @@ export default function NavigationStateManager() {
     };
   }, [startNavigation]);
 
-  // Handle manual navigation triggers and browser back/forward
+  // Handles browser navigation and manual navigation events
   useEffect(() => {
     const handleManualStart = () => {
       startNavigation();
@@ -168,9 +144,9 @@ export default function NavigationStateManager() {
     };
   }, [startNavigation, clearTimers]);
 
-  // Do not render anything if spinner is not active
+  // Nothing to render when spinner is hidden
   if (!showSpinner) return null;
 
-  // Render full-screen spinner with optional exit animation
-  return <LoadingSpinner exiting={isExiting} />;
+  // Render full-screen loading spinner
+  return <LoadingSpinner />;
 }

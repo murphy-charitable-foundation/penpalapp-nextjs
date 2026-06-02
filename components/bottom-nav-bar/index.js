@@ -46,10 +46,6 @@ export default function NavBar() {
     window.dispatchEvent(new Event("app:navigation-start"));
   };
 
-  const finishGlobalNavSpinner = () => {
-    window.dispatchEvent(new Event("app:navigation-finish"));
-  };
-
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
 
@@ -68,7 +64,6 @@ export default function NavBar() {
       router.push("/choose-profile");
     } catch (err) {
       console.error(err);
-      finishGlobalNavSpinner();
     }
   };
 
