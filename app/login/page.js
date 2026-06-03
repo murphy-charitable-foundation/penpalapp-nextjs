@@ -7,7 +7,6 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import { PageContainer } from "../../components/general/PageContainer";
@@ -15,12 +14,8 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { useEffect, useRef } from "react";
-import {
-  logInEvent,
-  logButtonEvent,
-  logLoadingTime,
-} from "../utils/analytics";
-import { initializeNotifications } from '../utils/notification'
+import { logInEvent, logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { initializeNotifications } from "../utils/notification";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
 export default function Login() {
@@ -31,7 +26,12 @@ export default function Login() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const router = useRouter();
-  const { hydrated, addCachedUserLogin, cachedUserLogins, clearCachedUserLogins } = useCachedUserLogins();
+  const {
+    hydrated,
+    addCachedUserLogin,
+    cachedUserLogins,
+    clearCachedUserLogins,
+  } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
   usePageAnalytics(`/login`);
@@ -40,13 +40,17 @@ export default function Login() {
   // gets a new reference every render and causes this effect to run 20+ times/sec.
   useEffect(() => {
     if (!hydrated || hasRedirected.current) return;
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("force")) return;
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("force")
+    )
+      return;
     if (cachedUserLogins?.length > 0) {
       hasRedirected.current = true;
       router.replace("/choose-account");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]); 
+  }, [hydrated]);
 
   const startNavigationSpinner = () => {
     window.dispatchEvent(new Event("app:navigation-start"));
@@ -64,30 +68,34 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
-
 
       const uid = userCredential.user.uid;
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
-      const data = userSnap.data()
+      const data = userSnap.data();
 
       setIsNavigating(true);
       startNavigationSpinner();
 
       if (userSnap.exists()) {
-        router.replace("/letterhome");
         addCachedUserLogin({
           id: uid,
           email,
           name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
           photo_uri: data?.photo_uri ?? "",
         });
+
         await initializeNotifications().catch((err) => {
           console.error("Notification setup failed:", err);
         });
-        router.push("/letterhome");
+
+        if (data.user_type === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/letterhome");
+        }
       } else {
         router.replace("/create-acc");
       }

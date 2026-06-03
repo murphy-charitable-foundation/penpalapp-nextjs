@@ -75,8 +75,17 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
       
-      // For the rest, try network first, and let error messages display normally
-      return fetch(request); 
+      // For the rest, try network first, and fail gracefully 
+      try {
+        return await fetch(request);
+      } catch (error) {
+        // Return a fallback response if the network request fails
+        return new Response('Failed to fetch resource.', {
+          status: 500,
+          statusText: 'Internal Server Error',
+          headers: { 'Content-Type': 'text/plain' },
+        });
+      }
     }) ()
   );
 });

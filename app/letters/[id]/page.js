@@ -44,7 +44,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
       orderBy("updated_at", "desc"),
-      limit(1)
+      limit(1),
     );
 
     let draftSnapshot = await getDocs(draftQuery);
@@ -55,7 +55,7 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         where("sent_by", "==", userRef),
         where("status", "==", "draft"),
         orderBy("drafted_at", "desc"),
-        limit(1)
+        limit(1),
       );
 
       draftSnapshot = await getDocs(fallbackDraftQuery);
@@ -125,7 +125,8 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
-  const [globalLetterboxReference, setGlobalLetterboxReference] = useState(null);
+  const [globalLetterboxReference, setGlobalLetterboxReference] =
+    useState(null);
   const [lettersRef, setLettersRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -369,7 +370,7 @@ export default function Page({ params }) {
 
       if (error?.code === "permission-denied") {
         alert(
-          "Permission denied. Please check your access rights to this conversation."
+          "Permission denied. Please check your access rights to this conversation.",
         );
       } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
@@ -440,6 +441,7 @@ export default function Page({ params }) {
         });
       }
 
+      // Clear states
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
@@ -459,7 +461,7 @@ export default function Page({ params }) {
     } catch (error) {
       if (error?.code === "permission-denied") {
         alert(
-          "Permission denied. Please check your access rights to this conversation."
+          "Permission denied. Please check your access rights to this conversation.",
         );
       } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
@@ -534,6 +536,7 @@ export default function Page({ params }) {
     }, 100);
   };
 
+  // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
       message.status !== "pending_review" ||
@@ -549,7 +552,7 @@ export default function Page({ params }) {
         console.error("❌ Failed to save draft before editing message:", error);
 
         const confirmSwitch = window.confirm(
-          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
+          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
         );
 
         if (!confirmSwitch) {
@@ -891,6 +894,7 @@ export default function Page({ params }) {
         center={false}
         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
+        {/* ===== HEADER ===== */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
           <button
             onClick={handleCloseMessage}
@@ -900,6 +904,7 @@ export default function Page({ params }) {
             X
           </button>
 
+          {/* Keep header layout stable (no mount/unmount jumps) */}
           <div className="w-10 h-10 flex items-center justify-center">
             {isSendButtonDisabled || isUpdatingFirebase ? (
               <div className="w-6 h-6 flex items-center justify-center">
@@ -929,13 +934,16 @@ export default function Page({ params }) {
           </div>
         </div>
 
+        {/* ===== EDITING BANNER ===== */}
         {editingMessageId && (
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
             <div className="flex items-center text-amber-800 text-sm min-w-0">
               <span className="mr-2 shrink-0" aria-hidden="true">
                 ✏️
               </span>
-              <span className="whitespace-nowrap truncate">Editing message</span>
+              <span className="whitespace-nowrap truncate">
+                Editing message
+              </span>
             </div>
 
             <button
@@ -969,11 +977,13 @@ export default function Page({ params }) {
               }}
               className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
             >
+              {/* Keep banner height consistent while editing */}
               Cancel
             </button>
           </div>
         )}
 
+        {/* ===== MESSAGES ===== */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
           {allMessages.map((message, index) => {
             const messageId = message.id;
@@ -996,7 +1006,9 @@ export default function Page({ params }) {
                       <div className="shrink-0">
                         <ProfileImage
                           photo_uri={
-                            isSenderUser ? profileImage : recipients[0]?.photo_uri
+                            isSenderUser
+                              ? profileImage
+                              : recipients[0]?.photo_uri
                           }
                           name={isSenderUser ? "Me" : recipients[0]?.first_name}
                           size={12}
@@ -1035,7 +1047,6 @@ export default function Page({ params }) {
                         <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
-
                         <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
                             <button
@@ -1046,7 +1057,7 @@ export default function Page({ params }) {
                                 setShowReportPopup(true);
                                 logButtonEvent(
                                   "Report message clicked!",
-                                  "/letters/[id]"
+                                  "/letters/[id]",
                                 );
                               }}
                               className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
@@ -1056,41 +1067,57 @@ export default function Page({ params }) {
                             </button>
                           )}
 
+                          {/* STATUS BANNER */}
                           {isSenderUser && (
                             <>
-                              {message.status === "rejected" && (
-                                <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
-                                  <div className="flex items-start text-red-700 font-semibold">
-                                    <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
-                                    <div>
-                                      <div>Your letter was not sent.</div>
-
-                                      {message.rejection_reason && (
-                                        <div className="text-sm text-red-600 mt-1">
-                                          {message.rejection_reason}
+                              {/* REJECTED */}
+                              {isSenderUser &&
+                                message.status === "rejected" && (
+                                  <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
+                                    <div className="flex items-start text-red-700 font-semibold">
+                                      <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                      <div>
+                                        <div>
+                                          Your letter was not sent for the
+                                          following reason:
                                         </div>
-                                      )}
+
+                                        {message.rejection_reason && (
+                                          <div className="text-sm font-semibold mt-2">
+                                            {message.rejection_reason}
+                                          </div>
+                                        )}
+
+                                        {message.rejection_feedback && (
+                                          <div className="text-sm text-red-500 mt-1 whitespace-pre-wrap">
+                                            {message.rejection_feedback}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
-                              {message.status === "sent" && (
+                              {/* APPROVED → GREEN CHECK */}
+                              {message.status === "approved" && (
                                 <span className="text-green-500 text-lg font-bold flex justify-end w-full">
                                   ✓
                                 </span>
                               )}
 
+                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
                               {message.status === "pending_review" && (
                                 <div className="flex items-center justify-end w-full">
+                                  {/* Wrapper so the check can stick to the button */}
                                   <div className="relative inline-flex">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+
                                         handleEditMessage(message);
                                         logButtonEvent(
                                           "Edit message clicked!",
-                                          "/letters/[id]"
+                                          "/letters/[id]",
                                         );
                                       }}
                                       className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
@@ -1099,6 +1126,7 @@ export default function Page({ params }) {
                                       Edit
                                     </button>
 
+                                    {/* Check badge in bottom-right of the button */}
                                     <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
                                       <span className="text-gray-400 text-xs font-bold">
                                         ✓
@@ -1117,10 +1145,10 @@ export default function Page({ params }) {
               </div>
             );
           })}
-
           <div ref={messagesEndRef} />
         </div>
 
+        {/* ===== REPLY ===== */}
         <div className="bg-white">
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center">
@@ -1141,7 +1169,9 @@ export default function Page({ params }) {
                 className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
                 onClick={handleReplyClick}
               >
-                {hasDraftContent ? "Continue draft..." : "Reply to the letter..."}
+                {hasDraftContent
+                  ? "Continue draft..."
+                  : "Reply to the letter..."}
               </div>
             </div>
           ) : (
@@ -1150,7 +1180,9 @@ export default function Page({ params }) {
                 ref={textAreaRef}
                 className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
                 placeholder={
-                  editingMessageId ? "Edit your message..." : "Write your message..."
+                  editingMessageId
+                    ? "Edit your message..."
+                    : "Write your message..."
                 }
                 value={messageContent}
                 onChange={handleMessageChange}
@@ -1159,6 +1191,7 @@ export default function Page({ params }) {
           )}
         </div>
 
+        {/* ===== POPUPS ===== */}
         {showCloseDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
             <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">

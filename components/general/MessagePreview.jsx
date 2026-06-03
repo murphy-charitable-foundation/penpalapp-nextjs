@@ -15,24 +15,31 @@ const MessagePreview = ({
   status,
   isRecipient,
   unread = false,
-  id
+  isAdmin = false,
+  onClick = () => {},
+  id,
 }) => {
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
 
-  
   const handleProfileClick = (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    if (!id) return;
     router.push(`/profile-view/${id}`);
   };
-// Returns the appropriate status icon based on letter status
+
+  // Returns the appropriate status icon based on letter status
   const getStatusIcon = () => {
     if (status === "rejected") {
       return <AlertTriangle className="text-red-500 w-6 h-6" />;
     }
-    if (status === "sent") {
+
+    if (status === "approved") {
       return <CheckCircle className="text-green-500 w-6 h-6" />;
     }
+
     if (status === "pending_review") {
       return (
         <div className="relative w-6 h-6">
@@ -41,102 +48,117 @@ const MessagePreview = ({
         </div>
       );
     }
+
     return null;
   };
 
-  const containerClassName = `block p-4 rounded-xl shadow hover:shadow-md transition-shadow duration-200 cursor-pointer ${
-    status === "rejected"
-      ? "bg-red-50"
-      : isRecipient && unread
-      ? "bg-green-50"
-      : status === "pending_review"
-      ? "bg-gray-50"
-      : "bg-white"
-  }`;
+  const rejectedText = isAdmin
+    ? "Letter was rejected"
+    : "Your letter was rejected";
 
-  const content = (
-    <>
+  const cardContent = (
+    <div
+      className={`w-full p-2 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer ${
+        status === "rejected"
+          ? "bg-red-50"
+          : isRecipient && unread
+          ? "bg-green-50"
+          : status === "pending_review"
+          ? "bg-gray-50"
+          : "bg-white"
+      }`}
+    >
       <div className="flex items-start">
         <div
           onClick={handleProfileClick}
           className="cursor-pointer"
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(e)}>
+          onKeyDown={(e) => e.key === "Enter" && handleProfileClick(e)}
+        >
           <Image
             src={imageSrc}
             alt={`${name}'s profile`}
             className="w-12 h-12 rounded-full object-cover mr-4"
-            width={36}
-            height={36}
+            width={48}
+            height={48}
           />
         </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="font-semibold text-gray-900">
+
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start gap-2">
+            <div className="min-w-0">
+              <div className="font-semibold text-gray-900 truncate">
                 {status === "draft" && lastMessage !== "" && (
                   <span className="text-red-500 mr-1">[Draft]</span>
                 )}
                 {name}
               </div>
-              <div className="text-sm text-gray-500">{country}</div>
+
+              <div className="text-sm text-gray-500 truncate">{country}</div>
             </div>
+
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
               {formatTimestamp(lastMessageDate)}
             </div>
           </div>
-        </div>
-      </div>
 
-      <div
-        className={`mt-2 text-sm text-gray-700 truncate ${
-          isRecipient && unread ? "font-semibold" : ""
-        }`}
-      >
-        {lastMessage ? (
-          <div className="flex">
-            {getStatusIcon() && (
-              <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            )}
-            <div className="flex-1">
-              {status === "rejected" && (
-                <div className="font-normal text-red-500">
-                  Your letter was rejected
+          <div
+            className={`mt-2 text-sm text-gray-700 truncate ${
+              isRecipient && unread ? "font-semibold" : ""
+            }`}
+          >
+            {lastMessage ? (
+              <div className="flex items-start">
+                {getStatusIcon() && (
+                  <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
+                )}
+
+                <div className="flex-1 min-w-0 truncate">
+                  {status === "rejected" && (
+                    <div className="font-normal text-red-500">
+                      {rejectedText}
+                    </div>
+                  )}
+                  {lastMessage}
                 </div>
-              )}
-              {lastMessage}
-            </div>
-          </div>
-        ) : (
-          <div className="flex">
-            <div className="mr-2 mt-0.5">{getStatusIcon()}</div>
-            {status === "rejected" && (
-              <div className="flex-1 font-normal text-red-500">
-                Your letter was rejected
+              </div>
+            ) : (
+              <div className="flex items-start">
+                {getStatusIcon() && (
+                  <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
+                )}
+
+                {status === "rejected" && (
+                  <div className="flex-1 font-normal text-red-500">
+                    {rejectedText}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
-    </>
+    </div>
   );
 
-  // If there is no valid letterboxId, render a non-clickable container
-  if (!letterboxId) {
+  if (isAdmin) {
     return (
-      <div className={containerClassName} role="button" aria-disabled="true">
-        {content}
+      <div onClick={onClick} className="w-full text-left">
+        {cardContent}
       </div>
     );
   }
 
-  // Use Next.js Link for proper client-side navigation
-  return (
-    <Link href={`/letters/${letterboxId}`} className={containerClassName}>
-      {content}
-    </Link>
-  );
+  if (!letterboxId) {
+    return (
+      <div className="w-full" role="button" aria-disabled="true">
+        {cardContent}
+      </div>
+    );
+  }
+
+  return <Link href={`/letters/${letterboxId}`}>{cardContent}</Link>;
 };
 
 export default MessagePreview;

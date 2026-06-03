@@ -13,16 +13,21 @@ import {
   FaBars,
   FaSignOutAlt,
 } from "react-icons/fa";
+import Link from "next/link";
+import { collection, doc, getDoc } from "firebase/firestore";
 
-import { auth } from "../../app/firebaseConfig";
+import { auth, db } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
+import { useNavigation } from "../../contexts/NavigationContext";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(null);
 
   const router = useRouter();
   const pathname = usePathname();
   const { userType } = useUser();
+  const { setIsNavigating } = useNavigation();
 
   const containerRef = useRef(null);
 
@@ -40,6 +45,20 @@ export default function NavBar() {
     };
   }, []);
 
+  useEffect(() => {
+    const grabUser = async () => {
+      if (!auth.currentUser) return;
+
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnapshot = await getDoc(userRef);
+      const userData = userSnapshot.data();
+
+      setIsAdmin(userData?.user_type === "admin");
+    };
+
+    grabUser();
+  }, []);
+
   if (userType === null) return null;
 
   const startGlobalNavSpinner = () => {
@@ -52,12 +71,14 @@ export default function NavBar() {
     if (pathname === href) return;
 
     startGlobalNavSpinner();
+    setIsNavigating(true);
     router.push(href);
   };
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
     startGlobalNavSpinner();
+    setIsNavigating(true);
 
     try {
       await signOut(auth);
@@ -76,6 +97,15 @@ export default function NavBar() {
     },
     { href: "/about", icon: <FaInfo />, label: "About" },
     { href: "/contact", icon: <FaEnvelopeOpenText />, label: "Contact" },
+    ...(isAdmin
+      ? [
+          {
+            href: "/admin",
+            icon: <FaUserAlt className="h-4 w-4" />,
+            label: "Admin",
+          },
+        ]
+      : []),
     { onClick: handleLogout, icon: <FaSignOutAlt />, label: "Logout" },
   ].filter(Boolean);
 
