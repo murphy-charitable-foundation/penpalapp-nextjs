@@ -321,7 +321,6 @@ export default function Page({ params }) {
       const updateData = {
         content: trimmedContent,
         drafted_at: currentTime,
-        updated_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
