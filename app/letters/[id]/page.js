@@ -352,7 +352,6 @@ export default function Page({ params }) {
               ...msg,
               content: trimmedContent,
               drafted_at: currentTime,
-              updated_at: currentTime,
             };
           }
           return msg;
