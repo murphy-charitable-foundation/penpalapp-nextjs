@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import rejectionReasons from "./rejectionReasons";
 import { ChevronLeft } from "lucide-react";
 import LoadingSpinner from "../../loading/LoadingSpinner";
@@ -10,6 +10,13 @@ export default function AdminRejectModal({ message, onSubmit, onClose }) {
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+  if (!letter) return;
+
+  setReason(letter.rejection_reason || "");
+  setFeedback(letter.rejection_feedback || "");
+}, [letter]);
 
   const handleReasonSelect = (selectedReason) => {
     setReason(selectedReason);

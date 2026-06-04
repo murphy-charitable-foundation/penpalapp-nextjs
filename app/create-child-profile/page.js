@@ -21,8 +21,8 @@ import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/conversationsFunctions";
 import Image from "next/image";
-import EditProfileImage from "../../components/edit-profile-image";
-import { uploadFile } from "../lib/uploadFile";
+import AvatarUploadModal from "../../components/general/AvatarUploadModal";
+import { uploadFile } from "../utils/uploadFile";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function CreateChildProfile() {
@@ -45,6 +45,7 @@ export default function CreateChildProfile() {
   const [croppedImage, setCroppedImage] = useState(null);
   const [croppedBlob, setCroppedBlob] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +53,8 @@ export default function CreateChildProfile() {
   const auth = getAuth();
   const fileInputRef = useRef(null);
   const cropperRef = useRef(null);
+  const avatarPreviewUrlRef = useRef(null);
+
   const { userType, loading: userLoading } = useUser();
   usePageAnalytics("/user-data-import");
 
@@ -71,6 +74,13 @@ export default function CreateChildProfile() {
     }
   }, [userType, userLoading, router]);
 
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrlRef.current) {
+        URL.revokeObjectURL(avatarPreviewUrlRef.current);
+      }
+    };
+  }, []);
 
 
   const handleImageClick = () => {
@@ -87,13 +97,34 @@ export default function CreateChildProfile() {
     }
   };
 
+    // Handle avatar selection from AvatarUploadModal
+  const handleAvatarSelected = (blob) => {
+    if (avatarPreviewUrlRef.current) {
+      URL.revokeObjectURL(avatarPreviewUrlRef.current);
+    }
+    const nextUrl = URL.createObjectURL(blob);
+    avatarPreviewUrlRef.current = nextUrl;
+    setCroppedBlob(blob);
+    // Generate preview URL from blob
+    //setCroppedImage(URL.createObjectURL(blob));
+    setCroppedImage(nextUrl);
+
+    setShowAvatarModal(false);  
+  };
+
   const handleCrop = () => {
     const cropper = cropperRef.current?.cropper;
     if (cropper) {
       const canvas = cropper.getCroppedCanvas();
       canvas.toBlob((blob) => {
+        if (avatarPreviewUrlRef.current) {
+          URL.revokeObjectURL(avatarPreviewUrlRef.current);
+        }
+        const nextUrl = URL.createObjectURL(blob);
+        avatarPreviewUrlRef.current = nextUrl;
         setCroppedBlob(blob);
-        setCroppedImage(URL.createObjectURL(blob));
+        setCroppedImage(nextUrl);
+
         setShowCropper(false);
       });
     }
@@ -252,6 +283,7 @@ const handleSubmit = async (e) => {
       setHobbies([]);
       setCroppedBlob(null);
       setCroppedImage(null);
+      setShowAvatarModal(false);
       e.target?.closest('form')?.reset();
       setIsDialogOpen(true);
       setDialogTitle("Congratulations!");
@@ -278,7 +310,16 @@ const handleSubmit = async (e) => {
         title={dialogTitle}
         content={dialogMessage}
       />
-
+      {showAvatarModal && (
+          <AvatarUploadModal
+            autoSave={false}
+            onContinue={handleAvatarSelected}
+            onBackClick={() => setShowAvatarModal(false)}
+            continueText="Select"
+            skipText=""
+            pageAnalyticsPath="/create-child-profile"
+          />
+      )}
       <div className="flex-1 min-h-0 flex justify-center">
         <PageContainer
           width="compactXS"
@@ -302,33 +343,12 @@ const handleSubmit = async (e) => {
             <div className="mt-4 flex justify-center">
               <button
                 type="button"
-                onClick={handleImageClick}
+                onClick={() => setShowAvatarModal(true)}
                 className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
               >
                 Upload Photo
               </button>
             </div>
-            {showCropper && (
-              <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
-                <div
-                  className={"fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]"}
-                  onClick={() => handleCancelCrop()}                
-                  />
-                <div className={"relative w-78 max-w-sm bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002]"}>
-                  <div className="flex justify-center">
-                    <EditProfileImage
-                      image={URL.createObjectURL(selectedFile)}
-                      newProfileImage={null}
-                      previewURL={null}
-                      handleDrop={() => {}}
-                      handleCrop={() => {}}
-                      cropperRef={cropperRef}
-                      onDone={handleCrop}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
@@ -506,7 +526,7 @@ const handleSubmit = async (e) => {
                     name="bio"
                     rows={3}
                     maxLength={50}
-                    label="Bio / Challenges Faced"
+                    label="Bio"
                   />
                 </div>
               </div>

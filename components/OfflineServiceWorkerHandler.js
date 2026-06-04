@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-export default function ServiceWorkerHandler() {
+export default function OfflineServiceWorkerHandler() {
 
   useEffect(() => {
     const setupServiceWorker = async () => {

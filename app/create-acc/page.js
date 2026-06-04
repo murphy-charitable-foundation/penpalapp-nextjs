@@ -138,6 +138,7 @@ export default function CreateAccount() {
         birthday,
         connected_penpals: connectedPenpals,
         connected_penpals_count: connectedPenpals.length,
+        user_type: "international_buddy",
       });
 
       localStorage.setItem("userFirstName", firstName);
@@ -362,8 +363,17 @@ return (
               )}
             </div>
 
-            <div className="pt-4 flex justify-center">
+            <div className="pt-4 flex flex-col justify-center items-center gap-2">
               <Button btnType="submit" btnText="Create Account" color="green" />
+                <Button
+                  btnType="button"
+                  btnText="Log Out"
+                  color="grayBlue"
+                  onClick={async () => {
+                    await signOut(auth);
+                    router.push("/");
+                  }}
+                />
             </div>
           </form>
         </div>
