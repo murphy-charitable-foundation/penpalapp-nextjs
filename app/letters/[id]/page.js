@@ -167,7 +167,6 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "draft",
         drafted_at: currentTime,
-        updated_at: currentTime,
         deleted: null,
         unread: true,
       };
