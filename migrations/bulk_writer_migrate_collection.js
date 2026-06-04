@@ -137,10 +137,10 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
   console.log(`Page size: ${PAGE_SIZE}\n`);
 
   let writer = null;
+  const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
+  const devDb = devApp.firestore();
 
   if (!DRY_RUN) {
-    const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_PRIVATE_KEY_DEV");
-    const devDb = devApp.firestore();
     if (!devDb || !db) {
       console.error("Firestore database not initialized. Check your Firebase environment variables.");
       process.exit(1);
@@ -173,7 +173,7 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
     });
   }
 
-  await copyCollectionRecursive(db.collection(srcTop), db.collection(dstTop), writer);
+  await copyCollectionRecursive(db.collection(srcTop), devDb.collection(dstTop), writer);
 
   if (!DRY_RUN) {
     // Ensure all queued writes finish
