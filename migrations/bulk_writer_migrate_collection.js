@@ -138,7 +138,7 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
   let writer = null;
 
   if (!DRY_RUN) {
-    const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
+    const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_PRIVATE_KEY_DEV");
     const devDb = devApp.firestore();
     if (!devDb || !db) {
       console.error("Firestore database not initialized. Check your Firebase environment variables.");

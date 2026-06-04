@@ -2,7 +2,7 @@ import admin from "firebase-admin";
 
 import { logError } from "./utils/analytics.js";
 
-export function getOrInitApp(name='[DEFAULT]', envVar='FIREBASE_SERVICE_ACCOUNT_JSON') {
+export function getOrInitApp(name='[DEFAULT]', envVar='FIREBASE_PRIVATE_KEY') {
   const existingApp = admin.apps.find((app) => app.name === name);
   if (existingApp) return existingApp;
   if (!envVar) return null;
