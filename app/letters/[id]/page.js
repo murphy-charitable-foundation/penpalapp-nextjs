@@ -81,7 +81,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         status: "draft",
         created_at: now,
         drafted_at: now,
-        updated_at: now,
         deleted: null,
         unread: true,
       };
