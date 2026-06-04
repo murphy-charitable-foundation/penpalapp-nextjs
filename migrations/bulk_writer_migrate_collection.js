@@ -9,7 +9,8 @@
  * Usage:
  * first you need to export these variables in env/terminal:
  * 
- *   export FIREBASE_PRIVATE_KEY="firebase_service_account_json"
+ *   export FIREBASE_PRIVATE_KEY="firebase_service_account_json for prd environment"
+ *   export FIREBASE_PRIVATE_KEY_DEV="firebase_service_account_json for dev environment"
  * 
  *   DRY_RUN=true   node bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
  *   DRY_RUN=false  node bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
