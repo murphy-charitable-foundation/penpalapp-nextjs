@@ -410,7 +410,6 @@ export default function Page({ params }) {
         status: "pending_review",
         created_at: currentTime,
         drafted_at: currentTime,
-        updated_at: currentTime,
         deleted: null,
         unread: true,
       };
