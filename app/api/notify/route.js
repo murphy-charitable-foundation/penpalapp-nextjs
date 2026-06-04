@@ -5,29 +5,17 @@ import { getFirestore } from "firebase-admin/firestore";
 // --- REQUIRED ENV VARS ---
 const requiredEnvVars = [
   "FIREBASE_CONFIG",
-  "FIREBASE_PRIVATE_KEY",
-  "FIREBASE_CLIENT_EMAIL"
+  "FIREBASE_SERVICE_ACCOUNT_JSON"
 ];
 
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 const envError = missingVars.length > 0
   ? `Missing Firebase env vars: ${missingVars.join(", ")}`
   : null;
-const FIREBASE_PROJECT_ID = envError
-  ? null
-  : JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
-if (!FIREBASE_PROJECT_ID) {
-  console.log("error retrieving project id");
-}
 // Initialize only if no env errors
 if (!envError && !admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    }),
-    databaseURL: `https://${FIREBASE_PROJECT_ID}.firebaseio.com`,
+    credential: admin.credential.cert( JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) )
   });
 }
 

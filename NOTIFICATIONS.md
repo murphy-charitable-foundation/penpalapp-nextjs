@@ -155,8 +155,7 @@ The notification sending process follows these steps:
 The server checks for required Firebase credentials:
 
 - FIREBASE_CONFIG
-- FIREBASE_PRIVATE_KEY
-- FIREBASE_CLIENT_EMAIL
+- FIREBASE_SERVICE_ACCOUNT_JSON
 
 If any are missing, the request fails.
 
