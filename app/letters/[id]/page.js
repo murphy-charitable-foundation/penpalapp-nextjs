@@ -765,7 +765,6 @@ export default function Page({ params }) {
                   ...docSnap.data(),
                   created_at: docSnap.data().created_at?.toDate(),
                   drafted_at: docSnap.data().drafted_at?.toDate(),
-                  updated_at: docSnap.data().updated_at?.toDate(),
                 };
 
                 if (msg.sent_by?.path) {
