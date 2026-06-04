@@ -12,11 +12,10 @@ export default function AdminRejectModal({ message, onSubmit, onClose }) {
   const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
-  if (!letter) return;
-
-  setReason(letter.rejection_reason || "");
-  setFeedback(letter.rejection_feedback || "");
-}, [letter]);
+  if (!message) return;
+  setReason(message.rejection_reason || "");
+  setFeedback(message.rejection_feedback || "");
+}, [message]);
 
   const handleReasonSelect = (selectedReason) => {
     setReason(selectedReason);
