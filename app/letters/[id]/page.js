@@ -14,6 +14,7 @@ import {
   limit,
   getDocs,
 } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
@@ -38,7 +39,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
     const letterboxRef = doc(db, "letterbox", letterboxId);
     const lettersRef = collection(letterboxRef, "letters");
 
-    // Retain the old query for existing documents
     const draftQuery = query(
       lettersRef,
       where("sent_by", "==", userRef),
@@ -49,7 +49,6 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 
     let draftSnapshot = await getDocs(draftQuery);
 
-    // Add fallback query for drafts with drafted_at
     if (draftSnapshot.empty) {
       const fallbackDraftQuery = query(
         lettersRef,
@@ -58,28 +57,29 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
         orderBy("drafted_at", "desc"),
         limit(1),
       );
+
       draftSnapshot = await getDocs(fallbackDraftQuery);
     }
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
-      const draftData = {
+
+      return {
         id: draftDoc.id,
         ...draftDoc.data(),
         created_at: draftDoc.data().created_at?.toDate?.() || null,
         drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
       };
-
-      return draftData;
     }
 
     if (shouldCreate) {
+      const now = new Date();
       const newDraftData = {
         sent_by: userRef,
         content: "",
         status: "draft",
-        created_at: new Date(),
-        drafted_at: new Date(),
+        created_at: now,
+        drafted_at: now,
         deleted: null,
         unread: true,
       };
@@ -107,6 +107,7 @@ export default function Page({ params }) {
   const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
+
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -151,35 +152,34 @@ export default function Page({ params }) {
 
   const saveDraft = useCallback(
     async (content) => {
-      if (!user || !lettersRef || isSending) {
+      if (!user?.uid || !lettersRef || isSending) {
         return Promise.resolve();
       }
 
       setIsUpdatingFirebase(true);
 
-      try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
-        const trimmedContent = content.trim();
-        const currentTime = new Date();
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const trimmedContent = (content ?? "").trim();
+      const currentTime = new Date();
 
+      const baseDraftData = {
+        sent_by: letterUserRef,
+        content: trimmedContent,
+        status: "draft",
+        drafted_at: currentTime,
+        deleted: null,
+        unread: true,
+      };
+
+      try {
         let existingDraft = draft;
 
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, letterUserRef, false);
-
           if (existingDraft) {
             setDraft(existingDraft);
           }
         }
-
-        const baseDraftData = {
-          sent_by: letterUserRef,
-          content: trimmedContent,
-          status: "draft",
-          drafted_at: currentTime,
-          deleted: null,
-          unread: true,
-        };
 
         if (existingDraft?.id) {
           const draftDocRef = doc(lettersRef, existingDraft.id);
@@ -190,23 +190,21 @@ export default function Page({ params }) {
           };
 
           await updateDoc(draftDocRef, updateData);
-
           setDraft({ ...updateData, id: existingDraft.id });
         } else {
+          const newDraftRef = doc(lettersRef);
           const newDraftData = {
             ...baseDraftData,
             created_at: currentTime,
           };
 
-          const newDraftRef = doc(lettersRef);
           await setDoc(newDraftRef, newDraftData);
-
           setDraft({ ...newDraftData, id: newDraftRef.id });
         }
 
         const hasContent = Boolean(trimmedContent);
-
         setHasDraftContent(hasContent);
+
         if (!hasContent && isEditing) {
           setIsEditing(false);
         }
@@ -215,21 +213,20 @@ export default function Page({ params }) {
       } catch (error) {
         console.error("❌ saveDraft error:", error);
 
-        if (error.code === "permission-denied") {
-          console.error("🔒 Permission denied error");
+        if (error?.code === "permission-denied") {
           alert("Permission denied. Please check your access rights.");
-        } else if (error.code === "not-found") {
-          console.error("🔍 Document not found, attempting retry...");
+        } else if (error?.code === "not-found") {
           setDraft(null);
+
           if (trimmedContent) {
             try {
+              const newDraftRef = doc(lettersRef);
               const newDraftData = {
                 ...baseDraftData,
                 created_at: currentTime,
               };
-              const newDraftRef = doc(lettersRef);
-              await setDoc(newDraftRef, newDraftData);
 
+              await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
             } catch (retryError) {
               logError(retryError, {
@@ -244,7 +241,7 @@ export default function Page({ params }) {
         setIsUpdatingFirebase(false);
       }
     },
-    [user, lettersRef, isSending, draft, userRef, isEditing, id],
+    [user?.uid, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
   const handleMessageChange = async (e) => {
@@ -272,6 +269,7 @@ export default function Page({ params }) {
             });
           }
         }, 1000);
+
         setDraftTimer(timer);
       }
     } else {
@@ -283,13 +281,13 @@ export default function Page({ params }) {
 
         try {
           await saveDraft(newContent);
-
           setIsSendButtonDisabled(false);
         } catch (error) {
           console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
+
           setTimeout(() => {
             setIsSendButtonDisabled(false);
           }, 3000);
@@ -298,7 +296,6 @@ export default function Page({ params }) {
     }
   };
 
-  // FIXED: Restore draft after updating message
   const handleUpdateMessage = async () => {
     const trimmedContent = messageContent.trim();
 
@@ -314,7 +311,7 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
+      if (!user?.uid || !lettersRef) {
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -348,7 +345,7 @@ export default function Page({ params }) {
       setSelectedMessageId(null);
 
       setAllMessages((prev) => {
-        const updatedMessages = prev.map((msg) => {
+        return prev.map((msg) => {
           if (msg.id === editingMessageId) {
             return {
               ...msg,
@@ -358,7 +355,6 @@ export default function Page({ params }) {
           }
           return msg;
         });
-        return updatedMessages;
       });
 
       setTimeout(() => {
@@ -367,11 +363,11 @@ export default function Page({ params }) {
     } catch (error) {
       console.error("❌ handleUpdateMessage error:", error);
 
-      if (error.code === "permission-denied") {
+      if (error?.code === "permission-denied") {
         alert(
           "Permission denied. Please check your access rights to this conversation.",
         );
-      } else if (error.code === "unauthenticated") {
+      } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
       } else {
         alert("Failed to update message. Please try again.");
@@ -400,7 +396,7 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
+      if (!user?.uid || !lettersRef) {
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -451,21 +447,17 @@ export default function Page({ params }) {
         sent_by: { id: user.uid },
       };
 
-      setAllMessages((prev) => {
-        const newMessages = [...prev, messageWithId];
-
-        return newMessages;
-      });
+      setAllMessages((prev) => [...prev, messageWithId]);
 
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      if (error.code === "permission-denied") {
+      if (error?.code === "permission-denied") {
         alert(
           "Permission denied. Please check your access rights to this conversation.",
         );
-      } else if (error.code === "unauthenticated") {
+      } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
       } else {
         alert("Failed to send message. Please try again.");
@@ -552,9 +544,11 @@ export default function Page({ params }) {
         await saveDraft(messageContent);
       } catch (error) {
         console.error("❌ Failed to save draft before editing message:", error);
+
         const confirmSwitch = window.confirm(
           "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
         );
+
         if (!confirmSwitch) {
           return;
         }
@@ -582,7 +576,7 @@ export default function Page({ params }) {
 
     if (!draft?.id) {
       try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
+        const letterUserRef = userRef || doc(db, "users", user?.uid);
         const existingDraft = await fetchDraft(id, letterUserRef, false);
 
         if (existingDraft) {
@@ -615,169 +609,232 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
-    setIsLoading(true);
+    const auth = getAuth();
+    let redirectTimer = null;
 
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+    const clearSensitiveState = () => {
+      setUserRef(null);
+      setUserLocation("");
+      setProfileImage("");
 
-    const initializeData = async () => {
-      try {
-        const letterboxRef = doc(db, "letterbox", id);
-        const letterboxDoc = await getDoc(letterboxRef);
+      setAllMessages([]);
+      setRecipients([]);
+      setRecipientName("");
+      setLettersRef(null);
+      setGlobalLetterboxReference(null);
 
-        if (!letterboxDoc.exists()) {
-          console.error("❌ Letterbox does not exist:", id);
-          setIsLoading(false);
-          return;
-        }
+      setMessageContent("");
+      setDraft(null);
+      setHasDraftContent(false);
 
-        const userDocRef = doc(db, "users", user.uid);
-        setUserRef(userDocRef);
+      setEditingMessageId(null);
+      setEditingMessageOriginalContent("");
 
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.location) {
-            const location = userData.location;
-            setUserLocation(location);
-          }
-          setProfileImage(userData?.photo_uri || "");
-        }
+      setShowCloseDialog(false);
+      setSelectedMessageId(null);
+      setIsEditing(false);
 
-        const fetchedRecipients = await fetchRecipients(id);
-        setRecipients(fetchedRecipients || []);
+      setIsSending(false);
+      setIsSendButtonDisabled(true);
+      setIsUpdatingFirebase(false);
 
-        if (fetchedRecipients?.length > 0) {
-          const recipientName = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
-          setRecipientName(recipientName);
-        }
-
-        const lRef = collection(letterboxRef, "letters");
-        setLettersRef(lRef);
-        setGlobalLetterboxReference(letterboxRef);
-
-        // ENHANCED: Improved draft fetching with better error handling
-        const draftData = await fetchDraft(id, userDocRef, false);
-
-        if (draftData && draftData.status === "draft") {
-          setDraft(draftData);
-          const draftContent = draftData.content || "";
-          const hasContent = Boolean(draftContent.trim());
-
-          setMessageContent(draftContent);
-          setHasDraftContent(hasContent);
-
-          if (hasContent) {
-            setIsEditing(true);
-            setTimeout(() => {
-              textAreaRef.current?.focus();
-              const length = draftContent.length;
-              textAreaRef.current?.setSelectionRange(length, length);
-            }, 100);
-          } else {
-            setIsEditing(false);
-          }
-        } else {
-          setIsEditing(false);
-          setMessageContent("");
-          setDraft(null);
-          setHasDraftContent(false);
-        }
-
-        if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", user.uid);
-
-          // All messages written BY ME
-          const myMessagesQuery = query(
-            lRef,
-            where("sent_by", "==", userRefDoc),
-            orderBy("created_at", "asc"),
-          );
-
-          // All messages with status = "approved" (approval by admin)
-          const sentMessagesQuery = query(
-            lRef,
-            where("status", "==", "approved"),
-            orderBy("created_at", "asc"),
-          );
-
-          const [mySnap, sentSnap] = await Promise.all([
-            getDocs(myMessagesQuery),
-            getDocs(sentMessagesQuery),
-          ]);
-
-          const all = [];
-
-          const pushDocs = (snap) => {
-            snap.forEach((docSnap) => {
-              // Skip drafts on client side
-              if (docSnap.data().status === "draft") {
-                return;
-              }
-
-              const msg = {
-                id: docSnap.id,
-                ...docSnap.data(),
-                created_at: docSnap.data().created_at?.toDate(),
-                drafted_at: docSnap.data().drafted_at?.toDate(),
-              };
-
-              // Normalize Firestore DocumentReference → { id }
-              if (msg.sent_by?.path) {
-                msg.sent_by = {
-                  id: msg.sent_by.path.split("/")[1],
-                };
-              }
-
-              all.push(msg);
-            });
-          };
-
-          pushDocs(mySnap);
-          pushDocs(sentSnap);
-
-          // remove duplicates
-          const unique = Array.from(
-            new Map(all.map((m) => [m.id, m])).values(),
-          );
-
-          // sort chronologically
-          const sortedMessages = unique.sort(
-            (a, b) => a.created_at - b.created_at,
-          );
-          const messagesWithSenderInfo = await Promise.all(
-            sortedMessages.map(async (message) => {
-              if (message.sent_by?.id !== user.uid) {
-                const recipient = fetchedRecipients.find(
-                  (r) => r.id === message.sent_by?.id,
-                );
-                if (recipient) {
-                  message.senderLocation = recipient.location || "";
-                }
-                if (message?.unread) {
-                  await updateDoc(doc(lRef, message.id), { unread: false });
-                }
-              }
-              return message;
-            }),
-          );
-
-          setAllMessages(messagesWithSenderInfo);
-        }
-      } catch (error) {
-        console.error("❌ INITIALIZATION ERROR:", error);
-        logError(error, {
-          description: "INITIALIZATION ERROR:",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      setShowReportPopup(false);
+      setShowConfirmReportPopup(false);
+      setReportContent(null);
+      setReportSender(null);
     };
 
-    initializeData();
-  }, [id, user]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setIsLoading(true);
+
+      if (!currentUser) {
+        if (redirectTimer) {
+          clearTimeout(redirectTimer);
+        }
+
+        clearSensitiveState();
+
+        redirectTimer = setTimeout(() => {
+          if (!auth.currentUser) {
+            router.replace("/login");
+          }
+        }, 400);
+
+        return;
+      }
+
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+        redirectTimer = null;
+      }
+
+      const initializeData = async () => {
+        try {
+          const letterboxRef = doc(db, "letterbox", id);
+          const letterboxDoc = await getDoc(letterboxRef);
+
+          if (!letterboxDoc.exists()) {
+            console.error("❌ Letterbox does not exist:", id);
+            return;
+          }
+
+          const userDocRef = doc(db, "users", currentUser.uid);
+          setUserRef(userDocRef);
+
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+
+            if (userData.location) {
+              setUserLocation(userData.location);
+            }
+
+            setProfileImage(userData?.photo_url || "");
+          }
+
+          const fetchedRecipients = await fetchRecipients(id);
+          setRecipients(fetchedRecipients || []);
+
+          if (fetchedRecipients?.length > 0) {
+            const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
+            setRecipientName(rn);
+          }
+
+          const lRef = collection(letterboxRef, "letters");
+          setLettersRef(lRef);
+          setGlobalLetterboxReference(letterboxRef);
+
+          const draftData = await fetchDraft(id, userDocRef, false);
+
+          if (draftData && draftData.status === "draft") {
+            setDraft(draftData);
+
+            const draftContent = draftData.content || "";
+            const hasContent = Boolean(draftContent.trim());
+
+            setMessageContent(draftContent);
+            setHasDraftContent(hasContent);
+
+            if (hasContent) {
+              setIsEditing(true);
+              setTimeout(() => {
+                textAreaRef.current?.focus();
+                const length = draftContent.length;
+                textAreaRef.current?.setSelectionRange(length, length);
+              }, 100);
+            } else {
+              setIsEditing(false);
+            }
+          } else {
+            setMessageContent("");
+            setDraft(null);
+            setHasDraftContent(false);
+          }
+
+          if (fetchedRecipients?.length > 0) {
+            const userRefDoc = doc(db, "users", currentUser.uid);
+
+            const myMessagesQuery = query(
+              lRef,
+              where("sent_by", "==", userRefDoc),
+              orderBy("created_at", "asc")
+            );
+
+            const sentMessagesQuery = query(
+              lRef,
+              where("status", "==", "sent"),
+              orderBy("created_at", "asc")
+            );
+
+            const [mySnap, sentSnap] = await Promise.all([
+              getDocs(myMessagesQuery),
+              getDocs(sentMessagesQuery),
+            ]);
+
+            const all = [];
+
+            const pushDocs = (snap) => {
+              snap.forEach((docSnap) => {
+                if (docSnap.data().status === "draft") {
+                  return;
+                }
+
+                const msg = {
+                  id: docSnap.id,
+                  ...docSnap.data(),
+                  created_at: docSnap.data().created_at?.toDate(),
+                  drafted_at: docSnap.data().drafted_at?.toDate(),
+                };
+
+                if (msg.sent_by?.path) {
+                  msg.sent_by = {
+                    id: msg.sent_by.path.split("/")[1],
+                  };
+                }
+
+                all.push(msg);
+              });
+            };
+
+            pushDocs(mySnap);
+            pushDocs(sentSnap);
+
+            const unique = Array.from(
+              new Map(all.map((m) => [m.id, m])).values()
+            );
+
+            const sortedMessages = unique.sort(
+              (a, b) => a.created_at - b.created_at
+            );
+
+            const messagesWithSenderInfo = await Promise.all(
+              sortedMessages.map(async (message) => {
+                if (message.sent_by?.id !== currentUser.uid) {
+                  const recipient = fetchedRecipients.find(
+                    (r) => r.id === message.sent_by?.id
+                  );
+
+                  if (recipient) {
+                    message.senderLocation = recipient.location || "";
+                  }
+
+                  if (message?.unread) {
+                    await updateDoc(doc(lRef, message.id), {
+                      unread: false,
+                    });
+                  }
+                }
+
+                return message;
+              })
+            );
+
+            setAllMessages(messagesWithSenderInfo);
+          } else {
+            setAllMessages([]);
+          }
+        } catch (error) {
+          console.error("❌ INITIALIZATION ERROR:", error);
+          logError(error, {
+            description: "INITIALIZATION ERROR:",
+          });
+        } finally {
+          setIsLoading(false);
+          setIsSendButtonDisabled(false);
+        }
+      };
+
+      await initializeData();
+    });
+
+    return () => {
+      unsubscribe();
+
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
+    };
+  }, [id, router]);
 
   useEffect(() => {
     return () => {
@@ -800,7 +857,9 @@ export default function Page({ params }) {
   };
 
   const truncateMessage = (message) => {
-    if (message.length <= 30) return message;
+    if (message.length <= 30) {
+      return message;
+    }
     return `${message.substring(0, 30)}...`;
   };
 
@@ -811,14 +870,13 @@ export default function Page({ params }) {
 
     if (isSenderUser) {
       return userLocation || "";
-    } else {
-      return message.senderLocation || recipients[0]?.location || "";
     }
+
+    return message.senderLocation || recipients[0]?.location || "";
   };
 
   const canSendMessage = () => {
-    const canSend = messageContent.trim().length > 0 && !isSending;
-    return canSend;
+    return messageContent.trim().length > 0 && !isSending;
   };
 
   return (
@@ -883,14 +941,10 @@ export default function Page({ params }) {
 
             <button
               onClick={async () => {
-                const letterUserRef = userRef || doc(db, "users", user.uid);
+                const letterUserRef = userRef || doc(db, "users", user?.uid);
 
                 try {
-                  const existingDraft = await fetchDraft(
-                    id,
-                    letterUserRef,
-                    false,
-                  );
+                  const existingDraft = await fetchDraft(id, letterUserRef, false);
 
                   if (existingDraft && existingDraft.content?.trim()) {
                     setDraft(existingDraft);
@@ -991,7 +1045,6 @@ export default function Page({ params }) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-
                                 setReportSender(message.sent_by?.id);
                                 setReportContent(message.content);
                                 setShowReportPopup(true);
