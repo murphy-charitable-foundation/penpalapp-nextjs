@@ -1,8 +1,9 @@
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { formatTimestamp } from "@/app/utils/dateHelpers";
 
 const MessagePreview = ({
   profileImage,
@@ -29,39 +30,7 @@ const MessagePreview = ({
     router.push(`/profile-view/${id}`);
   };
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "";
-
-    const date =
-      typeof timestamp.toDate === "function"
-        ? timestamp.toDate()
-        : new Date(timestamp.seconds * 1000);
-
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    const timeString = date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    if (date.toDateString() === today.toDateString()) {
-      return `Today ${timeString}`;
-    }
-
-    if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday ${timeString}`;
-    }
-
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
+  // Returns the appropriate status icon based on letter status
   const getStatusIcon = () => {
     if (status === "rejected") {
       return (
@@ -152,7 +121,7 @@ const MessagePreview = ({
             </div>
 
             <div className="text-xs text-gray-400 whitespace-nowrap ml-2">
-              {formatDate(lastMessageDate)}
+              {formatTimestamp(lastMessageDate)}
             </div>
           </div>
 
@@ -178,7 +147,9 @@ const MessagePreview = ({
               </div>
             ) : (
               <div className="flex items-start">
-                <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
+                {getStatusIcon() && (
+                  <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
+                )}
 
                 {status === "rejected" && (
                   <div className="flex-1 font-normal text-red-500">
@@ -196,6 +167,14 @@ const MessagePreview = ({
   if (isAdmin) {
     return (
       <div onClick={onClick} className="w-full text-left">
+        {cardContent}
+      </div>
+    );
+  }
+
+  if (!letterboxId) {
+    return (
+      <div className="w-full" role="button" aria-disabled="true">
         {cardContent}
       </div>
     );
