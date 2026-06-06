@@ -236,7 +236,6 @@ export default function Admin() {
         moderator_id: deleteField(),
         rejection_reason: deleteField(),
         rejection_feedback: deleteField(),
-        updated_at: deleteField(),
       });
 
       updateLocalMessage(message.id, {
@@ -244,7 +243,6 @@ export default function Admin() {
         moderator_id: undefined,
         rejection_reason: undefined,
         rejection_feedback: undefined,
-        updated_at: undefined,
       });
 
       setReviewAction(null);
@@ -278,7 +276,7 @@ export default function Admin() {
       await updateDoc(ref, {
         status: "approved",
         moderator_id: userId,
-        updated_at: serverTimestamp(),
+        moderated_at: serverTimestamp(),
       });
 
       updateLocalMessage(id, {
@@ -317,7 +315,7 @@ export default function Admin() {
         moderator_id: userId,
         rejection_reason: reason,
         rejection_feedback: feedback,
-        updated_at: serverTimestamp(),
+        moderated_at: serverTimestamp(),
       });
 
       updateLocalMessage(selectedMessage.id, {
@@ -325,6 +323,7 @@ export default function Admin() {
         moderator_id: userId,
         rejection_reason: reason,
         rejection_feedback: feedback,
+        moderated_at: serverTimestamp(),
       });
 
       setReviewAction("rejected");

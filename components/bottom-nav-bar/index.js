@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
   FaUserAlt,
@@ -14,70 +14,94 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import Link from "next/link";
-import { auth } from "../../app/firebaseConfig";
+import { collection, doc, getDoc } from "firebase/firestore";
+
+import { auth, db } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { useNavigation } from "../../contexts/NavigationContext";
-import { collection, doc, getDoc } from "firebase/firestore";
-import { db } from "../../app/firebaseConfig";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [, startTransition] = useTransition();
-  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(null);
+
+  const router = useRouter();
+  const pathname = usePathname();
   const { userType } = useUser();
   const { setIsNavigating } = useNavigation();
+
   const containerRef = useRef(null);
-  
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutside);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutside);
+    };
+  }, []);
+
   useEffect(() => {
     const grabUser = async () => {
       if (!auth.currentUser) return;
+
       const userRef = doc(db, "users", auth.currentUser.uid);
       const userSnapshot = await getDoc(userRef);
       const userData = userSnapshot.data();
-  
-      if (userData?.user_type === "admin") {
-        setIsAdmin(true);
-      } else { 
-        setIsAdmin(false);
-      }
-    }
-  
+
+      setIsAdmin(userData?.user_type === "admin");
+    };
+
     grabUser();
   }, []);
 
+  if (userType === null) return null;
+
+  const startGlobalNavSpinner = () => {
+    window.dispatchEvent(new Event("app:navigation-start"));
+  };
+
   const handleNavigation = (href) => {
     setIsMenuOpen(false);
-    startTransition(() => {
-      setIsNavigating(true);
-      router.push(href);
-    });
+
+    if (pathname === href) return;
+
+    startGlobalNavSpinner();
+    setIsNavigating(true);
+    router.push(href);
   };
-  
+
   const handleLogout = async () => {
     setIsMenuOpen(false);
+    startGlobalNavSpinner();
     setIsNavigating(true);
+
     try {
       await signOut(auth);
       router.push("/choose-profile");
     } catch (err) {
       console.error(err);
-    } finally {
-      setIsNavigating(false);
     }
   };
 
   const navLinks = [
     { href: "/profile", icon: <FaUserAlt />, label: "Profile" },
-    userType !== "child" && { href: "/discovery", icon: <FaCompass />, label: "Discover" },
+    userType !== "child" && {
+      href: "/discovery",
+      icon: <FaCompass />,
+      label: "Discover",
+    },
     { href: "/about", icon: <FaInfo />, label: "About" },
     { href: "/contact", icon: <FaEnvelopeOpenText />, label: "Contact" },
-    // 👇 conditionally add admin link
     ...(isAdmin
       ? [
           {
             href: "/admin",
-            icon: <FaUserAlt className="h-4 w-4" />, // choose any admin icon
+            icon: <FaUserAlt className="h-4 w-4" />,
             label: "Admin",
           },
         ]
@@ -99,7 +123,6 @@ export default function NavBar() {
         <span className="text-sm">Inbox</span>
       </button>
 
-      {/* Sponsor */}
       {userType !== "child" && (
         <button
           onClick={() => handleNavigation("/donate")}
@@ -110,7 +133,6 @@ export default function NavBar() {
         </button>
       )}
 
-      {/* Menu */}
       <div className="relative">
         <button
           onClick={() => setIsMenuOpen((v) => !v)}
@@ -121,11 +143,18 @@ export default function NavBar() {
         </button>
 
         {isMenuOpen && (
-          <div className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2">
+          <div
+            className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             {navLinks.map((link) => (
               <button
                 key={link.label || link.href}
-                onClick={link.onClick ? link.onClick : () => handleNavigation(link.href)}
+                onClick={
+                  link.onClick
+                    ? link.onClick
+                    : () => handleNavigation(link.href)
+                }
                 className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
               >
                 {link.icon}

@@ -410,12 +410,13 @@ export const createConnection = async (userDocRef, kidDocRef) => {
               archived_at: null,
             });
 
+            const now = new Date();
             await addDoc(collection(conversationRef, "messages"), {
               sent_by: userDocRef,
               content: "Please complete your first message here...",
               status: "draft",
-              drafted_at: new Date(),
-              created_at: new Date(),
+              drafted_at: now,
+              created_at: now,
               deleted: null
             });
 
