@@ -209,7 +209,7 @@ export default function ChooseKid() {
           center={false}
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
-          <PageHeader title="Discovery" image={false} showBackButton />
+          <PageHeader title="Discovery" image={false} showBackButton backHref="/inbox" />
 
           <DiscoveryHeader
             activeFilter={filtersOpen}

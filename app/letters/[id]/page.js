@@ -492,7 +492,7 @@ export default function Page({ params }) {
         setIsEditing(false);
         setHasDraftContent(false);
         setSelectedMessageId(null);
-        router.back();
+        router.push("/inbox");
       }
       return;
     }
@@ -510,7 +510,7 @@ export default function Page({ params }) {
     if (trimmedMessageContent.length > 0) {
       setShowCloseDialog(true);
     } else {
-      router.back();
+      router.push("/inbox");
     }
   };
 
@@ -526,7 +526,7 @@ export default function Page({ params }) {
       setSelectedMessageId(null);
     }
 
-    router.back();
+    router.push("/inbox");
   };
 
   const handleContinueEditing = () => {

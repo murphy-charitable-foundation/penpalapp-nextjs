@@ -115,7 +115,7 @@ export default function Login() {
     <PageContainer maxWidth="md" padding="p-8">
       {loading && <LoadingSpinner />}
 
-      <PageHeader title="Login" />
+      <PageHeader title="Login" backHref="/" />
 
       <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
         <Input

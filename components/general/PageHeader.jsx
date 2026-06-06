@@ -11,6 +11,7 @@ export function PageHeader({
   heading = true,
   onBack,
   showBackButton = true,
+  backHref = null,
   imageSize = "md",
   showBorder = true,
 }) {
@@ -28,7 +29,7 @@ export function PageHeader({
       >
         {/* LEFT */}
         <div className="w-8 flex justify-start">
-          {showBackButton && <BackButton fallbackHref="/" size="xs" onBack={onBack} />}
+          {showBackButton && <BackButton backHref={backHref} size="xs" onBack={onBack} />}
         </div>
 
         {/* CENTER */}
