@@ -119,6 +119,34 @@ export default function Page({ params }) {
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
 
+  // Allowed media origins can be configured via NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS
+  // as a comma-separated list (e.g. "https://example.com,https://cdn.example.com").
+  const getAllowedOrigins = () => {
+    try {
+      const env = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS : undefined;
+      if (env && env.length) {
+        return env.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    } catch (e) {
+      // ignore and fallback
+    }
+
+    // Default fallback to common Firebase storage origin
+    return ["https://firebasestorage.googleapis.com"];
+  };
+
+  const isAllowedMediaUrl = (url) => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      const origin = parsed.origin;
+      const allowed = getAllowedOrigins();
+      return allowed.includes(origin);
+    } catch (e) {
+      return false;
+    }
+  };
+
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
     useState("");
@@ -1122,7 +1150,7 @@ export default function Page({ params }) {
                           {message.content}
                         </p>
 
-                        {message.media_url && (
+                        {message.media_url && isAllowedMediaUrl(message.media_url) ? (
                           <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                             {message.media_type === "image" ? (
                               <img
@@ -1146,7 +1174,11 @@ export default function Page({ params }) {
                               </div>
                             ) : null}
                           </div>
-                        )}
+                        ) : message.media_url ? (
+                          <div className="mt-3 p-3 text-sm text-gray-500">
+                            Media from this source is not allowed.
+                          </div>
+                        ) : null}
 
                         <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
