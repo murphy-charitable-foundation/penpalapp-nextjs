@@ -54,8 +54,12 @@ export function InactivityProvider({ children }) {
       if (countdownInterval) clearInterval(countdownInterval);
     }
 
-    function proceedLogout() {
+    function proceedLogout(shouldBroadcast = true) {
       cleanupTimers();
+
+      if (shouldBroadcast) {
+        activityChannel.postMessage("logout");
+      }
 
       setInactivityWarning(false);
       setInactivitySecondsLeft(0);
@@ -105,8 +109,14 @@ export function InactivityProvider({ children }) {
       }, INACTIVITY_LIMIT);
     }
 
-    activityChannel.onmessage = () => {
-      resetTimer(false);
+    activityChannel.onmessage = (event) => {
+      if (event.data === "active") {
+        resetTimer(false);
+      }
+
+      if (event.data === "logout") {
+        proceedLogout(false);
+      }
     };
 
     activityEvents.forEach((event) => {
