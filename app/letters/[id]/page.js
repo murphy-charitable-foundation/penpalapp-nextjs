@@ -30,7 +30,10 @@ import LettersSkeleton from "../../../components/loading/LettersSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Film, Image as ImageIcon, Mic } from "lucide-react";
+import ImageUploader from "../../../components/media/ImageUploader";
+import VideoUploader from "../../../components/media/VideoUploader";
+import AudioRecorder from "../../../components/media/AudioRecorder";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 
@@ -140,6 +143,7 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [reportContent, setReportContent] = useState(null);
   const [reportSender, setReportSender] = useState(null);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const [draftTimer, setDraftTimer] = useState(null);
 
@@ -465,6 +469,83 @@ export default function Page({ params }) {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleRequireLogin = () => {
+    const shouldLogin = window.confirm(
+      "You must be logged in to send media. Go to login now?"
+    );
+
+    if (shouldLogin) {
+      router.push("/login");
+    }
+  };
+
+  const sendMediaMessage = async ({ mediaUrl, mediaType, caption = "" }) => {
+    if (!user?.uid || !lettersRef) {
+      alert("Unable to send media. Please refresh and try again.");
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const currentTime = new Date();
+
+      const messageData = {
+        sent_by: letterUserRef,
+        content:
+          caption ||
+          (mediaType === "image"
+            ? "Photo"
+            : mediaType === "video"
+            ? "Video"
+            : "Voice message"),
+        status: "pending_review",
+        created_at: currentTime,
+        drafted_at: currentTime,
+        deleted: null,
+        unread: true,
+        media_url: mediaUrl,
+        media_type: mediaType,
+      };
+
+      const messageRef = doc(lettersRef);
+      await setDoc(messageRef, messageData);
+
+      if (globalLetterboxReference) {
+        sendNotification(globalLetterboxReference, "").catch((error) => {
+          console.error("Failed to send media notification:", error);
+        });
+      }
+
+      setAllMessages((prev) => [
+        ...prev,
+        { ...messageData, id: messageRef.id, sent_by: { id: user.uid } },
+      ]);
+
+      setTimeout(() => scrollToBottom(true), 100);
+    } catch (error) {
+      console.error("❌ sendMediaMessage error:", error);
+      logError(error, { description: "Failed to send media message" });
+      alert("Failed to send media. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleImageUpload = async (url) => {
+    await sendMediaMessage({ mediaUrl: url, mediaType: "image" });
+  };
+
+  const handleVideoUpload = async (url) => {
+    await sendMediaMessage({ mediaUrl: url, mediaType: "video" });
+  };
+
+  const handleAudioUpload = async (url) => {
+    await sendMediaMessage({ mediaUrl: url, mediaType: "audio" });
+    setShowAudioRecorder(false);
   };
 
   const handleCloseMessage = async () => {
@@ -1040,6 +1121,33 @@ export default function Page({ params }) {
                         <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
+
+                        {message.media_url && (
+                          <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                            {message.media_type === "image" ? (
+                              <img
+                                src={message.media_url}
+                                alt="Shared media"
+                                className="w-full h-auto object-cover"
+                              />
+                            ) : message.media_type === "video" ? (
+                              <video
+                                src={message.media_url}
+                                controls
+                                className="w-full h-auto max-h-[320px] bg-black"
+                              />
+                            ) : message.media_type === "audio" ? (
+                              <div className="p-3">
+                                <audio
+                                  src={message.media_url}
+                                  controls
+                                  className="w-full"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
                             <button
@@ -1154,7 +1262,56 @@ export default function Page({ params }) {
               />
               <span className="text-gray-700">To {recipientName}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <ImageUploader
+                onUploadSuccess={handleImageUpload}
+                onRequireLogin={handleRequireLogin}
+                trigger={
+                  <button
+                    type="button"
+                    className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                    title="Send photo"
+                  >
+                    <ImageIcon size={18} className="text-slate-600" />
+                  </button>
+                }
+              />
+              <VideoUploader
+                onUploadSuccess={handleVideoUpload}
+                onRequireLogin={handleRequireLogin}
+                trigger={
+                  <button
+                    type="button"
+                    className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                    title="Send video"
+                  >
+                    <Film size={18} className="text-slate-600" />
+                  </button>
+                }
+              />
+              <button
+                type="button"
+                onClick={() => setShowAudioRecorder((prev) => !prev)}
+                className={`p-2 rounded-full transition-colors ${
+                  showAudioRecorder
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+                title="Send voice message"
+              >
+                <Mic size={18} />
+              </button>
+            </div>
           </div>
+
+          {showAudioRecorder && (
+            <div className="px-4 pb-2">
+              <AudioRecorder
+                onUploadSuccess={handleAudioUpload}
+                onRequireLogin={handleRequireLogin}
+              />
+            </div>
+          )}
 
           {!isEditing ? (
             <div className="p-4">
