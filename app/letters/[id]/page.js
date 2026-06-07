@@ -14,6 +14,7 @@ import {
   limit,
   getDocs,
 } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
@@ -33,7 +34,6 @@ import { AlertTriangle } from "lucide-react";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 
-
 const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
   try {
     const letterboxRef = doc(db, "letterbox", letterboxId);
@@ -44,32 +44,42 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
       orderBy("updated_at", "desc"),
-      limit(1)
+      limit(1),
     );
 
-    const draftSnapshot = await getDocs(draftQuery);
+    let draftSnapshot = await getDocs(draftQuery);
+
+    if (draftSnapshot.empty) {
+      const fallbackDraftQuery = query(
+        lettersRef,
+        where("sent_by", "==", userRef),
+        where("status", "==", "draft"),
+        orderBy("drafted_at", "desc"),
+        limit(1),
+      );
+
+      draftSnapshot = await getDocs(fallbackDraftQuery);
+    }
 
     if (!draftSnapshot.empty) {
       const draftDoc = draftSnapshot.docs[0];
-      const draftData = {
+
+      return {
         id: draftDoc.id,
         ...draftDoc.data(),
-        created_at:
-          draftDoc.data().created_at?.toDate?.() || draftDoc.data().created_at,
-        updated_at:
-          draftDoc.data().updated_at?.toDate?.() || draftDoc.data().updated_at,
+        created_at: draftDoc.data().created_at?.toDate?.() || null,
+        drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
       };
-
-      return draftData;
     }
 
     if (shouldCreate) {
+      const now = new Date();
       const newDraftData = {
         sent_by: userRef,
         content: "",
         status: "draft",
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: now,
+        drafted_at: now,
         deleted: null,
         unread: true,
       };
@@ -91,14 +101,13 @@ const fetchDraft = async (letterboxId, userRef, shouldCreate = false) => {
 };
 
 export default function Page({ params }) {
-
-
   const { id } = params;
 
   const router = useRouter();
   const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
+
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
   const [profileImage, setProfileImage] = useState("");
@@ -108,12 +117,14 @@ export default function Page({ params }) {
   const [hasDraftContent, setHasDraftContent] = useState(false);
 
   const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editingMessageOriginalContent, setEditingMessageOriginalContent] = useState("");
+  const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
+    useState("");
 
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
-  const [globalLetterboxReference, setGlobalLetterboxReference] = useState(null);
+  const [globalLetterboxReference, setGlobalLetterboxReference] =
+    useState(null);
   const [lettersRef, setLettersRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -132,7 +143,6 @@ export default function Page({ params }) {
 
   const [draftTimer, setDraftTimer] = useState(null);
 
-
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
@@ -142,35 +152,34 @@ export default function Page({ params }) {
 
   const saveDraft = useCallback(
     async (content) => {
-      if (!user || !lettersRef || isSending) {
+      if (!user?.uid || !lettersRef || isSending) {
         return Promise.resolve();
       }
 
       setIsUpdatingFirebase(true);
 
-      try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
-        const trimmedContent = content.trim();
-        const currentTime = new Date();
+      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const trimmedContent = (content ?? "").trim();
+      const currentTime = new Date();
 
+      const baseDraftData = {
+        sent_by: letterUserRef,
+        content: trimmedContent,
+        status: "draft",
+        drafted_at: currentTime,
+        deleted: null,
+        unread: true,
+      };
+
+      try {
         let existingDraft = draft;
 
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, letterUserRef, false);
-
           if (existingDraft) {
             setDraft(existingDraft);
           }
         }
-
-        const baseDraftData = {
-          sent_by: letterUserRef,
-          content: trimmedContent,
-          status: "draft",
-          updated_at: currentTime,
-          deleted: null,
-          unread: true,
-        };
 
         if (existingDraft?.id) {
           const draftDocRef = doc(lettersRef, existingDraft.id);
@@ -181,23 +190,21 @@ export default function Page({ params }) {
           };
 
           await updateDoc(draftDocRef, updateData);
-
           setDraft({ ...updateData, id: existingDraft.id });
         } else {
+          const newDraftRef = doc(lettersRef);
           const newDraftData = {
             ...baseDraftData,
             created_at: currentTime,
           };
 
-          const newDraftRef = doc(lettersRef);
           await setDoc(newDraftRef, newDraftData);
-
           setDraft({ ...newDraftData, id: newDraftRef.id });
         }
 
         const hasContent = Boolean(trimmedContent);
-
         setHasDraftContent(hasContent);
+
         if (!hasContent && isEditing) {
           setIsEditing(false);
         }
@@ -206,21 +213,20 @@ export default function Page({ params }) {
       } catch (error) {
         console.error("❌ saveDraft error:", error);
 
-        if (error.code === "permission-denied") {
-          console.error("🔒 Permission denied error");
+        if (error?.code === "permission-denied") {
           alert("Permission denied. Please check your access rights.");
-        } else if (error.code === "not-found") {
-          console.error("🔍 Document not found, attempting retry...");
+        } else if (error?.code === "not-found") {
           setDraft(null);
+
           if (trimmedContent) {
             try {
+              const newDraftRef = doc(lettersRef);
               const newDraftData = {
                 ...baseDraftData,
                 created_at: currentTime,
               };
-              const newDraftRef = doc(lettersRef);
-              await setDoc(newDraftRef, newDraftData);
 
+              await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
             } catch (retryError) {
               logError(retryError, {
@@ -235,7 +241,7 @@ export default function Page({ params }) {
         setIsUpdatingFirebase(false);
       }
     },
-    [user, lettersRef, isSending, draft, userRef, isEditing, id]
+    [user?.uid, lettersRef, isSending, draft, userRef, isEditing, id]
   );
 
   const handleMessageChange = async (e) => {
@@ -263,6 +269,7 @@ export default function Page({ params }) {
             });
           }
         }, 1000);
+
         setDraftTimer(timer);
       }
     } else {
@@ -274,13 +281,13 @@ export default function Page({ params }) {
 
         try {
           await saveDraft(newContent);
-
           setIsSendButtonDisabled(false);
         } catch (error) {
           console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
+
           setTimeout(() => {
             setIsSendButtonDisabled(false);
           }, 3000);
@@ -289,7 +296,6 @@ export default function Page({ params }) {
     }
   };
 
-  // FIXED: Restore draft after updating message
   const handleUpdateMessage = async () => {
     const trimmedContent = messageContent.trim();
 
@@ -305,7 +311,7 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
+      if (!user?.uid || !lettersRef) {
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -314,7 +320,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
-        updated_at: currentTime,
+        drafted_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -339,17 +345,16 @@ export default function Page({ params }) {
       setSelectedMessageId(null);
 
       setAllMessages((prev) => {
-        const updatedMessages = prev.map((msg) => {
+        return prev.map((msg) => {
           if (msg.id === editingMessageId) {
             return {
               ...msg,
               content: trimmedContent,
-              updated_at: currentTime,
+              drafted_at: currentTime,
             };
           }
           return msg;
         });
-        return updatedMessages;
       });
 
       setTimeout(() => {
@@ -358,11 +363,11 @@ export default function Page({ params }) {
     } catch (error) {
       console.error("❌ handleUpdateMessage error:", error);
 
-      if (error.code === "permission-denied") {
+      if (error?.code === "permission-denied") {
         alert(
-          "Permission denied. Please check your access rights to this conversation."
+          "Permission denied. Please check your access rights to this conversation.",
         );
-      } else if (error.code === "unauthenticated") {
+      } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
       } else {
         alert("Failed to update message. Please try again.");
@@ -391,7 +396,7 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      if (!user || !lettersRef) {
+      if (!user?.uid || !lettersRef) {
         throw new Error("Missing required dependencies: user or lettersRef");
       }
 
@@ -403,7 +408,7 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        updated_at: currentTime,
+        drafted_at: currentTime,
         deleted: null,
         unread: true,
       };
@@ -423,14 +428,13 @@ export default function Page({ params }) {
         messageRef = doc(lettersRef);
         await setDoc(messageRef, messageData);
       }
-      
-      
+
       if (globalLetterboxReference) {
-        sendNotification(globalLetterboxReference, "").catch(error => {
+        sendNotification(globalLetterboxReference, "").catch((error) => {
           console.error("Failed to send notification:", error);
         });
       }
-      
+
       // Clear states
       setMessageContent("");
       setDraft(null);
@@ -443,21 +447,17 @@ export default function Page({ params }) {
         sent_by: { id: user.uid },
       };
 
-      setAllMessages((prev) => {
-        const newMessages = [...prev, messageWithId];
-
-        return newMessages;
-      });
+      setAllMessages((prev) => [...prev, messageWithId]);
 
       setTimeout(() => {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      if (error.code === "permission-denied") {
+      if (error?.code === "permission-denied") {
         alert(
-          "Permission denied. Please check your access rights to this conversation."
+          "Permission denied. Please check your access rights to this conversation.",
         );
-      } else if (error.code === "unauthenticated") {
+      } else if (error?.code === "unauthenticated") {
         alert("You are not authenticated. Please log in again.");
       } else {
         alert("Failed to send message. Please try again.");
@@ -529,7 +529,7 @@ export default function Page({ params }) {
       textAreaRef.current?.focus();
     }, 100);
   };
-  
+
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
@@ -544,9 +544,11 @@ export default function Page({ params }) {
         await saveDraft(messageContent);
       } catch (error) {
         console.error("❌ Failed to save draft before editing message:", error);
+
         const confirmSwitch = window.confirm(
-          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost."
+          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
         );
+
         if (!confirmSwitch) {
           return;
         }
@@ -574,7 +576,7 @@ export default function Page({ params }) {
 
     if (!draft?.id) {
       try {
-        const letterUserRef = userRef || doc(db, "users", user.uid);
+        const letterUserRef = userRef || doc(db, "users", user?.uid);
         const existingDraft = await fetchDraft(id, letterUserRef, false);
 
         if (existingDraft) {
@@ -607,163 +609,232 @@ export default function Page({ params }) {
   usePageAnalytics(`/letters/[id]`);
 
   useEffect(() => {
-    setIsLoading(true);
+    const auth = getAuth();
+    let redirectTimer = null;
 
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+    const clearSensitiveState = () => {
+      setUserRef(null);
+      setUserLocation("");
+      setProfileImage("");
 
-    const initializeData = async () => {
-      try {
-        const letterboxRef = doc(db, "letterbox", id);
-        const letterboxDoc = await getDoc(letterboxRef);
+      setAllMessages([]);
+      setRecipients([]);
+      setRecipientName("");
+      setLettersRef(null);
+      setGlobalLetterboxReference(null);
 
-        if (!letterboxDoc.exists()) {
-          console.error("❌ Letterbox does not exist:", id);
-          setIsLoading(false);
-          return;
+      setMessageContent("");
+      setDraft(null);
+      setHasDraftContent(false);
+
+      setEditingMessageId(null);
+      setEditingMessageOriginalContent("");
+
+      setShowCloseDialog(false);
+      setSelectedMessageId(null);
+      setIsEditing(false);
+
+      setIsSending(false);
+      setIsSendButtonDisabled(true);
+      setIsUpdatingFirebase(false);
+
+      setShowReportPopup(false);
+      setShowConfirmReportPopup(false);
+      setReportContent(null);
+      setReportSender(null);
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setIsLoading(true);
+
+      if (!currentUser) {
+        if (redirectTimer) {
+          clearTimeout(redirectTimer);
         }
 
-        const userDocRef = doc(db, "users", user.uid);
-        setUserRef(userDocRef);
+        clearSensitiveState();
 
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.location) {
-            const location = userData.location;
-            setUserLocation(location);
+        redirectTimer = setTimeout(() => {
+          if (!auth.currentUser) {
+            router.replace("/login");
           }
-          setProfileImage(userData?.photo_uri || "");
-        }
+        }, 400);
 
-        const fetchedRecipients = await fetchRecipients(id);
-        setRecipients(fetchedRecipients || []);
+        return;
+      }
 
-        if (fetchedRecipients?.length > 0) {
-          const recipientName = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
-          setRecipientName(recipientName);
-        }
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+        redirectTimer = null;
+      }
 
-        const lRef = collection(letterboxRef, "letters");
-        setLettersRef(lRef);
-        setGlobalLetterboxReference(letterboxRef);
+      const initializeData = async () => {
+        try {
+          const letterboxRef = doc(db, "letterbox", id);
+          const letterboxDoc = await getDoc(letterboxRef);
 
-        // ENHANCED: Improved draft fetching with better error handling
-        const draftData = await fetchDraft(id, userDocRef, false);
+          if (!letterboxDoc.exists()) {
+            console.error("❌ Letterbox does not exist:", id);
+            return;
+          }
 
-        if (draftData && draftData.status === "draft") {
-          setDraft(draftData);
-          const draftContent = draftData.content || "";
-          const hasContent = Boolean(draftContent.trim());
+          const userDocRef = doc(db, "users", currentUser.uid);
+          setUserRef(userDocRef);
 
-          setMessageContent(draftContent);
-          setHasDraftContent(hasContent);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
 
-          if (hasContent) {
-            setIsEditing(true);
-            setTimeout(() => {
-              textAreaRef.current?.focus();
-              const length = draftContent.length;
-              textAreaRef.current?.setSelectionRange(length, length);
-            }, 100);
+            if (userData.location) {
+              setUserLocation(userData.location);
+            }
+
+            setProfileImage(userData?.photo_url || "");
+          }
+
+          const fetchedRecipients = await fetchRecipients(id);
+          setRecipients(fetchedRecipients || []);
+
+          if (fetchedRecipients?.length > 0) {
+            const rn = `${fetchedRecipients[0].first_name} ${fetchedRecipients[0].last_name}`;
+            setRecipientName(rn);
+          }
+
+          const lRef = collection(letterboxRef, "letters");
+          setLettersRef(lRef);
+          setGlobalLetterboxReference(letterboxRef);
+
+          const draftData = await fetchDraft(id, userDocRef, false);
+
+          if (draftData && draftData.status === "draft") {
+            setDraft(draftData);
+
+            const draftContent = draftData.content || "";
+            const hasContent = Boolean(draftContent.trim());
+
+            setMessageContent(draftContent);
+            setHasDraftContent(hasContent);
+
+            if (hasContent) {
+              setIsEditing(true);
+              setTimeout(() => {
+                textAreaRef.current?.focus();
+                const length = draftContent.length;
+                textAreaRef.current?.setSelectionRange(length, length);
+              }, 100);
+            } else {
+              setIsEditing(false);
+            }
           } else {
-            setIsEditing(false);
+            setMessageContent("");
+            setDraft(null);
+            setHasDraftContent(false);
           }
-        } else {
-          setIsEditing(false);
-          setMessageContent("");
-          setDraft(null);
-          setHasDraftContent(false);
-        }
 
-        if (fetchedRecipients?.length > 0) {
-          const userRefDoc = doc(db, "users", user.uid);
+          if (fetchedRecipients?.length > 0) {
+            const userRefDoc = doc(db, "users", currentUser.uid);
 
-          // All messages written BY ME
-          const myMessagesQuery = query(
-            lRef,
-            where("sent_by", "==", userRefDoc),
-            orderBy("created_at", "asc")
-          );
-      
-          // All messages with status = "sent" (approval by admin)
-          const sentMessagesQuery = query(
-            lRef,
-            where("status", "==", "sent"),
-            orderBy("created_at", "asc")
-          );
-      
-          const [mySnap, sentSnap] = await Promise.all([
-            getDocs(myMessagesQuery),
-            getDocs(sentMessagesQuery),
-          ]);
-      
-          const all = [];
-      
-          const pushDocs = (snap) => {
-            snap.forEach((docSnap) => {
-              // Skip drafts on client side
-              if (docSnap.data().status === "draft") {
-                return;
-              }
-              
-              const msg = {
-                id: docSnap.id,
-                ...docSnap.data(),
-                created_at: docSnap.data().created_at?.toDate(),
-                updated_at: docSnap.data().updated_at?.toDate(),
-              };
-      
-              // Normalize Firestore DocumentReference → { id }
-              if (msg.sent_by?.path) {
-                msg.sent_by = {
-                  id: msg.sent_by.path.split("/")[1],
+            const myMessagesQuery = query(
+              lRef,
+              where("sent_by", "==", userRefDoc),
+              orderBy("created_at", "asc")
+            );
+
+            const sentMessagesQuery = query(
+              lRef,
+              where("status", "==", "sent"),
+              orderBy("created_at", "asc")
+            );
+
+            const [mySnap, sentSnap] = await Promise.all([
+              getDocs(myMessagesQuery),
+              getDocs(sentMessagesQuery),
+            ]);
+
+            const all = [];
+
+            const pushDocs = (snap) => {
+              snap.forEach((docSnap) => {
+                if (docSnap.data().status === "draft") {
+                  return;
+                }
+
+                const msg = {
+                  id: docSnap.id,
+                  ...docSnap.data(),
+                  created_at: docSnap.data().created_at?.toDate(),
+                  drafted_at: docSnap.data().drafted_at?.toDate(),
                 };
-              }
-      
-              all.push(msg);
-            });
-          };
-      
-          pushDocs(mySnap);
-          pushDocs(sentSnap);
-      
-          // remove duplicates
-          const unique = Array.from(new Map(all.map((m) => [m.id, m])).values());
-      
-          // sort chronologically
-          const sortedMessages = unique.sort((a, b) => a.created_at - b.created_at);
-          const messagesWithSenderInfo = await Promise.all(
-            sortedMessages.map(async (message) => {
-              if (message.sent_by?.id !== user.uid) {
-                const recipient = fetchedRecipients.find(
-                  (r) => r.id === message.sent_by?.id
-                );
-                if (recipient) {
-                  message.senderLocation = recipient.location || "";
-                }
-                if (message?.unread) {
-                  await updateDoc(doc(lRef, message.id), { unread: false });
-                }
-              }
-              return message;
-            })
-          );
 
-          setAllMessages(messagesWithSenderInfo);
+                if (msg.sent_by?.path) {
+                  msg.sent_by = {
+                    id: msg.sent_by.path.split("/")[1],
+                  };
+                }
+
+                all.push(msg);
+              });
+            };
+
+            pushDocs(mySnap);
+            pushDocs(sentSnap);
+
+            const unique = Array.from(
+              new Map(all.map((m) => [m.id, m])).values()
+            );
+
+            const sortedMessages = unique.sort(
+              (a, b) => a.created_at - b.created_at
+            );
+
+            const messagesWithSenderInfo = await Promise.all(
+              sortedMessages.map(async (message) => {
+                if (message.sent_by?.id !== currentUser.uid) {
+                  const recipient = fetchedRecipients.find(
+                    (r) => r.id === message.sent_by?.id
+                  );
+
+                  if (recipient) {
+                    message.senderLocation = recipient.location || "";
+                  }
+
+                  if (message?.unread) {
+                    await updateDoc(doc(lRef, message.id), {
+                      unread: false,
+                    });
+                  }
+                }
+
+                return message;
+              })
+            );
+
+            setAllMessages(messagesWithSenderInfo);
+          } else {
+            setAllMessages([]);
+          }
+        } catch (error) {
+          console.error("❌ INITIALIZATION ERROR:", error);
+          logError(error, {
+            description: "INITIALIZATION ERROR:",
+          });
+        } finally {
+          setIsLoading(false);
+          setIsSendButtonDisabled(false);
         }
-      } catch (error) {
-        console.error("❌ INITIALIZATION ERROR:", error);
-        logError(error, {
-          description: "INITIALIZATION ERROR:",
-        });
-      } finally {
-        setIsLoading(false);
+      };
+
+      await initializeData();
+    });
+
+    return () => {
+      unsubscribe();
+
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
       }
     };
-  }, [id, router, auth]);
+  }, [id, router]);
 
   useEffect(() => {
     return () => {
@@ -786,360 +857,376 @@ export default function Page({ params }) {
   };
 
   const truncateMessage = (message) => {
-    if (message.length <= 30) return message;
+    if (message.length <= 30) {
+      return message;
+    }
     return `${message.substring(0, 30)}...`;
   };
 
   const getSenderLocation = (message) => {
     const isSenderUser =
-  message.sent_by?.id === user?.uid ||
-  message.sent_by?.path === `users/${user?.uid}`;
+      message.sent_by?.id === user?.uid ||
+      message.sent_by?.path === `users/${user?.uid}`;
 
     if (isSenderUser) {
       return userLocation || "";
-    } else {
-      return message.senderLocation || recipients[0]?.location || "";
     }
+
+    return message.senderLocation || recipients[0]?.location || "";
   };
 
   const canSendMessage = () => {
-    const canSend = messageContent.trim().length > 0 && !isSending;
-    return canSend;
+    return messageContent.trim().length > 0 && !isSending;
   };
 
-return (
+  return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-    <PageContainer
-      width="compactXS"
-      padding="none"
-      center={false}
-      className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-    >
-      {/* ===== HEADER ===== */}
-      <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
-        <button
-          onClick={handleCloseMessage}
-          className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
-          title="Close conversation"
-        >
-          X
-        </button>
-
-        {/* Keep header layout stable (no mount/unmount jumps) */}
-        <div className="w-10 h-10 flex items-center justify-center">
-          {isSendButtonDisabled || isUpdatingFirebase ? (
-            <div className="w-6 h-6 flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
-          ) : (
-            <button
-              onClick={handleSendMessage}
-              disabled={!isEditing || !canSendMessage()}
-              className={`p-1 ${
-                !isEditing || !canSendMessage()
-                  ? "cursor-not-allowed opacity-50"
-                  : "hover:bg-blue-200 rounded"
-              }`}
-              style={{ visibility: isEditing ? "visible" : "hidden" }}
-            >
-              <Image
-                src="/send-message-icon.png"
-                alt={editingMessageId ? "Update message" : "Send message"}
-                width={30}
-                height={30}
-                className="object-contain"
-                id="send-letter"
-              />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ===== EDITING BANNER ===== */}
-      {editingMessageId && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
-          <div className="flex items-center text-amber-800 text-sm min-w-0">
-            <span className="mr-2 shrink-0" aria-hidden="true">
-              ✏️
-            </span>
-            <span className="whitespace-nowrap truncate">Editing message</span>
-          </div>
-
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+      >
+        {/* ===== HEADER ===== */}
+        <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
           <button
-            onClick={async () => {
-              const letterUserRef = userRef || doc(db, "users", user.uid);
+            onClick={handleCloseMessage}
+            className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
+            title="Close conversation"
+          >
+            X
+          </button>
 
-              try {
-                const existingDraft = await fetchDraft(id, letterUserRef, false);
+          {/* Keep header layout stable (no mount/unmount jumps) */}
+          <div className="w-10 h-10 flex items-center justify-center">
+            {isSendButtonDisabled || isUpdatingFirebase ? (
+              <div className="w-6 h-6 flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <button
+                onClick={handleSendMessage}
+                disabled={!isEditing || !canSendMessage()}
+                className={`p-1 ${
+                  !isEditing || !canSendMessage()
+                    ? "cursor-not-allowed opacity-50"
+                    : "hover:bg-blue-200 rounded"
+                }`}
+                style={{ visibility: isEditing ? "visible" : "hidden" }}
+              >
+                <Image
+                  src="/send-message-icon.png"
+                  alt={editingMessageId ? "Update message" : "Send message"}
+                  width={30}
+                  height={30}
+                  className="object-contain"
+                  id="send-letter"
+                />
+              </button>
+            )}
+          </div>
+        </div>
 
-                if (existingDraft && existingDraft.content?.trim()) {
-                  setDraft(existingDraft);
-                  setMessageContent(existingDraft.content);
-                  setHasDraftContent(true);
-                  setIsEditing(true);
-                } else {
+        {/* ===== EDITING BANNER ===== */}
+        {editingMessageId && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 min-h-[44px] flex items-center justify-between">
+            <div className="flex items-center text-amber-800 text-sm min-w-0">
+              <span className="mr-2 shrink-0" aria-hidden="true">
+                ✏️
+              </span>
+              <span className="whitespace-nowrap truncate">
+                Editing message
+              </span>
+            </div>
+
+            <button
+              onClick={async () => {
+                const letterUserRef = userRef || doc(db, "users", user?.uid);
+
+                try {
+                  const existingDraft = await fetchDraft(id, letterUserRef, false);
+
+                  if (existingDraft && existingDraft.content?.trim()) {
+                    setDraft(existingDraft);
+                    setMessageContent(existingDraft.content);
+                    setHasDraftContent(true);
+                    setIsEditing(true);
+                  } else {
+                    setMessageContent("");
+                    setDraft(null);
+                    setHasDraftContent(false);
+                    setIsEditing(false);
+                  }
+                } catch {
                   setMessageContent("");
                   setDraft(null);
                   setHasDraftContent(false);
                   setIsEditing(false);
                 }
-              } catch {
-                setMessageContent("");
-                setDraft(null);
-                setHasDraftContent(false);
-                setIsEditing(false);
-              }
 
-              setEditingMessageId(null);
-              setEditingMessageOriginalContent("");
-              setSelectedMessageId(null);
-            }}
-            className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
-          >
-            {/* Keep banner height consistent while editing */}
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* ===== MESSAGES ===== */}
-      <div className="flex-1 overflow-y-auto bg-gray-100">
-        {allMessages.map((message, index) => {
-          const messageId = message.id;
-          const isSelected = selectedMessageId === messageId;
-          const isSenderUser = message.sent_by?.id === user?.uid;
-          const location = getSenderLocation(message);
-
-          return (
-            <div key={messageId}>
-              <div
-                className={`border-b border-gray-200 ${
-                  isSelected ? "bg-white" : "bg-gray-50"
-                } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-              >
-                <div
-                  className="px-4 py-3"
-                  onClick={() => selectMessage(messageId)}
-                >
-                  <div className="flex items-center">
-                    <div className="shrink-0">
-                      <ProfileImage
-                        photo_uri={
-                          isSenderUser ? profileImage : recipients[0]?.photo_uri
-                        }
-                        first_name={
-                          isSenderUser ? "Me" : recipients[0]?.first_name
-                        }
-                        size={12}
-                      />
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <span className="font-bold text-black">
-                          {isSenderUser
-                            ? "Me"
-                            : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
-                        </span>
-                        {location && (
-                          <span className="text-black ml-2 text-sm">
-                            {location}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-gray-800">
-                        {isSelected ? "" : truncateMessage(message.content)}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="text-gray-500 text-sm">
-                        {formatTimestamp(message.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div className="px-4 pb-3">
-                    <div className="ml-16 relative">
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                      <div className="flex items-center justify-end w-full">
-                        {!isSenderUser && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-
-                              setReportSender(message.sent_by?.id);
-                              setReportContent(message.content);
-                              setShowReportPopup(true);
-                              logButtonEvent(
-                                "Report message clicked!",
-                                "/letters/[id]"
-                              );
-                            }}
-                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
-                          >
-                            <FaExclamationCircle className="mr-1" size={10} />
-                            Report
-                          </button>
-                        )}
-
-                        {/* STATUS BANNER */}
-                        {isSenderUser && (
-                          <>
-                            {/* REJECTED */}
-                            {isSenderUser && message.status === "rejected" && (
-                              <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
-                                <div className="flex items-start text-red-700 font-semibold">
-                                  <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
-                                  <div>
-                                    <div>Your letter was not sent.</div>
-
-                                    {message.rejection_reason && (
-                                      <div className="text-sm text-red-600 mt-1">
-                                        {message.rejection_reason}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* SENT → GREEN CHECK */}
-                            {message.status === "sent" && (
-                              <span className="text-green-500 text-lg font-bold flex justify-end w-full">
-                                ✓
-                              </span>
-                            )}
-
-                            {/* PENDING REVIEW → GRAY DASHED CHECK */}
-                            {message.status === "pending_review" && (
-                              <div className="flex items-center justify-end w-full">
-                                {/* Wrapper so the check can stick to the button */}
-                                <div className="relative inline-flex">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-
-                                      handleEditMessage(message);
-                                      logButtonEvent(
-                                        "Edit message clicked!",
-                                        "/letters/[id]"
-                                      );
-                                    }}
-                                    className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
-                                    title="Edit message"
-                                  >
-                                    Edit
-                                  </button>
-
-                                  {/* Check badge in bottom-right of the button */}
-                                  <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
-                                    <span className="text-gray-400 text-xs font-bold">
-                                      ✓
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* ===== REPLY ===== */}
-      <div className="bg-white">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center">
-            <Image
-              src="/arrow-left.png"
-              alt="Back"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <span className="text-gray-700">To {recipientName}</span>
-          </div>
-        </div>
-
-        {!isEditing ? (
-          <div className="p-4">
-            <div
-              className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-              onClick={handleReplyClick}
+                setEditingMessageId(null);
+                setEditingMessageOriginalContent("");
+                setSelectedMessageId(null);
+              }}
+              className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
             >
-              {hasDraftContent ? "Continue draft..." : "Reply to the letter..."}
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 relative" style={{ height: "40vh" }}>
-            <textarea
-              ref={textAreaRef}
-              className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
-              placeholder={
-                editingMessageId ? "Edit your message..." : "Write your message..."
-              }
-              value={messageContent}
-              onChange={handleMessageChange}
-            />
+              {/* Keep banner height consistent while editing */}
+              Cancel
+            </button>
           </div>
         )}
-      </div>
 
-      {/* ===== POPUPS ===== */}
-      {showCloseDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-          <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
-            <h2 className="text-xl font-semibold mb-1 text-black">
-              {editingMessageId ? "Discard changes?" : "Close this message?"}
-            </h2>
-            <p className="text-gray-600 mb-6 text-sm">
-              {editingMessageId
-                ? "Your changes will not be saved."
-                : "Your message will be saved as a draft."}
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleContinueEditing}
-                className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
-              >
-                Stay on page
-              </button>
-              <button
-                onClick={handleConfirmClose}
-                className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
-              >
-                {editingMessageId ? "Discard" : "Close"}
-              </button>
+        {/* ===== MESSAGES ===== */}
+        <div className="flex-1 overflow-y-auto bg-gray-100">
+          {allMessages.map((message, index) => {
+            const messageId = message.id;
+            const isSelected = selectedMessageId === messageId;
+            const isSenderUser = message.sent_by?.id === user?.uid;
+            const location = getSenderLocation(message);
+
+            return (
+              <div key={messageId}>
+                <div
+                  className={`border-b border-gray-200 ${
+                    isSelected ? "bg-white" : "bg-gray-50"
+                  } ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                >
+                  <div
+                    className="px-4 py-3"
+                    onClick={() => selectMessage(messageId)}
+                  >
+                    <div className="flex items-center">
+                      <div className="shrink-0">
+                        <ProfileImage
+                          photo_uri={
+                            isSenderUser
+                              ? profileImage
+                              : recipients[0]?.photo_uri
+                          }
+                          name={isSenderUser ? "Me" : recipients[0]?.first_name}
+                          size={12}
+                        />
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <span className="font-bold text-black">
+                            {isSenderUser
+                              ? "Me"
+                              : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                          </span>
+                          {location && (
+                            <span className="text-black ml-2 text-sm">
+                              {location}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-gray-800">
+                          {isSelected ? "" : truncateMessage(message.content)}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="text-gray-500 text-sm">
+                          {formatTimestamp(message.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="px-4 pb-3">
+                      <div className="ml-16 relative">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div className="flex items-center justify-end w-full">
+                          {!isSenderUser && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReportSender(message.sent_by?.id);
+                                setReportContent(message.content);
+                                setShowReportPopup(true);
+                                logButtonEvent(
+                                  "Report message clicked!",
+                                  "/letters/[id]",
+                                );
+                              }}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                            >
+                              <FaExclamationCircle className="mr-1" size={10} />
+                              Report
+                            </button>
+                          )}
+
+                          {/* STATUS BANNER */}
+                          {isSenderUser && (
+                            <>
+                              {/* REJECTED */}
+                              {isSenderUser &&
+                                message.status === "rejected" && (
+                                  <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-2">
+                                    <div className="flex items-start text-red-700 font-semibold">
+                                      <AlertTriangle className="w-5 h-5 mr-2 mt-0.5" />
+                                      <div>
+                                        <div>
+                                          Your letter was not sent for the
+                                          following reason:
+                                        </div>
+
+                                        {message.rejection_reason && (
+                                          <div className="text-sm font-semibold mt-2">
+                                            {message.rejection_reason}
+                                          </div>
+                                        )}
+
+                                        {message.rejection_feedback && (
+                                          <div className="text-sm text-red-500 mt-1 whitespace-pre-wrap">
+                                            {message.rejection_feedback}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* APPROVED → GREEN CHECK */}
+                              {message.status === "approved" && (
+                                <span className="text-green-500 text-lg font-bold flex justify-end w-full">
+                                  ✓
+                                </span>
+                              )}
+
+                              {/* PENDING REVIEW → GRAY DASHED CHECK */}
+                              {message.status === "pending_review" && (
+                                <div className="flex items-center justify-end w-full">
+                                  {/* Wrapper so the check can stick to the button */}
+                                  <div className="relative inline-flex">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+
+                                        handleEditMessage(message);
+                                        logButtonEvent(
+                                          "Edit message clicked!",
+                                          "/letters/[id]",
+                                        );
+                                      }}
+                                      className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
+                                      title="Edit message"
+                                    >
+                                      Edit
+                                    </button>
+
+                                    {/* Check badge in bottom-right of the button */}
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-400 border-dashed flex items-center justify-center">
+                                      <span className="text-gray-400 text-xs font-bold">
+                                        ✓
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* ===== REPLY ===== */}
+        <div className="bg-white">
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center">
+              <Image
+                src="/arrow-left.png"
+                alt="Back"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
+              <span className="text-gray-700">To {recipientName}</span>
             </div>
           </div>
+
+          {!isEditing ? (
+            <div className="p-4">
+              <div
+                className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
+                onClick={handleReplyClick}
+              >
+                {hasDraftContent
+                  ? "Continue draft..."
+                  : "Reply to the letter..."}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 relative" style={{ height: "40vh" }}>
+              <textarea
+                ref={textAreaRef}
+                className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
+                placeholder={
+                  editingMessageId
+                    ? "Edit your message..."
+                    : "Write your message..."
+                }
+                value={messageContent}
+                onChange={handleMessageChange}
+              />
+            </div>
+          )}
         </div>
-      )}
 
-      {showReportPopup && (
-        <ReportPopup
-          setShowPopup={setShowReportPopup}
-          setShowConfirmReportPopup={setShowConfirmReportPopup}
-          sender={reportSender}
-          content={reportContent}
-        />
-      )}
+        {/* ===== POPUPS ===== */}
+        {showCloseDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
+              <h2 className="text-xl font-semibold mb-1 text-black">
+                {editingMessageId ? "Discard changes?" : "Close this message?"}
+              </h2>
+              <p className="text-gray-600 mb-6 text-sm">
+                {editingMessageId
+                  ? "Your changes will not be saved."
+                  : "Your message will be saved as a draft."}
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleContinueEditing}
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
+                >
+                  Stay on page
+                </button>
+                <button
+                  onClick={handleConfirmClose}
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
+                >
+                  {editingMessageId ? "Discard" : "Close"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {showConfirmReportPopup && (
-        <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
-      )}
-    </PageContainer>
-  </PageBackground>
-);
+        {showReportPopup && (
+          <ReportPopup
+            setShowPopup={setShowReportPopup}
+            setShowConfirmReportPopup={setShowConfirmReportPopup}
+            sender={reportSender}
+            content={reportContent}
+          />
+        )}
+
+        {showConfirmReportPopup && (
+          <ConfirmReportPopup setShowPopup={setShowConfirmReportPopup} />
+        )}
+      </PageContainer>
+    </PageBackground>
+  );
 }

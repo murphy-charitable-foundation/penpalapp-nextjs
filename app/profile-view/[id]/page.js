@@ -140,7 +140,7 @@ return (
           <div className="space-y-8 pl-4">
 
             <ProfileSection title="Personal Information">
-              {(userType == "child" || userType == "local_volunteer") && (
+              {(userType == "child") && (
                 <InfoDisplay title="Village" info={village} />
               )}
               <InfoDisplay title="Pronouns" info={pronouns} />
@@ -148,13 +148,10 @@ return (
             </ProfileSection>
             {userType !== 'admin' && (
               <>
-                <ProfileSection title={`Education ${(userType == "child" || userType == "local_volunteer") ? "& Family": ""}`}>
-                  <InfoDisplay
-                    title="Education Level"
-                    info={educationLevel}
-                  />
-                  {(userType == "child" || userType == "local_volunteer") && (
+                <ProfileSection title="Education & Family">
+                  {(userType == "child") && (
                     <>
+                      <InfoDisplay title="Education Level" info={educationLevel} />
                       <InfoDisplay title="Guardian" info={guardian} />
                       <InfoDisplay title="Is Orphan" info={isOrphan} />
                     </>
@@ -171,7 +168,7 @@ return (
                       <InfoDisplay title="Last Online" info={lastOnline} />
                     </>
                   )}
-                  {(userType == "child" || userType == "local_volunteer") && (
+                  {(userType == "child") && (
                     <>
                       <InfoDisplay title="Dream Job" info={dreamJob} />
                       <InfoDisplay title="Favorite Color" info={favoriteColor} />                

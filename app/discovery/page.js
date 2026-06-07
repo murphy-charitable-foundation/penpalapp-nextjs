@@ -22,7 +22,7 @@ import PageBackground from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import FilterPanel from "../../components/discovery/FilterPanel";
-import Header from "../../components/general/Header";
+import DiscoveryHeader from "../../components/discovery/DiscoveryHeader";
 import NavBar from "../../components/bottom-nav-bar";
 import KidsList from "../../components/discovery/KidsList";
 
@@ -255,21 +255,34 @@ export default function ChooseKid() {
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
           <PageHeader title="Discovery" image={false} showBackButton />
-          <Header activeFilter={filtersOpen} setActiveFilter={setFiltersOpen} />
+
+          <DiscoveryHeader
+            activeFilter={filtersOpen}
+            setActiveFilter={setFiltersOpen}
+          />
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {error && <div className="text-red-600 mb-3">{error}</div>}
 
-            <KidsList
-              kids={kids}
-              calculateAge={calculateAge}
-              loadMoreKids={loadMoreKids}
-              lastKidDoc={lastKidDoc}
-              loading={loading}
-              showEmpty={!initialLoad}
-              onClearFilters={handleClearFilters}
-              onEditFilters={() => setFiltersOpen(true)}
-            />
+            {filtersOpen ? (
+              <FilterPanel
+                open={filtersOpen}
+                initial={{ age, pronouns, hobbies }}
+                onApply={handleApplyFilters}
+                onClose={() => setFiltersOpen(false)}
+              />
+            ) : (
+              <KidsList
+                kids={kids}
+                calculateAge={calculateAge}
+                loadMoreKids={loadMoreKids}
+                lastKidDoc={lastKidDoc}
+                loading={loading}
+                showEmpty={!initialLoad}
+                onClearFilters={handleClearFilters}
+                onEditFilters={() => setFiltersOpen(true)}
+              />
+            )}
           </div>
 
           <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
@@ -277,13 +290,6 @@ export default function ChooseKid() {
           </div>
         </PageContainer>
       </div>
-
-      <FilterPanel
-        open={filtersOpen}
-        initial={{ age, pronouns, hobbies }}
-        onApply={handleApplyFilters}
-        onClose={() => setFiltersOpen(false)}
-      />
     </PageBackground>
   );
 }

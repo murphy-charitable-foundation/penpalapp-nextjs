@@ -11,7 +11,7 @@ export default function Input({
   label,
 }) {
   return (
-    <div className="relative">
+    <div className="relative px-6">
       {label && (
         <label
           htmlFor={id}
