@@ -9,7 +9,7 @@ import { NavigationProvider } from "../contexts/NavigationContext";
 import { CachedUserLoginsProvider } from "./contexts/CachedUserLoginContext";
 import { InactivityProvider } from "./contexts/InactivityContext";
 import { DormantLetterboxProvider } from "../contexts/DormantLetterboxContext";
-import ServiceWorkerHandler from "@/components/ServiceWorkerHandler";
+import OfflineServiceWorkerHandler from "../components/OfflineServiceWorkerHandler";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,8 +30,7 @@ export default function RootLayout({ children }) {
       </head>
 
       <body className={inter.className}>
-        <ServiceWorkerHandler />
-
+        <OfflineServiceWorkerHandler />
         <CachedUserLoginsProvider>
           <UserProvider>
             <InactivityProvider>
