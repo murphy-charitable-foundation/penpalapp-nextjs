@@ -823,7 +823,7 @@ export default function Page({ params }) {
 
             const sentMessagesQuery = query(
               lRef,
-              where("status", "==", "sent"),
+              where("status", "==", "approved"),
               orderBy("created_at", "asc")
             );
 
