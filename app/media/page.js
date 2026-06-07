@@ -19,64 +19,7 @@ export default function LocalDownload() {
   const [audioContent, setAudioContent] = useState("");
   const [videoContent, setVideoContent] = useState("");
   const [imgContent, setImgContent] = useState("");
-  const [isCompressing, setIsCompressing] = useState(false);
 
-  /**
-   *  Unused at the moment 
-   */
-  /*
-  async function handleFileChange(e) {
-    const input = e.target;
-    const file = input.files?.[0];
-
-    if (!file) {
-      input.value = "";
-      return;
-    }
-
-    const MAX_SIZE = 500 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      alert("文件过大，请选择小于 500MB 的文件");
-      input.value = "";
-      return;
-    }
-
-    if (isCompressing) return;
-    setIsCompressing(true);
-    setProgress(0);
-
-    console.log("Start compressing:", file.name);
-
-    let compressedBlob;
-    try {
-      compressedBlob = await compressMedia(file, (p) =>
-        setProgress(Math.round(p * 100)),
-      );
-    } catch (error) {
-      console.error("压缩失败:", error);
-      alert("压缩失败，请重试");
-      setProgress(0);
-      setIsCompressing(false);
-      input.value = "";
-      return;
-    }
-
-    console.log("compressed: ready for downloading");
-
-    const url = URL.createObjectURL(compressedBlob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `compressed_${file.name}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    URL.revokeObjectURL(url);
-    input.value = "";
-    setProgress(0);
-    setIsCompressing(false);
-  }
-  */
 
   const handleRequireLogin = () => {
     const shouldLogin = confirm(
