@@ -19,7 +19,12 @@ export default function LocalDownload() {
   const [audioContent, setAudioContent] = useState("");
   const [videoContent, setVideoContent] = useState("");
   const [imgContent, setImgContent] = useState("");
+  const [isCompressing, setIsCompressing] = useState(false);
 
+  /**
+   *  Unused at the moment 
+   */
+  /*
   async function handleFileChange(e) {
     const input = e.target;
     const file = input.files?.[0];
@@ -71,6 +76,7 @@ export default function LocalDownload() {
     setProgress(0);
     setIsCompressing(false);
   }
+  */
 
   const handleRequireLogin = () => {
     const shouldLogin = confirm(

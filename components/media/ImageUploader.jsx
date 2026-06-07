@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useRef, useEffect } from "react";
 import { Loader2, Image as ImageIcon, X, Send } from "lucide-react";
 import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";

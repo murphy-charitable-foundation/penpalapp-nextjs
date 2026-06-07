@@ -37,12 +37,15 @@ export async function compressMedia(
     throw new Error("FFmpeg instance failed to load.");
   }
 
+  let progressCallback = null;
+
   if (onProgress) {
-    ffmpeg.on("progress", ({ progress }) => {
+    progressCallback = ({ progress }) => {
       if (progress >= 0 && progress <= 1) {
         onProgress(progress);
       }
-    });
+    };
+    ffmpeg.on("progress", progressCallback);
   }
 
   const inputName = file.name;
@@ -122,8 +125,8 @@ export async function compressMedia(
   await ffmpeg.deleteFile(inputName);
   await ffmpeg.deleteFile(outputName);
 
-  if (onProgress) {
-    ffmpeg.off("progress");
+  if (progressCallback) {
+    ffmpeg.off("progress", progressCallback);
   }
 
   return new Blob([data.buffer], {
