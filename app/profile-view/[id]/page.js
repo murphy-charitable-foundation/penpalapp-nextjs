@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../../firebaseConfig";
 import { useUser } from "../../../contexts/UserContext";
 import { logButtonEvent } from "../../utils/analytics";
 
