@@ -60,6 +60,7 @@ export default function ChooseAccountPage() {
     try {
       const userCredential =await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
       setSelectedUser(null);
+      setIsLoading(true);
       setPasswordInput("");
       setIsLoading(true);
 
@@ -163,6 +164,7 @@ export default function ChooseAccountPage() {
           title="Choose Account"
           subtitle="Select a profile to sign in"
           showBorder={false}
+          backHref="/"
         />
 
         <div className="grid grid-cols-2 gap-4 px-6 mt-3">

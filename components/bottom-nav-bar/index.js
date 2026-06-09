@@ -13,8 +13,7 @@ import {
   FaBars,
   FaSignOutAlt,
 } from "react-icons/fa";
-import Link from "next/link";
-import { collection, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 import { auth, db } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
@@ -114,7 +113,6 @@ export default function NavBar() {
       ref={containerRef}
       className="w-full bg-blue-100 px-4 py-3 flex justify-around items-center text-zinc-900 border-t rounded-b-2xl shadow-md"
     >
-      {/* Inbox */}
       <button
         onClick={() => handleNavigation("/inbox")}
         className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"

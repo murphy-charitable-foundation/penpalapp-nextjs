@@ -16,12 +16,14 @@ const ReportPopup = ({
   async function handleButtonClick(content) {
     try {
       const excerpt = content.length > 100 ? content.substring(0, 100) + "..." : content;
+      const token = await auth.currentUser.getIdToken(true);
       const receiver_email = auth.currentUser.email;
       const currentUrl = `${window.location.origin}${window.location.pathname}`;
       const response = await fetch("/api/report", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ receiver_email, currentUrl, sender, excerpt }), // Send data as JSON
       });

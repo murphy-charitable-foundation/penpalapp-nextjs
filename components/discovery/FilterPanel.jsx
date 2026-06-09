@@ -5,24 +5,24 @@ import KidFilter from "../discovery/KidFilter";
 
 export default function FilterPanel({
   open,
-  initial,
+  initial, // { age, pronouns, hobbies }
   onApply,
   onClose,
 }) {
   const [hobbies, setHobbies] = useState([]);
   const [age, setAge] = useState(null);
-  const [gender, setGender] = useState("");
+  const [pronouns, setPronouns] = useState("");
 
   useEffect(() => {
     setHobbies(initial?.hobbies || []);
     setAge(initial?.age ?? null);
-    setGender(initial?.gender || "");
+    setPronouns(initial?.pronouns || "");
   }, [initial, open]);
 
   const handleApplyFromKidFilter = (payload) => {
     onApply?.({
       age: payload?.age ?? null,
-      gender: payload?.gender ?? "",
+      pronouns: payload?.pronouns ?? "",
       hobbies: payload?.hobbies ?? [],
     });
   };
@@ -33,13 +33,8 @@ export default function FilterPanel({
     <div className="mx-auto w-full max-w-[520px] rounded-2xl border border-gray-200 bg-white px-5 py-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">
-            Filters
-          </h2>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Refine the list of kids
-          </p>
+          <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+          <p className="mt-1 text-sm text-gray-500">Refine the list of kids</p>
         </div>
 
         <button
@@ -58,8 +53,8 @@ export default function FilterPanel({
           setHobbies={setHobbies}
           age={age}
           setAge={setAge}
-          gender={gender}
-          setGender={setGender}
+          pronouns={pronouns}
+          setPronouns={setPronouns}
           filter={handleApplyFromKidFilter}
         />
       </div>

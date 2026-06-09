@@ -26,7 +26,12 @@ export default function Login() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const router = useRouter();
-  const { hydrated, addCachedUserLogin, cachedUserLogins, clearAllCachedUserLogins } = useCachedUserLogins();
+  const {
+    hydrated,
+    addCachedUserLogin,
+    cachedUserLogins,
+    clearCachedUserLogins,
+  } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
   usePageAnalytics(`/login`);
@@ -124,6 +129,7 @@ export default function Login() {
 
   const handleForgotPassword = () => {
     startNavigationSpinner();
+    clearCachedUserLogins();
     router.push("/reset-password");
   };
 
@@ -140,7 +146,7 @@ export default function Login() {
   return (
     <PageBackground>
       <PageContainer maxWidth="md" padding="p-8">
-        <PageHeader title="Login" />
+        <PageHeader title="Login" backHref="/" />
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input

@@ -54,7 +54,7 @@ export default function Contact() {
           center={false}
           className="min-h-[100dvh] flex flex-col bg-[#F7F9FC] rounded-2xl shadow-lg overflow-hidden"
         >
-          <PageHeader title="Contact Us" image={false} showBackButton />
+          <PageHeader title="Contact Us" image={false} showBackButton backHref="/inbox" />
 
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pt-10 pb-8">
             <div className="mb-8 flex justify-center">
