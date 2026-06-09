@@ -511,7 +511,7 @@ export default function Page({ params }) {
   };
 
   const sendMediaMessage = async ({ mediaUrl, mediaType, caption = "" }) => {
-    if (!user?.uid || !lettersRef) {
+    if (!user?.uid || !messagesRef) {
       alert("Unable to send media. Please refresh and try again.");
       return;
     }
@@ -519,11 +519,11 @@ export default function Page({ params }) {
     setIsSending(true);
 
     try {
-      const letterUserRef = userRef || doc(db, "users", user.uid);
+      const messageUserRef = userRef || doc(db, "users", user.uid);
       const currentTime = new Date();
 
       const messageData = {
-        sent_by: letterUserRef,
+        sent_by: messageUserRef,
         content:
           caption ||
           (mediaType === "image"
@@ -540,11 +540,11 @@ export default function Page({ params }) {
         media_type: mediaType,
       };
 
-      const messageRef = doc(lettersRef);
+      const messageRef = doc(messagesRef);
       await setDoc(messageRef, messageData);
 
-      if (globalLetterboxReference) {
-        sendNotification(globalLetterboxReference, "").catch((error) => {
+      if (globalConversationReference) {
+        sendNotification(globalConversationReference, "").catch((error) => {
           console.error("Failed to send media notification:", error);
         });
       }
