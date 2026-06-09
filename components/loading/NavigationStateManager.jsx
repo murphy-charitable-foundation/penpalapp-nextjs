@@ -1,116 +1,152 @@
-// components/NavigationStateManager.jsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import LoadingSpinner from '../loading/LoadingSpinner';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import LoadingSpinner from "../loading/LoadingSpinner";
 
 export default function NavigationStateManager() {
+  // Current route and query parameters
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Use refs to avoid stale closures in event handlers
-  const currentUrlRef = useRef();
-  const navigationStartTimeRef = useRef(null);
+  // Controls spinner visibility
+  const [showSpinner, setShowSpinner] = useState(false);
 
-  // Update current URL ref when pathname/searchParams change
-  useEffect(() => {
-    currentUrlRef.current = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-  }, [pathname, searchParams]);
+  // Tracks the current URL to detect completed navigations
+  const currentUrlRef = useRef("");
+  const mountedRef = useRef(false);
 
-  // Memoized navigation handler to prevent recreating on every render
-  const handleNavigationStart = useCallback(() => {
-    // Prevent multiple simultaneous navigations
-    if (isNavigating) return;
-    
-    // Record navigation start time
-    navigationStartTimeRef.current = Date.now();
-    
-    // Use setTimeout to defer state update to next tick
-    setTimeout(() => {
-      setIsNavigating(true);
-    }, 0);
-  }, [isNavigating]);
+  // Records when navigation starts for timing calculations
+  const startTimeRef = useRef(0);
 
-    
-  useEffect(() => {
-    // Add event listeners for link clicks
-    const handleLinkClick = (e) => {
-      const target = e.target.closest('a');
-      if (
-        target && 
-        target.href && 
-        target.href.startsWith(window.location.origin) && 
-        !target.target && 
-        !e.ctrlKey && 
-        !e.metaKey && 
-        !e.shiftKey
-      ) {
-        const url = new URL(target.href);
-        const targetPath = url.pathname + url.search;
+  // Single timer used to control spinner visibility
+  const hideTimerRef = useRef(null);
 
-        if (targetPath !== currentUrlRef.current) {
-          handleNavigationStart();
-        }
-      }
-    };
+  // Timing configuration for smoother navigation UX
+  const MIN_DISPLAY_TIME = 450; // Minimum spinner display time
+  const POST_ROUTE_HOLD_TIME = 500; // Additional delay after route completion
+  const MAX_DISPLAY_TIME = 5000; // Safety timeout to prevent stuck spinner
 
-    // Intercept programmatic navigation
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function(state, unused, url) {
-      if (url && url !== currentUrlRef.current) {
-        handleNavigationStart(url);
-      }
-      return originalPushState.apply(this, arguments);
-    };
-
-    window.history.replaceState = function(state, unused, url) {
-      if (url && url !== currentUrlRef.current) {
-        handleNavigationStart(url);
-      }
-      return originalReplaceState.apply(this, arguments);
-    };
-
-    // Handle browser back/forward
-    const handlePopState = () => handleNavigationStart();
-
-    // Handle browser back/forward
-    window.addEventListener('popstate', () => handlePopState);
-    // Add click listener for all links
-    document.addEventListener('click', handleLinkClick);
-
-    // Clean up function
-    return () => {
-      document.removeEventListener('click', handleLinkClick);
-      window.removeEventListener('popstate', handleNavigationStart);
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-    };
-  }, [handleNavigationStart]);
-
-  // When pathname or searchParams change, navigation is complete
-  useEffect(() => {
-    if (isNavigating && navigationStartTimeRef.current) {
-      const elapsedTime = Date.now() - navigationStartTimeRef.current;
-      const minDisplayTime = 1000; // 1 second minimum
-      const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
-      
-      const timer = setTimeout(() => {
-        setIsNavigating(false);
-        navigationStartTimeRef.current = null;
-      }, remainingTime);
-      
-      return () => clearTimeout(timer);
+  // Clears any active timer before creating a new one
+  const clearTimers = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
     }
-  }, [pathname, searchParams, isNavigating]);
-   
-  return (
-    <>
-      {isNavigating && <LoadingSpinner />}
-    </>
-  );
+  }, []);
 
+  // Hides the spinner
+  const hideSpinner = useCallback(() => {
+    setShowSpinner(false);
+  }, []);
+
+  // Starts navigation loading state
+  const startNavigation = useCallback(() => {
+    clearTimers();
+
+    startTimeRef.current = Date.now();
+    setShowSpinner(true);
+
+    // Fallback timeout in case navigation never completes
+    hideTimerRef.current = setTimeout(() => {
+      hideSpinner();
+    }, MAX_DISPLAY_TIME);
+  }, [clearTimers, hideSpinner]);
+
+  // Completes navigation and ensures smooth spinner timing
+  const finishNavigation = useCallback(() => {
+    clearTimers();
+
+    const elapsed = Date.now() - startTimeRef.current;
+    const remainingMinTime = Math.max(0, MIN_DISPLAY_TIME - elapsed);
+
+    hideTimerRef.current = setTimeout(() => {
+      hideSpinner();
+    }, remainingMinTime + POST_ROUTE_HOLD_TIME);
+  }, [clearTimers, hideSpinner]);
+
+  // Detects route changes and treats them as navigation completion
+  useEffect(() => {
+    const qs = searchParams?.toString() || "";
+    const newUrl = pathname + (qs ? `?${qs}` : "");
+
+    // Skip initial render
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      currentUrlRef.current = newUrl;
+      return;
+    }
+
+    // Route change detected
+    if (newUrl !== currentUrlRef.current) {
+      currentUrlRef.current = newUrl;
+      finishNavigation();
+    }
+  }, [pathname, searchParams, finishNavigation]);
+
+  // Handles navigation triggered by internal links
+  useEffect(() => {
+    const handleLinkClick = (event) => {
+      const anchor = event.target.closest("a");
+
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+
+      if (!href) return;
+      if (href.startsWith("http")) return;
+      if (href.startsWith("#")) return;
+
+      // Ignore modified clicks and new tab actions
+      if (
+        anchor.target === "_blank" ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const currentUrl =
+        window.location.pathname + window.location.search;
+
+      // Ignore navigation to the current page
+      if (href === currentUrl || href === window.location.pathname) return;
+
+      startNavigation();
+    };
+
+    document.addEventListener("click", handleLinkClick);
+
+    return () => {
+      document.removeEventListener("click", handleLinkClick);
+    };
+  }, [startNavigation]);
+
+  // Handles browser navigation and manual navigation events
+  useEffect(() => {
+    const handleManualStart = () => {
+      startNavigation();
+    };
+
+    const handlePopState = () => {
+      startNavigation();
+    };
+
+    window.addEventListener("app:navigation-start", handleManualStart);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("app:navigation-start", handleManualStart);
+      window.removeEventListener("popstate", handlePopState);
+      clearTimers();
+    };
+  }, [startNavigation, clearTimers]);
+
+  // Nothing to render when spinner is hidden
+  if (!showSpinner) return null;
+
+  // Render full-screen loading spinner
+  return <LoadingSpinner />;
 }
