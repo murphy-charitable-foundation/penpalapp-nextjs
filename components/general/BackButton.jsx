@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 
 export function BackButton({
   onBack,
+  backHref = null,
   size = "sm",
   className = "",
 }) {
@@ -13,9 +14,19 @@ export function BackButton({
   const handleClick = () => {
     if (onBack) {
       onBack();
-      return;
     }
-    router.back();
+    if (typeof backHref === "string") {
+      if (backHref.startsWith("/")) {
+        router.replace(backHref);
+      } else {
+        logError(new Error("backHref must start with '/'"), { backHref });
+        router.back();
+      }
+    } else if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.replace("/");
+    }
   };
 
   return (

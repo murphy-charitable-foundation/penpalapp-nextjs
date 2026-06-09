@@ -15,11 +15,14 @@ const BRAND = {
 export default function KidCard({ kid, calculateAge }) {
   const imgSrc = kid?.photoURL || "/usericon.png";
 
-  const hobbies = Array.isArray(kid?.hobby)
-    ? kid.hobby
-    : typeof kid?.hobby === "string" && kid.hobby.trim()
-    ? [kid.hobby.trim()]
+  const hobbyData = kid?.hobbies ?? kid?.hobby;
+  const hobbies = Array.isArray(hobbyData)
+    ? hobbyData
+    : typeof hobbyData === "string" && hobbyData.trim()
+    ? [hobbyData.trim()]
     : [];
+
+  const age = calculateAge(kid?.birthday);
 
   return (
     <div
@@ -46,9 +49,14 @@ export default function KidCard({ kid, calculateAge }) {
         {kid?.first_name} {kid?.last_name}
       </h2>
 
-      <p className="text-xs mb-2 text-center" style={{ color: BRAND.subtext }}>
-        {calculateAge(kid?.birthday)} years old
-      </p>
+      {age != null && (
+        <p
+          className="text-xs mb-2 text-center"
+          style={{ color: BRAND.subtext }}
+        >
+          {age} years old
+        </p>
+      )}
 
       {kid?.bio && (
         <p

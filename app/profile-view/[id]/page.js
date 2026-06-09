@@ -73,6 +73,13 @@ export default function Page({ params }) {
     fetchUserData();
   }, [id]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) router.push("/login");
+    });
+    return () => unsubscribe();
+  }, [router]);
+
 return (
     <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <div className="flex-1 min-h-0 flex justify-center">
@@ -84,7 +91,7 @@ return (
         className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
       >
         {/* ===== HEADER ===== */}
-        <PageHeader title="View Profile" image={false} />
+        <PageHeader title="View Profile" image={false} backHref="/inbox" />
 
         {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">
