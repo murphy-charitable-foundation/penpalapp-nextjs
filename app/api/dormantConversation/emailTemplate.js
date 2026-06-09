@@ -1,9 +1,9 @@
-const generateDormantLetterboxEmailTemplate = ({
+const generateDormantConversationEmailTemplate = ({
     baseUrl,
     to,
     recipientName,
     message,
-    letterboxId,
+    conversationId,
   }) => {
     const emailHtml = `
           <html>
@@ -104,7 +104,7 @@ const generateDormantLetterboxEmailTemplate = ({
                 <p>${message}</p>
   
                 <div class="button-container">
-                  <a href="${baseUrl}/letters/${letterboxId}" class="button">See the message</a>
+                  <a href="${baseUrl}/conversation/${conversationId}" class="button">See the message</a>
                 </div>
   
                 <p>
@@ -126,4 +126,4 @@ const generateDormantLetterboxEmailTemplate = ({
     return emailHtml;
   };
   
-  export default generateDormantLetterboxEmailTemplate;
+  export default generateDormantConversationEmailTemplate;

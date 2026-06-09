@@ -94,7 +94,7 @@ export default function Login() {
         if (data.user_type === "admin") {
           router.push("/admin");
         } else {
-          router.push("/letterhome");
+          router.push("/inbox");
         }
       } else {
         router.replace("/create-acc");
@@ -146,7 +146,7 @@ export default function Login() {
   return (
     <PageBackground>
       <PageContainer maxWidth="md" padding="p-8">
-        <PageHeader title="Login" />
+        <PageHeader title="Login" backHref="/" />
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input

@@ -5,13 +5,13 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
 
-const MessagePreview = ({
+const ConversationPreview = ({
   profileImage,
   name,
   country,
   lastMessage,
   lastMessageDate,
-  letterboxId,
+  conversationId,
   status,
   isRecipient,
   unread = false,
@@ -30,19 +30,35 @@ const MessagePreview = ({
     router.push(`/profile-view/${id}`);
   };
 
-  // Returns the appropriate status icon based on letter status
+  // Returns the appropriate status icon based on message status
   const getStatusIcon = () => {
     if (status === "rejected") {
-      return <AlertTriangle className="text-red-500 w-6 h-6" />;
+      return (
+        <AlertTriangle
+          className="text-red-500 w-6 h-6"
+          title="Rejected"
+          aria-label="Rejected"
+        />
+      );
     }
 
     if (status === "approved") {
-      return <CheckCircle className="text-green-500 w-6 h-6" />;
+      return (
+        <CheckCircle
+          className="text-green-500 w-6 h-6"
+          title="Approved"
+          aria-label="Approved"
+        />
+      );
     }
 
     if (status === "pending_review") {
       return (
-        <div className="relative w-6 h-6">
+        <div
+          className="relative w-6 h-6"
+          title="Pending review"
+          aria-label="Pending review"
+        >
           <div className="absolute inset-0 rounded-full border border-dashed border-gray-400" />
           <CheckCircle className="absolute inset-0 m-auto w-4 h-4 text-gray-400" />
         </div>
@@ -53,8 +69,8 @@ const MessagePreview = ({
   };
 
   const rejectedText = isAdmin
-    ? "Letter was rejected"
-    : "Your letter was rejected";
+    ? "Message was rejected"
+    : "Your message was rejected";
 
   const cardContent = (
     <div
@@ -90,8 +106,14 @@ const MessagePreview = ({
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 truncate">
                 {status === "draft" && lastMessage !== "" && (
-                  <span className="text-red-500 mr-1">[Draft]</span>
-                )}
+                  <span
+                  className="text-red-500 mr-1"
+                  title="Draft"
+                  aria-label="Draft"
+                >
+                  [Draft]
+                </span>
+                        )}
                 {name}
               </div>
 
@@ -150,7 +172,7 @@ const MessagePreview = ({
     );
   }
 
-  if (!letterboxId) {
+  if (!conversationId) {
     return (
       <div className="w-full" role="button" aria-disabled="true">
         {cardContent}
@@ -158,7 +180,7 @@ const MessagePreview = ({
     );
   }
 
-  return <Link href={`/letters/${letterboxId}`}>{cardContent}</Link>;
+  return <Link href={`/conversation/${conversationId}`}>{cardContent}</Link>;
 };
 
-export default MessagePreview;
+export default ConversationPreview;

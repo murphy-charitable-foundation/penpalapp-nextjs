@@ -8,18 +8,20 @@ import { NotificationHandler } from '../components/NotificationHandler'
 import { UserProvider } from '../contexts/UserContext'
 import { NavigationProvider } from '../contexts/NavigationContext'
 import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
-import { DormantLetterboxProvider } from '../contexts/DormantLetterboxContext'
-import OfflineServiceWorkerHandler from '@/components/OfflineServiceWorkerHandler'
+import { DormantConversationProvider } from '../contexts/DormantConversationContext'
+import OfflineServiceWorkerHandler from '../components/OfflineServiceWorkerHandler'
+import { InactivityProvider } from "./contexts/InactivityContext"
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: {
-    default: 'Pen Pal Magic App',
-    template: '%s | Pen Pal Magic App',
+    default: "Pen Pal Magic App",
+    template: "%s | Pen Pal Magic App",
   },
-  description: 'To connect 2000 rural Ugandan Children to the World',
-}
+  description:
+    "To connect 2000 rural Ugandan Children to the World",
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -27,20 +29,23 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
+
       <body className={inter.className}>
         <OfflineServiceWorkerHandler />
         <CachedUserLoginsProvider>
           <UserProvider>
-            <DormantLetterboxProvider>
-              <NotificationHandler>
-                <NavigationProvider>
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <NavigationStateManager />
-                    {children}
-                  </Suspense>
-                </NavigationProvider>
-              </NotificationHandler>
-            </DormantLetterboxProvider>
+            <InactivityProvider>
+              <DormantConversationProvider>
+                <NotificationHandler>
+                  <NavigationProvider>
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <NavigationStateManager />
+                      {children}
+                    </Suspense>
+                  </NavigationProvider>
+                </NotificationHandler>
+              </DormantConversationProvider>
+            </InactivityProvider>
           </UserProvider>
         </CachedUserLoginsProvider>
       </body>

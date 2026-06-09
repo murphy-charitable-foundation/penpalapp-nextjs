@@ -5,29 +5,17 @@ import { getFirestore } from "firebase-admin/firestore";
 // --- REQUIRED ENV VARS ---
 const requiredEnvVars = [
   "FIREBASE_CONFIG",
-  "FIREBASE_PRIVATE_KEY",
-  "FIREBASE_CLIENT_EMAIL"
+  "FIREBASE_SERVICE_ACCOUNT_JSON"
 ];
 
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 const envError = missingVars.length > 0
   ? `Missing Firebase env vars: ${missingVars.join(", ")}`
   : null;
-const FIREBASE_PROJECT_ID = envError
-  ? null
-  : JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
-if (!FIREBASE_PROJECT_ID) {
-  console.log("error retrieving project id");
-}
 // Initialize only if no env errors
 if (!envError && !admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    }),
-    databaseURL: `https://${FIREBASE_PROJECT_ID}.firebaseio.com`,
+    credential: admin.credential.cert( JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) )
   });
 }
 
@@ -37,7 +25,7 @@ const db = !envError ? getFirestore() : null;
  * Verify user belongs in conversation
  */
 async function isInConversation(senderUid, conversationId) {
-  const convoRef = db.collection("letterbox").doc(conversationId);
+  const convoRef = db.collection("conversations").doc(conversationId);
   const convoSnap = await convoRef.get();
   if (!convoSnap.exists) return false;
 
@@ -48,7 +36,7 @@ async function isInConversation(senderUid, conversationId) {
  * Fetch all tokens for all users in the same "device group"
  */
 async function getConversationTokens(conversationId, senderUid) {
-  const convoRef = db.collection("letterbox").doc(conversationId);
+  const convoRef = db.collection("conversations").doc(conversationId);
   const convoSnap = await convoRef.get();
   if (!convoSnap.exists) return [];
 
@@ -124,7 +112,7 @@ export async function POST(req) {
       admin.messaging().send({
         token,
         notification: {
-          title: "New Letterbox Message",
+          title: "New Conversation Message",
           body: message || `New message for ${name}`,
         },
       })

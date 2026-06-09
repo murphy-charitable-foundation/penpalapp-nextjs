@@ -1,7 +1,7 @@
 import { db } from "../firebaseAdmin";
 import nodemailer from "nodemailer";
 import { logError } from "./analytics";
-import generateDormantLetterboxEmailTemplate from "../api/dormantLetterBox/emailTemplate";
+import generateDormantConversationEmailTemplate from "../api/dormantConversation/emailTemplate";
 
 
 const transporter = nodemailer.createTransport({
@@ -24,14 +24,14 @@ const formatListWithAnd = (arr) => {
   return `${allButLast}, & ${last}`;
 };
 
-export const sendEmail = async (letterboxId, members, toEmails, reason) => {
+export const sendEmail = async (conversationId, members, toEmails, reason) => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   let message;
   const membersNames = members.map(({ firstName = "", lastName = "" }) =>
     [firstName, lastName].filter((s) => s !== "").join(" ")
   );
   if (reason === "admin") {
-    message = `It seems that a chat in a letterbox with the id: ${letterboxId}, involving the user/s: [${formatListWithAnd(
+    message = `It seems that a chat in a conversation with the id: ${conversationId}, involving the user/s: [${formatListWithAnd(
       membersNames
     )}] has stalled because the user/s with the email/s: [${formatListWithAnd(
       toEmails
@@ -48,12 +48,12 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
-      html: generateDormantLetterboxEmailTemplate({
+      html: generateDormantConversationEmailTemplate({
         baseUrl,
         to: "Richard",
         recipientName: "Richard",
         message,
-        letterboxId,
+        conversationId,
       }),
     };
   } else {
@@ -62,12 +62,12 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       from: process.env.PENPAL_EMAIL, // Your verified sender email
       subject: "Message Reported",
       text: message || "No message provided.",
-      html: generateDormantLetterboxEmailTemplate({
+      html: generateDormantConversationEmailTemplate({
         baseUrl,
         to: formatListWithAnd(membersNames),
         recipientName: formatListWithAnd(membersNames),
         message,
-        letterboxId,
+        conversationId,
       }),
     };
   }
@@ -79,8 +79,8 @@ export const sendEmail = async (letterboxId, members, toEmails, reason) => {
       const fieldToUpdate =
         reason === "admin" ? "admin_reminded_at" : "user_reminded_at";
       await db
-        .collection("letterbox")
-        .doc(letterboxId)
+        .collection("conversations")
+        .doc(conversationId)
         .set(
           {
             [fieldToUpdate]: new Date(),

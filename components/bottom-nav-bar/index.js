@@ -13,8 +13,7 @@ import {
   FaBars,
   FaSignOutAlt,
 } from "react-icons/fa";
-import Link from "next/link";
-import { collection, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 import { auth, db } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
@@ -115,11 +114,11 @@ export default function NavBar() {
       className="w-full bg-blue-100 px-4 py-3 flex justify-around items-center text-zinc-900 border-t rounded-b-2xl shadow-md"
     >
       <button
-        onClick={() => handleNavigation("/letterhome")}
+        onClick={() => handleNavigation("/inbox")}
         className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
       >
         <FaInbox className="h-4 w-4" />
-        <span className="text-sm">Letterhome</span>
+        <span className="text-sm">Inbox</span>
       </button>
 
       {userType !== "child" && (

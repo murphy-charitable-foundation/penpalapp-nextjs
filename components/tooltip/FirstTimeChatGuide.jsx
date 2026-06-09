@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import styles from "./Tooltip.module.css";
 
 export default function FirstTimeChatGuide({
@@ -12,7 +12,7 @@ export default function FirstTimeChatGuide({
   const [currentStep, setCurrentStep] = useState(0);
   const tooltipRef = useRef(null);
   const [buttonHighlight, setButtonHighlight] = useState(false);
-  const defaultTemplate = `Dear ${recipient?.[0]?.first_name} ${recipient?.[0]?.last_name},
+  const defaultTemplate = useMemo(() => `Dear ${recipient?.[0]?.first_name} ${recipient?.[0]?.last_name},
 
       I hope you find well in this e-mail.
       I'm writing to you today to share a little bit about my life.
@@ -22,13 +22,13 @@ export default function FirstTimeChatGuide({
       ....
 
       Thank you,
-      (enter your name)`;
+      (enter your name)`, [recipient]);
 
-  const steps = [
+  const steps = useMemo(() => [
     {
-      target: ".first-letter",
-      content: "Tap with your finger to open the letter ",
-      position: "first-letter", // @todo: change this to array?
+      target: ".first-message",
+      content: "Tap with your finger to open the message ",
+      position: "first-message", // @todo: change this to array?
       arrowDirection: "top",
       //advanceOn: 'click', // The event on the target that will advance the tour
     },
@@ -42,40 +42,56 @@ export default function FirstTimeChatGuide({
     },
     // {
     //   target: '#message-input',
-    //   content: 'Draft your response here. Here is a sample template on how to structure a letter response',
+    //   content: 'Draft your response here. Here is a sample template on how to structure a message response',
     //   position: 'typing-box',
     //   arrowDirection: 'bottom',
     //   advanceOn: 'focus',
     //   showTemplateOptions: true,
     // },
     // {
-    //   target: '.send-letter',
+    //   target: '.send-message',
     //   content: 'You can see your message now, how it is send',
-    //   position: 'send-letter',
+    //   position: 'send-message',
     //   arrowDirection: 'topRight',
     // }
     {
-      target: "#send-letter",
-      content: "When you click this button, your letter will be sent",
-      position: "send-letter",
+      target: "#send-message",
+      content: "When you click this button, your message will be sent",
+      position: "send-message",
       arrowDirection: "topRight",
     },
-  ];
+  ], []);
+
+  const completeGuide = useCallback(() => {
+    localStorage.setItem("hasSeenChatGuide", "true");
+    setShowGuide(false);
+    setButtonHighlight(false);
+  }, []);
+
+  const nextStep = useCallback(() => {
+    if (currentStep < steps.length - 1) {
+      setButtonHighlight(false);
+      setCurrentStep(currentStep + 1);
+    } else {
+      setButtonHighlight(true);
+      completeGuide();
+    }
+  }, [currentStep, steps.length, completeGuide]);
 
   useEffect(() => {
     const isGuideCompleted =
       localStorage.getItem("hasSeenChatGuide") === "true";
 
     if (!isGuideCompleted) {
-      if (page == "letterHome" || params == "/letterhome") {
+      if (page == "inbox" || params == "/inbox") {
         setShowGuide(true);
         setCurrentStep(0);
-      } else if (page == "letterDetail" || params.includes("/letters/")) {
+      } else if (page == "messageDetail" || params.includes("/conversation/")) {
         setCurrentStep(1);
         setShowGuide(true);
       }
     }
-  }, [page]);
+  }, [page, params]);
 
   useEffect(() => {
     console.log(`show guide: ${showGuide}, current step: ${currentStep}`);
@@ -83,7 +99,7 @@ export default function FirstTimeChatGuide({
       setButtonHighlight(true);
     }
     // Save current step to localStorage whenever it changes
-  }, [currentStep, showGuide]);
+  }, [currentStep, showGuide, steps.length]);
 
   useEffect(() => {
     // Set up event listeners for the current step target
@@ -133,7 +149,7 @@ export default function FirstTimeChatGuide({
 
     // Clean up event listener
     return cleanupFn;
-  }, [currentStep, showGuide]);
+  }, [currentStep, showGuide, defaultTemplate, nextStep, onUseTemplate, steps]);
 
   // Function to position tooltip relative to target element
   const positionTooltip = (targetElement, position) => {
@@ -166,7 +182,7 @@ export default function FirstTimeChatGuide({
         top = targetRect.top + tooltipRect.height;
         //left = targetRect.right + 10;
         break;
-      case "first-letter":
+      case "first-message":
         top = targetRect.bottom + "px";
         left = targetRect.left + 20 + "px";
         break;
@@ -179,7 +195,7 @@ export default function FirstTimeChatGuide({
         left = 70 + "px";
         bottom = "unset";
         break;
-      case "send-letter":
+      case "send-message":
         top = targetRect.bottom - 10 + "px";
         left = "unset";
         right = 0;
@@ -195,21 +211,12 @@ export default function FirstTimeChatGuide({
     tooltipElement.style.bottom = bottom;
   };
 
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setButtonHighlight(false);
-      setCurrentStep(currentStep + 1);
-    } else {
-      // End of guide
-      setButtonHighlight(true);
-      completeGuide();
+  const handleUseTemplate = () => {
+    if (onUseTemplate) {
+      onUseTemplate(defaultTemplate);
     }
-  };
 
-  const completeGuide = () => {
-    localStorage.setItem("hasSeenChatGuide", "true");
-    setShowGuide(false);
-    setButtonHighlight(false);
+    nextStep(); // Move to the next step after using template
   };
 
   // If not showing guide or not a first time user, don't render anything

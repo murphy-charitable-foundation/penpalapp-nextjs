@@ -30,17 +30,17 @@ import { PageContainer } from "../../components/general/PageContainer";
 import ConversationList from "../../components/general/ConversationList";
 import AdminHeader from "../../components/general/admin/AdminHeader";
 import AdminFilter from "../../components/general/admin/AdminFilter";
-import AdminLetterReview from "../../components/general/admin/AdminLetterReview";
+import AdminMessageReview from "../../components/general/admin/AdminMessageReview";
 import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
-import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
+import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
-import { useDormantLetterbox } from "../../contexts/DormantLetterboxContext";
-import { fetchRecipients } from "../utils/letterboxFunctions";
+import { useDormantConversation } from "../../contexts/DormantConversationContext";
+import { fetchRecipients } from "../utils/conversationsFunctions";
 
 export default function Admin() {
   const PAGE_SIZE = 5;
-  const { handleDormantLetterboxWorker } = useDormantLetterbox();
+  const { handleDormantConversationWorker } = useDormantConversation();
 
   const [userId, setUserId] = useState("");
   const [documents, setDocuments] = useState([]);
@@ -48,7 +48,7 @@ export default function Admin() {
   const [hasMore, setHasMore] = useState(true);
 
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isLettersLoading, setIsLettersLoading] = useState(false);
+  const [isConversationsLoading, setIsConversationsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -58,25 +58,25 @@ export default function Admin() {
   const [endDate, setEndDate] = useState(null);
 
   const [activeFilter, setActiveFilter] = useState(false);
-  const [selectedLetter, setSelectedLetter] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
   const [activeView, setActiveView] = useState("inbox");
   const [reviewAction, setReviewAction] = useState(null);
 
   const router = useRouter();
 
-  const updateLocalLetter = (id, updates) => {
+  const updateLocalMessage = (id, updates) => {
     setDocuments((prev) =>
-      prev.map((letter) =>
-        letter.id === id ? { ...letter, ...updates } : letter,
+      prev.map((message) =>
+        message.id === id ? { ...message, ...updates } : message,
       ),
     );
   };
 
-  const currentLetter =
-    (selectedLetter && documents.find((d) => d.id === selectedLetter.id)) ||
-    selectedLetter;
+  const currentMessage =
+    (selectedMessage && documents.find((d) => d.id === selectedMessage.id)) ||
+    selectedMessage;
 
-  const fetchLetters = async (nextPage = false, pageCursor = null) => {
+  const fetchConversations = async (nextPage = false, pageCursor = null) => {
     try {
       setError("");
 
@@ -98,7 +98,7 @@ export default function Admin() {
         constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
       }
 
-      const q = query(collectionGroup(db, "letters"), ...constraints);
+      const q = query(collectionGroup(db, "messages"), ...constraints);
       const snap = await getDocs(q);
 
       if (snap.empty) {
@@ -109,7 +109,7 @@ export default function Admin() {
       const newDocs = await Promise.all(
         snap.docs.map(async (d) => {
           const data = d.data();
-          const letterboxId = d.ref.parent.parent?.id || "";
+          const conversationId = d.ref.parent.parent?.id || "";
           let pfp = "/usericon.png";
 
           try {
@@ -124,12 +124,12 @@ export default function Admin() {
             pfp = "/usericon.png";
           }
 
-          const rec = letterboxId ? await fetchRecipients(letterboxId) : [];
+          const rec = conversationId ? await fetchRecipients(conversationId) : [];
           const recipient = rec?.[0] ?? {};
 
           return {
             id: d.id,
-            letterboxId,
+            conversationId,
             ...data,
             profileImage: recipient?.photo_uri || pfp,
             name: `${recipient.first_name ?? "Unknown"} ${
@@ -146,10 +146,10 @@ export default function Admin() {
       setLastDoc(snap.docs[snap.docs.length - 1]);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) {
-      console.warn("Failed to fetch admin letters", err);
-      setError("Failed to load letters. Please try again.");
+      console.warn("Failed to fetch admin messages", err);
+      setError("Failed to load messages. Please try again.");
     } finally {
-      setIsLettersLoading(false);
+      setIsConversationsLoading(false);
       setIsLoadingMore(false);
     }
   };
@@ -174,7 +174,7 @@ export default function Admin() {
           return;
         }
 
-        handleDormantLetterboxWorker();
+        handleDormantConversationWorker();
       } catch (err) {
         console.warn("Admin auth check failed", err);
         setError("Something went wrong. Please refresh and try again.");
@@ -184,23 +184,23 @@ export default function Admin() {
     });
 
     return () => unsubscribe();
-  }, [router, handleDormantLetterboxWorker]);
+  }, [router, handleDormantConversationWorker]);
 
   useEffect(() => {
     if (activeView !== "inbox") return;
     if (!userId) return;
     if (isAuthLoading) return;
 
-    const loadLetters = async () => {
-      setIsLettersLoading(true);
+    const loadConversations = async () => {
+      setIsConversationsLoading(true);
       setDocuments([]);
       setLastDoc(null);
       setHasMore(true);
 
-      await fetchLetters(false, null);
+      await fetchConversations(false, null);
     };
 
-    loadLetters();
+    loadConversations();
   }, [selectedStatus, startDate, endDate, activeView, userId, isAuthLoading]);
 
   const filter = (status, start, end) => {
@@ -217,18 +217,18 @@ export default function Admin() {
     setActiveFilter(false);
   };
 
-  const revertToPending = async (letter) => {
-    if (!letter) return;
+  const revertToPending = async (message) => {
+    if (!message) return;
 
     setIsReviewSubmitting(true);
 
     try {
       const ref = doc(
         db,
-        "letterbox",
-        letter.letterboxId,
-        "letters",
-        letter.id,
+        "conversations",
+        message.conversationId,
+        "messages",
+        message.id,
       );
 
       await updateDoc(ref, {
@@ -236,19 +236,17 @@ export default function Admin() {
         moderator_id: deleteField(),
         rejection_reason: deleteField(),
         rejection_feedback: deleteField(),
-        updated_at: deleteField(),
       });
 
-      updateLocalLetter(letter.id, {
+      updateLocalMessage(message.id, {
         status: "pending_review",
         moderator_id: undefined,
         rejection_reason: undefined,
         rejection_feedback: undefined,
-        updated_at: undefined,
       });
 
       setReviewAction(null);
-      setSelectedLetter(null);
+      setSelectedMessage(null);
       setActiveView("inbox");
     } catch (err) {
       console.warn("Revert blocked by Firestore rules", err);
@@ -262,26 +260,26 @@ export default function Admin() {
     if (isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
-    await fetchLetters(true, lastDoc);
+    await fetchConversations(true, lastDoc);
   };
 
   const handleApprove = async () => {
-    if (!currentLetter) return;
+    if (!currentMessage) return;
 
     setIsReviewSubmitting(true);
 
-    const { id, letterboxId } = currentLetter;
+    const { id, conversationId } = currentMessage;
 
     try {
-      const ref = doc(db, "letterbox", letterboxId, "letters", id);
+      const ref = doc(db, "conversations", conversationId, "messages", id);
 
       await updateDoc(ref, {
         status: "approved",
         moderator_id: userId,
-        updated_at: serverTimestamp(),
+        moderated_at: serverTimestamp(),
       });
 
-      updateLocalLetter(id, {
+      updateLocalMessage(id, {
         status: "approved",
         moderator_id: userId,
       });
@@ -296,9 +294,9 @@ export default function Admin() {
   };
 
   const handleRejectSubmit = async (reason, feedback) => {
-    if (!selectedLetter?.letterboxId || !selectedLetter?.id) {
-      setError("Could not reject this letter. Please refresh and try again.");
-      throw new Error("Missing letter reference for rejection.");
+    if (!selectedMessage?.conversationId || !selectedMessage?.id) {
+      setError("Could not reject this message. Please refresh and try again.");
+      throw new Error("Missing message reference for rejection.");
     }
 
     setIsReviewSubmitting(true);
@@ -306,10 +304,10 @@ export default function Admin() {
     try {
       const ref = doc(
         db,
-        "letterbox",
-        selectedLetter.letterboxId,
-        "letters",
-        selectedLetter.id,
+        "conversations",
+        selectedMessage.conversationId,
+        "messages",
+        selectedMessage.id,
       );
 
       await updateDoc(ref, {
@@ -317,14 +315,15 @@ export default function Admin() {
         moderator_id: userId,
         rejection_reason: reason,
         rejection_feedback: feedback,
-        updated_at: serverTimestamp(),
+        moderated_at: serverTimestamp(),
       });
 
-      updateLocalLetter(selectedLetter.id, {
+      updateLocalMessage(selectedMessage.id, {
         status: "rejected",
         moderator_id: userId,
         rejection_reason: reason,
         rejection_feedback: feedback,
+        moderated_at: serverTimestamp(),
       });
 
       setReviewAction("rejected");
@@ -337,8 +336,8 @@ export default function Admin() {
     }
   };
 
-  if (isAuthLoading || isLettersLoading) {
-    return <LetterHomeSkeleton />;
+  if (isAuthLoading || isConversationsLoading) {
+    return <InboxSkeleton />;
   }
 
   return (
@@ -388,7 +387,7 @@ export default function Admin() {
                         conversations={documents}
                         isAdmin
                         onSelectConversation={(conversation) => {
-                          setSelectedLetter(conversation);
+                          setSelectedMessage(conversation);
                           setActiveView("review");
                         }}
                       />
@@ -412,17 +411,17 @@ export default function Admin() {
                   </div>
                 )}
 
-                {activeView === "review" && selectedLetter && !reviewAction && (
+                {activeView === "review" && selectedMessage && !reviewAction && (
                   <div className="h-full overflow-hidden">
-                    <AdminLetterReview
-                      letter={currentLetter}
+                    <AdminMessageReview
+                      message={currentMessage}
                       isSubmitting={isReviewSubmitting}
                       onClose={() => {
                         if (isReviewSubmitting) return;
 
                         setReviewAction(null);
                         setActiveView("inbox");
-                        setSelectedLetter(null);
+                        setSelectedMessage(null);
                       }}
                       onApprove={handleApprove}
                       onReject={() => {
@@ -434,10 +433,10 @@ export default function Admin() {
                   </div>
                 )}
 
-                {activeView === "reject" && selectedLetter && !reviewAction && (
+                {activeView === "reject" && selectedMessage && !reviewAction && (
                   <div className="h-full overflow-hidden">
                     <AdminRejectModal
-                      letter={selectedLetter}
+                      message={selectedMessage}
                       onClose={() => setActiveView("review")}
                       onSubmit={handleRejectSubmit}
                     />
@@ -450,10 +449,10 @@ export default function Admin() {
                       type="approved"
                       onClose={() => {
                         setReviewAction(null);
-                        setSelectedLetter(null);
+                        setSelectedMessage(null);
                         setActiveView("inbox");
                       }}
-                      onRevert={() => revertToPending(selectedLetter)}
+                      onRevert={() => revertToPending(selectedMessage)}
                     />
                   </div>
                 )}
@@ -463,10 +462,10 @@ export default function Admin() {
                     type="rejected"
                     onClose={() => {
                       setReviewAction(null);
-                      setSelectedLetter(null);
+                      setSelectedMessage(null);
                       setActiveView("inbox");
                     }}
-                    onRevert={() => revertToPending(selectedLetter)}
+                    onRevert={() => revertToPending(selectedMessage)}
                   />
                 )}
               </>

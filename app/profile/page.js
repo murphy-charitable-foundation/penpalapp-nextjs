@@ -23,7 +23,7 @@ import NavBar from "../../components/bottom-nav-bar";
 import { usePageAnalytics } from "../useAnalytics";
 import { logError } from "../utils/analytics";
 
-/* ❗ If you add new fields to the user profile, update this file as well as the view profile page, pages/createChild API, and user-data-import page */
+/* ❗ If you add new fields to the user profile, update this file as well as the view profile page, pages/createChild API, and create-child-profile page */
 
 export default function EditProfile() {
   const [firstName, setFirstName] = useState("");
@@ -197,7 +197,7 @@ export default function EditProfile() {
       guardian,
       dream_job: dreamJob,
       gender,
-      hobbies: hobbies.map((h) => h.id),
+      hobbies: hobbies.map((h) => h.label),
       favorite_color: favoriteColor,
       profession,
       favorite_animal: favoriteAnimal,
@@ -231,7 +231,7 @@ export default function EditProfile() {
         isOpen={isDialogOpen}
         onClose={() => {
           setIsDialogOpen(false);
-          if (isSaved) router.push("/letterhome");
+          if (isSaved) router.push("/inbox");
         }}
         title={dialogTitle}
         content={dialogMessage}
@@ -299,7 +299,7 @@ export default function EditProfile() {
         <PageHeader
           title="Profile"
           image={false}
-          onBack={() => attemptNavigate(() => router.push("/letterhome"))}
+          onBack={() => attemptNavigate(() => router.push("/inbox"))}
         />
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">

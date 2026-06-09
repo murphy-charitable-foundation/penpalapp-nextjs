@@ -9,9 +9,9 @@ export default function SuccessModal({
     return (
       <StatusSuccessModal
         type="approved"
-        title="Letter Approved"
-        description="The letter has been approved and sent."
-        primaryButtonText="Back to letters"
+        title="Message Approved"
+        description="The message has been approved and sent."
+        primaryButtonText="Back to messages"
         onClose={onClose}
         onRevert={onRevert}
       />
@@ -24,7 +24,7 @@ export default function SuccessModal({
         type="rejected"
         title="Rejection Feedback"
         description={`We sent the feedback to the user.\nThanks for your feedback.`}
-        primaryButtonText="Go to letters"
+        primaryButtonText="Go to messages"
         onClose={onClose}
         onRevert={onRevert}
       />
