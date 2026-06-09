@@ -3,7 +3,6 @@ import admin from "firebase-admin";
 
 // ---------- ADMIN INITIALIZATION ----------
 const requiredEnvVars = [
-  "FIREBASE_CONFIG",
   "FIREBASE_SERVICE_ACCOUNT_JSON"
 ];
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);

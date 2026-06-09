@@ -4,7 +4,6 @@ import { getFirestore } from "firebase-admin/firestore";
 
 // --- REQUIRED ENV VARS ---
 const requiredEnvVars = [
-  "FIREBASE_CONFIG",
   "FIREBASE_SERVICE_ACCOUNT_JSON"
 ];
 
