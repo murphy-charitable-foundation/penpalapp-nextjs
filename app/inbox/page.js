@@ -4,18 +4,19 @@ import { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { doc, getDoc } from "firebase/firestore";
+
 import NavBar from "../../components/bottom-nav-bar";
 import ConversationList from "../../components/general/ConversationList";
 import {
   getUserPfp,
-  fetchLatestLetterFromLetterbox,
-  fetchLetterboxes,
+  fetchLatestMessageFromConversation,
+  fetchConversations,
   fetchRecipients,
-} from "../utils/letterboxFunctions";
+} from "../utils/conversationsFunctions";
 
-import LetterHomeSkeleton from "../../components/loading/LetterHomeSkeleton";
-import ProfileHeader from "../../components/general/letter/ProfileHeader";
-import EmptyState from "../../components/general/letterhome/EmptyState";
+import InboxSkeleton from "../../components/loading/InboxSkeleton";
+import ProfileHeader from "../../components/general/message/ProfileHeader";
+import EmptyState from "../../components/general/inbox/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
@@ -30,8 +31,8 @@ export default function Home() {
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
   const { user, userDocRef } = useUser();
-
-  usePageAnalytics("/letterhome");
+  
+  usePageAnalytics("/inbox");
 
   const getUserData = async (uid) => {
     const docRef = doc(db, "users", uid);
@@ -39,41 +40,46 @@ export default function Home() {
 
     if (docSnap.exists()) {
       return docSnap.data();
-    } else {
-      setError("User data not found.");
-      throw new Error("No user document found.");
     }
+
+    setError("User data not found.");
+    throw new Error("No user document found.");
   };
 
   const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
 
   const getConversations = async (uid) => {
     try {
-      const letterboxes = await fetchLetterboxes();
+      const conversations = await fetchConversations();
 
-      if (!letterboxes?.length) {
+      if (!conversations || conversations.length === 0) {
         setError("No conversations found.");
-        return [];
+        throw new Error("No conversations found.");
       }
 
+      const conversationIds = conversations.map((conversation) => conversation.id);
+
       const fetchedConversations = await Promise.all(
-        letterboxes.map(async ({ id }) => {
-          const letter =
-            (await fetchLatestLetterFromLetterbox(id, userDocRef)) || {};
+        conversationIds.map(async (id) => {
+          const userRef = doc(db, "users", uid);
+
+          const message =
+            (await fetchLatestMessageFromConversation(id, userRef)) || {};
+
           const rec = await fetchRecipients(id);
           const recipient = rec?.[0] ?? {};
 
           return {
-            id: letter?.id,
+            id: message?.id,
             profileImage: recipient?.photo_uri || "",
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
-            lastMessage: letter.content || "",
-            lastMessageDate: letter.drafted_at || letter.created_at || "",
-            status: letter.status || "",
-            letterboxId: id || "",
-            isRecipient: letter?.sent_by?.id !== uid,
-            unread: letter?.unread || false,
+            lastMessage: message.content || "",
+            lastMessageDate: message.created_at || "",
+            status: message.status || "",
+            conversationId: id || "",
+            isRecipient: message?.sent_by?.id !== uid,
+            unread: message?.unread || false,
           };
         })
       );
@@ -85,6 +91,7 @@ export default function Home() {
       logError(err, {
         description: "Error fetching conversations",
       });
+
       setError("Failed to load data.");
       throw err;
     }
@@ -101,6 +108,7 @@ export default function Home() {
         setUserId(uid);
 
         const userData = await getUserData(uid);
+
         setUserName(userData.first_name || "Unknown User");
 
         const downloaded = await getUserPfp(uid);
@@ -122,7 +130,7 @@ export default function Home() {
   }, [user]);
 
   if (isLoading) {
-    return <LetterHomeSkeleton />;
+    return <InboxSkeleton />;
   }
 
   return (

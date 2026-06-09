@@ -1,4 +1,4 @@
-import MessagePreview from "./MessagePreview.jsx";
+import ConversationPreview from "./ConversationPreview";
 
 const ConversationList = ({
   conversations,
@@ -8,15 +8,15 @@ const ConversationList = ({
   return (
     <div className="space-y-4 pr-1 mb-4">
       {conversations.map((conversation, i) => (
-        <div key={`${conversation.letterboxId}-${conversation.id}-${i}`}>
-          <MessagePreview
+        <div key={`${conversation.conversationId}-${conversation.id}-${i}`}>
+          <ConversationPreview
             className={i === 0 ? "first-letter relative" : ""}
             profileImage={conversation.profileImage}
             name={conversation.name}
             country={conversation.country}
             lastMessage={conversation.lastMessage}
             lastMessageDate={conversation.lastMessageDate}
-            letterboxId={conversation.letterboxId}
+            conversationId={conversation.conversationId}
             status={conversation.status}
             isRecipient={conversation.isRecipient}
             unread={conversation.unread}

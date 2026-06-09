@@ -5,7 +5,7 @@ self.onmessage = async function (e) {
     return;
   }
   try {
-    const result = await sendDormantLetterbox(idToken);
+    const result = await sendDormantConversation(idToken);
     const data = await result.json();
     self.postMessage({ success: true, data });
   } catch (error) {
@@ -13,8 +13,8 @@ self.onmessage = async function (e) {
   }
 };
 
-async function sendDormantLetterbox(idToken) {
-  /*const response = await fetch("/api/dormantletterbox", {
+async function sendDormantConversation(idToken) {
+  /*const response = await fetch("/api/dormantConversation", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -26,7 +26,7 @@ async function sendDormantLetterbox(idToken) {
   return {
     success: true,
     data: {
-      message: "Dormant letterbox worker is working",
+      message: "Dormant conversation worker is working",
     },
   };
 }

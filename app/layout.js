@@ -1,15 +1,16 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
-import NavigationStateManager from "../components/loading/NavigationStateManager";
 import { Suspense } from "react";
-import LoadingSpinner from "../components/loading/LoadingSpinner";
-import { NotificationHandler } from "../components/NotificationHandler";
-import { UserProvider } from "../contexts/UserContext";
-import { NavigationProvider } from "../contexts/NavigationContext";
-import { CachedUserLoginsProvider } from "./contexts/CachedUserLoginContext";
-import { InactivityProvider } from "./contexts/InactivityContext";
-import { DormantLetterboxProvider } from "../contexts/DormantLetterboxContext";
-import OfflineServiceWorkerHandler from "../components/OfflineServiceWorkerHandler";
+import { Inter } from 'next/font/google'
+
+import NavigationStateManager from '../components/loading/NavigationStateManager'
+import LoadingSpinner from '../components/loading/LoadingSpinner'
+import { NotificationHandler } from '../components/NotificationHandler'
+import { UserProvider } from '../contexts/UserContext'
+import { NavigationProvider } from '../contexts/NavigationContext'
+import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
+import { DormantConversationProvider } from '../contexts/DormantConversationContext'
+import OfflineServiceWorkerHandler from '../components/OfflineServiceWorkerHandler'
+import { InactivityProvider } from "./contexts/InactivityContext"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,7 +35,7 @@ export default function RootLayout({ children }) {
         <CachedUserLoginsProvider>
           <UserProvider>
             <InactivityProvider>
-              <DormantLetterboxProvider>
+              <DormantConversationProvider>
                 <NotificationHandler>
                   <NavigationProvider>
                     <Suspense fallback={<LoadingSpinner />}>
@@ -43,11 +44,10 @@ export default function RootLayout({ children }) {
                     </Suspense>
                   </NavigationProvider>
                 </NotificationHandler>
-              </DormantLetterboxProvider>
+              </DormantConversationProvider>
             </InactivityProvider>
           </UserProvider>
         </CachedUserLoginsProvider>
-
       </body>
     </html>
   );

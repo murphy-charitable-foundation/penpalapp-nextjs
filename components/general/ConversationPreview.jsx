@@ -5,13 +5,13 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { formatTimestamp } from "@/app/utils/dateHelpers";
 
-const MessagePreview = ({
+const ConversationPreview = ({
   profileImage,
   name,
   country,
   lastMessage,
   lastMessageDate,
-  letterboxId,
+  conversationId,
   status,
   isRecipient,
   unread = false,
@@ -30,7 +30,7 @@ const MessagePreview = ({
     router.push(`/profile-view/${id}`);
   };
 
-  // Returns the appropriate status icon based on letter status
+  // Returns the appropriate status icon based on message status
   const getStatusIcon = () => {
     if (status === "rejected") {
       return (
@@ -69,8 +69,8 @@ const MessagePreview = ({
   };
 
   const rejectedText = isAdmin
-    ? "Letter was rejected"
-    : "Your letter was rejected";
+    ? "Message was rejected"
+    : "Your message was rejected";
 
   const cardContent = (
     <div
@@ -172,7 +172,7 @@ const MessagePreview = ({
     );
   }
 
-  if (!letterboxId) {
+  if (!conversationId) {
     return (
       <div className="w-full" role="button" aria-disabled="true">
         {cardContent}
@@ -180,7 +180,7 @@ const MessagePreview = ({
     );
   }
 
-  return <Link href={`/letters/${letterboxId}`}>{cardContent}</Link>;
+  return <Link href={`/conversation/${conversationId}`}>{cardContent}</Link>;
 };
 
-export default MessagePreview;
+export default ConversationPreview;

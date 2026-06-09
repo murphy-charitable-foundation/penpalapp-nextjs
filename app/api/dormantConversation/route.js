@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldPath } from "firebase-admin/firestore";
 
 import { db, auth } from "../../firebaseAdmin";
-import { sendEmail } from "../../utils/dormantLetterboxHelpers";
+import { sendEmail } from "../../utils/dormantConversationHelpers";
 
 export async function POST(request) {
   if (auth == null) {
@@ -44,42 +44,42 @@ export async function POST(request) {
       );
     }
 
-    const letterboxSnapshot = await db.collection("letterbox").get();
-    const letterBoxesPromises = letterboxSnapshot.docs.map(async (doc) => {
+    const conversationSnapshot = await db.collection("conversations").get();
+    const conversationesPromises = conversationSnapshot.docs.map(async (doc) => {
       const docData = doc.data();
-      let latestLetter = null;
+      let latestMessage = null;
 
-      const denormalizedAt = docData.latest_letter_created_at;
+      const denormalizedAt = docData.latest_message_created_at;
       if (denormalizedAt != null) {
-        latestLetter = {
-          id: docData.latest_letter_id ?? null,
+        latestMessage = {
+          id: docData.latest_message_id ?? null,
           created_at: typeof denormalizedAt.toDate === "function" ? denormalizedAt.toDate() : denormalizedAt,
-          sent_by: docData.latest_letter_sent_by ?? null,
+          sent_by: docData.latest_message_sent_by ?? null,
         };
       }
 
-      if (latestLetter === null) {
-        const latestLetterSnapshot = await doc.ref
-          .collection("letters")
+      if (latestMessage === null) {
+        const latestMessageSnapshot = await doc.ref
+          .collection("messages")
           .orderBy("created_at", "desc")
           .limit(1)
           .get();
 
-        if (!latestLetterSnapshot.empty) {
-          const letterDoc = latestLetterSnapshot.docs[0];
-          const letterData = letterDoc.data();
-          const createdAt = letterData.created_at?.toDate?.();
-          const sentById = letterData.sent_by?.id ?? (typeof letterData.sent_by === "string" ? letterData.sent_by : null);
-          latestLetter = {
-            id: letterDoc.id,
+        if (!latestMessageSnapshot.empty) {
+          const messageDoc = latestMessageSnapshot.docs[0];
+          const messageData = messageDoc.data();
+          const createdAt = messageData.created_at?.toDate?.();
+          const sentById = messageData.sent_by?.id ?? (typeof messageData.sent_by === "string" ? messageData.sent_by : null);
+          latestMessage = {
+            id: messageDoc.id,
             created_at: createdAt,
             sent_by: sentById,
           };
           try {
             await doc.ref.update({
-              latest_letter_created_at: letterData.created_at,
-              latest_letter_id: letterDoc.id,
-              latest_letter_sent_by: sentById,
+              latest_message_created_at: messageData.created_at,
+              latest_message_id: messageDoc.id,
+              latest_message_sent_by: sentById,
             });
           } catch (err) {
             // Non-fatal: next run will query again
@@ -90,19 +90,19 @@ export async function POST(request) {
       return {
         id: doc.id,
         members: docData.members.map((member) => member.id),
-        latestLetter,
+        latestMessage,
         user_reminded_at: docData.user_reminded_at?.toDate?.(),
         admin_reminded_at: docData.admin_reminded_at?.toDate?.(),
       };
     });
-    const letterBoxes = await Promise.all(letterBoxesPromises);
+    const conversationes = await Promise.all(conversationesPromises);
 
     const emailPromises = [];
 
-    for (const letterBox of letterBoxes) {
-      const latestMessageTimestamp = letterBox?.latestLetter?.created_at;
-      const latestAdminDormantLetterboxTimestamp = letterBox?.admin_reminded_at;
-      const latestUserDormantLetterboxTimestamp = letterBox?.user_reminded_at;
+    for (const conversation of conversationes) {
+      const latestMessageTimestamp = conversation?.latestMessage?.created_at;
+      const latestAdminDormantConversationTimestamp = conversation?.admin_reminded_at;
+      const latestUserDormantConversationTimestamp = conversation?.user_reminded_at;
       const now = new Date();
       let adminDiffDays = 0;
       let userDiffDays = 0;
@@ -115,23 +115,23 @@ export async function POST(request) {
         userDiffDays = diffDays;
       }
 
-      if (latestAdminDormantLetterboxTimestamp) {
-        const latestAdminDormantLetterboxTimestampDate = new Date(
-          latestAdminDormantLetterboxTimestamp
+      if (latestAdminDormantConversationTimestamp) {
+        const latestAdminDormantConversationTimestampDate = new Date(
+          latestAdminDormantConversationTimestamp
         );
         const diffMs = Math.floor(
-          (now - latestAdminDormantLetterboxTimestampDate) / (1000 * 60 * 60 * 24)
+          (now - latestAdminDormantConversationTimestampDate) / (1000 * 60 * 60 * 24)
         );
         if (adminDiffDays === 0 || diffMs < adminDiffDays) {
           adminDiffDays = diffMs;
         }
       }
-      if (latestUserDormantLetterboxTimestamp) {
-        const latestUserDormantLetterboxTimestampDate = new Date(
-          latestUserDormantLetterboxTimestamp
+      if (latestUserDormantConversationTimestamp) {
+        const latestUserDormantConversationTimestampDate = new Date(
+          latestUserDormantConversationTimestamp
         );
         const diffMs = Math.floor(
-          (now - latestUserDormantLetterboxTimestampDate) / (1000 * 60 * 60 * 24)
+          (now - latestUserDormantConversationTimestampDate) / (1000 * 60 * 60 * 24)
         );
         if (userDiffDays === 0 || diffMs < userDiffDays) {
           userDiffDays = diffMs;
@@ -141,7 +141,7 @@ export async function POST(request) {
       if (userDiffDays >= 14 || adminDiffDays >= 28) {
         const usersRef = db.collection("users");
         const membersSnapshot = await usersRef
-          .where(FieldPath.documentId(), "in", letterBox.members)
+          .where(FieldPath.documentId(), "in", conversation.members)
           .get();
         const allMembers = membersSnapshot.docs.map((doc) => {
           const docData = doc.data();
@@ -152,7 +152,7 @@ export async function POST(request) {
           };
         });
 
-        const userPromises = letterBox.members.map((uid) =>
+        const userPromises = conversation.members.map((uid) =>
           auth.getUser(uid).catch((err) => {
             return null; // Handle missing users gracefully
           })
@@ -165,7 +165,7 @@ export async function POST(request) {
 
         if (userDiffDays >= 14) {
           emailPromises.push(
-            sendEmail(letterBox.id, allMembers, emails, "user").catch(
+            sendEmail(conversation.id, allMembers, emails, "user").catch(
               (err) => err
             )
           );
@@ -173,7 +173,7 @@ export async function POST(request) {
 
         if (adminDiffDays >= 28) {
           emailPromises.push(
-            sendEmail(letterBox.id, allMembers, emails, "admin").catch(
+            sendEmail(conversation.id, allMembers, emails, "admin").catch(
               (err) => err
             )
           );
@@ -200,10 +200,10 @@ export async function POST(request) {
 
     return NextResponse.json(
       {
-        message: "DormantLetterbox Request Success!",
+        message: "DormantConversation Request Success!",
         successEmails: successEmails,
         failedEmails: failedEmails,
-        letterBoxes: letterBoxes,
+        conversationes: conversationes,
       },
       { status: 200 }
     );

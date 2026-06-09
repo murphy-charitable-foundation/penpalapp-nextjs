@@ -19,7 +19,7 @@ import Dropdown from "../../components/general/Dropdown";
 import { usePageAnalytics } from "../useAnalytics";
 import { logButtonEvent, logError } from "../utils/analytics";
 import HobbySelect from "../../components/general/HobbySelect";
-import { createConnection } from "../utils/letterboxFunctions";
+import { createConnection } from "../utils/conversationsFunctions";
 import Image from "next/image";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
 import { uploadFile } from "../utils/uploadFile";

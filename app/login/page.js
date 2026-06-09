@@ -94,7 +94,7 @@ export default function Login() {
         if (data.user_type === "admin") {
           router.push("/admin");
         } else {
-          router.push("/letterhome");
+          router.push("/inbox");
         }
       } else {
         router.replace("/create-acc");

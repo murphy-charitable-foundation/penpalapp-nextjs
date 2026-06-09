@@ -4,34 +4,28 @@ import admin from "firebase-admin";
 // ---------- ADMIN INITIALIZATION ----------
 const requiredEnvVars = [
   "FIREBASE_CONFIG",
-  "FIREBASE_PRIVATE_KEY",
-  "FIREBASE_CLIENT_EMAIL"
+  "FIREBASE_SERVICE_ACCOUNT_JSON"
 ];
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 const envError = missingVars.length > 0
   ? `Missing Firebase env vars: ${missingVars.join(", ")}`
   : null;
 
-let FIREBASE_PROJECT_ID = null;
+let serviceAccount = null;
 if (!envError) {
   try {
-    FIREBASE_PROJECT_ID = JSON.parse(process.env.FIREBASE_CONFIG)["projectId"];
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   } catch (e) {
-    console.error("Invalid FIREBASE_CONFIG JSON:", e.message);
+    console.error("Invalid FIREBASE_SERVICE_ACCOUNT_JSON JSON:", e.message);
   }
-  if (!FIREBASE_PROJECT_ID) {
-    console.error("error retrieving project id in setup");
+  if (!serviceAccount) {
+    console.error("error retrieving service account in setup");
   }
 }
 
 if (!envError && !admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    }),
-    databaseURL: `https://${FIREBASE_PROJECT_ID}.firebaseio.com`,
+    credential: admin.credential.cert( JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) )
   });
 }
 
