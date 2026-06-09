@@ -56,7 +56,7 @@ export default function CreateChildProfile() {
   const avatarPreviewUrlRef = useRef(null);
 
   const { userType, loading: userLoading } = useUser();
-  usePageAnalytics("/user-data-import");
+  usePageAnalytics("/create-child-profile");
 
   // Check if user is admin
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function CreateChildProfile() {
 const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    logButtonEvent("/user-data-import", "Import User Data button clicked!");
+    logButtonEvent("/create-child-profile", "Create Child Profile button clicked!");
 
     try {
       const newErrors = {};
@@ -178,7 +178,7 @@ const handleSubmit = async (e) => {
           const firstNameLetter = userData.first_name.charAt(0).toLowerCase();
           const lastName = userData.last_name.toLowerCase();
           const yearLastTwoDigits = birthday.toString().slice(2,4);
-          email = `rez+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
+          email = `penpal+${firstNameLetter}${lastName}${yearLastTwoDigits}@murphycharity.org`;
         }
       }
 
@@ -384,7 +384,7 @@ const handleSubmit = async (e) => {
                   <Input type="date" name="birthday" label="Birthday" error={errors.birthday} onChange={(e) => setBirthday(e.target.value)}/>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Pronouns
                     </label>
                     <Dropdown
@@ -405,7 +405,7 @@ const handleSubmit = async (e) => {
                       name="email"
                       id="email"
                       label="Child's Email"
-                      placeholder={`rez+${firstName?.slice(0, 1) || ""}${lastName || ""}${birthday?.slice(2, 4) || ""}@murphycharity.org`}
+                      placeholder={`penpal+${firstName?.slice(0, 1) || ""}${lastName || ""}${birthday?.slice(2, 4) || ""}@murphycharity.org`}
                       error={errors.email ? errors.email : ""}
                     />
                   </div>
@@ -446,7 +446,7 @@ const handleSubmit = async (e) => {
                   <Input name="village" label="Village" />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Education Level
                     </label>
                     <Dropdown
@@ -464,7 +464,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Is Orphan
                     </label>
                     <Dropdown
@@ -476,7 +476,7 @@ const handleSubmit = async (e) => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Guardian
                     </label>
                     <Dropdown
@@ -508,7 +508,7 @@ const handleSubmit = async (e) => {
                   <Input name="favoriteColor" label="Favorite Color" />
                   <Input name="favoriteAnimal" label="Favorite Animal" />
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium mb-1 text-gray-500">
                       Hobby
                     </label>
                     <HobbySelect

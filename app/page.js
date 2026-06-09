@@ -12,6 +12,20 @@ export default function Home() {
 
   const handleNavigation = (href) => {
     window.dispatchEvent(new Event("app:navigation-start"));
+    // If user is trying to go to the login page from the root,
+      // prefer `choose-profile` when there are cached users.
+    if (href === "/login") {
+      try {
+        const raw = window.localStorage.getItem("cached_users");
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          router.push("/choose-profile");
+          return;
+        }
+      } catch (err) {
+        // ignore localStorage/parse errors and fall back to normal navigation
+      }
+    }
     router.push(href);
   };
 

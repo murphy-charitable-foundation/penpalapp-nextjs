@@ -60,6 +60,7 @@ export default function ChooseAccountPage() {
     try {
       const userCredential =await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
       setSelectedUser(null);
+      setIsLoading(true);
       setPasswordInput("");
       setIsLoading(true);
 

@@ -16,7 +16,7 @@ import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
 
-/* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and user-data-import page */
+/* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and create-child-profile page */
 
 export default function Page({ params }) {
   const { id } = params;
