@@ -3,6 +3,7 @@ import { Loader2, Play, Send, X, Film } from "lucide-react";
 import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { storage, auth } from "../../app/firebaseConfig";
+import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
 
 // Fix: Detect supported mimeType at runtime instead of hardcoding
 const getSupportedMimeType = () => {
@@ -35,6 +36,8 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
+
+  useBeforeUnloadWarning(status === "compressing" || status === "uploading");
 
   const handlePickVideo = () => {
     if (!user) {

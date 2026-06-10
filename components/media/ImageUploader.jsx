@@ -6,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import imageCompression from "browser-image-compression";
 
 import { storage, auth } from "../../app/firebaseConfig";
+import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
 
 const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   const [file, setFile] = useState(null);
@@ -22,6 +23,8 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
+
+  useBeforeUnloadWarning(status === "compressing" || status === "uploading");
 
   const handlePick = () => {
     if (!user) {
