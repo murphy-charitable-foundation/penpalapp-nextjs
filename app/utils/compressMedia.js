@@ -17,6 +17,45 @@ const AUDIO_MIME_TYPES = [
   "audio/mpeg",
 ];
 
+const KB = 1024;
+const MB = 1024 * KB;
+
+const COMPRESSION_PROFILES = {
+  lowEnd: {
+    imageMaxSizeMB: 0.75,
+    imageMaxWidthOrHeight: 1024,
+    imageQuality: 0.65,
+    videoMaxWidth: 480,
+    videoFps: 12,
+    videoBitsPerSecond: 450000,
+    audioBitsPerSecond: 48000,
+    audioSkipBelowBytes: 500 * KB,
+    videoSkipBelowBytes: 5 * MB,
+  },
+  balanced: {
+    imageMaxSizeMB: 1,
+    imageMaxWidthOrHeight: 1280,
+    imageQuality: 0.72,
+    videoMaxWidth: 640,
+    videoFps: 15,
+    videoBitsPerSecond: 650000,
+    audioBitsPerSecond: 56000,
+    audioSkipBelowBytes: 500 * KB,
+    videoSkipBelowBytes: 8 * MB,
+  },
+  capable: {
+    imageMaxSizeMB: 1.25,
+    imageMaxWidthOrHeight: 1600,
+    imageQuality: 0.78,
+    videoMaxWidth: 854,
+    videoFps: 20,
+    videoBitsPerSecond: 900000,
+    audioBitsPerSecond: 64000,
+    audioSkipBelowBytes: 500 * KB,
+    videoSkipBelowBytes: 10 * MB,
+  },
+};
+
 const clampProgress = (progress) => Math.min(1, Math.max(0, progress));
 
 const reportProgress = (onProgress, progress) => {
@@ -42,6 +81,38 @@ const chooseSmallerMedia = (originalFile, compressedBlob) => {
   return compressedBlob;
 };
 
+const finishWithOriginal = (file, onProgress) => {
+  reportProgress(onProgress, 1);
+  return file;
+};
+
+const getDeviceProfileName = () => {
+  if (typeof navigator === "undefined") return "balanced";
+
+  const cores = navigator.hardwareConcurrency || 4;
+  const memory = navigator.deviceMemory || 4;
+  const isMobile =
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    navigator.maxTouchPoints > 1;
+
+  if (cores <= 2 || memory <= 2) return "lowEnd";
+  if (cores <= 4 || memory <= 4 || isMobile) return "balanced";
+  return "capable";
+};
+
+const getAdaptiveOptions = (customOptions) => {
+  const profileName = customOptions.profile || getDeviceProfileName();
+  const profile =
+    COMPRESSION_PROFILES[profileName] || COMPRESSION_PROFILES.balanced;
+
+  return {
+    ...profile,
+    ...customOptions,
+  };
+};
+
+export const getDetectedCompressionProfile = getDeviceProfileName;
+
 const waitForMetadata = (mediaElement) =>
   new Promise((resolve, reject) => {
     mediaElement.onloadedmetadata = resolve;
@@ -64,8 +135,11 @@ const compressImage = async (file, onProgress, options) => {
 
 const compressAudio = async (file, onProgress, options) => {
   if (typeof MediaRecorder === "undefined") {
-    reportProgress(onProgress, 1);
-    return file;
+    return finishWithOriginal(file, onProgress);
+  }
+
+  if (file.size < options.audioSkipBelowBytes) {
+    return finishWithOriginal(file, onProgress);
   }
 
   const audio = document.createElement("audio");
@@ -91,8 +165,7 @@ const compressAudio = async (file, onProgress, options) => {
     }
 
     if (!stream) {
-      reportProgress(onProgress, 1);
-      return file;
+      return finishWithOriginal(file, onProgress);
     }
 
     const mimeType = getSupportedMimeType(AUDIO_MIME_TYPES);
@@ -116,8 +189,11 @@ const compressAudio = async (file, onProgress, options) => {
 
 const compressVideo = async (file, onProgress, options) => {
   if (typeof MediaRecorder === "undefined") {
-    reportProgress(onProgress, 1);
-    return file;
+    return finishWithOriginal(file, onProgress);
+  }
+
+  if (file.size < options.videoSkipBelowBytes) {
+    return finishWithOriginal(file, onProgress);
   }
 
   const video = document.createElement("video");
@@ -142,8 +218,7 @@ const compressVideo = async (file, onProgress, options) => {
     canvas.height = height;
 
     if (!canvas.captureStream) {
-      reportProgress(onProgress, 1);
-      return file;
+      return finishWithOriginal(file, onProgress);
     }
 
     const canvasStream = canvas.captureStream(options.videoFps);
@@ -237,17 +312,7 @@ const recordMedia = ({
  * compressMedia(file, onProgress, customOptions)
  */
 export async function compressMedia(file, onProgress = null, customOptions = {}) {
-  const defaultOptions = {
-    imageMaxSizeMB: 1,
-    imageMaxWidthOrHeight: 1280,
-    imageQuality: 0.72,
-    videoMaxWidth: 854,
-    videoFps: 15,
-    videoBitsPerSecond: 700000,
-    audioBitsPerSecond: 64000,
-  };
-
-  const options = { ...defaultOptions, ...customOptions };
+  const options = getAdaptiveOptions(customOptions);
   reportProgress(onProgress, 0);
 
   if (file.type.startsWith("image")) {

@@ -3,7 +3,10 @@
 import React, { useState } from "react";
 import { Film, Image as ImageIcon } from "lucide-react";
 
-import { compressMedia } from "../utils/compressMedia";
+import {
+  compressMedia,
+  getDetectedCompressionProfile,
+} from "../utils/compressMedia";
 
 import AudioRecorder from "../../components/media/AudioRecorder"
 import AudioPlayer from "../../components/media/AudioPlayer";
@@ -24,6 +27,8 @@ export default function LocalDownload() {
   const [testFile, setTestFile] = useState(null);
   const [testResult, setTestResult] = useState(null);
   const [testError, setTestError] = useState("");
+  const [selectedProfile, setSelectedProfile] = useState("auto");
+  const detectedProfile = getDetectedCompressionProfile();
 
   useBeforeUnloadWarning(isCompressing);
 
@@ -69,8 +74,10 @@ export default function LocalDownload() {
 
     try {
       setIsCompressing(true);
-      const compressedBlob = await compressMedia(file, (p) =>
-        setProgress(Math.round(p * 100)),
+      const compressedBlob = await compressMedia(
+        file,
+        (p) => setProgress(Math.round(p * 100)),
+        selectedProfile === "auto" ? {} : { profile: selectedProfile },
       );
 
       const url = URL.createObjectURL(compressedBlob);
@@ -124,6 +131,29 @@ export default function LocalDownload() {
           <p className="text-sm text-slate-500">
             Runs compressMedia in this browser only. Nothing is uploaded.
           </p>
+        </div>
+
+        <div className="mb-3 grid gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>Detected profile</span>
+            <span className="rounded bg-white px-2 py-1 font-medium text-slate-800">
+              {detectedProfile}
+            </span>
+          </div>
+          <label className="flex flex-wrap items-center justify-between gap-2">
+            <span>Test with profile</span>
+            <select
+              value={selectedProfile}
+              onChange={(e) => setSelectedProfile(e.target.value)}
+              disabled={isCompressing}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-800"
+            >
+              <option value="auto">Auto ({detectedProfile})</option>
+              <option value="lowEnd">lowEnd</option>
+              <option value="balanced">balanced</option>
+              <option value="capable">capable</option>
+            </select>
+          </label>
         </div>
 
         <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-600 hover:bg-slate-100">
