@@ -437,6 +437,11 @@ export default function Page({ params }) {
       }
 
       // Clear states
+      const conversationRef = doc(db, "conversations", id);
+      await updateDoc(conversationRef, {
+        drafted_at: currentTime,
+      });
+
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
