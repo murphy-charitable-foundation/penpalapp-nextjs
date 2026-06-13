@@ -90,7 +90,7 @@ export async function POST(request) {
       return {
         id: doc.id,
         members: docData.members.map((member) => member.id),
-        latestMessage,
+        latest_message_created_at: docData.drafted_at?.toDate?.(),
         user_reminded_at: docData.user_reminded_at?.toDate?.(),
         admin_reminded_at: docData.admin_reminded_at?.toDate?.(),
       };
@@ -107,9 +107,9 @@ export async function POST(request) {
       let adminDiffDays = 0;
       let userDiffDays = 0;
 
-      if (latestMessageTimestamp) {
-        const latestMessageTimestampDate = new Date(latestMessageTimestamp);
-        const diffMs = now - latestMessageTimestampDate;
+      if (letterBoxDraftedAtTimestamp) {
+        const latestMessageCreatedAtTimestampDate = new Date(latestMessageTimestamp);
+        const diffMs = now - latestMessageCreatedAtTimestampDate;
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         adminDiffDays = diffDays;
         userDiffDays = diffDays;

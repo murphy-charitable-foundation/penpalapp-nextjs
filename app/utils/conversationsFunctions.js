@@ -401,16 +401,17 @@ export const createConnection = async (userDocRef, kidDocRef) => {
           let conversationRef;
 
           if (querySnapshot.empty) { // if there's no conversation, create one.
+            const now = new Date();
             conversationRef = await addDoc(collection(db, "conversations"), {
               members: [
                 userDocRef, 
                 kidDocRef   
               ],
-              created_at: new Date(),
+              created_at: now,
+              drafted_at: now,
               archived_at: null,
             });
 
-            const now = new Date();
             await addDoc(collection(conversationRef, "messages"), {
               sent_by: userDocRef,
               content: "Please complete your first message here...",
