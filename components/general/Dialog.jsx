@@ -99,7 +99,9 @@ export default function Dialog({
     const titleColor = isCloseDialogStyle ? "text-black" : titleClassName || "";
     const buttonLayout = isCloseDialogStyle
       ? "flex"
-      : "flex justify-between w-full";
+      : buttons.length === 1
+         ? "flex justify-center w-full"
+         : "flex justify-between w-full";
     const contentAlignment =
       variant === "alert" || variant === "confirmation"
         ? "flex flex-col items-center"

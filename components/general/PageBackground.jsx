@@ -1,22 +1,20 @@
 "use client";
 
-
-
-
-export function PageBackground({
-    children,
-    className,
-}
-) {
-  
-
+export function PageBackground({ children, className = "" }) {
   return (
-    <>
-        <div id="background" className={`bg-gray-100 min-h-screen py-6 relative ${className}`}>
-            {children}
-        </div>
-    
-    </>
-      
+    <div
+      className={`
+        bg-gray-100
+        min-h-dvh
+        w-full
+        flex
+        justify-center
+        ${className}
+      `}
+    >
+      {children}
+    </div>
   );
 }
+
+export default PageBackground;

@@ -1,28 +1,54 @@
+import "./globals.css";
+import { Suspense } from "react";
 import { Inter } from 'next/font/google'
-import './globals.css'
-import NavigationStateManager from '../components/loading/NavigationStateManager'
-import { Suspense } from 'react'
-import LoadingSpinner from '../components/loading/LoadingSpinner'
-import { DormantLetterboxProvider } from '../context/DormantLetterboxContext';
 
-const inter = Inter({ subsets: ['latin'] })
+import NavigationStateManager from '../components/loading/NavigationStateManager'
+import LoadingSpinner from '../components/loading/LoadingSpinner'
+import { NotificationHandler } from '../components/NotificationHandler'
+import { UserProvider } from '../contexts/UserContext'
+import { NavigationProvider } from '../contexts/NavigationContext'
+import { CachedUserLoginsProvider } from './contexts/CachedUserLoginContext'
+import { DormantConversationProvider } from '../contexts/DormantConversationContext'
+import OfflineServiceWorkerHandler from '../components/OfflineServiceWorkerHandler'
+import { InactivityProvider } from "./contexts/InactivityContext"
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'Pen Pal Magic App',
-  description: 'To connect 2000 rural Ugandan Children to the World',
-}
+  title: {
+    default: "Pen Pal Magic App",
+    template: "%s | Pen Pal Magic App",
+  },
+  description:
+    "To connect 2000 rural Ugandan Children to the World",
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+
       <body className={inter.className}>
-      <DormantLetterboxProvider>
-        <Suspense fallback={<LoadingSpinner />}>
-          <NavigationStateManager />
-          {children}
-        </Suspense>          
-      </DormantLetterboxProvider>
+        <OfflineServiceWorkerHandler />
+        <CachedUserLoginsProvider>
+          <UserProvider>
+            <InactivityProvider>
+              <DormantConversationProvider>
+                <NotificationHandler>
+                  <NavigationProvider>
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <NavigationStateManager />
+                      {children}
+                    </Suspense>
+                  </NavigationProvider>
+                </NotificationHandler>
+              </DormantConversationProvider>
+            </InactivityProvider>
+          </UserProvider>
+        </CachedUserLoginsProvider>
       </body>
     </html>
-  )
+  );
 }

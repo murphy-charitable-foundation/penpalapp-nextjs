@@ -2,7 +2,7 @@
  * Usage is commented in useAnalytics.js and donate/page.js
  */
 import { getAnalytics, logEvent } from "firebase/analytics";
-import { app } from "../firebaseConfig";
+import { app } from "../firebaseConfig.js";
 import * as Sentry from "@sentry/nextjs";
 
 // Initialize Firebase Analytics
@@ -43,7 +43,7 @@ const logButtonEvent = (buttonName, pagePath) => {
 };
 
 // status is either "success" or "failure"
-const logInEvent = (status, message) => {
+const logInEvent = (status) => {
   if (analytics) {
     logEvent(analytics, "login", {
       status: status,

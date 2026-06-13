@@ -1,59 +1,95 @@
 "use client";
-// page.js
 
 import Image from "next/image";
-import logo from "/public/murphylogo.png";
-import Link from "next/link";
+import { PageBackground } from "../components/general/PageBackground";
+import { PageContainer } from "../components/general/PageContainer";
 import Button from "../components/general/Button";
-import { BackButton } from "../components/general/BackButton";
-import { usePageAnalytics } from "./useAnalytics";
-import { logButtonEvent, logLoadingTime } from "./utils/analytics";
-import { useEffect } from "react";
+import logo from "../public/murphylogo.png";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  usePageAnalytics("/");
+  const router = useRouter();
+
+  const handleNavigation = (href) => {
+    window.dispatchEvent(new Event("app:navigation-start"));
+    // If user is trying to go to the login page from the root,
+      // prefer `choose-profile` when there are cached users.
+    if (href === "/login") {
+      try {
+        const raw = window.localStorage.getItem("cached_users");
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          router.push("/choose-profile");
+          return;
+        }
+      } catch (err) {
+        // ignore localStorage/parse errors and fall back to normal navigation
+      }
+    }
+    router.push(href);
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-6">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-left p-4 bg-white h-[80%]">
-          <Link href="/cover">
-            <BackButton
-              btnType="button"
-              color="transparent"
-              textColor="text-gray-600"
-              onClick={() => router.push("/cover")}
-              size="xs"
+    <PageBackground className="bg-gray-100 h-screen flex items-center justify-center overflow-hidden">
+      <PageContainer
+        width="compactXS"
+        padding="none"
+        center={false}
+        className="
+          w-full
+          max-w-[29rem]
+          flex flex-col
+          bg-white
+          rounded-2xl
+          shadow-lg
+          overflow-hidden
+          relative
+          z-20
+        "
+      >
+        {/* LOGO */}
+        <div className="flex justify-center pt-10">
+          <Image
+            src={logo}
+            alt="Murphy Charitable Foundation Uganda"
+            width={150}
+            height={150}
+            className="h-auto w-36 sm:w-40 md:w-44"
+          />
+        </div>
+
+        {/* TITLE */}
+        <div className="px-10 pt-14 text-center">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+            Welcome to Pen Pal App
+          </h1>
+        </div>
+
+        {/* SUBTITLE */}
+        <div className="px-10 mt-3 text-center">
+          <p className="text-gray-700 text-base md:text-lg leading-relaxed">
+            Write, connect, and inspire children in Uganda
+          </p>
+        </div>
+
+        {/* BUTTONS */}
+        <div className="text-center w-full pt-20 pb-10 px-10">
+          <div className="mx-auto max-w-sm space-y-5">
+            <Button
+              btnText="Log in"
+              color="green"
+              onClick={() => handleNavigation("/login")}
             />
-          </Link>
-          <div className="flex justify-center mb-40">
-            <Image
-              src={logo}
-              alt="Murphy Charitable Foundation Uganda"
-              width={150}
-              height={150}
+
+            <Button
+              btnText="Become a Pen Pal Volunteer"
+              color="blue"
+              href="https://calendly.com/murphycharity/60min"
+              external
             />
-          </div>
-          <div className="flex flex-col gap-10 jsu mb-36 items-center">
-            <Link href="/login">
-              <Button
-                color={"green"}
-                btnText={"Log in"}
-                onClick={() => logButtonEvent("log in clicked", "/")}
-              />
-            </Link>
-            <Link href="https://calendly.com/murphycharity/60min">
-              <Button
-                color={"blue"}
-                btnText={"Become a Pen Pal Volunteer"}
-                onClick={() =>
-                  logButtonEvent("become a pen pal volunteer clicked", "/")
-                }
-              />
-            </Link>
           </div>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </PageBackground>
   );
 }
