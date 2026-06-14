@@ -1284,17 +1284,7 @@ export default function Page({ params }) {
 
         {/* ===== REPLY ===== */}
         <div className="bg-white">
-          <div className="flex items-center justify-between px-4 py-2">
-            <div className="flex items-center">
-              <Image
-                src="/arrow-left.png"
-                alt="Back"
-                width={20}
-                height={20}
-                className="mr-2"
-              />
-              <span className="text-gray-700">To {recipientName}</span>
-            </div>
+          <div className="flex items-center justify-center px-4 py-2">
             <div className="flex items-center gap-2">
               <ImageUploader
                 onUploadSuccess={handleImageUpload}
@@ -1334,6 +1324,18 @@ export default function Page({ params }) {
               >
                 <Mic size={18} />
               </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center">
+              <Image
+                src="/arrow-left.png"
+                alt="Back"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
+              <span className="text-gray-700">To {recipientName}</span>
             </div>
           </div>
 
