@@ -18,8 +18,9 @@ import { storage, auth } from "../../app/firebaseConfig";
  * Audio Recording and Upload Component
  * @param {Function} onUploadSuccess - Callback upon successful upload: (url) => void
  * @param {Function} onRequireLogin - (Optional) Triggered when an unauthorized user clicks
+ * @param {Function} onRecordingComplete - Callback when recording is completed: ({ blob, fileName }) => void
  */
-const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
+const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete }) => {
   // --- State Management ---
   const [status, setStatus] = useState("idle"); // 'idle' | 'recording' | 'review' | 'uploading'
   const [time, setTime] = useState(0);
@@ -109,8 +110,14 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
         setAudioUrl(url);
         setDuration(timeRef.current);
 
+        const fileName = `voice_${Date.now()}.webm`;
         if (sendAfterStopRef.current) {
-          handleUploadToFirebase(blob, user.uid);
+          if (onRecordingComplete) {
+            onRecordingComplete({ blob, fileName });
+            handleDelete();
+          } else {
+            handleUploadToFirebase(blob, user.uid);
+          }
         } else {
           setStatus("review");
           setTime(0);
@@ -179,7 +186,13 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin }) => {
 
   const handleSendInReview = () => {
     if (audioBlob && user) {
-      handleUploadToFirebase(audioBlob, user.uid);
+      const fileName = `voice_${Date.now()}.webm`;
+      if (onRecordingComplete) {
+        onRecordingComplete({ blob: audioBlob, fileName });
+        handleDelete();
+      } else {
+        handleUploadToFirebase(audioBlob, user.uid);
+      }
     }
   };
 

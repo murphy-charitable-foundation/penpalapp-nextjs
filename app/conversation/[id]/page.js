@@ -259,7 +259,11 @@ export default function Page({ params }) {
     const storagePath =
       attachment.mediaType === "image"
         ? `users/${user.uid}/images/${Date.now()}_${safeFileName}`
-        : `users/${user.uid}/video_messages/${Date.now()}_${safeFileName}`;
+        : attachment.mediaType === "video"
+        ? `users/${user.uid}/video_messages/${Date.now()}_${safeFileName}`
+        : attachment.mediaType === "audio"
+        ? `users/${user.uid}/voice_messages/${Date.now()}_${safeFileName}`
+        : `users/${user.uid}/uploads/${Date.now()}_${safeFileName}`;
 
     const task = uploadBytesResumable(storageRef(storage, storagePath), attachment.file);
 
@@ -837,6 +841,19 @@ export default function Page({ params }) {
 
   const handleAudioUpload = async (url) => {
     await sendMediaMessage({ mediaUrl: url, mediaType: "audio" });
+    setShowAudioRecorder(false);
+  };
+
+  const handleAudioRecordComplete = ({ blob, fileName }) => {
+    const audioFile = new File(
+      [blob],
+      fileName || `voice_${Date.now()}.webm`,
+      {
+        type: blob?.type || "audio/webm",
+      },
+    );
+
+    handleAddAttachment({ file: audioFile, mediaType: "audio" });
     setShowAudioRecorder(false);
   };
 
@@ -1631,7 +1648,7 @@ export default function Page({ params }) {
           {showAudioRecorder && (
             <div className="px-4 pb-2">
               <AudioRecorder
-                onUploadSuccess={handleAudioUpload}
+                onRecordingComplete={handleAudioRecordComplete}
                 onRequireLogin={handleRequireLogin}
               />
             </div>
