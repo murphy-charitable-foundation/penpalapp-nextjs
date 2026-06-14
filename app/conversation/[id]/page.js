@@ -48,6 +48,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "@firebase/storage";
+import { deleteObject } from "@firebase/storage";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 
@@ -341,12 +342,54 @@ export default function Page({ params }) {
     setShowAttachmentDeleteDialog(true);
   };
 
-  const handleConfirmDeleteAttachment = () => {
-    if (attachmentToDelete) {
-      removeAttachment(attachmentToDelete.id);
+  const extractStoragePathFromDownloadUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      // downloadURL format: /v0/b/<bucket>/o/<encodedPath>
+      const path = parsed.pathname || "";
+      const marker = "/o/";
+      const idx = path.indexOf(marker);
+      if (idx === -1) return null;
+      const encoded = path.substring(idx + marker.length);
+      return decodeURIComponent(encoded);
+    } catch (e) {
+      return null;
     }
-    setAttachmentToDelete(null);
-    setShowAttachmentDeleteDialog(false);
+  };
+
+  const handleConfirmDeleteAttachment = async () => {
+    if (!attachmentToDelete) {
+      setShowAttachmentDeleteDialog(false);
+      return;
+    }
+
+    const att = attachmentToDelete;
+
+    // Remove from pending UI immediately
+    removeAttachment(att.id);
+
+    // Attempt to delete storage object if we can determine its path
+    try {
+      let storagePath = att.storagePath || null;
+
+      if (!storagePath && att.url) {
+        storagePath = extractStoragePathFromDownloadUrl(att.url);
+      }
+
+      if (storagePath) {
+        try {
+          await deleteObject(storageRef(storage, storagePath));
+        } catch (err) {
+          // Log but continue — file may already be deleted or path invalid
+          console.error("Failed to delete storage object:", err);
+        }
+      }
+    } catch (error) {
+      console.error("Error during attachment deletion:", error);
+    } finally {
+      setAttachmentToDelete(null);
+      setShowAttachmentDeleteDialog(false);
+    }
   };
 
   const handleOpenAttachment = (attachment) => {
@@ -1770,7 +1813,7 @@ export default function Page({ params }) {
               </p>
               <div className="flex space-x-3">
                 <button
-                  onClick={() => setShowAttachmentDeleteDialog(false)}
+                  onClick={handleConfirmDeleteAttachment}
                   className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
                 >
                   Continue
