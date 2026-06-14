@@ -30,7 +30,25 @@ import MessagesSkeleton from "../../../components/loading/MessagesSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
-import { AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Film,
+  Image as ImageIcon,
+  Mic,
+  Paperclip,
+  Trash2,
+  Play,
+} from "lucide-react";
+import ImageUploader from "../../../components/media/ImageUploader";
+import VideoUploader from "../../../components/media/VideoUploader";
+import AudioRecorder from "../../../components/media/AudioRecorder";
+import { storage } from "../../firebaseConfig";
+import {
+  ref as storageRef,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "@firebase/storage";
+import { deleteObject } from "@firebase/storage";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
 
@@ -108,6 +126,8 @@ export default function Page({ params }) {
   const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
@@ -116,6 +136,34 @@ export default function Page({ params }) {
   const [messageContent, setMessageContent] = useState("");
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
+
+  // Allowed media origins can be configured via NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS
+  // as a comma-separated list (e.g. "https://example.com,https://cdn.example.com").
+  const getAllowedOrigins = () => {
+    try {
+      const env = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS : undefined;
+      if (env && env.length) {
+        return env.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    } catch (e) {
+      // ignore and fallback
+    }
+
+    // Default fallback to common Firebase storage origin
+    return ["https://firebasestorage.googleapis.com"];
+  };
+
+  const isAllowedMediaUrl = (url) => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      const origin = parsed.origin;
+      const allowed = getAllowedOrigins();
+      return allowed.includes(origin);
+    } catch (e) {
+      return false;
+    }
+  };
 
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
@@ -140,6 +188,12 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [reportContent, setReportContent] = useState(null);
   const [reportSender, setReportSender] = useState(null);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+
+  const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [attachmentToDelete, setAttachmentToDelete] = useState(null);
+  const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
+  const [attachmentViewer, setAttachmentViewer] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
 
@@ -148,6 +202,262 @@ export default function Page({ params }) {
       behavior: instant ? "auto" : "smooth",
       block: "end",
     });
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0 || bytes == null) return "0 KB";
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${Math.round(kb)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+  };
+
+  const getAttachmentIcon = (mediaType) => {
+    if (mediaType === "image") return <ImageIcon size={18} className="text-emerald-700" />;
+    if (mediaType === "video") return <Film size={18} className="text-emerald-700" />;
+    if (mediaType === "audio") return <Play size={18} className="text-emerald-700" />;
+    return <Paperclip size={18} className="text-emerald-700" />;
+  };
+
+  const createAttachmentFromFile = (file, mediaType) => ({
+    id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: file.name,
+    size: file.size,
+    mediaType,
+    file,
+    url: null,
+    previewUrl: URL.createObjectURL(file),
+    uploadStatus: "uploading",
+    progress: 0,
+  });
+
+  const updateAttachment = (attachmentId, patch) => {
+    setPendingAttachments((current) =>
+      current.map((item) =>
+        item.id === attachmentId ? { ...item, ...patch } : item,
+      ),
+    );
+  };
+
+  const removeAttachment = (attachmentId) => {
+    setPendingAttachments((current) => {
+      const removed = current.find((item) => item.id === attachmentId);
+      if (removed?.previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(removed.previewUrl);
+      }
+      return current.filter((item) => item.id !== attachmentId);
+    });
+  };
+
+  const uploadAttachment = async (attachment) => {
+    if (!attachment || !user?.uid || !messagesRef) {
+      updateAttachment(attachment.id, { uploadStatus: "error" });
+      return;
+    }
+
+    const safeFileName = attachment.name
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9._-]/g, "");
+    const storagePath =
+      attachment.mediaType === "image"
+        ? `users/${user.uid}/images/${Date.now()}_${safeFileName}`
+        : attachment.mediaType === "video"
+        ? `users/${user.uid}/video_messages/${Date.now()}_${safeFileName}`
+        : attachment.mediaType === "audio"
+        ? `users/${user.uid}/voice_messages/${Date.now()}_${safeFileName}`
+        : `users/${user.uid}/uploads/${Date.now()}_${safeFileName}`;
+
+    const task = uploadBytesResumable(storageRef(storage, storagePath), attachment.file);
+
+    task.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        updateAttachment(attachment.id, { progress, uploadStatus: "uploading" });
+      },
+      (error) => {
+        console.error("❌ uploadAttachment error:", error);
+        updateAttachment(attachment.id, { uploadStatus: "error" });
+      },
+      async () => {
+        try {
+          const url = await getDownloadURL(task.snapshot.ref);
+          updateAttachment(attachment.id, { url, uploadStatus: "done", progress: 100 });
+          await saveDraft(messageContent);
+        } catch (error) {
+          console.error("❌ uploadAttachment download URL error:", error);
+          updateAttachment(attachment.id, { uploadStatus: "error" });
+        }
+      },
+    );
+  };
+
+  const handleAddAttachment = ({ file, mediaType }) => {
+    const newAttachment = createAttachmentFromFile(file, mediaType);
+    setPendingAttachments((current) => [...current, newAttachment]);
+    setIsEditing(true);
+    setHasDraftContent(true);
+    uploadAttachment(newAttachment);
+  };
+
+  const handlePickImage = () => {
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    imageInputRef.current?.click();
+  };
+
+  const handlePickVideo = () => {
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    videoInputRef.current?.click();
+  };
+
+  const handleImageFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      return;
+    }
+    handleAddAttachment({ file, mediaType: "image" });
+  };
+
+  const handleVideoFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+    if (!file.type.startsWith("video/")) {
+      alert("Please select a valid video file.");
+      return;
+    }
+    handleAddAttachment({ file, mediaType: "video" });
+  };
+
+  const handleRequestDeleteAttachment = (attachment) => {
+    setAttachmentToDelete(attachment);
+    setShowAttachmentDeleteDialog(true);
+  };
+
+  const extractStoragePathFromDownloadUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      // downloadURL format: /v0/b/<bucket>/o/<encodedPath>
+      const path = parsed.pathname || "";
+      const marker = "/o/";
+      const idx = path.indexOf(marker);
+      if (idx === -1) return null;
+      const encoded = path.substring(idx + marker.length);
+      return decodeURIComponent(encoded);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const handleConfirmDeleteAttachment = async () => {
+    if (!attachmentToDelete) {
+      setShowAttachmentDeleteDialog(false);
+      return;
+    }
+
+    const att = attachmentToDelete;
+
+    // Remove from pending UI immediately
+    removeAttachment(att.id);
+
+    // Attempt to delete storage object if we can determine its path
+    try {
+      let storagePath = att.storagePath || null;
+
+      if (!storagePath && att.url) {
+        storagePath = extractStoragePathFromDownloadUrl(att.url);
+      }
+
+      if (storagePath) {
+        try {
+          await deleteObject(storageRef(storage, storagePath));
+        } catch (err) {
+          // Log but continue — file may already be deleted or path invalid
+          console.error("Failed to delete storage object:", err);
+        }
+      }
+    } catch (error) {
+      console.error("Error during attachment deletion:", error);
+    } finally {
+      setAttachmentToDelete(null);
+      setShowAttachmentDeleteDialog(false);
+    }
+  };
+
+  const handleOpenAttachment = (attachment) => {
+    if (!attachment?.url && !attachment?.previewUrl) return;
+    setAttachmentViewer({
+      ...attachment,
+      source: attachment.url || attachment.previewUrl,
+    });
+  };
+
+  const messageAttachments = (message) => {
+    const normalized = [];
+
+    if (Array.isArray(message.attachments) && message.attachments.length > 0) {
+      message.attachments.forEach((att, index) => {
+        normalized.push({
+          id: att.id || `${message.id}-att-${index}`,
+          name: att.file_name || att.name || `Attachment ${index + 1}`,
+          size: att.size || 0,
+          mediaType: att.media_type || att.mediaType || "image",
+          url: att.url,
+        });
+      });
+    }
+
+    if (normalized.length === 0 && message.media_url) {
+      normalized.push({
+        id: `${message.id}-legacy`,
+        name:
+          message.media_type === "image"
+            ? "Image"
+            : message.media_type === "video"
+            ? "Video"
+            : "Audio",
+        size: 0,
+        mediaType: message.media_type,
+        url: message.media_url,
+      });
+    }
+
+    return normalized;
+  };
+
+  const attachmentsToSave = () =>
+    pendingAttachments
+      .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)
+      .map((attachment) => ({
+        url: attachment.url,
+        media_type: attachment.mediaType,
+        file_name: attachment.name,
+        size: attachment.size,
+      }));
+
+  const hasUploadingAttachments = pendingAttachments.some(
+    (attachment) => attachment.uploadStatus !== "done",
+  );
+
+  const clearPendingAttachments = () => {
+    pendingAttachments.forEach((attachment) => {
+      if (attachment.previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(attachment.previewUrl);
+      }
+    });
+    setPendingAttachments([]);
+  };
+
+  const clearDraftRelatedState = () => {
+    clearPendingAttachments();
   };
 
   const saveDraft = useCallback(
@@ -416,22 +726,28 @@ export default function Page({ params }) {
 
       let messageRef;
 
+      const attachments = attachmentsToSave();
+      const messageDataWithAttachments = {
+        ...messageData,
+        attachments,
+      };
+
       if (draft?.id) {
         messageRef = doc(messagesRef, draft.id);
 
         const updateData = {
-          ...messageData,
+          ...messageDataWithAttachments,
           created_at: draft.created_at || currentTime,
         };
 
         await updateDoc(messageRef, updateData);
       } else {
         messageRef = doc(messagesRef);
-        await setDoc(messageRef, messageData);
+        await setDoc(messageRef, messageDataWithAttachments);
       }
       
       if (globalConversationReference) {
-        sendNotification(globalConversationReference, "").catch(error => {
+        sendNotification(globalConversationReference, "").catch((error) => {
           console.error("Failed to send notification:", error);
         });
       }
@@ -441,9 +757,10 @@ export default function Page({ params }) {
       setDraft(null);
       setHasDraftContent(false);
       setIsEditing(false);
+      clearPendingAttachments();
 
       const messageWithId = {
-        ...messageData,
+        ...messageDataWithAttachments,
         id: messageRef.id,
         sent_by: { id: user.uid },
       };
@@ -468,12 +785,128 @@ export default function Page({ params }) {
     }
   };
 
+  const handleRequireLogin = () => {
+    const shouldLogin = window.confirm(
+      "You must be logged in to send media. Go to login now?"
+    );
+
+    if (shouldLogin) {
+      router.push("/login");
+    }
+  };
+
+  const legacyAttachmentFromMedia = ({ mediaUrl, mediaType }) => ({
+    id: `legacy_${Date.now()}`,
+    name:
+      mediaType === "image"
+        ? "Photo"
+        : mediaType === "video"
+        ? "Video"
+        : "Audio",
+    size: 0,
+    mediaType,
+    url: mediaUrl,
+  });
+
+  const sendMediaMessage = async ({ mediaUrl, mediaType, caption = "" }) => {
+    if (!user?.uid || !messagesRef) {
+      alert("Unable to send media. Please refresh and try again.");
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const messageUserRef = userRef || doc(db, "users", user.uid);
+      const currentTime = new Date();
+
+      const messageData = {
+        sent_by: messageUserRef,
+        content:
+          caption ||
+          (mediaType === "image"
+            ? "Photo"
+            : mediaType === "video"
+            ? "Video"
+            : "Voice message"),
+        status: "pending_review",
+        created_at: currentTime,
+        drafted_at: currentTime,
+        deleted: null,
+        unread: true,
+        attachments: [
+          {
+            id: `legacy_${Date.now()}`,
+            url: mediaUrl,
+            media_type: mediaType,
+            file_name:
+              mediaType === "image"
+                ? "Photo"
+                : mediaType === "video"
+                ? "Video"
+                : "Audio",
+            size: 0,
+          },
+        ],
+      };
+
+      const messageRef = doc(messagesRef);
+      await setDoc(messageRef, messageData);
+
+      if (globalConversationReference) {
+        sendNotification(globalConversationReference, "").catch((error) => {
+          console.error("Failed to send media notification:", error);
+        });
+      }
+
+      setAllMessages((prev) => [
+        ...prev,
+        { ...messageData, id: messageRef.id, sent_by: { id: user.uid } },
+      ]);
+
+      setTimeout(() => scrollToBottom(true), 100);
+    } catch (error) {
+      console.error("❌ sendMediaMessage error:", error);
+      logError(error, { description: "Failed to send media message" });
+      alert("Failed to send media. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleImageUpload = async (url) => {
+    await sendMediaMessage({ mediaUrl: url, mediaType: "image" });
+  };
+
+  const handleVideoUpload = async (url) => {
+    await sendMediaMessage({ mediaUrl: url, mediaType: "video" });
+  };
+
+  const handleAudioUpload = async (url) => {
+    await sendMediaMessage({ mediaUrl: url, mediaType: "audio" });
+    setShowAudioRecorder(false);
+  };
+
+  const handleAudioRecordComplete = ({ blob, fileName }) => {
+    const audioFile = new File(
+      [blob],
+      fileName || `voice_${Date.now()}.webm`,
+      {
+        type: blob?.type || "audio/webm",
+      },
+    );
+
+    handleAddAttachment({ file: audioFile, mediaType: "audio" });
+    setShowAudioRecorder(false);
+  };
+
   const handleCloseMessage = async () => {
     if (isSendButtonDisabled || isUpdatingFirebase) {
       return;
     }
 
     const trimmedMessageContent = messageContent.trim();
+    const hasAttachments = pendingAttachments.length > 0;
 
     if (editingMessageId) {
       if (trimmedMessageContent !== editingMessageOriginalContent.trim()) {
@@ -485,6 +918,7 @@ export default function Page({ params }) {
         setIsEditing(false);
         setHasDraftContent(false);
         setSelectedMessageId(null);
+        clearPendingAttachments();
         router.push("/inbox");
       }
       return;
@@ -500,7 +934,7 @@ export default function Page({ params }) {
       }
     }
 
-    if (trimmedMessageContent.length > 0) {
+    if (trimmedMessageContent.length > 0 || hasAttachments) {
       setShowCloseDialog(true);
     } else {
       router.push("/inbox");
@@ -519,6 +953,7 @@ export default function Page({ params }) {
       setSelectedMessageId(null);
     }
 
+    clearPendingAttachments();
     router.push("/inbox");
   };
 
@@ -627,6 +1062,7 @@ export default function Page({ params }) {
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
+      clearPendingAttachments();
 
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
@@ -877,7 +1313,11 @@ export default function Page({ params }) {
   };
 
   const canSendMessage = () => {
-    return messageContent.trim().length > 0 && !isSending;
+    return (
+      (messageContent.trim().length > 0 || pendingAttachments.length > 0) &&
+      !isSending &&
+      !hasUploadingAttachments
+    );
   };
 
   return (
@@ -1041,6 +1481,65 @@ export default function Page({ params }) {
                         <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
+
+                        {messageAttachments(message).length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {messageAttachments(message).map((attachment) => (
+                              <button
+                                key={attachment.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenAttachment(attachment);
+                                }}
+                                className="w-full flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-left hover:bg-emerald-100 transition-colors"
+                              >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
+                                  {getAttachmentIcon(attachment.mediaType)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-sm font-semibold text-emerald-900 truncate">
+                                    {attachment.name}
+                                  </div>
+                                  <div className="text-xs text-emerald-700">
+                                    {formatFileSize(attachment.size)}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {message.media_url && isAllowedMediaUrl(message.media_url) ? (
+                          <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                            {message.media_type === "image" ? (
+                              <img
+                                src={message.media_url}
+                                alt="Shared media"
+                                className="w-full h-auto object-cover"
+                              />
+                            ) : message.media_type === "video" ? (
+                              <video
+                                src={message.media_url}
+                                controls
+                                className="w-full h-auto max-h-[320px] bg-black"
+                              />
+                            ) : message.media_type === "audio" ? (
+                              <div className="p-3">
+                                <audio
+                                  src={message.media_url}
+                                  controls
+                                  className="w-full"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : message.media_url ? (
+                          <div className="mt-3 p-3 text-sm text-gray-500">
+                            Media from this source is not allowed.
+                          </div>
+                        ) : null}
+
                         <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
                             <button
@@ -1144,6 +1643,38 @@ export default function Page({ params }) {
 
         {/* ===== REPLY ===== */}
         <div className="bg-white">
+          <div className="flex items-center justify-center px-4 py-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handlePickImage}
+                className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                title="Send photo"
+              >
+                <ImageIcon size={18} className="text-slate-600" />
+              </button>
+              <button
+                type="button"
+                onClick={handlePickVideo}
+                className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                title="Send video"
+              >
+                <Film size={18} className="text-slate-600" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAudioRecorder((prev) => !prev)}
+                className={`p-2 rounded-full transition-colors ${
+                  showAudioRecorder
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+                title="Send voice message"
+              >
+                <Mic size={18} />
+              </button>
+            </div>
+          </div>
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center">
               <Image
@@ -1156,6 +1687,63 @@ export default function Page({ params }) {
               <span className="text-gray-700">To {recipientName}</span>
             </div>
           </div>
+
+          {showAudioRecorder && (
+            <div className="px-4 pb-2">
+              <AudioRecorder
+                onRecordingComplete={handleAudioRecordComplete}
+                onRequireLogin={handleRequireLogin}
+              />
+            </div>
+          )}
+
+          {pendingAttachments.length > 0 && (
+            <div className="px-4 pb-3 space-y-2">
+              {pendingAttachments.map((attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
+                    {getAttachmentIcon(attachment.mediaType)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-emerald-900 truncate">
+                      {attachment.name}
+                    </div>
+                    <div className="text-xs text-emerald-700">
+                      {formatFileSize(attachment.size)}
+                      {attachment.uploadStatus === "uploading" && " • Uploading..."}
+                      {attachment.uploadStatus === "error" && " • Upload failed"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRequestDeleteAttachment(attachment)}
+                    className="text-emerald-700 hover:text-emerald-900"
+                    title="Delete attachment"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageFileChange}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={handleVideoFileChange}
+          />
 
           {!isEditing ? (
             <div className="p-4">
@@ -1210,6 +1798,73 @@ export default function Page({ params }) {
                 >
                   {editingMessageId ? "Discard" : "Close"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showAttachmentDeleteDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
+              <h2 className="text-xl font-semibold mb-1 text-black">
+                Delete Voice mail?
+              </h2>
+              <p className="text-gray-600 mb-6 text-sm">
+                Are you sure you want to delete this Voice mail? This is permanent action!
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleConfirmDeleteAttachment}
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
+                >
+                  Continue
+                </button>
+                <button
+                  onClick={() => {
+                    setAttachmentToDelete(null);
+                    setShowAttachmentDeleteDialog(false);
+                  }}
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {attachmentViewer && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm px-4 py-6">
+            <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <button
+                onClick={() => setAttachmentViewer(null)}
+                className="absolute top-4 right-4 z-10 rounded-full bg-white p-2 text-gray-700 shadow hover:bg-gray-100"
+              >
+                ✕
+              </button>
+              <div className="p-4">
+                {attachmentViewer.mediaType === "image" ? (
+                  <img
+                    src={attachmentViewer.source}
+                    alt={attachmentViewer.name}
+                    className="w-full h-[70vh] object-contain rounded-2xl bg-slate-900"
+                  />
+                ) : attachmentViewer.mediaType === "video" ? (
+                  <video
+                    src={attachmentViewer.source}
+                    controls
+                    className="w-full h-[70vh] rounded-2xl bg-black"
+                  />
+                ) : (
+                  <div className="rounded-2xl bg-slate-100 p-6">
+                    <audio
+                      src={attachmentViewer.source}
+                      controls
+                      className="w-full"
+                    />
+                  </div>
+                )}
+                <div className="mt-3 text-sm text-slate-600">
+                  {attachmentViewer.name}
+                </div>
               </div>
             </div>
           </div>
