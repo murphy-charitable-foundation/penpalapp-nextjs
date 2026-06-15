@@ -12,7 +12,7 @@ import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } fr
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
+const productionFirebaseConfig = {
   apiKey: "AIzaSyBpYg-KAzwWGaT3g7J8smjnNqP8N8Nj8vQ",
   authDomain: "penpalmagicapp.firebaseapp.com",
   projectId: "penpalmagicapp",
@@ -21,6 +21,21 @@ const firebaseConfig = {
   appId: "1:45289060638:web:33121bc47d40ceef83f10f",
   measurementId: "G-FG3MPZ8JV6",
 };
+
+const developmentFirebaseConfig = {
+  apiKey: "AIzaSyDKph6qj7ojAf9pg6o0N8Lq1Zd7eUBC_YQ",
+  authDomain: "penpalmagicapp-dev.firebaseapp.com",
+  projectId: "penpalmagicapp-dev",
+  storageBucket: "penpalmagicapp-dev.firebasestorage.app",
+  messagingSenderId: "793782879682",
+  appId: "1:793782879682:web:7e1ebb814edd688892025b",
+  measurementId: "G-6TCJ7JEMZ0",
+};
+
+const firebaseConfig =
+  process.env.NODE_ENV === "production"
+    ? productionFirebaseConfig
+    : developmentFirebaseConfig;
 
 // // Initialize Firebase
 // Only initialize if no apps have been initialized
@@ -32,11 +47,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app, "gs://penpalmagicapp.appspot.com/");
+const storage = getStorage(app);
 const VAPID_KEY =
-  "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc";
+  process.env.NODE_ENV === "production"
+    ? "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc"
+    : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
 let messaging;
 if (typeof window !== "undefined") {
+  if (process.env.NODE_ENV === "development") {
+    console.log("Firebase client project:", firebaseConfig.projectId);
+  }
   messaging = getMessaging(app);
 }
 
