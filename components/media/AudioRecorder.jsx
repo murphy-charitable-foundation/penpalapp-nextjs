@@ -13,6 +13,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 
 import { storage, auth } from "../../app/firebaseConfig";
+import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
 
 /**
  * Audio Recording and Upload Component
@@ -52,6 +53,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
     });
     return () => unsubscribe();
   }, []);
+
+  useBeforeUnloadWarning(status === "recording" || status === "uploading");
 
   // --- 2. Utility Functions ---
   const formatTime = (seconds) => {
