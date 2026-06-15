@@ -12,15 +12,49 @@ import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } fr
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBpYg-KAzwWGaT3g7J8smjnNqP8N8Nj8vQ",
-  authDomain: "penpalmagicapp.firebaseapp.com",
-  projectId: "penpalmagicapp",
-  storageBucket: "penpalmagicapp.appspot.com",
-  messagingSenderId: "45289060638",
-  appId: "1:45289060638:web:33121bc47d40ceef83f10f",
-  measurementId: "G-FG3MPZ8JV6",
+const parseFirebaseWebAppConfig = () => {
+  const rawConfig =
+    process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG ||
+    process.env.FIREBASE_WEBAPP_CONFIG;
+
+  if (!rawConfig) return null;
+
+  try {
+    return JSON.parse(rawConfig);
+  } catch (error) {
+    console.error("Invalid Firebase web app config JSON:", error);
+    return null;
+  }
 };
+
+const envFirebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+};
+
+const hasEnvFirebaseConfig = Boolean(
+  envFirebaseConfig.apiKey &&
+    envFirebaseConfig.authDomain &&
+    envFirebaseConfig.projectId &&
+    envFirebaseConfig.storageBucket &&
+    envFirebaseConfig.messagingSenderId &&
+    envFirebaseConfig.appId
+);
+
+const firebaseConfig =
+  parseFirebaseWebAppConfig() ||
+  (hasEnvFirebaseConfig ? envFirebaseConfig : null);
+
+if (!firebaseConfig) {
+  throw new Error(
+    "Firebase client config is missing. Set FIREBASE_WEBAPP_CONFIG or NEXT_PUBLIC_FIREBASE_* environment variables.",
+  );
+}
 
 // // Initialize Firebase
 // Only initialize if no apps have been initialized
@@ -32,11 +66,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const storage = getStorage(app, "gs://penpalmagicapp.appspot.com/");
+const storage = getStorage(app);
 const VAPID_KEY =
+  process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ||
   "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc";
 let messaging;
 if (typeof window !== "undefined") {
+  if (process.env.NODE_ENV === "development") {
+    console.log("Firebase client project:", firebaseConfig.projectId);
+  }
   messaging = getMessaging(app);
 }
 

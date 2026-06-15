@@ -6,6 +6,9 @@ const nextConfig = {
     ];
   },
   env: {
+    FIREBASE_WEBAPP_CONFIG: process.env.FIREBASE_WEBAPP_CONFIG,
+    NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG:
+      process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG,
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
       process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -18,6 +21,8 @@ const nextConfig = {
     NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID:
       process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    NEXT_PUBLIC_FIREBASE_VAPID_KEY:
+      process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
   },
   images: {
     domains: ["firebasestorage.googleapis.com"],
