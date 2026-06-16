@@ -9,6 +9,7 @@ import { useUser } from "../../contexts/UserContext";
 import { PageBackground } from "../../components/general/PageBackground";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
 import { uploadFile } from "../utils/uploadFile";
+import { getUserPfp } from "../utils/conversationsFunctions";
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
@@ -92,7 +93,10 @@ export default function EditProfile() {
       setGuardian(userData.guardian || "");
       setDreamJob(userData.dream_job || "");
       setFavoriteColor(userData.favorite_color || "");
-      setPhotoUri(userData.photo_uri || "");
+
+      const downloaded = await getUserPfp(user.uid);
+      setPhotoUri(downloaded || "");
+
       setUserType(userData.user_type || "");
       setFavoriteAnimal(userData.favorite_animal || "");
       setProfession(userData.profession || "");

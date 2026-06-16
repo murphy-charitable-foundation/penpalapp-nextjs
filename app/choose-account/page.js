@@ -8,6 +8,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import ProfileImage from "../../components/general/ProfileImage";
+import { getUserPfp } from "../utils/conversationsFunctions";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import Dialog from "../../components/general/Dialog";
@@ -26,11 +27,11 @@ export default function ChooseAccountPage() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const router = useRouter();
+  const [userPfps, setUserPfps] = useState({});
 
   const {
     cachedUserLogins,
     hydrated,
-    clearAllCachedUserLogins,
     removeCachedUserLogin,
   } = useCachedUserLogins();
 
@@ -49,6 +50,37 @@ export default function ChooseAccountPage() {
 
     setIsLoading(false);
   }, [hydrated, users.length, router]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadPfps = async () => {
+      try {
+        const entries = await Promise.all(
+          users.map(async (u) => {
+            try {
+              const downloaded = await getUserPfp(u.id);
+              return [u.id, downloaded || ""];
+            } catch (e) {
+              return [u.id, ""];
+            }
+          })
+        );
+
+        if (mounted) {
+          setUserPfps(Object.fromEntries(entries));
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    if (users.length > 0) loadPfps();
+
+    return () => {
+      mounted = false;
+    };
+  }, [users]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -121,8 +153,8 @@ export default function ChooseAccountPage() {
         <div className="flex justify-center">
           <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
             <ProfileImage
-              photo_uri={selectedUser.photo_uri}
-              name={selectedUser.name}
+              photo_uri={userPfps[selectedUser?.id] || ""}
+              name={selectedUser?.name}
               size={20}
             />
           </div>
@@ -189,13 +221,13 @@ export default function ChooseAccountPage() {
                 }}
                 className="bg-white rounded-lg p-4 shadow-md border border-gray-200 flex flex-col items-center hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-dark-green focus:ring-offset-2 w-full"
               >
-                <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
-                  <ProfileImage
-                    photo_uri={user.photo_uri}
-                    name={user.name}
-                    size={20}
-                  />
-                </div>
+                    <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
+                      <ProfileImage
+                        photo_uri={userPfps[user.id] || ""}
+                        name={user.name}
+                        size={20}
+                      />
+                    </div>
 
                 <p className="mt-3 font-semibold text-gray-900 text-sm text-center line-clamp-2">
                   {user.name}

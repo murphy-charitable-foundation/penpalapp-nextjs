@@ -24,13 +24,12 @@ import { usePageAnalytics } from "../useAnalytics";
 
 export default function Home() {
   const [userName, setUserName] = useState("");
-  const [userType, setUserType] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
-  const { user, userDocRef } = useUser();
+  const { user } = useUser();
   
   usePageAnalytics("/inbox");
 
@@ -53,8 +52,7 @@ export default function Home() {
       const conversations = await fetchConversations();
 
       if (!conversations || conversations.length === 0) {
-        setError("No conversations found.");
-        throw new Error("No conversations found.");
+        return [];
       }
 
       const conversationIds = conversations.map((conversation) => conversation.id);
@@ -70,8 +68,8 @@ export default function Home() {
           const recipient = rec?.[0] ?? {};
 
           return {
-            id: message?.id,
-            profileImage: recipient?.photo_uri || "",
+            id: message?.id || id,
+            profileImage: recipient?.pfp || "",
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: message.content || "",
