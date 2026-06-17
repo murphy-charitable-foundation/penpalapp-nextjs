@@ -1,18 +1,9 @@
 import { db } from "../firebaseAdmin";
-import nodemailer from "nodemailer";
+import { sendEmailMessage } from "./email";
 import { logError } from "./analytics";
 import generateDormantConversationEmailTemplate from "../api/dormantConversation/emailTemplate";
 
 
-const transporter = nodemailer.createTransport({
-    host: process.env.CPANEL_SMTP_HOST,
-    port: parseInt(process.env.CPANEL_SMTP_PORT),
-    secure: process.env.CPANEL_SMTP_PORT == 465, // SSL for 465
-    auth: {
-        user: process.env.PENPAL_EMAIL, //sender email
-        pass: process.env.PENPAL_EMAIL_PASSWORD, //sender password (cPanel email password)
-    },
-});
 
 
 const formatListWithAnd = (arr) => {
@@ -72,8 +63,8 @@ export const sendEmail = async (conversationId, members, toEmails, reason) => {
     };
   }
   try {
-    // Send the email
-    await transporter.sendMail(msg);
+  // Send the email
+  await sendEmailMessage(msg);
 
     if (db) {
       const fieldToUpdate =
