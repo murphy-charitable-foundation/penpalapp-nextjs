@@ -1,25 +1,14 @@
-import admin from "firebase-admin";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getOrInitApp } from "../../firebaseAdmin";
 
 // --- REQUIRED ENV VARS ---
-const requiredEnvVars = [
-  "FIREBASE_CONFIG",
-  "FIREBASE_SERVICE_ACCOUNT_JSON"
-];
-
-const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
-const envError = missingVars.length > 0
-  ? `Missing Firebase env vars: ${missingVars.join(", ")}`
+const adminApp = getOrInitApp();
+const envError = !adminApp
+  ? "Missing or invalid Firebase Admin env var: FIREBASE_SERVICE_ACCOUNT_JSON"
   : null;
-// Initialize only if no env errors
-if (!envError && !admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert( JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) )
-  });
-}
 
-const db = !envError ? getFirestore() : null;
+const auth = adminApp?.auth();
+const db = adminApp?.firestore();
+const messaging = adminApp?.messaging();
 
 /**
  * Verify user belongs in conversation
@@ -81,7 +70,7 @@ export async function POST(req) {
     let decodedToken;
 
     try {
-      decodedToken = await getAuth().verifyIdToken(idToken);
+      decodedToken = await auth.verifyIdToken(idToken);
     } catch {
       return new Response(JSON.stringify({ error: "Authentication failed." }), { status: 403 });
     }
@@ -109,7 +98,7 @@ export async function POST(req) {
 
     // --- SEND ---
     const sendPromises = tokens.map(({ token, name }) =>
-      admin.messaging().send({
+      messaging.send({
         token,
         notification: {
           title: "New Conversation Message",

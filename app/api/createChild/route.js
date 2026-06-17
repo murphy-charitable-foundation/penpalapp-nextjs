@@ -43,6 +43,7 @@ export default async function handler(req, res) {
     
     // Save Firestore user document; roll back auth user on failure
     try {
+      sanitizedData.created_at = new Date();
       await db.collection("users").doc(uid).set(sanitizedData);
     } catch (firestoreError) {
       await auth.deleteUser(uid).catch(() => {}); // best-effort cleanup

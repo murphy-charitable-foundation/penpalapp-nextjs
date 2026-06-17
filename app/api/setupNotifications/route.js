@@ -1,35 +1,11 @@
 // app/api/setupNotifications/route.js
-import admin from "firebase-admin";
+import { auth, db } from "../../firebaseAdmin";
 
 // ---------- ADMIN INITIALIZATION ----------
-const requiredEnvVars = [
-  "FIREBASE_CONFIG",
-  "FIREBASE_SERVICE_ACCOUNT_JSON"
-];
-const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
-const envError = missingVars.length > 0
-  ? `Missing Firebase env vars: ${missingVars.join(", ")}`
-  : null;
-
-let serviceAccount = null;
-if (!envError) {
-  try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-  } catch (e) {
-    console.error("Invalid FIREBASE_SERVICE_ACCOUNT_JSON JSON:", e.message);
-  }
-  if (!serviceAccount) {
-    console.error("error retrieving service account in setup");
-  }
-}
-
-if (!envError && !admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert( JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) )
-  });
-}
-
-const db = !envError ? admin.firestore() : null;
+const envError =
+  !auth || !db
+    ? "Missing or invalid Firebase Admin env var: FIREBASE_SERVICE_ACCOUNT_JSON"
+    : null;
 
 // ---------- ROUTE HANDLER ----------
 export async function POST(req) {
@@ -50,7 +26,7 @@ export async function POST(req) {
     }
 
     // Verify Firebase ID token
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    const decoded = await auth.verifyIdToken(idToken);
     const uid = decoded.uid;
 
     const userDocRef = db.collection("users").doc(uid);

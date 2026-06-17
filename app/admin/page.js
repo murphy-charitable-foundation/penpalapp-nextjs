@@ -36,7 +36,6 @@ import Button from "../../components/general/Button";
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
 import { useDormantConversation } from "../../contexts/DormantConversationContext";
-import { fetchRecipients } from "../utils/conversationsFunctions";
 
 export default function Admin() {
   const PAGE_SIZE = 5;
@@ -124,18 +123,30 @@ export default function Admin() {
             pfp = "/usericon.png";
           }
 
-          const rec = conversationId ? await fetchRecipients(conversationId) : [];
-          const recipient = rec?.[0] ?? {};
+          let sender = {};
+
+          try {
+            if (data.sent_by?.id) {
+              const senderRef = doc(db, "users", data.sent_by.id);
+              const senderSnap = await getDoc(senderRef);
+
+              if (senderSnap.exists()) {
+                sender = senderSnap.data();
+              }
+            }
+          } catch {
+            sender = {};
+          }
 
           return {
             id: d.id,
             conversationId,
             ...data,
-            profileImage: recipient?.photo_uri || pfp,
-            name: `${recipient.first_name ?? "Unknown"} ${
-              recipient.last_name ?? ""
+            profileImage: pfp,
+            name: `${sender.first_name ?? "Unknown"} ${
+              sender.last_name ?? ""
             }`.trim(),
-            country: recipient.country ?? "Unknown",
+            country: sender.country ?? "Unknown",
             lastMessage: data.content,
             lastMessageDate: data.created_at,
           };
@@ -411,37 +422,41 @@ export default function Admin() {
                   </div>
                 )}
 
-                {activeView === "review" && selectedMessage && !reviewAction && (
-                  <div className="h-full overflow-hidden">
-                    <AdminMessageReview
-                      message={currentMessage}
-                      isSubmitting={isReviewSubmitting}
-                      onClose={() => {
-                        if (isReviewSubmitting) return;
+                {activeView === "review" &&
+                  selectedMessage &&
+                  !reviewAction && (
+                    <div className="h-full overflow-hidden">
+                      <AdminMessageReview
+                        message={currentMessage}
+                        isSubmitting={isReviewSubmitting}
+                        onClose={() => {
+                          if (isReviewSubmitting) return;
 
-                        setReviewAction(null);
-                        setActiveView("inbox");
-                        setSelectedMessage(null);
-                      }}
-                      onApprove={handleApprove}
-                      onReject={() => {
-                        if (isReviewSubmitting) return;
-                        setActiveView("reject");
-                      }}
-                      onRevert={revertToPending}
-                    />
-                  </div>
-                )}
+                          setReviewAction(null);
+                          setActiveView("inbox");
+                          setSelectedMessage(null);
+                        }}
+                        onApprove={handleApprove}
+                        onReject={() => {
+                          if (isReviewSubmitting) return;
+                          setActiveView("reject");
+                        }}
+                        onRevert={revertToPending}
+                      />
+                    </div>
+                  )}
 
-                {activeView === "reject" && selectedMessage && !reviewAction && (
-                  <div className="h-full overflow-hidden">
-                    <AdminRejectModal
-                      message={selectedMessage}
-                      onClose={() => setActiveView("review")}
-                      onSubmit={handleRejectSubmit}
-                    />
-                  </div>
-                )}
+                {activeView === "reject" &&
+                  selectedMessage &&
+                  !reviewAction && (
+                    <div className="h-full overflow-hidden">
+                      <AdminRejectModal
+                        message={selectedMessage}
+                        onClose={() => setActiveView("review")}
+                        onSubmit={handleRejectSubmit}
+                      />
+                    </div>
+                  )}
 
                 {reviewAction === "approved" && (
                   <div className="h-full overflow-hidden">

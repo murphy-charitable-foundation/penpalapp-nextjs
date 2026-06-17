@@ -84,6 +84,8 @@ export default function NavBar() {
       router.push("/choose-profile");
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsNavigating(false);
     }
   };
 
