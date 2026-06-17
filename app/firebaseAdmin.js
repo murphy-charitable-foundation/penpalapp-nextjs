@@ -5,7 +5,7 @@ import { logError } from "./utils/analytics.js";
 export function getOrInitApp(name='[DEFAULT]', envVar='FIREBASE_SERVICE_ACCOUNT_JSON') {
   const existingApp = admin.apps.find((app) => app.name === name);
   if (existingApp) return existingApp;
-  if (!envVar) return null;
+  if (!envVar || !process.env[envVar]) return null;
 
   try {
     const serviceAccount = JSON.parse(process.env[envVar]);
