@@ -29,6 +29,11 @@ const PAGE_SIZE = Number(process.env.PAGE_SIZE || 250);
 
 const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
 
+if (!devApp) {
+  console.error("Dev Firebase app not initialized. Check FIREBASE_SERVICE_ACCOUNT_JSON_DEV.");
+  process.exit(1);
+}
+
 const devDb = devApp.firestore();
 
 if (!devDb || !db) {
