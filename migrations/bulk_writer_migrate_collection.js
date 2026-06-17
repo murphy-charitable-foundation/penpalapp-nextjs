@@ -12,9 +12,9 @@
  *   export FIREBASE_SERVICE_ACCOUNT_JSON="firebase_service_account_json for prd environment"
  *   export FIREBASE_SERVICE_ACCOUNT_JSON_DEV="firebase_service_account_json for dev environment"
  * 
- *   DRY_RUN=true   node bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
- *   DRY_RUN=false  node bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
- *  Ex:  node bulk_writer_migrate_collection.js conversation conversations '{"messages":"messages"}'
+ *   DRY_RUN=true   node migrations/bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
+ *   DRY_RUN=false  node migrations/bulk_writer_migrate_collection.js <srcTop> <dstTop> [renameMapJson]
+ *   Ex:  node migrations/bulk_writer_migrate_collection.js conversations conversations '{"messages":"messages"}'
  * 
  * Optional:
  *   PAGE_SIZE=250 (default)
@@ -26,6 +26,9 @@ console.log("DRY_RUN env:", process.env.DRY_RUN);
 
 const DRY_RUN = process.env.DRY_RUN !== "false";
 const PAGE_SIZE = Number(process.env.PAGE_SIZE || 250);
+
+const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
+const devDb = devApp.firestore();
 
 const [,, srcTop, dstTop, renameMapJson] = process.argv;
 
@@ -70,6 +73,32 @@ function mapSubcollectionId(srcId) {
   return mapped || srcId;
 }
 
+function rebaseRefs(value, dstDb = devDb) {
+  
+  const isFirestoreRefLike = v =>
+    v &&
+    typeof v === "object" &&
+    typeof v.path === "string" &&
+    "_firestore" in v &&
+    "_path" in v;
+
+  if (isFirestoreRefLike(value)) {
+    return dstDb.doc(value.path);
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => {
+      value[i] = rebaseRefs(item, dstDb);
+    });
+  } else if (value && value.constructor === Object) {
+    Object.keys(value).forEach(key => {
+      value[key] = rebaseRefs(value[key], dstDb);
+    });
+  }
+
+  return value;
+}
+
 /**
  * Copy a collection recursively.
  * Note: writes are queued to BulkWriter; we await writer.flush() per page
@@ -98,7 +127,7 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
       } else {
         // Queue the write (do NOT await per document)
         stats.docsQueued++;
-        writer.set(dstDocRef, docSnap.data(), { merge: false });
+        writer.set(dstDocRef, rebaseRefs(docSnap.data(), devDb), { merge: false });
       }
 
       // Recurse into subcollections
@@ -137,8 +166,6 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
   console.log(`Page size: ${PAGE_SIZE}\n`);
 
   let writer = null;
-  const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
-  const devDb = devApp.firestore();
 
   if (!DRY_RUN) {
     if (!devDb || !db) {
