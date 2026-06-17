@@ -28,7 +28,13 @@ const DRY_RUN = process.env.DRY_RUN !== "false";
 const PAGE_SIZE = Number(process.env.PAGE_SIZE || 250);
 
 const devApp = getOrInitApp("penpalmagicapp-dev", "FIREBASE_SERVICE_ACCOUNT_JSON_DEV");
+
 const devDb = devApp.firestore();
+
+if (!devDb || !db) {
+  console.error("Firestore database not initialized. Check your Firebase environment variables.");
+  process.exit(1);
+}
 
 const [,, srcTop, dstTop, renameMapJson] = process.argv;
 
@@ -168,10 +174,6 @@ async function copyCollectionRecursive(srcColRef, dstColRef, writer) {
   let writer = null;
 
   if (!DRY_RUN) {
-    if (!devDb || !db) {
-      console.error("Firestore database not initialized. Check your Firebase environment variables.");
-      process.exit(1);
-    }
     writer = devDb.bulkWriter();
 
     // Track per-write success/failure
