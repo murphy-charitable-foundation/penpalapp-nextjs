@@ -20,6 +20,8 @@ const PUBLIC_PATHS = [
   '/welcome',
   '/create-acc',
   '/reset-password',
+    "/privacy-policy",
+    "/terms-conditions",
 ];
 
 export function UserProvider({ children }) {
@@ -64,7 +66,7 @@ export function UserProvider({ children }) {
             setUserType('Unknown Type');
             setProfileImage('');
 
-            if (pathname !== '/create-acc') {
+            if (!PUBLIC_PATHS.includes(pathname) && pathname !== '/create-acc') {
               router.push('/create-acc');
             }
           }
