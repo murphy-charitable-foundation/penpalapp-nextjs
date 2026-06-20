@@ -94,8 +94,13 @@ export default function EditProfile() {
       setDreamJob(userData.dream_job || "");
       setFavoriteColor(userData.favorite_color || "");
 
-      const downloaded = await getUserPfp(user.uid);
-      setPhotoUri(downloaded || "");
+      try {
+        const downloaded = await getUserPfp(user.uid);
+        setPhotoUri(downloaded || "");
+      } catch (error) {
+        console.error("Failed to load profile image", error);
+        setPhotoUri("");
+      }
 
       setUserType(userData.user_type || "");
       setFavoriteAnimal(userData.favorite_animal || "");

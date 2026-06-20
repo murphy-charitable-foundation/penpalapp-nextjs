@@ -109,8 +109,13 @@ export default function Home() {
 
         setUserName(userData.first_name || "Unknown User");
 
-        const downloaded = await getUserPfp(uid);
-        setProfileImage(downloaded || "");
+        try {
+          const downloaded = await getUserPfp(uid);
+          setProfileImage(downloaded || "");
+        } catch (error) {
+          console.error("Failed to load profile image", error);
+          setProfileImage("");
+        }
 
         const userConversations = await getConversations(uid);
         setConversations(userConversations);

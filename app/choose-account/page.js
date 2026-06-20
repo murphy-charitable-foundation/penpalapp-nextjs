@@ -52,6 +52,7 @@ export default function ChooseAccountPage() {
   }, [hydrated, users.length, router]);
 
   useEffect(() => {
+    // Reload profile pictures whenever the `users` list changes
     let mounted = true;
 
     const loadPfps = async () => {
@@ -62,6 +63,7 @@ export default function ChooseAccountPage() {
               const downloaded = await getUserPfp(u.id);
               return [u.id, downloaded || ""];
             } catch (e) {
+              console.error(`Failed to load profile image for ${u.id}`, e);
               return [u.id, ""];
             }
           })
