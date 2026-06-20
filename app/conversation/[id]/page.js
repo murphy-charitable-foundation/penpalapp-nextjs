@@ -691,8 +691,13 @@ export default function Page({ params }) {
               setUserLocation(userData.location);
             }
 
-            const downloaded = await getUserPfp(currentUser.uid);
-            setProfileImage(downloaded || "");
+            try {
+              const downloaded = await getUserPfp(currentUser.uid);
+              setProfileImage(downloaded || "");
+            } catch (error) {
+              console.error("Failed to load profile image", error);
+              setProfileImage("");
+            }
           }
 
           const fetchedRecipients = await fetchRecipients(id);

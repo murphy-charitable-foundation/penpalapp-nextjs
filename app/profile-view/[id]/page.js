@@ -64,8 +64,13 @@ export default function Page({ params }) {
         setHobbies(u.hobbies || []);
         setFavoriteColor(u.favorite_color || "");
 
-        const downloaded = await getUserPfp(id);
-        setPhotoUri(downloaded || "");
+        try {
+          const downloaded = await getUserPfp(id);
+          setPhotoUri(downloaded || "");
+        } catch (error) {
+          console.error("Failed to load profile image", error);
+          setPhotoUri("");
+        }
 
         setUserType(u.user_type || "");
         setFavoriteAnimal(u.favorite_animal || "");
