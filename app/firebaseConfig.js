@@ -54,31 +54,44 @@ const VAPID_KEY =
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
 let messaging = null;
 
-if (typeof window !== "undefined") {
+const hasBasicMessagingSupport = () =>
+  typeof window !== "undefined" &&
+  typeof navigator !== "undefined" &&
+  navigator.serviceWorker != null &&
+  typeof navigator.serviceWorker.addEventListener === "function" &&
+  "PushManager" in window;
+
+const initializeMessaging = async () => {
+  if (messaging) {
+    return messaging;
+  }
+
+  if (typeof window === "undefined") {
+    return null;
+  }
+
   if (process.env.NODE_ENV === "development") {
     console.log("Firebase client project:", firebaseConfig.projectId);
   }
 
-  const isServiceWorkerSupported =
-    typeof navigator !== "undefined" &&
-    navigator.serviceWorker != null &&
-    typeof navigator.serviceWorker.addEventListener === "function";
-
-  const isPushSupported = typeof window !== "undefined" && "PushManager" in window;
-
-  if (isServiceWorkerSupported && isPushSupported) {
-    isSupported()
-      .then((supported) => {
-        if (supported) {
-          messaging = getMessaging(app);
-        }
-      })
-      .catch((err) => {
-        console.warn("Firebase messaging support check failed:", err);
-        messaging = null;
-      });
+  if (!hasBasicMessagingSupport()) {
+    return null;
   }
-}
+
+  try {
+    const supported = await isSupported();
+    if (!supported) {
+      return null;
+    }
+
+    messaging = getMessaging(app);
+    return messaging;
+  } catch (err) {
+    console.warn("Firebase messaging support check failed:", err);
+    messaging = null;
+    return null;
+  }
+};
 
 // ---------- PERMISSION + API CALL ----------
 
@@ -97,7 +110,8 @@ export const requestNotificationPermission = async () => {
 };
 
 export const handleNotificationSetup = async () => {
-  if (!messaging) {
+  const activeMessaging = await initializeMessaging();
+  if (!activeMessaging) {
     console.warn("Messaging not initialized (probably server environment or unsupported browser).");
     return;
   }
@@ -118,7 +132,7 @@ export const handleNotificationSetup = async () => {
   }
 
   try {
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(activeMessaging, { vapidKey: VAPID_KEY });
     const user = auth.currentUser;
 
     if (!token || !user) {
