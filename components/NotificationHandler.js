@@ -8,10 +8,7 @@ export function NotificationHandler({ children }) {
     if (typeof window === 'undefined') return;
     if (!('Notification' in window)) return;
     if (!messaging) return;
-
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
-    }
+      if (!('serviceWorker' in navigator)) return;
   }, []);
 
   return children;

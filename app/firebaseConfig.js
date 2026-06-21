@@ -3,7 +3,7 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore"
 
 // import { getAnalytics } from "firebase/analytics";
@@ -52,12 +52,32 @@ const VAPID_KEY =
   process.env.NODE_ENV === "production"
     ? "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc"
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
-let messaging;
+let messaging = null;
+
 if (typeof window !== "undefined") {
   if (process.env.NODE_ENV === "development") {
     console.log("Firebase client project:", firebaseConfig.projectId);
   }
-  messaging = getMessaging(app);
+
+  const isServiceWorkerSupported =
+    typeof navigator !== "undefined" &&
+    navigator.serviceWorker != null &&
+    typeof navigator.serviceWorker.addEventListener === "function";
+
+  const isPushSupported = typeof window !== "undefined" && "PushManager" in window;
+
+  if (isServiceWorkerSupported && isPushSupported) {
+    isSupported()
+      .then((supported) => {
+        if (supported) {
+          messaging = getMessaging(app);
+        }
+      })
+      .catch((err) => {
+        console.warn("Firebase messaging support check failed:", err);
+        messaging = null;
+      });
+  }
 }
 
 // ---------- PERMISSION + API CALL ----------
@@ -78,7 +98,12 @@ export const requestNotificationPermission = async () => {
 
 export const handleNotificationSetup = async () => {
   if (!messaging) {
-    console.warn("Messaging not initialized (probably server environment).");
+    console.warn("Messaging not initialized (probably server environment or unsupported browser).");
+    return;
+  }
+
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    console.warn("Browser does not support service workers for notifications.");
     return;
   }
 
