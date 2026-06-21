@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -75,7 +75,7 @@ export default function Admin() {
     (selectedMessage && documents.find((d) => d.id === selectedMessage.id)) ||
     selectedMessage;
 
-  const fetchConversations = async (nextPage = false, pageCursor = null) => {
+  const fetchConversations = useCallback(async (nextPage = false, pageCursor = null) => {
     try {
       setError("");
 
@@ -163,7 +163,7 @@ export default function Admin() {
       setIsConversationsLoading(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [selectedStatus, startDate, endDate]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -212,7 +212,7 @@ export default function Admin() {
     };
 
     loadConversations();
-  }, [selectedStatus, startDate, endDate, activeView, userId, isAuthLoading]);
+  }, [selectedStatus, startDate, endDate, activeView, userId, isAuthLoading, fetchConversations]);
 
   const filter = (status, start, end) => {
     setSelectedStatus(status);
