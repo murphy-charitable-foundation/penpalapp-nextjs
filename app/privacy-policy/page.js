@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
             <div className="space-y-8 text-gray-800 leading-relaxed text-sm">
               <p><strong>Last Updated:</strong> June 20, 2026</p>
 
-              <p>Welcome to the <strong>Murphy Charity Foundation Pen Pal App</strong> ("we," "us," or "our"). This Privacy Policy explains how we collect, use, and handle your information when you use our chat and messaging application. As a nonprofit organization, we like to keep things simple, transparent, and focused on our mission.</p>
+              <p>Welcome to the <strong>Murphy Charity Foundation Pen Pal App</strong> (&QUOT;we,&QUOT; &QUOT;us,&QUOT; or &QUOT;our&QUOT;). This Privacy Policy explains how we collect, use, and handle your information when you use our chat and messaging application. As a nonprofit organization, we like to keep things simple, transparent, and focused on our mission.</p>
 
               <p>By using the app, you agree to the practices described below. If you do not agree, please do not use the app.</p>
 
@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
                   <li>Create and manage your account.</li>
                   <li>Deliver your messages to your pen pal(s).</li>
                   <li>Enforce our rules and maintain a safe, respectful environment for all users.</li>
-                  <li>Fix bugs and improve the app's functionality.</li>
+                  <li>Fix bugs and improve the app&APOS;s functionality.</li>
               </ul>
 
               <h2>3. Moderation and Your Messages</h2>
