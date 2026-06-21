@@ -31,6 +31,9 @@ export default function TermsCondition() {
           {/* ===== SCROLLABLE CONTENT ===== */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
             <div className="space-y-8 text-gray-800 leading-relaxed text-sm">
+            
+              <p><strong>Last Updated:</strong> June 20, 2026</p>
+              
               <p class="intro">
                 Below are our terms for using the App:
               </p>
@@ -95,7 +98,12 @@ export default function TermsCondition() {
                 <li>Inappropriate or violating content will be removed at the discretion of the App administration.</li>
               </ul>
 
-              <h2>12. Contact Information</h2>
+              <h2>12. Changes to this Privacy Policy</h2>
+              <ul>
+                <li>We may update this Privacy Policy from time to time. We will post any changes on our website.</li>
+              </ul>
+
+              <h2>13. Contact Information</h2>
               <ul>
                 <li>As an international pen pal, you must share clear and correct contact information with the administrators so that you can be matched with children based on your preferences.</li>
               </ul>
