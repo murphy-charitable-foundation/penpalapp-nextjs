@@ -393,10 +393,18 @@ export default function Page({ params }) {
   };
 
   const handleOpenAttachment = (attachment) => {
-    if (!attachment?.url && !attachment?.previewUrl) return;
+    const source = attachment?.url || attachment?.previewUrl;
+    if (!source) return;
+
+    // If attachment has a remote URL, ensure it's from an allowed origin
+    if (attachment?.url && !isAllowedMediaUrl(attachment.url)) {
+      console.warn("Blocked attachment from disallowed origin:", attachment.url);
+      return;
+    }
+
     setAttachmentViewer({
       ...attachment,
-      source: attachment.url || attachment.previewUrl,
+      source,
     });
   };
 
@@ -1484,7 +1492,16 @@ export default function Page({ params }) {
 
                         {messageAttachments(message).length > 0 && (
                           <div className="mt-3 space-y-2">
-                            {messageAttachments(message).map((attachment) => (
+                            {messageAttachments(message)
+                          .filter((attachment) => {
+                            // Allow preview blobs (local File previews) or validated remote URLs
+                            const src = attachment?.url || attachment?.previewUrl;
+                            if (!src) return false;
+                            // If this is a local preview (no remote url), allow it
+                            if (attachment?.previewUrl && !attachment?.url) return true;
+                            return isAllowedMediaUrl(src);
+                          })
+                          .map((attachment) => (
                               <button
                                 key={attachment.id}
                                 type="button"
