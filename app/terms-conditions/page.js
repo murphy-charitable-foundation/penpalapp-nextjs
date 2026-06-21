@@ -33,7 +33,7 @@ export default function TermsCondition() {
             <div className="space-y-8 text-gray-800 leading-relaxed text-sm">
             
               <p><strong>Last Updated:</strong> June 20, 2026</p>
-              
+
               <p class="intro">
                 Below are our terms for using the App:
               </p>
@@ -98,9 +98,9 @@ export default function TermsCondition() {
                 <li>Inappropriate or violating content will be removed at the discretion of the App administration.</li>
               </ul>
 
-              <h2>12. Changes to this Privacy Policy</h2>
+              <h2>12. Changes to this Terms of Service</h2>
               <ul>
-                <li>We may update this Privacy Policy from time to time. We will post any changes on our website.</li>
+                <li>We may update these Terms of Service from time to time. We will post any changes on our website.</li>
               </ul>
 
               <h2>13. Contact Information</h2>
