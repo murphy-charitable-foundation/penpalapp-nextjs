@@ -15,8 +15,9 @@
  */
 
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { sendEmailMessage } from "../../utils/email";
 import { auth, db } from "../../firebaseAdmin";
+import { logError } from "../../utils/analytics";
 
 export const runtime = "nodejs";
 
@@ -146,40 +147,10 @@ Reported Excerpt:
       </html>
     `;
 
-    const requiredEnvVars = [
-      "PENPAL_EMAIL",
-      "PENPAL_EMAIL_PASSWORD",
-      "CPANEL_SMTP_HOST",
-      "CPANEL_SMTP_PORT",
-    ];
-
-    const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
-
-    if (missingEnvVars.length > 0) {
-      return jsonError(
-        `Missing email environment variables: ${missingEnvVars.join(", ")}`,
-        500
-      );
-    }
-
-    const smtpPort = Number(process.env.CPANEL_SMTP_PORT);
-
-    if (Number.isNaN(smtpPort)) {
-      return jsonError("CPANEL_SMTP_PORT must be a number.", 500);
-    }
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.CPANEL_SMTP_HOST,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: process.env.PENPAL_EMAIL,
-        pass: process.env.PENPAL_EMAIL_PASSWORD,
-      },
-    });
+    // SMTP config validation is handled inside `sendEmailMessage`
 
     try {
-      await transporter.sendMail({
+      await sendEmailMessage({
         to: process.env.PENPAL_EMAIL,
         from: process.env.PENPAL_EMAIL,
         subject: "Message Reported",

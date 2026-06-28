@@ -200,7 +200,6 @@ window.onunhandledrejection captures unhandled promise rejections.
 
 When an error occurs:
 The error is logged to Firebase using logError.
-The error is also sent to Sentry using Sentry.captureException.
 */
 class GlobalTracker {
   static instance = null;
@@ -217,7 +216,6 @@ class GlobalTracker {
   /**
    * Adds global error listeners to track uncaught errors and unhandled promise
    * rejections. When an error occurs, it is logged to Firebase using logError
-   * which is also sent to Sentry using Sentry.captureException.
    *
    * Listeners are registered for:
    * - window.onerror: captures uncaught JavaScript errors

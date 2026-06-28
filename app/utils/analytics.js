@@ -72,7 +72,6 @@ const logError = (error, errorInfo) => {
       ...errorInfo,
     });
   }
-  Sentry.captureException(errorObject);
 };
 
 /**
