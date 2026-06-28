@@ -3,13 +3,17 @@
 import React, { useState } from "react";
 import { Film, Image as ImageIcon } from "lucide-react";
 
-import { compressMedia } from "../utils/compressMedia";
+import {
+  compressMedia,
+  getDetectedCompressionProfile,
+} from "../utils/compressMedia";
 
 import AudioRecorder from "../../components/media/AudioRecorder"
 import AudioPlayer from "../../components/media/AudioPlayer";
 import VideoUploader from "../../components/media/VideoUploader";
 import VideoPlayer from "../../components/media/VideoPlayer";
 import ImageUploader from "../../components/media/ImageUploader";
+import useBeforeUnloadWarning from "../../components/media/useBeforeUnloadWarning";
 /**
  *
  * // Audio and Video compression test
@@ -19,6 +23,78 @@ export default function LocalDownload() {
   const [audioContent, setAudioContent] = useState("");
   const [videoContent, setVideoContent] = useState("");
   const [imgContent, setImgContent] = useState("");
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [testFile, setTestFile] = useState(null);
+  const [testResult, setTestResult] = useState(null);
+  const [testError, setTestError] = useState("");
+  const [selectedProfile, setSelectedProfile] = useState("auto");
+  const detectedProfile = getDetectedCompressionProfile();
+
+  useBeforeUnloadWarning(isCompressing);
+
+  const formatSize = (bytes) => {
+    if (!bytes) return "0 KB";
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  };
+
+  const getExtensionFromMimeType = (mimeType) => {
+    const baseType = mimeType.split(";")[0];
+    const extensionMap = {
+      "audio/mpeg": "mp3",
+      "audio/mp3": "mp3",
+      "audio/mp4": "m4a",
+      "audio/ogg": "ogg",
+      "audio/webm": "webm",
+      "video/mp4": "mp4",
+      "video/webm": "webm",
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    };
+
+    return extensionMap[baseType] || baseType.split("/")[1] || "bin";
+  };
+
+  const clearTestResult = () => {
+    if (testResult?.url) URL.revokeObjectURL(testResult.url);
+    setTestResult(null);
+  };
+
+  async function handleCompressionTest(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+
+    clearTestResult();
+    setTestFile(file ?? null);
+    setTestError("");
+    setProgress(0);
+
+    if (!file) return;
+
+    try {
+      setIsCompressing(true);
+      const compressedBlob = await compressMedia(
+        file,
+        (p) => setProgress(Math.round(p * 100)),
+        selectedProfile === "auto" ? {} : { profile: selectedProfile },
+      );
+
+      const url = URL.createObjectURL(compressedBlob);
+      setTestResult({
+        blob: compressedBlob,
+        url,
+        fileName: `compressed_${Date.now()}.${getExtensionFromMimeType(
+          compressedBlob.type,
+        )}`,
+      });
+    } catch (error) {
+      console.error("Compression test failed:", error);
+      setTestError(error.message || "Compression failed");
+    } finally {
+      setIsCompressing(false);
+    }
+  }
 
 
   const handleRequireLogin = () => {
@@ -47,6 +123,114 @@ export default function LocalDownload() {
 
   return (
     <div className="p-4 flex flex-col justify-center items-center gap-4">
+      <section className="w-full max-w-xl rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3">
+          <h1 className="text-lg font-semibold text-slate-800">
+            Local Compression Test
+          </h1>
+          <p className="text-sm text-slate-500">
+            Runs compressMedia in this browser only. Nothing is uploaded.
+          </p>
+        </div>
+
+        <div className="mb-3 grid gap-2 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>Detected profile</span>
+            <span className="rounded bg-white px-2 py-1 font-medium text-slate-800">
+              {detectedProfile}
+            </span>
+          </div>
+          <label className="flex flex-wrap items-center justify-between gap-2">
+            <span>Test with profile</span>
+            <select
+              value={selectedProfile}
+              onChange={(e) => setSelectedProfile(e.target.value)}
+              disabled={isCompressing}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-slate-800"
+            >
+              <option value="auto">Auto ({detectedProfile})</option>
+              <option value="lowEnd">lowEnd</option>
+              <option value="balanced">balanced</option>
+              <option value="capable">capable</option>
+            </select>
+          </label>
+        </div>
+
+        <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-600 hover:bg-slate-100">
+          Choose photo, video, or audio
+          <input
+            type="file"
+            accept="image/*,video/*,audio/*"
+            className="hidden"
+            onChange={handleCompressionTest}
+            disabled={isCompressing}
+          />
+        </label>
+
+        {(testFile || isCompressing || testError) && (
+          <div className="mt-4 space-y-3 text-sm text-slate-700">
+            {testFile && (
+              <div className="grid grid-cols-2 gap-2 rounded-md bg-slate-50 p-3">
+                <span>Original</span>
+                <span className="text-right font-medium">
+                  {formatSize(testFile.size)}
+                </span>
+                <span>Compressed</span>
+                <span className="text-right font-medium">
+                  {testResult ? formatSize(testResult.blob.size) : "-"}
+                </span>
+              </div>
+            )}
+
+            {isCompressing && (
+              <div>
+                <div className="mb-1 flex justify-between text-xs text-slate-500">
+                  <span>Compressing</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-indigo-600 transition-all"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {testError && <p className="text-red-600">{testError}</p>}
+
+            {testResult && (
+              <div className="space-y-3">
+                {testResult.blob.type.startsWith("image") && (
+                  <img
+                    src={testResult.url}
+                    alt="Compressed preview"
+                    className="max-h-72 w-full rounded-md bg-slate-100 object-contain"
+                  />
+                )}
+                {testResult.blob.type.startsWith("video") && (
+                  <video
+                    src={testResult.url}
+                    controls
+                    className="max-h-72 w-full rounded-md bg-black"
+                  />
+                )}
+                {testResult.blob.type.startsWith("audio") && (
+                  <audio src={testResult.url} controls className="w-full" />
+                )}
+                <a
+                  href={testResult.url}
+                  download={testResult.fileName}
+                  className="inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  Download compressed file
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
       <div>
         <AudioPlayer src={audioContent} />
       </div>
