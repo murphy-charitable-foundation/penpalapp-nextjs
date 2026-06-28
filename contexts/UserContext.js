@@ -6,23 +6,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '../app/firebaseConfig';
 import { getUserPfp } from '../app/utils/conversationsFunctions';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
+import { PUBLIC_PATHS } from "../app/utils/publicPaths";
 
 const UserContext = createContext();
-
-const PUBLIC_PATHS = [
-  '/login',
-  '/choose-profile',
-  '/choose-account',
-  '/',
-  '/about',
-  '/contact',
-  '/donate',
-  '/welcome',
-  '/create-acc',
-  '/reset-password',
-    "/privacy-policy",
-    "/terms-conditions",
-];
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);

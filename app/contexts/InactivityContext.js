@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { PUBLIC_PATHS } from "../utils/publicPaths";
 
 const InactivityContext = createContext();
 
@@ -14,16 +15,7 @@ export function InactivityProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const publicPaths = [
-    "/",
-    "/login",
-    "/create-acc",
-    "/reset-password",
-    "/choose-profile",
-    "/choose-account",
-  ];
-
-  const isPublicPath = publicPaths.includes(pathname);
+  const isPublicPath = PUBLIC_PATHS.includes(pathname);
 
   const [inactivityWarning, setInactivityWarning] = useState(false);
   const [inactivitySecondsLeft, setInactivitySecondsLeft] = useState(0);
