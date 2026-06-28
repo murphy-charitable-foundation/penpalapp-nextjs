@@ -23,6 +23,9 @@ export default function AdminMessageReview({
   onClose,
   isSubmitting = false,
 }) {
+
+  const [attachmentViewer, setAttachmentViewer] = useState(null);
+
   if (!message) return null;
 
   const status =
@@ -51,7 +54,6 @@ export default function AdminMessageReview({
         })
     : "";
 
-  const [attachmentViewer, setAttachmentViewer] = useState(null);
 
   const getAllowedOrigins = () => {
     try {
@@ -182,9 +184,9 @@ export default function AdminMessageReview({
 
                 {attachments.length > 0 && (
                   <div className="mt-4 space-y-2">
-                    {attachments.map((attachment) => (
+                    {attachments.map((attachment, index) => (
                       <button
-                        key={attachment.id}
+                        key={index}
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
