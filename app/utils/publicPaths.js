@@ -9,4 +9,6 @@ export const PUBLIC_PATHS = [
   "/contact",
   "/donate",
   "/welcome",
+  "/privacy-policy",
+  "/terms-conditions",
 ];
