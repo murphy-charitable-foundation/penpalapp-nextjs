@@ -31,7 +31,6 @@ export function UserProvider({ children }) {
         
         // Fetch user type from Firestore
         try {
-          const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
           
           if (userDoc.exists()) {
