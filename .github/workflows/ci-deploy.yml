@@ -63,7 +63,7 @@ jobs:
           if [ "${{ github.ref_name }}" = "main" ]; then
             OUT="$(vercel deploy --prebuilt --prod --yes --token "$VC_TOKEN" --scope "$VC_TEAM")"
           else
-            OUT="$(vercel deploy --prebuilt --yes --token "$VC_TOKEN" --scope "$VC_TEAM")"
+            OUT="$(vercel deploy --prebuilt --env NODE_ENV=development --yes --token "$VC_TOKEN" --scope "$VC_TEAM")"
           fi
           # Extract public .vercel.app URL (usually after "Preview:" line)
           URL="$(printf "%s\n" "$OUT" | grep -Eo 'https?://[a-zA-Z0-9.-]+\.vercel\.app' | head -1 || true)"
