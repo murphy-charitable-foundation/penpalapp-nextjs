@@ -188,6 +188,7 @@ export default function Page({ params }) {
           const updateData = {
             ...baseDraftData,
             created_at: existingDraft.created_at || currentTime,
+            drafted_at: currentTime,
           };
 
           await updateDoc(draftDocRef, updateData);
@@ -197,6 +198,7 @@ export default function Page({ params }) {
           const newDraftData = {
             ...baseDraftData,
             created_at: currentTime,
+            drafted_at: currentTime,
           };
 
           await setDoc(newDraftRef, newDraftData);
@@ -225,6 +227,7 @@ export default function Page({ params }) {
               const newDraftData = {
                 ...baseDraftData,
                 created_at: currentTime,
+                drafted_at: currentTime,
               };
 
               await setDoc(newDraftRef, newDraftData);
@@ -422,6 +425,7 @@ export default function Page({ params }) {
         const updateData = {
           ...messageData,
           created_at: draft.created_at || currentTime,
+          drafted_at: currentTime,
         };
 
         await updateDoc(messageRef, updateData);
