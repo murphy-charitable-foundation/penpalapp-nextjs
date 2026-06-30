@@ -37,6 +37,19 @@ const firebaseConfig =
     ? productionFirebaseConfig
     : developmentFirebaseConfig;
 
+const firebaseDebugInfo = {
+  mode: process.env.NODE_ENV || "unknown",
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  storageBucket: firebaseConfig.storageBucket,
+  appId: firebaseConfig.appId,
+  apiKeyPresent: Boolean(firebaseConfig.apiKey),
+  env: {
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ? "set" : "missing",
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? "set" : "missing",
+  },
+};
+
 // // Initialize Firebase
 // Only initialize if no apps have been initialized
 
@@ -54,9 +67,7 @@ const VAPID_KEY =
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
 let messaging;
 if (typeof window !== "undefined") {
-  if (process.env.NODE_ENV === "development") {
-    console.log("Firebase client project:", firebaseConfig.projectId);
-  }
+  console.info("[firebase-config]", firebaseDebugInfo);
   messaging = getMessaging(app);
 }
 

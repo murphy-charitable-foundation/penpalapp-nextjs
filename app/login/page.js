@@ -34,11 +34,28 @@ export default function Login() {
   } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
+  const logFirebaseDebugInfo = () => {
+    console.info("[login-debug]", {
+      path: "/login",
+      nodeEnv: process.env.NODE_ENV,
+      projectId: auth?.app?.options?.projectId ?? "unknown",
+      authDomain: auth?.app?.options?.authDomain ?? "unknown",
+      apiKeyPresent: Boolean(auth?.app?.options?.apiKey),
+      env: {
+        FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ? "set" : "missing",
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? "set" : "missing",
+        FIREBASE_SERVICE_ACCOUNT_JSON: process.env.FIREBASE_SERVICE_ACCOUNT_JSON ? "set" : "missing",
+        GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS ? "set" : "missing",
+      },
+    });
+  };
+
   usePageAnalytics(`/login`);
 
   // Only depend on [hydrated]. Do NOT add searchParams or cachedUserLogins - searchParams
   // gets a new reference every render and causes this effect to run 20+ times/sec.
   useEffect(() => {
+    logFirebaseDebugInfo();
     if (!hydrated || hasRedirected.current) return;
     if (
       typeof window !== "undefined" &&
@@ -64,6 +81,8 @@ export default function Login() {
     try {
       if (!email) throw new Error("Please enter your email.");
       if (!password) throw new Error("Please enter your password.");
+
+      logFirebaseDebugInfo();
 
       const userCredential = await signInWithEmailAndPassword(
         auth,
