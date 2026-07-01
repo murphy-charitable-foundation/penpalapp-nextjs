@@ -148,7 +148,7 @@ export default function Admin() {
             }`.trim(),
             country: sender.country ?? "Unknown",
             lastMessage: data.content,
-            lastMessageDate: data.drafted_at,
+            lastMessageDate: data.created_at,
           };
         }),
       );
