@@ -68,7 +68,6 @@ const fetchDraft = async (conversationId, userRef, shouldCreate = false) => {
       return {
         id: draftDoc.id,
         ...draftDoc.data(),
-        created_at: draftDoc.data().created_at?.toDate?.() || null,
         drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
       };
     }
@@ -79,9 +78,7 @@ const fetchDraft = async (conversationId, userRef, shouldCreate = false) => {
         sent_by: userRef,
         content: "",
         status: "draft",
-        created_at: now,
         drafted_at: now,
-        deleted: null,
         unread: true,
       };
 
@@ -167,7 +164,6 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "draft",
         drafted_at: currentTime,
-        deleted: null,
         unread: true,
       };
 
@@ -187,7 +183,6 @@ export default function Page({ params }) {
 
           const updateData = {
             ...baseDraftData,
-            created_at: existingDraft.created_at || currentTime,
             drafted_at: currentTime,
           };
 
@@ -197,7 +192,6 @@ export default function Page({ params }) {
           const newDraftRef = doc(messagesRef);
           const newDraftData = {
             ...baseDraftData,
-            created_at: currentTime,
             drafted_at: currentTime,
           };
 
@@ -226,7 +220,6 @@ export default function Page({ params }) {
               const newDraftRef = doc(messagesRef);
               const newDraftData = {
                 ...baseDraftData,
-                created_at: currentTime,
                 drafted_at: currentTime,
               };
 
@@ -412,8 +405,6 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        drafted_at: currentTime,
-        deleted: null,
         unread: true,
       };
 
@@ -424,8 +415,7 @@ export default function Page({ params }) {
 
         const updateData = {
           ...messageData,
-          created_at: draft.created_at || currentTime,
-          drafted_at: currentTime,
+          created_at: currentTime,
         };
 
         await updateDoc(messageRef, updateData);

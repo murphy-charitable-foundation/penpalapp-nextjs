@@ -44,7 +44,8 @@ export const fetchConversations = async () => {
 
   const conversationQuery = query(
     collection(db, "conversations"),
-    where("members", "array-contains", userDocRef)
+    where("members", "array-contains", userDocRef),
+    where("deleted_at", '==', null)
   );
   const conversationQuerySnapshot = await getDocs(conversationQuery);
   const conversations = conversationQuerySnapshot.docs;
@@ -67,7 +68,6 @@ export const fetchConversation = async (id, lim = false, lastVisible = null) => 
   const lRef = collection(conversationRef, "messages");
   let conversationQuery;
 
-  // TODO temporarily disable moderation until it is developed
   if (lim) {
     conversationQuery = lastVisible
       ? query(
@@ -97,16 +97,6 @@ export const fetchConversation = async (id, lim = false, lastVisible = null) => 
           orderBy("created_at", "desc")
         );
   }
-
-  /*if (lim) {
-    conversationQuery = lastVisible
-      ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible), limit(lim))
-      : query(lRef, orderBy("created_at", "desc"), limit(lim));
-  } else {
-    conversationQuery = lastVisible
-      ? query(lRef, orderBy("created_at", "desc"), startAfter(lastVisible))
-      : query(lRef, orderBy("created_at", "desc"));
-  }*/
 
   try {
     const messagesSnapshot = await getDocs(conversationQuery);
@@ -161,100 +151,84 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
       sent_by: userRef,
       content: "",
       status: "draft",
-      created_at: new Date(),
-      deleted: null,
+      drafted_at: new Date(),
     });
     draft = {
       sent_by: userRef,
       content: "",
       status: "draft",
-      created_at: new Date(),
+      drafted_at: new Date(),
       id: d.id,
-      deleted: null,
     };
   }
   return draft;
 };
 
-export const fetchLatestMessageFromConversationOld = async (
+export const fetchLatestMessageFromConversation = async (
   conversationId,
   userRef
 ) => {
-  const draft = await fetchDraft(conversationId, userRef, false);
-  if (draft) return draft;
-
-  const messagesRef = collection(db, "conversations", conversationId, "messages");
-  const q = query(
-    messagesRef,
-    where("status", "==", "approved"),
-    orderBy("created_at", "desc"),
-    limit(1)
-  );
-  const messageSnapshot = await getDocs(q);
-  let message;
-  messageSnapshot.forEach((doc) => {
-    message = { id: doc.id, ...doc.data() };
-  });
-  return message;
-};
-
-export const fetchLatestMessageFromConversation = async (conversationId, userRef) => {
   const conversationRef = doc(collection(db, "conversations"), conversationId);
-  const lRef = collection(conversationRef, "messages");
+  const messagesRef = collection(conversationRef, "messages");
 
-  // Query with fallback in case no result for drafted_at
-  const getLatestByFieldFallback = async (constraints) => {
+  const toDate = (value) =>
+    value?.toDate?.() || (value instanceof Date ? value : new Date(0));
 
-    // initial query to check existence of the new field drafted_at
-    const draftedQuery = query (
-      lRef,
-      ...constraints,
-      orderBy("drafted_at", "desc"),
-      limit(1)
-    );
-    
-    const draftedSnap = await getDocs(draftedQuery);
-    
-    return draftedSnap;
+  const getFirstMessage = (snap, dateField) => {
+    if (snap.empty) return null;
+
+    const messageDoc = snap.docs[0];
+    const data = messageDoc.data();
+
+    return {
+      id: messageDoc.id,
+      ...data,
+      lastMessageDate: toDate(data?.[dateField]),
+    };
   };
 
-  // Run both in parallel
-  const [userConversationsSnap, sentConversationsSnap] = await Promise.all([
-    getLatestByFieldFallback([
-      where("sent_by", "==", userRef),
-      where("content", "!=", ""),
-    ]),
-    getLatestByFieldFallback([
-      where("status", "==", "approved"),
-      where("content", "!=", ""),
-    ]),
-  ]);
+  const [userConversationsSnap, sentConversationsSnap] = await Promise.all(
+    [
+      query(
+        messagesRef,
+        where("sent_by", "==", userRef),
+        where("content", "!=", ""),
+        orderBy("drafted_at", "desc"),
+        limit(1)
+      ),
 
-  const allConversations = [];
+      query(
+        messagesRef,
+        where("status", "==", "approved"),
+        where("content", "!=", ""),
+        orderBy("created_at", "desc"),
+        limit(1)
+      ),
+    ].map(getDocs)
+  );
 
-  if (!userConversationsSnap?.empty)
-    userConversationsSnap.forEach((doc) => {
-      allConversations.push({ id: doc?.id, ...doc?.data() });
-    });
+  const latestUserMessage = getFirstMessage(
+    userConversationsSnap,
+    "drafted_at"
+  );
 
-  if (!sentConversationsSnap?.empty)
-    sentConversationsSnap.forEach((doc) => {
-      if (doc?.data()?.sent_by?.id !== userRef?.id)
-        allConversations.push({ id: doc?.id, ...doc?.data() });
-    });
-  // Use drafted_at for new docs, and created_at for old as fallback
-  const getMessageDate = (message) => 
-    message?.drafted_at?.toDate?.() ||
-    message?.created_at?.toDate?.() ||
-    new Date(0);
-  
+  const latestApprovedMessage = getFirstMessage(
+    sentConversationsSnap,
+    "created_at"
+  );
 
-  if (allConversations.length === 0) return null;
-  if (allConversations.length === 1) return allConversations[0];
-  
-  return getMessageDate(allConversations[0]) > getMessageDate(allConversations[1]) 
-      ? allConversations[0] 
-      : allConversations[1];
+  const latestSentMessage =
+    latestApprovedMessage?.sent_by?.id !== userRef?.id
+      ? latestApprovedMessage
+      : null;
+
+  if (!latestUserMessage && !latestSentMessage) return null;
+  if (!latestUserMessage) return latestSentMessage;
+  if (!latestSentMessage) return latestUserMessage;
+
+  return latestUserMessage.lastMessageDate > latestSentMessage.lastMessageDate
+    ? latestUserMessage
+    : latestSentMessage;
 };
 
 export const fetchRecipients = async (id) => {
@@ -385,7 +359,8 @@ export const createConnection = async (userDocRef, kidDocRef) => {
           // query DB to check for existing conversation
           let conversationQuery = query(
             collection(db, "conversations"),
-            where("members", "==", [userDocRef, kidDocRef]) // Use reference, not string
+            where("members", "==", [userDocRef, kidDocRef]), // Use reference, not string
+            where("deleted_at", '==', null)
           );
 
           let querySnapshot = await getDocs(conversationQuery);
@@ -393,7 +368,8 @@ export const createConnection = async (userDocRef, kidDocRef) => {
           if (querySnapshot.empty) {
             conversationQuery = query(
               collection(db, "conversations"),
-              where("members", "==", [kidDocRef, userDocRef])
+              where("members", "==", [kidDocRef, userDocRef]),
+              where("deleted_at", '==', null)
             );
             querySnapshot = await getDocs(conversationQuery);
           }
@@ -407,7 +383,7 @@ export const createConnection = async (userDocRef, kidDocRef) => {
                 kidDocRef   
               ],
               created_at: new Date(),
-              archived_at: null,
+              deleted_at: null,
             });
 
             const now = new Date();
@@ -416,8 +392,6 @@ export const createConnection = async (userDocRef, kidDocRef) => {
               content: "Please complete your first message here...",
               status: "draft",
               drafted_at: now,
-              created_at: now,
-              deleted: null
             });
 
             console.log(conversationRef);
