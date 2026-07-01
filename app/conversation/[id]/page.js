@@ -19,6 +19,7 @@ import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
   sendNotification,
+  getUserPfp,
 } from "../../utils/conversationsFunctions";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -694,7 +695,13 @@ export default function Page({ params }) {
               setUserLocation(userData.location);
             }
 
-            setProfileImage(userData?.photo_uri || "");
+            try {
+              const downloaded = await getUserPfp(currentUser.uid);
+              setProfileImage(downloaded || "");
+            } catch (error) {
+              console.error("Failed to load profile image", error);
+              setProfileImage("");
+            }
           }
 
           const fetchedRecipients = await fetchRecipients(id);
@@ -1006,7 +1013,7 @@ export default function Page({ params }) {
                           photo_uri={
                             isSenderUser
                               ? profileImage
-                              : recipients[0]?.photo_uri
+                              : recipients[0]?.pfp
                           }
                           name={isSenderUser ? "Me" : recipients[0]?.first_name}
                           size={12}

@@ -277,8 +277,17 @@ export const fetchRecipients = async (id) => {
     const selUser = await getDoc(selectedUserDocRef);
     const userData = selUser.data();    // utility/helper variable
 
-    // Call the only source of profile
-    const pfpUrl = await getUserPfp(user.id);
+    // Call the only source of profile; protect against unexpected throws
+    let pfpUrl = null;
+    try {
+      pfpUrl = await getUserPfp(user.id);
+    } catch (error) {
+      logError(error, {
+        description: "Error fetching profile image for recipient",
+        userId: user.id,
+      });
+      pfpUrl = null;
+    }
 
     // Push the data; if pfpUrl is null, pfp is null as well; UI should handle the default
     members.push({ ...userData, id: user.id, pfp: pfpUrl });
