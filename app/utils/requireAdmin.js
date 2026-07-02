@@ -15,10 +15,10 @@ export async function requireAdmin(req) {
   let decodedToken;
   try {
     decodedToken = await auth.verifyIdToken(idToken);
-  } catch (e) {
-    const e = new Error("Invalid or expired token");
-    e.status = 401;
-    throw e;
+  } catch {
+    const err = new Error("Invalid or expired token");
+    err.status = 401;
+    throw err;
   }
 
   const callerUid = decodedToken.uid;
