@@ -348,10 +348,10 @@ export default function CreateAccount() {
                     id="terms-check"
                     name="terms-check"
                     type="checkbox"
+                    value={termsCheck}
                     onChange={(e) => {
                       setTermsCheck(e.target.checked);
                     }}
-                    className="h-4 w-4"
                   />
                   <label className="text-sm text-gray-900">
                     See the{" "}
