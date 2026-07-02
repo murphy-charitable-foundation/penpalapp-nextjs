@@ -16,7 +16,8 @@ export async function requireAdmin(req) {
   try {
     decodedToken = await auth.verifyIdToken(idToken);
   } catch (e) {
-    // rethrow firebase auth errors so callers can handle them
+    const err = new Error("Invalid or expired token");
+    err.status = 401;
     throw e;
   }
 
