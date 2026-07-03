@@ -62,12 +62,3 @@ body {
   outline: none; /* because border-radius doesn’t affect outline */
 }
 
-.password-checklist-wrapper {
-  color: #111827;
-}
-
-.password-checklist-wrapper li,
-.password-checklist-wrapper span {
-  color: inherit !important;
-  opacity: 1 !important;
-}
