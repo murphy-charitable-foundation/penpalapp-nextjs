@@ -3,24 +3,44 @@ import { FieldPath } from "firebase-admin/firestore";
 
 import { db, auth } from "../../firebaseAdmin";
 import { sendEmail } from "../../utils/dormantConversationHelpers";
-import { requireAdmin } from "../../utils/requireAdmin";
 
 export async function POST(request) {
   if (auth == null) {
     return NextResponse.json({ message: "Admin is null." }, { status: 500 });
   }
-
   try {
-    await requireAdmin({
-      headers: {
-        authorization: request.headers.get("Authorization"),
-      },
-    });
-
+    const authHeader = request.headers.get("Authorization");
+    const idToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+    if (!idToken) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Missing or invalid Authorization header" },
+        { status: 401 }
+      );
+    }
+    let decodedToken;
+    try {
+      decodedToken = await auth.verifyIdToken(idToken);
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+    const uid = decodedToken.uid;
     if (!db) {
       return NextResponse.json(
         { error: "Database not initialized" },
-        { status: 500 },
+        { status: 500 }
+      );
+    }
+    const userDoc = await db.collection("users").doc(uid).get();
+    const userData = userDoc.data();
+    if (!userDoc.exists || userData?.user_type !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden", message: "Only admin users can use this endpoint" },
+        { status: 403 }
       );
     }
 
@@ -33,10 +53,7 @@ export async function POST(request) {
       if (denormalizedAt != null) {
         latestMessage = {
           id: docData.latest_message_id ?? null,
-          created_at:
-            typeof denormalizedAt.toDate === "function"
-              ? denormalizedAt.toDate()
-              : denormalizedAt,
+          created_at: typeof denormalizedAt.toDate === "function" ? denormalizedAt.toDate() : denormalizedAt,
           sent_by: docData.latest_message_sent_by ?? null,
         };
       }
@@ -52,18 +69,12 @@ export async function POST(request) {
           const messageDoc = latestMessageSnapshot.docs[0];
           const messageData = messageDoc.data();
           const createdAt = messageData.created_at?.toDate?.();
-          const sentById =
-            messageData.sent_by?.id ??
-            (typeof messageData.sent_by === "string"
-              ? messageData.sent_by
-              : null);
-
+          const sentById = messageData.sent_by?.id ?? (typeof messageData.sent_by === "string" ? messageData.sent_by : null);
           latestMessage = {
             id: messageDoc.id,
             created_at: createdAt,
             sent_by: sentById,
           };
-
           try {
             await doc.ref.update({
               latest_message_created_at: messageData.created_at,
@@ -84,17 +95,14 @@ export async function POST(request) {
         admin_reminded_at: docData.admin_reminded_at?.toDate?.(),
       };
     });
-
     const conversationes = await Promise.all(conversationesPromises);
+
     const emailPromises = [];
 
     for (const conversation of conversationes) {
       const latestMessageTimestamp = conversation?.latestMessage?.created_at;
-      const latestAdminDormantConversationTimestamp =
-        conversation?.admin_reminded_at;
-      const latestUserDormantConversationTimestamp =
-        conversation?.user_reminded_at;
-
+      const latestAdminDormantConversationTimestamp = conversation?.admin_reminded_at;
+      const latestUserDormantConversationTimestamp = conversation?.user_reminded_at;
       const now = new Date();
       let adminDiffDays = 0;
       let userDiffDays = 0;
@@ -109,27 +117,22 @@ export async function POST(request) {
 
       if (latestAdminDormantConversationTimestamp) {
         const latestAdminDormantConversationTimestampDate = new Date(
-          latestAdminDormantConversationTimestamp,
+          latestAdminDormantConversationTimestamp
         );
         const diffMs = Math.floor(
-          (now - latestAdminDormantConversationTimestampDate) /
-            (1000 * 60 * 60 * 24),
+          (now - latestAdminDormantConversationTimestampDate) / (1000 * 60 * 60 * 24)
         );
-
         if (adminDiffDays === 0 || diffMs < adminDiffDays) {
           adminDiffDays = diffMs;
         }
       }
-
       if (latestUserDormantConversationTimestamp) {
         const latestUserDormantConversationTimestampDate = new Date(
-          latestUserDormantConversationTimestamp,
+          latestUserDormantConversationTimestamp
         );
         const diffMs = Math.floor(
-          (now - latestUserDormantConversationTimestampDate) /
-            (1000 * 60 * 60 * 24),
+          (now - latestUserDormantConversationTimestampDate) / (1000 * 60 * 60 * 24)
         );
-
         if (userDiffDays === 0 || diffMs < userDiffDays) {
           userDiffDays = diffMs;
         }
@@ -140,10 +143,8 @@ export async function POST(request) {
         const membersSnapshot = await usersRef
           .where(FieldPath.documentId(), "in", conversation.members)
           .get();
-
         const allMembers = membersSnapshot.docs.map((doc) => {
           const docData = doc.data();
-
           return {
             id: doc.id,
             firstName: docData.first_name,
@@ -152,27 +153,29 @@ export async function POST(request) {
         });
 
         const userPromises = conversation.members.map((uid) =>
-          auth.getUser(uid).catch(() => null),
+          auth.getUser(uid).catch((err) => {
+            return null; // Handle missing users gracefully
+          })
         );
-
         const userRecords = await Promise.all(userPromises);
         const emails = userRecords
           .filter((record) => record !== null)
           .map((record) => record.email);
 
+
         if (userDiffDays >= 14) {
           emailPromises.push(
             sendEmail(conversation.id, allMembers, emails, "user").catch(
-              (err) => err,
-            ),
+              (err) => err
+            )
           );
         }
 
         if (adminDiffDays >= 28) {
           emailPromises.push(
             sendEmail(conversation.id, allMembers, emails, "admin").catch(
-              (err) => err,
-            ),
+              (err) => err
+            )
           );
         }
       }
@@ -185,7 +188,6 @@ export async function POST(request) {
     emailResults.forEach((result) => {
       if (result.status === "fulfilled") {
         const value = result.value;
-
         if (value && value.success) {
           successEmails.push(value);
         } else if (value && value.error) {
@@ -199,29 +201,20 @@ export async function POST(request) {
     return NextResponse.json(
       {
         message: "DormantConversation Request Success!",
-        successEmails,
-        failedEmails,
-        conversationes,
+        successEmails: successEmails,
+        failedEmails: failedEmails,
+        conversationes: conversationes,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
-    if (error?.status && error.message) {
-      return NextResponse.json(
-        {
-          error: error.status === 403 ? "Forbidden" : "Unauthorized",
-          message: error.message,
-        },
-        { status: error.status },
-      );
-    }
-
+    // Handle errors
     return NextResponse.json(
       {
         error: "Failed to process request",
         message: error.message,
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
