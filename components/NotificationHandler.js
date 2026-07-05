@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
+import { messaging } from '../app/firebaseConfig';
 
 export function NotificationHandler({ children }) {
   useEffect(() => {
