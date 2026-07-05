@@ -54,12 +54,23 @@ const VAPID_KEY =
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
 let messaging = null;
 
-const hasBasicMessagingSupport = () =>
+const hasBasicMessagingSupportSync = () =>
   typeof window !== "undefined" &&
   typeof navigator !== "undefined" &&
   navigator.serviceWorker != null &&
   typeof navigator.serviceWorker.addEventListener === "function" &&
   "PushManager" in window;
+
+const hasBasicMessagingSupport = async () => {
+  if (!hasBasicMessagingSupportSync()) return false;
+
+  try {
+    return await isSupported();
+  } catch (err) {
+    console.warn("Firebase messaging support check failed:", err);
+    return false;
+  }
+};
 
 const initializeMessaging = async () => {
   if (messaging) {
@@ -70,23 +81,11 @@ const initializeMessaging = async () => {
     console.log("Firebase client project:", firebaseConfig.projectId);
   }
 
-  if (!hasBasicMessagingSupport()) {
-    return null;
-  }
+  const supported = await hasBasicMessagingSupport();
+  if (!supported) return null;
 
-  try {
-    const supported = await isSupported();
-    if (!supported) {
-      return null;
-    }
-
-    messaging = getMessaging(app);
-    return messaging;
-  } catch (err) {
-    console.warn("Firebase messaging support check failed:", err);
-    messaging = null;
-    return null;
-  }
+  messaging = getMessaging(app);
+  return messaging;
 };
 
 // ---------- PERMISSION + API CALL ----------
