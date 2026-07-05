@@ -331,7 +331,7 @@ export default function Page() {
       await avatarUploadPromise;
     }
 
-    router.push("/discovery");
+    router.push("/inbox");  // change to discovery when we are ready to onboard new international buddy users
   };
 
   const handleCountryContinue = async () => {
