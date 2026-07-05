@@ -105,7 +105,9 @@ export const requestNotificationPermission = async () => {
 };
 
 export const handleNotificationSetup = async () => {
-  if (!messaging) {
+  const initializedMessaging = await initializeMessaging();
+
+  if (!initializedMessaging) {
     console.warn("Messaging not initialized (probably server environment or unsupported browser).");
     return;
   }
@@ -121,7 +123,7 @@ export const handleNotificationSetup = async () => {
   }
 
   try {
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(initializedMessaging, { vapidKey: VAPID_KEY });
     const user = auth.currentUser;
 
     if (!token || !user) {
