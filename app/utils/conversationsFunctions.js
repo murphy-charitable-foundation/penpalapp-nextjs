@@ -13,7 +13,7 @@ const getUserDoc = async () => {
 };
 
 export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
+  const path = `user-profiles/${uid}/profile-image`;
   try {
     const photoRef = storageRef(storage, path);
     const downloaded = await getDownloadURL(photoRef)

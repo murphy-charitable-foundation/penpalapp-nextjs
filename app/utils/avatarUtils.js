@@ -53,34 +53,10 @@ export const saveAvatar = async ({
     return;
   }
 
-  /*
-  uploadFile(
-    base64ToBlob(avatar),
-    `profile/${uid}/profile-image`,
-    () => {}, // optional progress callback
-    (error) => {
-      console.error("Upload error:", error);
-      setLoading(false);
-      onError(new Error("Upload error"));
-    },
-    async (url) => {
-      if (!url) return;
-      try {
-        await updateDoc(doc(db, "users", uid), { photo_uri: url });
-        setStorageUrl?.(url);
-        onSuccess(url);
-      } catch (e) {
-        console.error("Firestore update error:", e);
-        onError?.(new Error("Save Error!"));
-      } finally {
-        setLoading(false);
-      }
-    },
-  ); */
     try {
     uploadFile(
       avatarBlob,
-      `profile/${uid}/profile-image`,
+      `user-profiles/${uid}/profile-image`,
       () => {}, // optional progress callback
      (error) => {
         setLoading(false);

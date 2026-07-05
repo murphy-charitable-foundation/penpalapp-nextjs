@@ -261,7 +261,7 @@ const handleSubmit = async (e) => {
         // Upload profile image if available
         if (croppedBlob) {
           setLoading(true);
-          uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
+          uploadFile(croppedBlob, `user-profiles/${kidId}/profile-image`, 
             (progress) => {
               console.log('Upload progress:', progress);
               if (progress === 100) {

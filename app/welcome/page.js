@@ -269,7 +269,7 @@ export default function Page() {
       try {
         uploadFile(
           blob,
-          `profile/${user.uid}/profile-image`,
+          `user-profiles/${user.uid}/profile-image`,
           () => {},
           (error) => {
             console.error("Profile image upload error", error);

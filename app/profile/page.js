@@ -155,7 +155,7 @@ export default function EditProfile() {
     setIsPhotoUploading(true);
     uploadFile(
       blob,
-      `profile/${user.uid}/profile-image`,
+      `user-profiles/${user.uid}/profile-image`,
       () => {},
       (error) => {
         logError(error, { description: "Profile image upload error" });
