@@ -1878,10 +1878,10 @@ export default function Page({ params }) {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
             <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
               <h2 className="text-xl font-semibold mb-1 text-black">
-                Delete Voice mail?
+                Delete Attachment?
               </h2>
               <p className="text-gray-600 mb-6 text-sm">
-                Are you sure you want to delete this Voice mail? This is permanent action!
+                Are you sure you want to delete this attachment? This is permanent action!
               </p>
               <div className="flex space-x-3">
                 <button
