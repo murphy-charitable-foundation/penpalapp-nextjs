@@ -20,6 +20,7 @@ import {
   fetchRecipients,
   sendNotification,
 } from "../../utils/conversationsFunctions";
+import { compressMedia } from "../../utils/compressMedia";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -39,8 +40,6 @@ import {
   Trash2,
   Play,
 } from "lucide-react";
-import ImageUploader from "../../../components/media/ImageUploader";
-import VideoUploader from "../../../components/media/VideoUploader";
 import AudioRecorder from "../../../components/media/AudioRecorder";
 import { storage } from "../../firebaseConfig";
 import {
@@ -226,9 +225,16 @@ export default function Page({ params }) {
     file,
     url: null,
     previewUrl: URL.createObjectURL(file),
-    uploadStatus: "uploading",
+    uploadStatus: "pending",
     progress: 0,
   });
+
+  const getFileNameWithType = (name, mimeType) => {
+    const baseName = name?.replace(/\.[^/.]+$/, "") || `attachment_${Date.now()}`;
+    const typeBase = (mimeType || "").split(";")[0];
+    const ext = typeBase.includes("/") ? typeBase.split("/")[1] : "bin";
+    return `${baseName}.${ext}`;
+  };
 
   const updateAttachment = (attachmentId, patch) => {
     setPendingAttachments((current) =>
@@ -254,7 +260,46 @@ export default function Page({ params }) {
       return;
     }
 
-    const safeFileName = attachment.name
+    let fileToUpload = attachment.file;
+
+    try {
+      updateAttachment(attachment.id, { uploadStatus: "compressing", progress: 0 });
+
+      const compressedMedia = await compressMedia(
+        attachment.file,
+        (compressionProgress) => {
+          const progress = Math.round(Math.max(0, Math.min(1, compressionProgress)) * 40);
+          updateAttachment(attachment.id, {
+            uploadStatus: "compressing",
+            progress,
+          });
+        },
+      );
+
+      if (compressedMedia instanceof File) {
+        fileToUpload = compressedMedia;
+      } else {
+        fileToUpload = new File(
+          [compressedMedia],
+          getFileNameWithType(attachment.name, compressedMedia.type || attachment.file.type),
+          { type: compressedMedia.type || attachment.file.type },
+        );
+      }
+
+      updateAttachment(attachment.id, {
+        file: fileToUpload,
+        name: fileToUpload.name,
+        size: fileToUpload.size,
+      });
+    } catch (error) {
+      console.error("❌ attachment compression error:", error);
+      updateAttachment(attachment.id, {
+        uploadStatus: "error",
+      });
+      return;
+    }
+
+    const safeFileName = fileToUpload.name
       .replace(/\s+/g, "_")
       .replace(/[^a-zA-Z0-9._-]/g, "");
     const storagePath =
@@ -266,12 +311,15 @@ export default function Page({ params }) {
         ? `users/${user.uid}/voice_messages/${Date.now()}_${safeFileName}`
         : `users/${user.uid}/uploads/${Date.now()}_${safeFileName}`;
 
-    const task = uploadBytesResumable(storageRef(storage, storagePath), attachment.file);
+    const task = uploadBytesResumable(storageRef(storage, storagePath), fileToUpload);
 
     task.on(
       "state_changed",
       (snapshot) => {
-        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        const uploadProgress = snapshot.totalBytes
+          ? snapshot.bytesTransferred / snapshot.totalBytes
+          : 0;
+        const progress = Math.round(40 + uploadProgress * 60);
         updateAttachment(attachment.id, { progress, uploadStatus: "uploading" });
       },
       (error) => {
@@ -281,7 +329,13 @@ export default function Page({ params }) {
       async () => {
         try {
           const url = await getDownloadURL(task.snapshot.ref);
-          updateAttachment(attachment.id, { url, uploadStatus: "done", progress: 100 });
+          updateAttachment(attachment.id, {
+            url,
+            uploadStatus: "done",
+            progress: 100,
+            size: fileToUpload.size,
+            storagePath,
+          });
           await saveDraft(messageContent);
         } catch (error) {
           console.error("❌ uploadAttachment download URL error:", error);
@@ -1730,6 +1784,7 @@ export default function Page({ params }) {
                     </div>
                     <div className="text-xs text-emerald-700">
                       {formatFileSize(attachment.size)}
+                      {attachment.uploadStatus === "compressing" && " • Compressing..."}
                       {attachment.uploadStatus === "uploading" && " • Uploading..."}
                       {attachment.uploadStatus === "error" && " • Upload failed"}
                     </div>
