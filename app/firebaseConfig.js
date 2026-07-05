@@ -66,10 +66,6 @@ const initializeMessaging = async () => {
     return messaging;
   }
 
-  if (typeof window === "undefined") {
-    return null;
-  }
-
   if (process.env.NODE_ENV === "development") {
     console.log("Firebase client project:", firebaseConfig.projectId);
   }
