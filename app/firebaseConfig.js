@@ -106,14 +106,8 @@ export const requestNotificationPermission = async () => {
 };
 
 export const handleNotificationSetup = async () => {
-  const activeMessaging = await initializeMessaging();
-  if (!activeMessaging) {
+  if (!messaging) {
     console.warn("Messaging not initialized (probably server environment or unsupported browser).");
-    return;
-  }
-
-  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
-    console.warn("Browser does not support service workers for notifications.");
     return;
   }
 
