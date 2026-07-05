@@ -307,9 +307,6 @@ const recordMedia = ({
 
 /**
  * Compress media with lightweight browser-native paths.
- *
- * Keeps the same public signature as the previous ffmpeg-based version:
- * compressMedia(file, onProgress, customOptions)
  */
 export async function compressMedia(file, onProgress = null, customOptions = {}) {
   const options = getAdaptiveOptions(customOptions);
