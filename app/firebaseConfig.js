@@ -122,7 +122,7 @@ export const handleNotificationSetup = async () => {
   }
 
   try {
-    const token = await getToken(activeMessaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
     const user = auth.currentUser;
 
     if (!token || !user) {
