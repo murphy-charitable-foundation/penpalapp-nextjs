@@ -11,6 +11,8 @@ import { db } from "../firebaseConfig";
 import { uploadFile } from "../utils/uploadFile";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
+import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 
 const COUNTRIES = [
@@ -190,6 +192,7 @@ const COUNTRIES = [
 
 export default function Page() {
   const { user, displayName } = useUser();
+  const { updateCachedUserLogin } = useCachedUserLogins();
   const router = useRouter();
   const dropdownRef = useRef(null);
   const avatarUploadPromiseRef = useRef(null);
@@ -292,6 +295,7 @@ export default function Page() {
               await updateDoc(doc(db, "users", user.uid), {
                 photo_uri: url,
               });
+              await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
             } catch (error) {
               console.error("Failed to update user photo_uri", error);
               setErrorMsg(
@@ -329,6 +333,10 @@ export default function Page() {
     if (avatarUploadPromise && isUploading) {
       setShowFinalSpinner(true);
       await avatarUploadPromise;
+    }
+
+    if (user?.uid) {
+      await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
     }
 
     router.push("/inbox");  // change to discovery when we are ready to onboard new international buddy users

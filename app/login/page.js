@@ -18,6 +18,7 @@ import { logInEvent, logButtonEvent, logLoadingTime } from "../utils/analytics";
 import { initializeNotifications } from "../utils/notification";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
+import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +30,7 @@ export default function Login() {
   const {
     hydrated,
     addCachedUserLogin,
+    updateCachedUserLogin,
     cachedUserLogins,
     clearCachedUserLogins,
   } = useCachedUserLogins();
@@ -86,6 +88,8 @@ export default function Login() {
           name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
           photo_uri: data?.photo_uri ?? "",
         });
+
+        await refreshCachedUserPhoto(uid, updateCachedUserLogin);
 
         await initializeNotifications().catch((err) => {
           console.error("Notification setup failed:", err);

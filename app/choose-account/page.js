@@ -8,7 +8,6 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import ProfileImage from "../../components/general/ProfileImage";
-import { getUserPfp } from "../utils/conversationsFunctions";
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
 import Dialog from "../../components/general/Dialog";
@@ -18,6 +17,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { initializeNotifications } from '../utils/notification'
+import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 
 export default function ChooseAccountPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -27,12 +27,12 @@ export default function ChooseAccountPage() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const router = useRouter();
-  const [userPfps, setUserPfps] = useState({});
 
   const {
     cachedUserLogins,
     hydrated,
     removeCachedUserLogin,
+    updateCachedUserLogin,
   } = useCachedUserLogins();
 
   const hasRedirected = useRef(false);
@@ -51,39 +51,6 @@ export default function ChooseAccountPage() {
     setIsLoading(false);
   }, [hydrated, users.length, router]);
 
-  useEffect(() => {
-    // Reload profile pictures whenever the `users` list changes
-    let mounted = true;
-
-    const loadPfps = async () => {
-      try {
-        const entries = await Promise.all(
-          users.map(async (u) => {
-            try {
-              const downloaded = await getUserPfp(u.id);
-              return [u.id, downloaded || ""];
-            } catch (e) {
-              console.error(`Failed to load profile image for ${u.id}`, e);
-              return [u.id, ""];
-            }
-          })
-        );
-
-        if (mounted) {
-          setUserPfps(Object.fromEntries(entries));
-        }
-      } catch (e) {
-        // ignore
-      }
-    };
-
-    if (users.length > 0) loadPfps();
-
-    return () => {
-      mounted = false;
-    };
-  }, [users]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedUser?.email || !passwordInput.trim()) return;
@@ -94,7 +61,6 @@ export default function ChooseAccountPage() {
     try {
       const userCredential =await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
       setSelectedUser(null);
-      setIsLoading(true);
       setPasswordInput("");
       setIsLoading(true);
 
@@ -102,6 +68,7 @@ export default function ChooseAccountPage() {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
+        await refreshCachedUserPhoto(uid, updateCachedUserLogin);
         await initializeNotifications()
         if (userSnap.data().user_type === "admin") {
           router.push("/admin");
@@ -155,7 +122,7 @@ export default function ChooseAccountPage() {
         <div className="flex justify-center">
           <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
             <ProfileImage
-              photo_uri={userPfps[selectedUser?.id] || ""}
+              photo_uri={selectedUser?.photo_uri || ""}
               name={selectedUser?.name}
               size={20}
             />
@@ -225,7 +192,7 @@ export default function ChooseAccountPage() {
               >
                     <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
                       <ProfileImage
-                        photo_uri={userPfps[user.id] || ""}
+                        photo_uri={user.photo_uri || ""}
                         name={user.name}
                         size={20}
                       />

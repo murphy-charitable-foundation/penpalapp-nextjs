@@ -23,6 +23,8 @@ import NavBar from "../../components/bottom-nav-bar";
 
 import { usePageAnalytics } from "../useAnalytics";
 import { logError } from "../utils/analytics";
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
+import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the view profile page, pages/createChild API, and create-child-profile page */
 
@@ -69,6 +71,7 @@ export default function EditProfile() {
 
   const router = useRouter();
   const { user, loading } = useUser();
+  const { updateCachedUserLogin } = useCachedUserLogins();
   usePageAnalytics("/profile");
 
   // Fetch profile data whenever React `user` changes
@@ -173,6 +176,7 @@ export default function EditProfile() {
             return;
           }
           await updateDoc(doc(db, "users", user.uid), { photo_uri: url });
+          await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
           setPhotoUri(url);
           setShowAvatarModal(false);
           setDialogTitle("Success!");
