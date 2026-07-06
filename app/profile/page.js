@@ -8,8 +8,7 @@ import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { PageBackground } from "../../components/general/PageBackground";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
-import { uploadFile } from "../utils/uploadFile";
-import { getUserPfp } from "../utils/conversationsFunctions";
+import { getUserPfp, uploadProfilePicture } from "../utils/conversationsFunctions";
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";
@@ -153,45 +152,45 @@ export default function EditProfile() {
 
   const handleAvatarSelected = async (blob) => {
     if (!user?.uid) return;
-
     setShowAvatarModal(false);
     setIsPhotoUploading(true);
-    uploadFile(
-      blob,
-      `user-profiles/${user.uid}/profile-image`,
-      () => {},
-      (error) => {
-        logError(error, { description: "Profile image upload error" });
-        setIsPhotoUploading(false);
+    try {
+      const url = await uploadProfilePicture(
+        user.uid,
+        blob,
+        () => {},
+        (error) => {
+          logError(error, { description: "Profile image upload error" });
+        }
+      );
+
+      if (!url) {
         setDialogTitle("Oops!");
         setDialogMessage("Unable to upload profile photo. Please try again.");
         setIsDialogOpen(true);
-      },
-      async (url) => {
-        try {
-          if (!url) {
-            setDialogTitle("Oops!");
-            setDialogMessage("Unable to upload profile photo. Please try again.");
-            setIsDialogOpen(true);
-            return;
-          }
-          await updateDoc(doc(db, "users", user.uid), { photo_uri: url });
-          await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
-          setPhotoUri(url);
-          setShowAvatarModal(false);
-          setDialogTitle("Success!");
-          setDialogMessage("Profile photo updated successfully.");
-          setIsDialogOpen(true);
-        } catch (e) {
-          logError(e, { description: "Firestore update error" });
-          setDialogTitle("Oops!");
-          setDialogMessage("Unable to save profile photo. Please try again.");
-          setIsDialogOpen(true);
-        } finally {
-          setIsPhotoUploading(false);
-        }
+        return;
       }
-    );
+
+      try {
+        await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
+      } catch (e) {
+        // Refresh failure should not block success flow
+        console.warn("refreshCachedUserPhoto failed", e);
+      }
+
+      setPhotoUri(url);
+      setShowAvatarModal(false);
+      setDialogTitle("Success!");
+      setDialogMessage("Profile photo updated successfully.");
+      setIsDialogOpen(true);
+    } catch (e) {
+      logError(e, { description: "Profile image upload error" });
+      setDialogTitle("Oops!");
+      setDialogMessage("Unable to upload profile photo. Please try again.");
+      setIsDialogOpen(true);
+    } finally {
+      setIsPhotoUploading(false);
+    }
   };
 
   const saveProfileData = async () => {

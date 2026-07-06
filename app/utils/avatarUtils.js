@@ -1,8 +1,7 @@
 // src/lib/avatarUtils.js
 
-import { doc, updateDoc } from "firebase/firestore";
-import { auth, db } from "@/app/firebaseConfig";
-import { uploadFile } from "@/app/utils/uploadFile";
+import { auth } from "@/app/firebaseConfig";
+import { uploadProfilePicture } from "@/app/utils/conversationsFunctions";
 
 export const base64ToBlob = (base64, type = "image/jpeg") => {
   try {
@@ -54,35 +53,30 @@ export const saveAvatar = async ({
   }
 
     try {
-    uploadFile(
-      avatarBlob,
-      `user-profiles/${uid}/profile-image`,
-      () => {}, // optional progress callback
-     (error) => {
+      const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
         setLoading(false);
-        onError(new Error("Upload error"));
-      },
-      async (url) => {
-        if (!url) {
-          setLoading(false);
-          onError?.(new Error("Upload returned empty URL"));
-          return;
-        }
-        try {
-          await updateDoc(doc(db, "users", uid), { photo_uri: url });
-          setStorageUrl?.(url);
-          onSuccess(url);
-        } catch (e) {
-          onError?.(new Error("Save Error!"));
-        } finally {
-          setLoading(false);
-        }
-      },
-    );
-  } catch (error) {
-    setLoading(false);
-    onError?.(error);
-  }
+        console.error(error);
+        onError(error);
+      });
+
+      if (!url) {
+        setLoading(false);
+        onError?.(new Error("Upload returned empty URL"));
+        return;
+      }
+
+      try {
+        setStorageUrl?.(url);
+        onSuccess(url);
+      } catch (e) {
+        onError?.(new Error("Save Error!"));
+      } finally {
+        setLoading(false);
+      }
+    } catch (error) {
+      setLoading(false);
+      onError?.(error);
+    }
 };
 
 export const confirmDeleteAvatar = async ({
