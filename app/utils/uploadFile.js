@@ -1,41 +1,85 @@
 import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
-import { storage } from "../firebaseConfig";
+import { storage, db } from "../firebaseConfig";
+import { updateDoc, doc } from "firebase/firestore";
+import { logError } from "./analytics";
 
 /**
- * Utility file upload function to Firebase storage.
- * @param {File} file - The file to be uploaded.
- * @param {string} path - Firebase storage path where the file will be stored.
- * @param {function} onProgress - Callback for upload progress.
- * @param {function} onError - Callback for handling errors.
- * @param {function} onSuccess - Callback for handling successful upload.
+ * Uploads a profile picture for a user and updates their Firestore `photo_uri`.
+ * @param {string} uid
+ * @param {File|Blob} file
+ * @param {(progress:number)=>void} onProgress
+ * @param {(error:Error)=>void} onError
+ * @returns {Promise<string|null>} download URL or null
  */
-const uploadFile = async (file, path, onProgress, onError, onSuccess) => {
-  if (!file) return;
+export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onError = () => {}) => {
+  if (!file) return null;
 
-  const storageRef = ref(storage, path);
+  return new Promise((resolve, reject) => {
+    try {
+      const storageRef = ref(storage, `profile/${uid}/profile-image`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-  const uploadTask = uploadBytesResumable(storageRef, file);
-
-  uploadTask.on(
-    "state_changed",
-    (snapshot) => {
-      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-      onProgress(progress);
-    },
-    (error) => {
-      console.error("Upload error:", error);
-      onError(error);
-    },
-    async () => {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          try {
+            onProgress(progress);
+          } catch (e) {
+            // ignore progress handler errors
+          }
+        },
+        (error) => {
+          try {
+            onError(error);
+          } catch (e) {
+            // ignore
+          }
+          logError(error, { description: "Profile upload failed" });
+          reject(error);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            if (url) {
+              await updateDoc(doc(db, "users", uid), { photo_uri: url });
+            }
+            resolve(url || null);
+          } catch (e) {
+            try {
+              onError(e);
+            } catch (er) {
+              // ignore
+            }
+            logError(e, { description: "Getting download URL failed" });
+            reject(e);
+          }
+        }
+      );
+    } catch (e) {
       try {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
-        if (onSuccess) onSuccess(url);
-      } catch (error) {
-        console.error("Error getting download URL:", error.message); // Log error message
-        if (onError) onError(error);
+        onError(e);
+      } catch (er) {
+        // ignore
       }
+      reject(e);
     }
-  );
+  });
 };
 
-export { uploadFile };
+export const getUserPfp = async (uid) => {
+  const path = `profile/${uid}/profile-image`;
+  try {
+    const photoRef = ref(storage, path);
+    const downloaded = await getDownloadURL(photoRef);
+    return downloaded;
+  } catch (error) {
+    if (error?.code === "storage/object-not-found") {
+      return null;
+    }
+    logError(error, {
+      description: "Error fetching user profile:",
+    });
+    return null;
+  }
+};

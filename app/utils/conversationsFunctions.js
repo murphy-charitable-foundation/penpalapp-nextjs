@@ -1,8 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
-import { ref as storageRef, getDownloadURL } from "@firebase/storage";
-import { storage } from "../firebaseConfig.js";
-import { uploadFile } from "./uploadFile";
 import { auth, db } from "../firebaseConfig"
+import { getUserPfp } from "./uploadFile";
 import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
@@ -13,71 +11,6 @@ const getUserDoc = async () => {
   return { userDocRef, userDocSnapshot };
 };
 
-export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
-  try {
-    const photoRef = storageRef(storage, path);
-    const downloaded = await getDownloadURL(photoRef)
-    return downloaded;
-  } catch (error) {
-    // Return null if there is no profile; default should be handled by UI
-    if (error.code === 'storage/object-not-found') {
-      return null;
-    }
-    logError(error, {
-      description: "Error fetching user profile:",
-    });
-    // Returns null for all other errors so it only has one fallback mechanism
-    return null;
-  }
-  
-}
-
-export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onError = () => {}) => {
-  if (!file) return null;
-
-  return new Promise((resolve, reject) => {
-    try {
-      uploadFile(
-        file,
-        `profile/${uid}/profile-image`,
-        (progress) => {
-          try {
-            onProgress(progress);
-          } catch (e) {
-            // ignore progress handler errors
-          }
-        },
-        (error) => {
-          try {
-            onError(error);
-          } catch (e) {
-            // ignore
-          }
-          reject(error);
-        },
-        async (url) => {
-          try {
-            if (!url) {
-              resolve(null);
-              return;
-            }
-            await updateDoc(doc(db, "users", uid), { photo_uri: url });
-            resolve(url);
-          } catch (e) {
-            try {
-              onError(e);
-            } catch (er) {}
-            reject(e);
-          }
-        }
-      );
-    } catch (e) {
-      try { onError(e); } catch (er) {}
-      reject(e);
-    }
-  });
-};
 
 export const fetchConversations = async () => {
   const retryFetch = () => setTimeout(() => fetchConversations(), DELAY);

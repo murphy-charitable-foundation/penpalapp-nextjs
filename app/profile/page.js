@@ -8,7 +8,7 @@ import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { PageBackground } from "../../components/general/PageBackground";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
-import { getUserPfp, uploadProfilePicture } from "../utils/conversationsFunctions";
+import { getUserPfp, uploadProfilePicture } from "../utils/uploadFile";
 
 import Button from "../../components/general/Button";
 import Input from "../../components/general/Input";

@@ -22,7 +22,7 @@ import {
   where,
 } from "firebase/firestore";
 
-import { getUserPfp } from "../utils/conversationsFunctions";
+import { getUserPfp } from "../utils/uploadFile";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import ConversationList from "../../components/general/ConversationList";

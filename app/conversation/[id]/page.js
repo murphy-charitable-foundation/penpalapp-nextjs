@@ -19,8 +19,8 @@ import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
   sendNotification,
-  getUserPfp,
 } from "../../utils/conversationsFunctions";
+import { getUserPfp } from "../../utils/uploadFile";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";

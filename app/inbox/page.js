@@ -8,11 +8,11 @@ import { doc, getDoc } from "firebase/firestore";
 import NavBar from "../../components/bottom-nav-bar";
 import ConversationList from "../../components/general/ConversationList";
 import {
-  getUserPfp,
   fetchLatestMessageFromConversation,
   fetchConversations,
   fetchRecipients,
 } from "../utils/conversationsFunctions";
+import { getUserPfp } from "../utils/uploadFile";
 
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import ProfileHeader from "../../components/general/message/ProfileHeader";

@@ -1,7 +1,7 @@
 // src/lib/avatarUtils.js
 
 import { auth } from "@/app/firebaseConfig";
-import { uploadProfilePicture } from "@/app/utils/conversationsFunctions";
+import { uploadProfilePicture } from "@/app/utils/uploadFile";
 
 export const base64ToBlob = (base64, type = "image/jpeg") => {
   try {

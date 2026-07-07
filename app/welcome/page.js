@@ -8,7 +8,7 @@ import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { uploadProfilePicture } from "../utils/conversationsFunctions";
+import { uploadProfilePicture } from "../utils/uploadFile";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
