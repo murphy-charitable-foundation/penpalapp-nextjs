@@ -14,7 +14,7 @@ import { logError } from "./analytics";
 export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onError = () => {}) => {
   if (!file) return null;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       const storageRef = ref(storage, `profile/${uid}/profile-image`);
       const uploadTask = uploadBytesResumable(storageRef, file);
@@ -36,15 +36,26 @@ export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onE
             // ignore
           }
           logError(error, { description: "Profile upload failed" });
-          reject(error);
+          resolve(null);
         },
         async () => {
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
-            if (url) {
-              await updateDoc(doc(db, "users", uid), { photo_uri: url });
-            }
             resolve(url || null);
+            if (url) {
+              try {
+                await updateDoc(doc(db, "users", uid), { photo_uri: url });
+              } catch (firestoreError) {
+                logError(firestoreError, {
+                  description: "Failed to update Firestore after profile upload",
+                });
+                try {
+                  onError(firestoreError);
+                } catch (e) {
+                  // ignore
+                }
+              }
+            }
           } catch (e) {
             try {
               onError(e);
@@ -52,7 +63,7 @@ export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onE
               // ignore
             }
             logError(e, { description: "Getting download URL failed" });
-            reject(e);
+            resolve(null);
           }
         }
       );
@@ -62,7 +73,7 @@ export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onE
       } catch (er) {
         // ignore
       }
-      reject(e);
+      resolve(null);
     }
   });
 };

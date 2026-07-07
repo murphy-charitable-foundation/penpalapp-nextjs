@@ -262,23 +262,18 @@ const handleSubmit = async (e) => {
         if (croppedBlob) {
           setLoading(true);
           try {
-            await uploadProfilePicture(
+            const uploadResult = await uploadProfilePicture(
               kidId,
               croppedBlob,
               (progress) => {
                 console.log("Upload progress:", progress);
-                if (progress === 100) setLoading(false);
               },
-              (error) => {
-                logError(error, {
-                  description: "Error uploading profile image",
-                });
-              }
+              () => {}
             );
-          } catch (e) {
-            logError(e, {
-              description: "Error uploading profile image",
-            });
+
+            if (!uploadResult) {
+              throw new Error("Profile image upload failed");
+            }
           } finally {
             setLoading(false);
           }

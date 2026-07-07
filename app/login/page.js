@@ -32,7 +32,7 @@ export default function Login() {
     addCachedUserLogin,
     updateCachedUserLogin,
     cachedUserLogins,
-    clearCachedUserLogins,
+    clearAllCachedUserLogins,
   } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
@@ -133,7 +133,7 @@ export default function Login() {
 
   const handleForgotPassword = () => {
     startNavigationSpinner();
-    clearCachedUserLogins();
+    clearAllCachedUserLogins();
     router.push("/reset-password");
   };
 
