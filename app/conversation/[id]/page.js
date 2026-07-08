@@ -261,6 +261,15 @@ export default function Page({ params }) {
   const attachmentsToSave = (attachments = pendingAttachments) =>
     getCompletedAttachmentsForSave(attachments);
 
+  const getMessageContentForSave = (content, attachments = pendingAttachments) => {
+    const trimmedContent = (content ?? "").trim();
+    if (trimmedContent) {
+      return trimmedContent;
+    }
+
+    return attachmentsToSave(attachments).length > 0 ? "[Attachments]" : "";
+  };
+
   const hasUploadingAttachments = pendingAttachments.some(
     (attachment) => attachment.uploadStatus !== "done",
   );
@@ -279,7 +288,7 @@ export default function Page({ params }) {
       setIsUpdatingFirebase(true);
 
       const messageUserRef = userRef || doc(db, "users", user.uid);
-      const trimmedContent = (content ?? "").trim();
+      const trimmedContent = getMessageContentForSave(content, draftAttachments);
       const currentTime = new Date();
 
       const baseDraftData = {
@@ -328,9 +337,9 @@ export default function Page({ params }) {
         }
 
         const hasContent = Boolean(trimmedContent);
-        setHasDraftContent(hasContent);
+        setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
 
-        if (!hasContent && isEditing) {
+        if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
           setIsEditing(false);
         }
 
@@ -354,9 +363,9 @@ export default function Page({ params }) {
               await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
               const hasContent = Boolean(trimmedContent);
-              setHasDraftContent(hasContent);
+              setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
 
-              if (!hasContent && isEditing) {
+              if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
                 setIsEditing(false);
               }
 
@@ -415,8 +424,9 @@ export default function Page({ params }) {
         setDraftTimer(timer);
       }
     } else {
-      setHasDraftContent(false);
-      setIsEditing(false);
+      const hasAttachments = pendingAttachments.length > 0;
+      setHasDraftContent(hasAttachments);
+      setIsEditing(hasAttachments);
 
       if (!editingMessageId) {
         setIsSendButtonDisabled(true);
@@ -524,7 +534,7 @@ export default function Page({ params }) {
       return handleUpdateMessage();
     }
 
-    const trimmedContent = messageContent.trim();
+    const trimmedContent = getMessageContentForSave(messageContent, pendingAttachments);
 
     if (!trimmedContent) {
       alert("Please enter a message");
