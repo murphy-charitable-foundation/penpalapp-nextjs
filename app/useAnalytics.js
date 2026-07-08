@@ -34,7 +34,7 @@ import { ref, getDownloadURL, uploadString } from "@firebase/storage";
 import { storage } from "./firebaseConfig";
 
 async function uploadScreenshot(base64Image, fileName) {
-  const storageRef = ref(storage, `deadclicks/${fileName}.png`);
+  const storageRef = ref(storage, `analytics/deadclicks/${fileName}.png`);
   await uploadString(storageRef, base64Image, "data_url");
   return await getDownloadURL(storageRef);
 }

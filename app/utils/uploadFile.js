@@ -16,7 +16,7 @@ export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onE
 
   return new Promise((resolve) => {
     try {
-      const storageRef = ref(storage, `profile/${uid}/profile-image`);
+      const storageRef = ref(storage, `users/${uid}/profile-image`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on(
@@ -79,7 +79,7 @@ export const uploadProfilePicture = async (uid, file, onProgress = () => {}, onE
 };
 
 export const getUserPfp = async (uid) => {
-  const path = `profile/${uid}/profile-image`;
+  const path = `users/${uid}/profile-image`;
   try {
     const photoRef = ref(storage, path);
     const downloaded = await getDownloadURL(photoRef);
