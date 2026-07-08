@@ -264,10 +264,6 @@ export default function Page({ params }) {
     setPendingAttachments([]);
   };
 
-  const clearDraftRelatedState = () => {
-    clearPendingAttachments();
-  };
-
   const saveDraft = useCallback(
     async (content) => {
       if (!user?.uid || !messagesRef || isSending) {
@@ -612,98 +608,6 @@ export default function Page({ params }) {
     if (shouldLogin) {
       router.push("/login");
     }
-  };
-
-  const legacyAttachmentFromMedia = ({ mediaUrl, mediaType }) => ({
-    id: `legacy_${Date.now()}`,
-    name:
-      mediaType === "image"
-        ? "Photo"
-        : mediaType === "video"
-        ? "Video"
-        : "Audio",
-    size: 0,
-    mediaType,
-    url: mediaUrl,
-  });
-
-  const sendMediaMessage = async ({ mediaUrl, mediaType, caption = "" }) => {
-    if (!user?.uid || !messagesRef) {
-      alert("Unable to send media. Please refresh and try again.");
-      return;
-    }
-
-    setIsSending(true);
-
-    try {
-      const messageUserRef = userRef || doc(db, "users", user.uid);
-      const currentTime = new Date();
-
-      const messageData = {
-        sent_by: messageUserRef,
-        content:
-          caption ||
-          (mediaType === "image"
-            ? "Photo"
-            : mediaType === "video"
-            ? "Video"
-            : "Voice message"),
-        status: "pending_review",
-        created_at: currentTime,
-        drafted_at: currentTime,
-        deleted: null,
-        unread: true,
-        attachments: [
-          {
-            id: `legacy_${Date.now()}`,
-            url: mediaUrl,
-            media_type: mediaType,
-            file_name:
-              mediaType === "image"
-                ? "Photo"
-                : mediaType === "video"
-                ? "Video"
-                : "Audio",
-            size: 0,
-          },
-        ],
-      };
-
-      const messageRef = doc(messagesRef);
-      await setDoc(messageRef, messageData);
-
-      if (globalConversationReference) {
-        sendNotification(globalConversationReference, "").catch((error) => {
-          console.error("Failed to send media notification:", error);
-        });
-      }
-
-      setAllMessages((prev) => [
-        ...prev,
-        { ...messageData, id: messageRef.id, sent_by: { id: user.uid } },
-      ]);
-
-      setTimeout(() => scrollToBottom(true), 100);
-    } catch (error) {
-      console.error("❌ sendMediaMessage error:", error);
-      logError(error, { description: "Failed to send media message" });
-      alert("Failed to send media. Please try again.");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleImageUpload = async (url) => {
-    await sendMediaMessage({ mediaUrl: url, mediaType: "image" });
-  };
-
-  const handleVideoUpload = async (url) => {
-    await sendMediaMessage({ mediaUrl: url, mediaType: "video" });
-  };
-
-  const handleAudioUpload = async (url) => {
-    await sendMediaMessage({ mediaUrl: url, mediaType: "audio" });
-    setShowAudioRecorder(false);
   };
 
   const handleAudioRecordComplete = ({ blob, fileName }) => {
