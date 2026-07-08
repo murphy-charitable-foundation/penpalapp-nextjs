@@ -200,7 +200,6 @@ export const fetchLatestMessageFromConversation = async (
       query(
         messagesRef,
         where("status", "==", "approved"),
-        where("content", "!=", ""),
         orderBy("created_at", "desc"),
         limit(1)
       ),
