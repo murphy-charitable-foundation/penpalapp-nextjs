@@ -44,8 +44,10 @@ export async function POST(request) {
       );
     }
 
-    const conversationSnapshot = await db.collection("conversations").where("deleted_at", '==', null).get();
-    const conversationesPromises = conversationSnapshot.docs.map(async (doc) => {
+    const conversationSnapshot = await db.collection("conversations").get();
+    const conversationesPromises = conversationSnapshot.docs
+      .filter((doc) => doc.data()?.deleted_at == null)
+      .map(async (doc) => {
       const docData = doc.data();
       let latestMessage = null;
 
