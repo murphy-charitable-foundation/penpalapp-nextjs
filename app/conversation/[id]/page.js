@@ -11,16 +11,26 @@ import {
   query,
   where,
   orderBy,
-  limit,
   getDocs,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
+  fetchDraft,
   sendNotification,
 } from "../../utils/conversationsFunctions";
-import { compressMedia } from "../../utils/compressMedia";
+import {
+  createAttachmentFromFile,
+  deleteAttachmentStorageObject,
+  formatFileSize,
+  getCompletedAttachmentsForSave,
+  isAllowedMediaUrl,
+  normalizeMessageAttachments,
+  revokeAttachmentPreview,
+  revokeAttachmentPreviews,
+  uploadAttachmentFile,
+} from "../../utils/attachments";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -41,82 +51,8 @@ import {
   Play,
 } from "lucide-react";
 import AudioRecorder from "../../../components/media/AudioRecorder";
-import { storage } from "../../firebaseConfig";
-import {
-  ref as storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "@firebase/storage";
-import { deleteObject } from "@firebase/storage";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
-
-
-const fetchDraft = async (conversationId, userRef, shouldCreate = false) => {
-  try {
-    const conversationsRef = doc(db, "conversations", conversationId);
-    const messagesRef = collection(conversationsRef, "messages");
-
-    const draftQuery = query(
-      messagesRef,
-      where("sent_by", "==", userRef),
-      where("status", "==", "draft"),
-      orderBy("drafted_at", "desc"),
-      limit(1),
-    );
-
-    let draftSnapshot = await getDocs(draftQuery);
-
-    if (draftSnapshot.empty) {
-      const fallbackDraftQuery = query (
-        messagesRef,
-        where("sent_by", "==", userRef),
-        where("status", "==", "draft"),
-        orderBy("drafted_at", "desc"),
-        limit(1),
-      );
-
-      draftSnapshot = await getDocs(fallbackDraftQuery);
-    }
-
-    if (!draftSnapshot.empty) {
-      const draftDoc = draftSnapshot.docs[0];
-
-      return {
-        id: draftDoc.id,
-        ...draftDoc.data(),
-        created_at: draftDoc.data().created_at?.toDate?.() || null,
-        drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
-      };
-    }
-
-    if (shouldCreate) {
-      const now = new Date();
-      const newDraftData = {
-        sent_by: userRef,
-        content: "",
-        status: "draft",
-        created_at: now,
-        drafted_at: now,
-        deleted: null,
-        unread: true,
-      };
-
-      const newDraftRef = doc(messagesRef);
-      await setDoc(newDraftRef, newDraftData);
-
-      return {
-        id: newDraftRef.id,
-        ...newDraftData,
-      };
-    }
-
-    return null;
-  } catch (error) {
-    console.error("❌ fetchDraft error:", error);
-    return null;
-  }
-};
 
 export default function Page({ params }) {
   const { id } = params;
@@ -135,34 +71,6 @@ export default function Page({ params }) {
   const [messageContent, setMessageContent] = useState("");
   const [draft, setDraft] = useState(null);
   const [hasDraftContent, setHasDraftContent] = useState(false);
-
-  // Allowed media origins can be configured via NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS
-  // as a comma-separated list (e.g. "https://example.com,https://cdn.example.com").
-  const getAllowedOrigins = () => {
-    try {
-      const env = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS : undefined;
-      if (env && env.length) {
-        return env.split(",").map((s) => s.trim()).filter(Boolean);
-      }
-    } catch (e) {
-      // ignore and fallback
-    }
-
-    // Default fallback to common Firebase storage origin
-    return ["https://firebasestorage.googleapis.com"];
-  };
-
-  const isAllowedMediaUrl = (url) => {
-    if (!url) return false;
-    try {
-      const parsed = new URL(url);
-      const origin = parsed.origin;
-      const allowed = getAllowedOrigins();
-      return allowed.includes(origin);
-    } catch (e) {
-      return false;
-    }
-  };
 
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageOriginalContent, setEditingMessageOriginalContent] =
@@ -203,37 +111,11 @@ export default function Page({ params }) {
     });
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0 || bytes == null) return "0 KB";
-    const kb = bytes / 1024;
-    if (kb < 1024) return `${Math.round(kb)} KB`;
-    return `${(kb / 1024).toFixed(1)} MB`;
-  };
-
   const getAttachmentIcon = (mediaType) => {
     if (mediaType === "image") return <ImageIcon size={18} className="text-emerald-700" />;
     if (mediaType === "video") return <Film size={18} className="text-emerald-700" />;
     if (mediaType === "audio") return <Play size={18} className="text-emerald-700" />;
     return <Paperclip size={18} className="text-emerald-700" />;
-  };
-
-  const createAttachmentFromFile = (file, mediaType) => ({
-    id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    name: file.name,
-    size: file.size,
-    mediaType,
-    file,
-    url: null,
-    previewUrl: URL.createObjectURL(file),
-    uploadStatus: "pending",
-    progress: 0,
-  });
-
-  const getFileNameWithType = (name, mimeType) => {
-    const baseName = name?.replace(/\.[^/.]+$/, "") || `attachment_${Date.now()}`;
-    const typeBase = (mimeType || "").split(";")[0];
-    const ext = typeBase.includes("/") ? typeBase.split("/")[1] : "bin";
-    return `${baseName}.${ext}`;
   };
 
   const updateAttachment = (attachmentId, patch) => {
@@ -247,9 +129,7 @@ export default function Page({ params }) {
   const removeAttachment = (attachmentId) => {
     setPendingAttachments((current) => {
       const removed = current.find((item) => item.id === attachmentId);
-      if (removed?.previewUrl?.startsWith("blob:")) {
-        URL.revokeObjectURL(removed.previewUrl);
-      }
+      revokeAttachmentPreview(removed);
       return current.filter((item) => item.id !== attachmentId);
     });
   };
@@ -260,89 +140,12 @@ export default function Page({ params }) {
       return;
     }
 
-    let fileToUpload = attachment.file;
-
-    try {
-      updateAttachment(attachment.id, { uploadStatus: "compressing", progress: 0 });
-
-      const compressedMedia = await compressMedia(
-        attachment.file,
-        (compressionProgress) => {
-          const progress = Math.round(Math.max(0, Math.min(1, compressionProgress)) * 40);
-          updateAttachment(attachment.id, {
-            uploadStatus: "compressing",
-            progress,
-          });
-        },
-      );
-
-      if (compressedMedia instanceof File) {
-        fileToUpload = compressedMedia;
-      } else {
-        fileToUpload = new File(
-          [compressedMedia],
-          getFileNameWithType(attachment.name, compressedMedia.type || attachment.file.type),
-          { type: compressedMedia.type || attachment.file.type },
-        );
-      }
-
-      updateAttachment(attachment.id, {
-        file: fileToUpload,
-        name: fileToUpload.name,
-        size: fileToUpload.size,
-      });
-    } catch (error) {
-      console.error("❌ attachment compression error:", error);
-      updateAttachment(attachment.id, {
-        uploadStatus: "error",
-      });
-      return;
-    }
-
-    const safeFileName = fileToUpload.name
-      .replace(/\s+/g, "_")
-      .replace(/[^a-zA-Z0-9._-]/g, "");
-    const storagePath =
-      attachment.mediaType === "image"
-        ? `users/${user.uid}/images/${Date.now()}_${safeFileName}`
-        : attachment.mediaType === "video"
-        ? `users/${user.uid}/video_messages/${Date.now()}_${safeFileName}`
-        : attachment.mediaType === "audio"
-        ? `users/${user.uid}/voice_messages/${Date.now()}_${safeFileName}`
-        : `users/${user.uid}/uploads/${Date.now()}_${safeFileName}`;
-
-    const task = uploadBytesResumable(storageRef(storage, storagePath), fileToUpload);
-
-    task.on(
-      "state_changed",
-      (snapshot) => {
-        const uploadProgress = snapshot.totalBytes
-          ? snapshot.bytesTransferred / snapshot.totalBytes
-          : 0;
-        const progress = Math.round(40 + uploadProgress * 60);
-        updateAttachment(attachment.id, { progress, uploadStatus: "uploading" });
-      },
-      (error) => {
-        console.error("❌ uploadAttachment error:", error);
-        updateAttachment(attachment.id, { uploadStatus: "error" });
-      },
-      async () => {
-        try {
-          const url = await getDownloadURL(task.snapshot.ref);
-          updateAttachment(attachment.id, {
-            url,
-            uploadStatus: "done",
-            progress: 100,
-            size: fileToUpload.size,
-            storagePath,
-          });
-          await saveDraft(messageContent);
-        } catch (error) {
-          console.error("❌ uploadAttachment download URL error:", error);
-          updateAttachment(attachment.id, { uploadStatus: "error" });
-        }
-      },
-    );
+    await uploadAttachmentFile({
+      attachment,
+      uid: user.uid,
+      onUpdate: updateAttachment,
+      onComplete: () => saveDraft(messageContent),
+    });
   };
 
   const handleAddAttachment = ({ file, mediaType }) => {
@@ -396,21 +199,6 @@ export default function Page({ params }) {
     setShowAttachmentDeleteDialog(true);
   };
 
-  const extractStoragePathFromDownloadUrl = (url) => {
-    try {
-      const parsed = new URL(url);
-      // downloadURL format: /v0/b/<bucket>/o/<encodedPath>
-      const path = parsed.pathname || "";
-      const marker = "/o/";
-      const idx = path.indexOf(marker);
-      if (idx === -1) return null;
-      const encoded = path.substring(idx + marker.length);
-      return decodeURIComponent(encoded);
-    } catch (e) {
-      return null;
-    }
-  };
-
   const handleConfirmDeleteAttachment = async () => {
     if (!attachmentToDelete) {
       setShowAttachmentDeleteDialog(false);
@@ -422,22 +210,8 @@ export default function Page({ params }) {
     // Remove from pending UI immediately
     removeAttachment(att.id);
 
-    // Attempt to delete storage object if we can determine its path
     try {
-      let storagePath = att.storagePath || null;
-
-      if (!storagePath && att.url) {
-        storagePath = extractStoragePathFromDownloadUrl(att.url);
-      }
-
-      if (storagePath) {
-        try {
-          await deleteObject(storageRef(storage, storagePath));
-        } catch (err) {
-          // Log but continue — file may already be deleted or path invalid
-          console.error("Failed to delete storage object:", err);
-        }
-      }
+      await deleteAttachmentStorageObject(att);
     } catch (error) {
       console.error("Error during attachment deletion:", error);
     } finally {
@@ -462,59 +236,16 @@ export default function Page({ params }) {
     });
   };
 
-  const messageAttachments = (message) => {
-    const normalized = [];
+  const messageAttachments = normalizeMessageAttachments;
 
-    if (Array.isArray(message.attachments) && message.attachments.length > 0) {
-      message.attachments.forEach((att, index) => {
-        normalized.push({
-          id: att.id || `${message.id}-att-${index}`,
-          name: att.file_name || att.name || `Attachment ${index + 1}`,
-          size: att.size || 0,
-          mediaType: att.media_type || att.mediaType || "image",
-          url: att.url,
-        });
-      });
-    }
-
-    if (normalized.length === 0 && message.media_url) {
-      normalized.push({
-        id: `${message.id}-legacy`,
-        name:
-          message.media_type === "image"
-            ? "Image"
-            : message.media_type === "video"
-            ? "Video"
-            : "Audio",
-        size: 0,
-        mediaType: message.media_type,
-        url: message.media_url,
-      });
-    }
-
-    return normalized;
-  };
-
-  const attachmentsToSave = () =>
-    pendingAttachments
-      .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)
-      .map((attachment) => ({
-        url: attachment.url,
-        media_type: attachment.mediaType,
-        file_name: attachment.name,
-        size: attachment.size,
-      }));
+  const attachmentsToSave = () => getCompletedAttachmentsForSave(pendingAttachments);
 
   const hasUploadingAttachments = pendingAttachments.some(
     (attachment) => attachment.uploadStatus !== "done",
   );
 
   const clearPendingAttachments = () => {
-    pendingAttachments.forEach((attachment) => {
-      if (attachment.previewUrl?.startsWith("blob:")) {
-        URL.revokeObjectURL(attachment.previewUrl);
-      }
-    });
+    revokeAttachmentPreviews(pendingAttachments);
     setPendingAttachments([]);
   };
 
