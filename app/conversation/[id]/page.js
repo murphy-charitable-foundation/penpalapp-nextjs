@@ -689,6 +689,8 @@ export default function Page({ params }) {
       },
     );
 
+    // TODO: record them at the desired bitrate from AudioRecorder instead of recording high-quality audio
+    // and recompressing it in the following function. Maybe propagate a skipCompression argument?
     handleAddAttachment({ file: audioFile, mediaType: "audio" });
     setShowAudioRecorder(false);
   };
