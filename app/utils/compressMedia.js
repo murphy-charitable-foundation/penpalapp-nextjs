@@ -289,7 +289,12 @@ const recordMedia = ({
       if (mediaElement.duration) {
         reportProgress(onProgress, mediaElement.currentTime / mediaElement.duration);
       }
-      animationFrameId = requestAnimationFrame(drawFrame);
+
+      if ("requestVideoFrameCallback" in mediaElement) {
+        mediaElement.requestVideoFrameCallback(drawFrame);
+      } else {
+        animationFrameId = requestAnimationFrame(drawFrame);
+      }
     };
 
     mediaRecorder.start();
