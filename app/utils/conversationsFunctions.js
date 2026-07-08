@@ -187,7 +187,11 @@ export const fetchLatestMessageFromConversation = async (
     };
   };
 
-  const [userConversationsSnap, sentConversationsSnap] = await Promise.all(
+  const [
+    userConversationsSnap,
+    approvedConversationsSnap,
+    rejectedConversationsSnap,
+  ] = await Promise.all(
     [
       query(
         messagesRef,
@@ -200,7 +204,15 @@ export const fetchLatestMessageFromConversation = async (
       query(
         messagesRef,
         where("status", "==", "approved"),
-        orderBy("created_at", "desc"),
+        orderBy("s", "desc"),
+        limit(1)
+      ),
+
+      query(
+        messagesRef,
+        where("sent_by", "==", userRef),
+        where("status", "==", "rejected"),
+        orderBy("moderated_at", "desc"),
         limit(1)
       ),
     ].map(getDocs)
@@ -212,8 +224,13 @@ export const fetchLatestMessageFromConversation = async (
   );
 
   const latestApprovedMessage = getFirstMessage(
-    sentConversationsSnap,
-    "created_at"
+    approvedConversationsSnap,
+    "moderated_at"
+  );
+
+  const latestRejectedMessage = getFirstMessage(
+    rejectedConversationsSnap,
+    "moderated_at"
   );
 
   const latestSentMessage =
@@ -221,13 +238,15 @@ export const fetchLatestMessageFromConversation = async (
       ? latestApprovedMessage
       : null;
 
-  if (!latestUserMessage && !latestSentMessage) return null;
-  if (!latestUserMessage) return latestSentMessage;
-  if (!latestSentMessage) return latestUserMessage;
-
-  return latestUserMessage.lastMessageDate > latestSentMessage.lastMessageDate
-    ? latestUserMessage
-    : latestSentMessage;
+  return [latestUserMessage, latestSentMessage, latestRejectedMessage]
+    .filter(Boolean)
+    .reduce(
+      (latest, message) =>
+        !latest || message.lastMessageDate > latest.lastMessageDate
+          ? message
+          : latest,
+      null
+    );
 };
 
 export const fetchRecipients = async (id) => {
