@@ -45,7 +45,9 @@ export async function POST(request) {
     }
 
     const conversationSnapshot = await db.collection("conversations").get();
-    const conversationesPromises = conversationSnapshot.docs.map(async (doc) => {
+    const conversationesPromises = conversationSnapshot.docs
+      .filter((doc) => doc.data()?.deleted_at == null)
+      .map(async (doc) => {
       const docData = doc.data();
       let latestMessage = null;
 
@@ -59,6 +61,8 @@ export async function POST(request) {
       }
 
       if (latestMessage === null) {
+        // TODO: maintain latest_message_created_at at the level of `conversation`
+        // updated at the time of message approval so that it is faster to query here
         const latestMessageSnapshot = await doc.ref
           .collection("messages")
           .orderBy("created_at", "desc")
