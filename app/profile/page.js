@@ -77,6 +77,7 @@ export default function EditProfile() {
   useEffect(() => {
     if (!user?.uid) return;
 
+    // TODO: populate this data from UserContext
     const fetchProfile = async () => {
       const snap = await getDoc(doc(db, "users", user.uid));
       if (!snap.exists()) return;
