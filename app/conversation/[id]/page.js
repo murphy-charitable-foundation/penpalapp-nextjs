@@ -317,7 +317,7 @@ export default function Page({ params }) {
 
       const updateData = {
         content: trimmedContent,
-        drafted_at: currentTime,
+        created_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -347,7 +347,7 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: trimmedContent,
-              drafted_at: currentTime,
+              created_at: currentTime,
             };
           }
           return msg;
@@ -413,12 +413,7 @@ export default function Page({ params }) {
       if (draft?.id) {
         messageRef = doc(messagesRef, draft.id);
 
-        const updateData = {
-          ...messageData,
-          created_at: currentTime,
-        };
-
-        await updateDoc(messageRef, updateData);
+        await updateDoc(messageRef, messageData);
       } else {
         messageRef = doc(messagesRef);
         await setDoc(messageRef, messageData);
