@@ -140,9 +140,24 @@ export default function Page({ params }) {
       return;
     }
 
+    let draftMessage;
+
+    try {
+      draftMessage = await saveDraft(messageContent);
+    } catch (error) {
+      updateAttachment(attachment.id, { uploadStatus: "error" });
+      return;
+    }
+
+    if (!draftMessage?.id) {
+      updateAttachment(attachment.id, { uploadStatus: "error" });
+      return;
+    }
+
     await uploadAttachmentFile({
       attachment,
-      uid: user.uid,
+      conversationId: id,
+      messageId: draftMessage.id,
       onUpdate: updateAttachment,
       onComplete: () => saveDraft(messageContent),
     });
@@ -256,7 +271,7 @@ export default function Page({ params }) {
   const saveDraft = useCallback(
     async (content) => {
       if (!user?.uid || !messagesRef || isSending) {
-        return Promise.resolve();
+        return null;
       }
 
       setIsUpdatingFirebase(true);
@@ -276,6 +291,7 @@ export default function Page({ params }) {
 
       try {
         let existingDraft = draft;
+        let savedDraft = null;
 
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, messageUserRef, false);
@@ -295,6 +311,7 @@ export default function Page({ params }) {
 
           await updateDoc(draftDocRef, updateData);
           setDraft({ ...updateData, id: existingDraft.id });
+          savedDraft = { ...updateData, id: existingDraft.id };
         } else {
           const newDraftRef = doc(messagesRef);
           const newDraftData = {
@@ -304,6 +321,7 @@ export default function Page({ params }) {
 
           await setDoc(newDraftRef, newDraftData);
           setDraft({ ...newDraftData, id: newDraftRef.id });
+          savedDraft = { ...newDraftData, id: newDraftRef.id };
         }
 
         const hasContent = Boolean(trimmedContent);
@@ -313,7 +331,7 @@ export default function Page({ params }) {
           setIsEditing(false);
         }
 
-        return Promise.resolve();
+        return savedDraft;
       } catch (error) {
         console.error("❌ saveDraft error:", error);
 
@@ -332,6 +350,14 @@ export default function Page({ params }) {
 
               await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
+              const hasContent = Boolean(trimmedContent);
+              setHasDraftContent(hasContent);
+
+              if (!hasContent && isEditing) {
+                setIsEditing(false);
+              }
+
+              return { ...newDraftData, id: newDraftRef.id };
             } catch (retryError) {
               logError(retryError, {
                 description: "Retry Error:",
@@ -340,7 +366,7 @@ export default function Page({ params }) {
           }
         }
 
-        return Promise.reject(error);
+        throw error;
       } finally {
         setIsUpdatingFirebase(false);
       }

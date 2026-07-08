@@ -70,21 +70,16 @@ export const getFileNameWithType = (name, mimeType) => {
   return `${baseName}.${ext}`;
 };
 
-export const getAttachmentStoragePath = ({ uid, mediaType, fileName }) => {
+export const getAttachmentStoragePath = ({ conversationId, messageId, fileName }) => {
   const safeFileName = fileName
     .replace(/\s+/g, "_")
     .replace(/[^a-zA-Z0-9._-]/g, "");
 
-  const prefix =
-    mediaType === "image"
-      ? "images"
-      : mediaType === "video"
-      ? "video_messages"
-      : mediaType === "audio"
-      ? "voice_messages"
-      : "uploads";
+  if (!conversationId || !messageId) {
+    return null;
+  }
 
-  return `users/${uid}/${prefix}/${Date.now()}_${safeFileName}`;
+  return `conversations/${conversationId}/${messageId}/${Date.now()}_${safeFileName}`;
 };
 
 export const extractStoragePathFromDownloadUrl = (url) => {
@@ -163,11 +158,12 @@ export const legacyAttachmentFromMedia = ({ mediaUrl, mediaType }) => ({
 
 export const uploadAttachmentFile = async ({
   attachment,
-  uid,
+  conversationId,
+  messageId,
   onUpdate,
   onComplete,
 }) => {
-  if (!attachment || !uid) {
+  if (!attachment || !conversationId || !messageId) {
     onUpdate?.(attachment?.id, { uploadStatus: "error" });
     return;
   }
@@ -216,10 +212,15 @@ export const uploadAttachmentFile = async ({
   }
 
   const storagePath = getAttachmentStoragePath({
-    uid,
-    mediaType: attachment.mediaType,
+    conversationId,
+    messageId,
     fileName: fileToUpload.name,
   });
+
+  if (!storagePath) {
+    onUpdate?.(attachment.id, { uploadStatus: "error" });
+    return;
+  }
 
   const task = uploadBytesResumable(storageRef(storage, storagePath), fileToUpload);
 
