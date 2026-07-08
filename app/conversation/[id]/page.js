@@ -99,6 +99,7 @@ export default function Page({ params }) {
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [queuedAttachmentDeletes, setQueuedAttachmentDeletes] = useState([]);
   const [attachmentToDelete, setAttachmentToDelete] = useState(null);
   const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
   const [attachmentViewer, setAttachmentViewer] = useState(null);
@@ -230,8 +231,14 @@ export default function Page({ params }) {
     removeAttachment(att.id);
 
     try {
-      await saveDraft(messageContent, remainingAttachments);
-      await deleteAttachmentStorageObject(att);
+      if (editingMessageId) {
+        setQueuedAttachmentDeletes((current) => [...current, att]);
+        const hasContent = Boolean(messageContent.trim());
+        setHasDraftContent(hasContent || remainingAttachments.length > 0);
+      } else {
+        await saveDraft(messageContent, remainingAttachments);
+        await deleteAttachmentStorageObject(att);
+      }
     } catch (error) {
       console.error("Error during attachment deletion:", error);
     } finally {
@@ -449,9 +456,9 @@ export default function Page({ params }) {
   };
 
   const handleUpdateMessage = async () => {
-    const trimmedContent = messageContent.trim();
+    const nextContent = getMessageContentForSave(messageContent, pendingAttachments);
 
-    if (!trimmedContent) {
+    if (!nextContent) {
       alert("Please enter a message");
       return;
     }
@@ -469,31 +476,52 @@ export default function Page({ params }) {
 
       const currentTime = new Date();
       const messageRef = doc(messagesRef, editingMessageId);
+      const updatedAttachments = attachmentsToSave(pendingAttachments);
 
       const updateData = {
-        content: trimmedContent,
+        content: nextContent,
         drafted_at: currentTime,
+        attachments: updatedAttachments,
+        media_url: null,
+        media_type: null,
       };
 
       await updateDoc(messageRef, updateData);
 
+      if (queuedAttachmentDeletes.length > 0) {
+        await Promise.allSettled(
+          queuedAttachmentDeletes.map((attachment) =>
+            deleteAttachmentStorageObject(attachment),
+          ),
+        );
+      }
+
       const messageUserRef = userRef || doc(db, "users", user.uid);
       const existingDraft = await fetchDraft(id, messageUserRef, false);
+      const restoredDraftAttachments = normalizeDraftAttachments(
+        existingDraft?.attachments || [],
+      );
+      const hasRestoredDraftContent =
+        Boolean(existingDraft?.content?.trim()) ||
+        restoredDraftAttachments.length > 0;
 
-      if (existingDraft && existingDraft.content?.trim()) {
+      if (existingDraft && hasRestoredDraftContent) {
         setDraft(existingDraft);
         setMessageContent(existingDraft.content);
-        setHasDraftContent(true);
+        setPendingAttachments(restoredDraftAttachments);
+        setHasDraftContent(hasRestoredDraftContent);
         setIsEditing(true);
       } else {
         setMessageContent("");
         setDraft(null);
         setHasDraftContent(false);
         setIsEditing(false);
+        clearPendingAttachments();
       }
 
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
+      setQueuedAttachmentDeletes([]);
       setSelectedMessageId(null);
 
       setAllMessages((prev) => {
@@ -501,8 +529,11 @@ export default function Page({ params }) {
           if (msg.id === editingMessageId) {
             return {
               ...msg,
-              content: trimmedContent,
+              content: nextContent,
               drafted_at: currentTime,
+              attachments: updatedAttachments,
+              media_url: null,
+              media_type: null,
             };
           }
           return msg;
@@ -666,6 +697,7 @@ export default function Page({ params }) {
         setMessageContent("");
         setEditingMessageId(null);
         setEditingMessageOriginalContent("");
+        setQueuedAttachmentDeletes([]);
         setIsEditing(false);
         setHasDraftContent(false);
         setSelectedMessageId(null);
@@ -699,6 +731,7 @@ export default function Page({ params }) {
       setMessageContent("");
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
+      setQueuedAttachmentDeletes([]);
       setIsEditing(false);
       setHasDraftContent(false);
       setSelectedMessageId(null);
@@ -745,8 +778,15 @@ export default function Page({ params }) {
     setEditingMessageId(message.id);
     setEditingMessageOriginalContent(message.content);
     setMessageContent(message.content);
+    const restoredAttachments = normalizeDraftAttachments(
+      messageAttachments(message),
+    );
+    setPendingAttachments(restoredAttachments);
+    setQueuedAttachmentDeletes([]);
     setIsEditing(true);
-    setHasDraftContent(true);
+    setHasDraftContent(
+      Boolean(message.content?.trim()) || restoredAttachments.length > 0,
+    );
     setSelectedMessageId(null);
 
     setTimeout(() => {
@@ -1156,21 +1196,33 @@ export default function Page({ params }) {
 
                 try {
                   const existingDraft = await fetchDraft(id, messageUserRef, false);
+                  const restoredDraftAttachments = normalizeDraftAttachments(
+                    existingDraft?.attachments || [],
+                  );
+                  const hasRestoredDraftContent =
+                    Boolean(existingDraft?.content?.trim()) ||
+                    restoredDraftAttachments.length > 0;
 
-                  if (existingDraft && existingDraft.content?.trim()) {
+                  if (existingDraft && hasRestoredDraftContent) {
                     setDraft(existingDraft);
                     setMessageContent(existingDraft.content);
-                    setHasDraftContent(true);
+                    setPendingAttachments(restoredDraftAttachments);
+                    setQueuedAttachmentDeletes([]);
+                    setHasDraftContent(hasRestoredDraftContent);
                     setIsEditing(true);
                   } else {
                     setMessageContent("");
                     setDraft(null);
+                    clearPendingAttachments();
+                    setQueuedAttachmentDeletes([]);
                     setHasDraftContent(false);
                     setIsEditing(false);
                   }
                 } catch {
                   setMessageContent("");
                   setDraft(null);
+                  clearPendingAttachments();
+                  setQueuedAttachmentDeletes([]);
                   setHasDraftContent(false);
                   setIsEditing(false);
                 }

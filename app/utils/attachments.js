@@ -115,6 +115,9 @@ export const normalizeMessageAttachments = (message) => {
         size: att.size || 0,
         mediaType: att.media_type || att.mediaType || "image",
         url: att.url,
+        storagePath:
+          att.storagePath ||
+          (att.url ? extractStoragePathFromDownloadUrl(att.url) : null),
       });
     });
   }
@@ -131,6 +134,7 @@ export const normalizeMessageAttachments = (message) => {
       size: 0,
       mediaType: message.media_type,
       url: message.media_url,
+      storagePath: extractStoragePathFromDownloadUrl(message.media_url),
     });
   }
 
