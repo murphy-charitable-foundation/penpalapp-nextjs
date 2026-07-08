@@ -141,10 +141,28 @@ export const getCompletedAttachmentsForSave = (attachments) =>
   attachments
     .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)
     .map((attachment) => ({
+      id: attachment.id,
       url: attachment.url,
       media_type: attachment.mediaType,
       file_name: attachment.name,
       size: attachment.size,
+      storagePath: attachment.storagePath || null,
+    }));
+
+export const normalizeDraftAttachments = (attachments = []) =>
+  attachments
+    .filter(Boolean)
+    .map((attachment, index) => ({
+      id: attachment.id || `draft-att-${index}`,
+      name: attachment.file_name || attachment.name || `Attachment ${index + 1}`,
+      size: attachment.size || 0,
+      mediaType: attachment.media_type || attachment.mediaType || "image",
+      url: attachment.url || null,
+      storagePath:
+        attachment.storagePath ||
+        (attachment.url ? extractStoragePathFromDownloadUrl(attachment.url) : null),
+      uploadStatus: "done",
+      progress: 100,
     }));
 
 export const legacyAttachmentFromMedia = ({ mediaUrl, mediaType }) => ({

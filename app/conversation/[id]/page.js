@@ -27,6 +27,7 @@ import {
   getCompletedAttachmentsForSave,
   isAllowedMediaUrl,
   normalizeMessageAttachments,
+  normalizeDraftAttachments,
   revokeAttachmentPreview,
   revokeAttachmentPreviews,
   uploadAttachmentFile,
@@ -221,11 +222,15 @@ export default function Page({ params }) {
     }
 
     const att = attachmentToDelete;
+    const remainingAttachments = pendingAttachments.filter(
+      (item) => item.id !== att.id,
+    );
 
     // Remove from pending UI immediately
     removeAttachment(att.id);
 
     try {
+      await saveDraft(messageContent, remainingAttachments);
       await deleteAttachmentStorageObject(att);
     } catch (error) {
       console.error("Error during attachment deletion:", error);
@@ -253,7 +258,8 @@ export default function Page({ params }) {
 
   const messageAttachments = normalizeMessageAttachments;
 
-  const attachmentsToSave = () => getCompletedAttachmentsForSave(pendingAttachments);
+  const attachmentsToSave = (attachments = pendingAttachments) =>
+    getCompletedAttachmentsForSave(attachments);
 
   const hasUploadingAttachments = pendingAttachments.some(
     (attachment) => attachment.uploadStatus !== "done",
@@ -265,7 +271,7 @@ export default function Page({ params }) {
   };
 
   const saveDraft = useCallback(
-    async (content) => {
+    async (content, draftAttachments = pendingAttachments) => {
       if (!user?.uid || !messagesRef || isSending) {
         return null;
       }
@@ -283,6 +289,7 @@ export default function Page({ params }) {
         drafted_at: currentTime,
         deleted: null,
         unread: true,
+        attachments: attachmentsToSave(draftAttachments),
       };
 
       try {
@@ -367,7 +374,16 @@ export default function Page({ params }) {
         setIsUpdatingFirebase(false);
       }
     },
-    [user?.uid, messagesRef, isSending, draft, userRef, isEditing, id]
+    [
+      user?.uid,
+      messagesRef,
+      isSending,
+      draft,
+      userRef,
+      isEditing,
+      id,
+      pendingAttachments,
+    ]
   );
 
   const handleMessageChange = async (e) => {
@@ -743,19 +759,33 @@ export default function Page({ params }) {
         if (existingDraft) {
           setDraft(existingDraft);
           setMessageContent(existingDraft.content || "");
-          setHasDraftContent(Boolean(existingDraft.content?.trim()));
+          const restoredAttachments = normalizeDraftAttachments(
+            existingDraft.attachments || [],
+          );
+          setPendingAttachments(restoredAttachments);
+          setHasDraftContent(
+            Boolean(existingDraft.content?.trim()) || restoredAttachments.length > 0,
+          );
         } else {
           setMessageContent("");
+          setPendingAttachments([]);
           setHasDraftContent(false);
         }
       } catch (error) {
         console.error("❌ Error fetching draft:", error);
         setMessageContent("");
+        setPendingAttachments([]);
         setHasDraftContent(false);
       }
     } else {
       setMessageContent(draft.content || "");
-      setHasDraftContent(Boolean(draft.content?.trim()));
+      const restoredAttachments = normalizeDraftAttachments(
+        draft.attachments || [],
+      );
+      setPendingAttachments(restoredAttachments);
+      setHasDraftContent(
+        Boolean(draft.content?.trim()) || restoredAttachments.length > 0,
+      );
     }
 
     setTimeout(() => {
@@ -873,11 +903,16 @@ export default function Page({ params }) {
 
             const draftContent = draftData.content || "";
             const hasContent = Boolean(draftContent.trim());
+            const restoredAttachments = normalizeDraftAttachments(
+              draftData.attachments || [],
+            );
+            const hasAttachments = restoredAttachments.length > 0;
 
             setMessageContent(draftContent);
-            setHasDraftContent(hasContent);
+            setPendingAttachments(restoredAttachments);
+            setHasDraftContent(hasContent || hasAttachments);
 
-            if (hasContent) {
+            if (hasContent || hasAttachments) {
               setIsEditing(true);
               setTimeout(() => {
                 textAreaRef.current?.focus();
