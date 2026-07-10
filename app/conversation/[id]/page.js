@@ -303,7 +303,6 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "draft",
         drafted_at: currentTime,
-        deleted: null,
         unread: true,
         attachments: attachmentsToSave(draftAttachments),
       };
@@ -325,7 +324,7 @@ export default function Page({ params }) {
 
           const updateData = {
             ...baseDraftData,
-            created_at: existingDraft.created_at || currentTime,
+            drafted_at: currentTime,
           };
 
           await updateDoc(draftDocRef, updateData);
@@ -335,7 +334,7 @@ export default function Page({ params }) {
           const newDraftRef = doc(messagesRef);
           const newDraftData = {
             ...baseDraftData,
-            created_at: currentTime,
+            drafted_at: currentTime,
           };
 
           await setDoc(newDraftRef, newDraftData);
@@ -364,7 +363,7 @@ export default function Page({ params }) {
               const newDraftRef = doc(messagesRef);
               const newDraftData = {
                 ...baseDraftData,
-                created_at: currentTime,
+                drafted_at: currentTime,
               };
 
               await setDoc(newDraftRef, newDraftData);
@@ -480,10 +479,10 @@ export default function Page({ params }) {
 
       const updateData = {
         content: nextContent,
-        drafted_at: currentTime,
         attachments: updatedAttachments,
         media_url: null,
         media_type: null,
+        created_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
@@ -530,10 +529,10 @@ export default function Page({ params }) {
             return {
               ...msg,
               content: nextContent,
-              drafted_at: currentTime,
               attachments: updatedAttachments,
               media_url: null,
               media_type: null,
+              created_at: currentTime,
             };
           }
           return msg;
@@ -591,8 +590,6 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        drafted_at: currentTime,
-        deleted: null,
         unread: true,
       };
 
@@ -607,12 +604,7 @@ export default function Page({ params }) {
       if (draft?.id) {
         messageRef = doc(messagesRef, draft.id);
 
-        const updateData = {
-          ...messageDataWithAttachments,
-          created_at: draft.created_at || currentTime,
-        };
-
-        await updateDoc(messageRef, updateData);
+        await updateDoc(messageRef, messageData);
       } else {
         messageRef = doc(messagesRef);
         await setDoc(messageRef, messageDataWithAttachments);

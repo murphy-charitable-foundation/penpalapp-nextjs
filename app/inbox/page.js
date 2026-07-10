@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { doc, getDoc } from "firebase/firestore";
@@ -21,6 +21,8 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+
+const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
 
 export default function Home() {
   const [userName, setUserName] = useState("");
@@ -46,9 +48,7 @@ export default function Home() {
     throw new Error("No user document found.");
   };
 
-  const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
-
-  const getConversations = async (uid) => {
+  const getConversations = useCallback(async (uid) => {
     try {
       const conversations = await fetchConversations();
 
@@ -58,11 +58,10 @@ export default function Home() {
       }
 
       const conversationIds = conversations.map((conversation) => conversation.id);
-
+      
+      const userRef = doc(db, "users", uid);
       const fetchedConversations = await Promise.all(
         conversationIds.map(async (id) => {
-          const userRef = doc(db, "users", uid);
-
           const message =
             (await fetchLatestMessageFromConversation(id, userRef)) || {};
 
@@ -75,7 +74,7 @@ export default function Home() {
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: message.content || "",
-            lastMessageDate: message.created_at || "",
+            lastMessageDate: message.lastMessageDate || "",
             status: message.status || "",
             conversationId: id || "",
             isRecipient: message?.sent_by?.id !== uid,
@@ -84,8 +83,8 @@ export default function Home() {
         })
       );
 
-      return fetchedConversations.sort(
-        (a, b) => toDateValue(b.lastMessageDate) - toDateValue(a.lastMessageDate)
+      return fetchedConversations.sort((a, b) =>
+        toDateValue(b.lastMessageDate) - toDateValue(a.lastMessageDate)
       );
     } catch (err) {
       logError(err, {
@@ -95,7 +94,7 @@ export default function Home() {
       setError("Failed to load data.");
       throw err;
     }
-  };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -127,7 +126,7 @@ export default function Home() {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, getConversations]);
 
   if (isLoading) {
     return <InboxSkeleton />;

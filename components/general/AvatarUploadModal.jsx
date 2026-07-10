@@ -8,6 +8,7 @@ import { logButtonEvent } from "@/app/utils/analytics";
 import { saveAvatar } from "@/app/utils/avatarUtils";
 import Dialog from "@/components/general/Dialog";
 import { useAvatarUpload } from "@/app/utils/useAvatarUpload";
+import Image from "next/image";
 
 /**
  * AvatarUploadModal - A reusable avatar upload & crop component
@@ -165,10 +166,13 @@ export default function AvatarUploadModal({
                   aria-label="Select profile picture"
                 >
                   {croppedUrl ? (
-                    <img
+                    <Image
                       src={croppedUrl}
                       alt="Profile preview"
+                      width={192}
+                      height={192}
                       className="w-full h-full object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className={`w-full h-full bg-primary flex items-center justify-center`}>

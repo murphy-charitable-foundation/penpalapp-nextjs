@@ -1,39 +1,31 @@
+import { NextResponse } from "next/server";
 import { auth } from "../../firebaseAdmin";
 import { requireAdmin } from "../../utils/requireAdmin";
 import { logError } from "../../utils/analytics";
 
-export default async function handler(req, res) {
-  
-  if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
+export async function POST(request) {
   try {
-    
-    // Verify admin authorization (delegated to util)
-    await requireAdmin(req);
-    
-    const { email } = req.body;
+    await requireAdmin(request);
+
+    const { email } = await request.json();
 
     if (!email || typeof email !== "string") {
-      return res.status(400).json({ error: "Invalid email" });
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
-    
-    const userRecord = await auth.getUserByEmail(email);
 
-    res.status(200).json({ uid: userRecord.uid });
+    const userRecord = await auth.getUserByEmail(email);
+    return NextResponse.json({ uid: userRecord.uid });
   } catch (error) {
+    logError("Error fetching UID: " + error.message, { error });
     if (error?.status && error.message) {
-      return res.status(error.status).json({ error: error.message });
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
     if (error.code === "auth/argument-error" || error.message?.includes("Decoding")) {
-      return res.status(401).json({ error: "Invalid authentication token" });
+      return NextResponse.json({ error: "Invalid authentication token" }, { status: 401 });
     }
     if (error.code === "auth/user-not-found") {
-      return res.status(404).json({ error: "User not found" });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    logError("Error fetching UID: " + error.message, { error });
-    return res.status(500).json({ error: "Server error" });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

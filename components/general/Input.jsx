@@ -29,6 +29,7 @@ export default function Input({
         required={required}
         disabled={disabled}
         placeholder={placeholder}
+        max={type=="date" ? new Date().toISOString().split("T")[0] : undefined}
         className={`
           bg-white
           border-b

@@ -1,4 +1,4 @@
-/**
+ /**
  * POST /api/report
  *
  * Sends a report about inappropriate message content.
@@ -15,8 +15,9 @@
  */
 
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { sendEmailMessage } from "../../utils/email";
 import { auth, db } from "../../firebaseAdmin";
+import { logError } from "../../utils/analytics";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,22 @@ function escapeHtml(value = "") {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function getSafeHref(value = "") {
+  const rawValue = String(value || "");
+
+  try {
+    const parsedUrl = new URL(rawValue);
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return "";
+    }
+
+    return escapeHtml(parsedUrl.toString());
+  } catch {
+    return "";
+  }
 }
 
 function jsonError(message, status, error = null) {
@@ -109,7 +126,7 @@ A message has been reported.
 
 Reporter UID: ${reporterUid}
 Reporter Name: ${reporterName || "Unknown"}
-Reported User UID: ${receiver_email}
+Reported User / Receiver: ${receiver_email}
 Conversation URL: ${currentUrl}
 
 Reported Excerpt:
@@ -118,27 +135,65 @@ Reported Excerpt:
 
     const safeReporterUid = escapeHtml(reporterUid);
     const safeReporterName = escapeHtml(reporterName || "Unknown");
-    const safeReceiverUid = escapeHtml(receiver_email);
+    const safeReceiverEmail = escapeHtml(receiver_email);
     const safeCurrentUrl = escapeHtml(currentUrl);
+    const safeCurrentHref = getSafeHref(currentUrl);
     const safeExcerpt = escapeHtml(excerpt);
+
+    const conversationUrlHtml = safeCurrentHref
+      ? `
+          <a href="${safeCurrentHref}" style="color: #0066cc; word-break: break-all;">
+            ${safeCurrentUrl}
+          </a>
+        `
+      : `
+          <span style="word-break: break-all;">
+            ${safeCurrentUrl}
+          </span>
+        `;
 
     const emailHtml = `
       <html>
         <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;">
-          <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px;">
-            <h1 style="color: #333; font-size: 24px;">Message Reported</h1>
+          <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+            <h1 style="color: #333333; font-size: 24px; margin: 0 0 16px;">
+              Message Reported
+            </h1>
 
-            <p><strong>Reporter UID:</strong> ${safeReporterUid}</p>
-            <p><strong>Reporter Name:</strong> ${safeReporterName}</p>
-            <p><strong>Reported User UID:</strong> ${safeReceiverUid}</p>
-            <p><strong>Conversation URL:</strong> ${safeCurrentUrl}</p>
+            <p style="color: #555555; font-size: 16px; line-height: 1.5; margin: 0 0 20px;">
+              A message has been reported for moderation.
+            </p>
 
-            <p><strong>Reported Message Excerpt:</strong></p>
-            <p style="font-style: italic; color: #666; white-space: pre-wrap;">"${safeExcerpt}"</p>
+            <div style="background-color: #f5f5f5; padding: 16px; border-radius: 6px; margin-bottom: 20px;">
+              <p style="color: #555555; font-size: 16px; line-height: 1.5; margin: 0 0 10px;">
+                <strong>Reporter UID:</strong> ${safeReporterUid}
+              </p>
 
-            <hr />
+              <p style="color: #555555; font-size: 16px; line-height: 1.5; margin: 0 0 10px;">
+                <strong>Reporter Name:</strong> ${safeReporterName}
+              </p>
 
-            <p style="font-size: 12px; color: #999;">
+              <p style="color: #555555; font-size: 16px; line-height: 1.5; margin: 0 0 10px;">
+                <strong>Reported User / Receiver:</strong> ${safeReceiverEmail}
+              </p>
+
+              <p style="color: #555555; font-size: 16px; line-height: 1.5; margin: 0;">
+                <strong>Conversation URL:</strong>
+                ${conversationUrlHtml}
+              </p>
+            </div>
+
+            <p style="color: #555555; font-size: 16px; line-height: 1.5; margin: 0 0 8px;">
+              <strong>Reported Message Excerpt:</strong>
+            </p>
+
+            <div style="font-style: italic; color: #666666; background-color: #fafafa; padding: 14px; border-left: 4px solid #cccccc; border-radius: 4px; white-space: pre-wrap; line-height: 1.5;">
+              "${safeExcerpt}"
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #eeeeee; margin: 24px 0;" />
+
+            <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">
               This email was sent from the report system.
             </p>
           </div>
@@ -146,40 +201,10 @@ Reported Excerpt:
       </html>
     `;
 
-    const requiredEnvVars = [
-      "PENPAL_EMAIL",
-      "PENPAL_EMAIL_PASSWORD",
-      "CPANEL_SMTP_HOST",
-      "CPANEL_SMTP_PORT",
-    ];
-
-    const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
-
-    if (missingEnvVars.length > 0) {
-      return jsonError(
-        `Missing email environment variables: ${missingEnvVars.join(", ")}`,
-        500
-      );
-    }
-
-    const smtpPort = Number(process.env.CPANEL_SMTP_PORT);
-
-    if (Number.isNaN(smtpPort)) {
-      return jsonError("CPANEL_SMTP_PORT must be a number.", 500);
-    }
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.CPANEL_SMTP_HOST,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: process.env.PENPAL_EMAIL,
-        pass: process.env.PENPAL_EMAIL_PASSWORD,
-      },
-    });
+    // SMTP config validation is handled inside `sendEmailMessage`
 
     try {
-      await transporter.sendMail({
+      await sendEmailMessage({
         to: process.env.PENPAL_EMAIL,
         from: process.env.PENPAL_EMAIL,
         subject: "Message Reported",
