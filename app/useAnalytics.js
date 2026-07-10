@@ -34,9 +34,27 @@ import { ref, getDownloadURL, uploadString } from "@firebase/storage";
 import { storage } from "./firebaseConfig";
 
 async function uploadScreenshot(base64Image, fileName) {
-  const storageRef = ref(storage, `deadclicks/${fileName}.png`);
+  const storageRef = ref(storage, `analytics/deadclicks/${fileName}.png`);
   await uploadString(storageRef, base64Image, "data_url");
   return await getDownloadURL(storageRef);
+}
+
+// Generate a RFC4122-compliant UUID safely across older browsers.
+function fallbackRandomUUID() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch (e) {
+    // fall through to Math.random fallback
+  }
+
+  // Non-crypto fallback (best-effort)
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 const captureClickArea = async function(normalizedX, normalizedY, radius = 300) {
@@ -122,8 +140,8 @@ const usePageAnalytics = (pagePath) => {
           const normalizedY = (e.clientY + window.scrollY) / viewportHeight;
 
           const screenshot = await captureClickArea(normalizedX, normalizedY);
-          // Use a UUID for the filename
-          const fileName = `${crypto.randomUUID()}`;
+          // Use a UUID for the filename (safe across older browsers)
+          const fileName = fallbackRandomUUID();
           await uploadScreenshot(screenshot, fileName);
           logDeadClick(
             e.target.tagName,

@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment, setDoc } from "firebase/firestore"
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig"
@@ -123,45 +123,57 @@ export const fetchConversation = async (id, lim = false, lastVisible = null) => 
 };
 
 export const fetchDraft = async (id, userRef, createNew = false) => {
-  const conversationRef = doc(collection(db, "conversations"), id);
-  const lRef = collection(conversationRef, "messages");
-  const conversationQuery = query(
-    lRef,
-    where("sent_by", "==", userRef),
-    where("status", "==", "draft"),
-    where("content", "!=", ""),
-    limit(1)
-  );
-  const draftSnapshot = await getDocs(conversationQuery);
-  if (draftSnapshot.docs?.[0]?.data()) {
-    return {
-      ...draftSnapshot.docs?.[0].data(),
-      id: draftSnapshot.docs?.[0].id,
-    };
-  }
+  try {
+    const conversationRef = doc(db, "conversations", id);
+    const messagesRef = collection(conversationRef, "messages");
 
-  let draft;
-  if (draftSnapshot.docs?.[0]?.data()) {
-    draft = {
-      ...draftSnapshot.docs?.[0].data(),
-      id: draftSnapshot.docs?.[0].id,
-    };
-  } else if (createNew) {
-    const d = await addDoc(lRef, {
-      sent_by: userRef,
-      content: "",
-      status: "draft",
-      drafted_at: new Date(),
+    const draftQuery = query(
+      messagesRef,
+      where("sent_by", "==", userRef),
+      where("status", "==", "draft"),
+      where("content", "!=", ""),
+      orderBy("drafted_at", "desc"),
+      limit(1),
+    );
+
+    const draftSnapshot = await getDocs(draftQuery);
+
+    if (!draftSnapshot.empty) {
+      const draftDoc = draftSnapshot.docs[0];
+
+      return {
+        id: draftDoc.id,
+        ...draftDoc.data(),
+        drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
+      };
+    }
+
+    if (createNew) {
+      const now = new Date();
+      const newDraftData = {
+        sent_by: userRef,
+        content: "",
+        status: "draft",
+        drafted_at: now,
+        unread: true,
+      };
+
+      const newDraftRef = doc(messagesRef);
+      await setDoc(newDraftRef, newDraftData);
+
+      return {
+        id: newDraftRef.id,
+        ...newDraftData,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    logError(error, {
+      description: "Error fetching draft:",
     });
-    draft = {
-      sent_by: userRef,
-      content: "",
-      status: "draft",
-      drafted_at: new Date(),
-      id: d.id,
-    };
+    return null;
   }
-  return draft;
 };
 
 export const fetchLatestMessageFromConversation = async (
