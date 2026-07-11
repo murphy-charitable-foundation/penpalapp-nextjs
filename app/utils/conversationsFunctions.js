@@ -1,6 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment } from "firebase/firestore"
 import { auth, db } from "../firebaseConfig"
-import { getUserPfp } from "./uploadFile";
+import { getUserPfp } from "./avatarUtils";
 import { logError } from "../utils/analytics";
 
 const DELAY = 1000;

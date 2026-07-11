@@ -20,7 +20,7 @@ import {
   fetchRecipients,
   sendNotification,
 } from "../../utils/conversationsFunctions";
-import { getUserPfp } from "../../utils/uploadFile";
+import { getUserPfp } from "../../utils/avatarUtils";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";

@@ -8,7 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../firebaseConfig";
 import { useUser } from "../../../contexts/UserContext";
 import { logButtonEvent } from "../../utils/analytics";
-import { getUserPfp } from "../../utils/uploadFile";
+import { getUserPfp } from "../../utils/avatarUtils";
 
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageHeader } from "../../../components/general/PageHeader";

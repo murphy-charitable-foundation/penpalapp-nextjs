@@ -12,7 +12,7 @@ import {
   fetchConversations,
   fetchRecipients,
 } from "../utils/conversationsFunctions";
-import { getUserPfp } from "../utils/uploadFile";
+import { getUserPfp } from "../utils/avatarUtils";
 
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import ProfileHeader from "../../components/general/message/ProfileHeader";

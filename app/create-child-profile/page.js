@@ -22,7 +22,7 @@ import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/conversationsFunctions";
 import Image from "next/image";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
-import { uploadProfilePicture } from "../utils/uploadFile";
+import { uploadProfilePicture } from "../utils/avatarUtils";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function CreateChildProfile() {

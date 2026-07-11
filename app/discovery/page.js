@@ -14,7 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
 import { db, auth } from "../firebaseConfig";
-import { getUserPfp } from "../utils/uploadFile";
+import { getUserPfp } from "../utils/avatarUtils";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
