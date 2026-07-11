@@ -56,6 +56,30 @@ export default function Dialog({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose?.();
+        return;
+      }
+
+      if (event.key === "Enter") {
+        const confirmButton = buttons.at(-1);
+
+        if (confirmButton?.onClick && !confirmButton.disabled) {
+          event.preventDefault();
+          confirmButton.onClick();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, buttons, onClose]);
+
   if (!isOpen) return null;
 
   // Render button with consistent styling
