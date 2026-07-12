@@ -105,6 +105,7 @@ export default function Page({ params }) {
   const [attachmentViewer, setAttachmentViewer] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
+  const completedAttachmentSignatureRef = useRef("");
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -1082,6 +1083,45 @@ export default function Page({ params }) {
       }
     };
   }, [draftTimer]);
+
+  useEffect(() => {
+    if (!isEditing || editingMessageId || !user?.uid || !messagesRef || isSending) {
+      completedAttachmentSignatureRef.current = "";
+      return;
+    }
+
+    const completed = attachmentsToSave(pendingAttachments);
+    if (completed.length === 0) {
+      completedAttachmentSignatureRef.current = "";
+      return;
+    }
+
+    const signature = completed
+      .map((attachment) => `${attachment.id}:${attachment.url || ""}`)
+      .sort()
+      .join("|");
+
+    if (signature === completedAttachmentSignatureRef.current) {
+      return;
+    }
+
+    completedAttachmentSignatureRef.current = signature;
+
+    saveDraft(messageContent, pendingAttachments).catch((error) => {
+      logError(error, {
+        description: "Failed to save draft after attachment upload:",
+      });
+    });
+  }, [
+    pendingAttachments,
+    isEditing,
+    editingMessageId,
+    user?.uid,
+    messagesRef,
+    isSending,
+    saveDraft,
+    messageContent,
+  ]);
 
   useEffect(() => {
     scrollToBottom();
