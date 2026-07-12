@@ -153,16 +153,28 @@ export default function Page({ params }) {
       return;
     }
 
-    let draftMessage;
+    const isEditingExistingMessage = Boolean(editingMessageId);
+    let targetMessageId = editingMessageId;
 
-    try {
-      draftMessage = await saveDraft(messageContent);
-    } catch (error) {
-      updateAttachment(attachment.id, { uploadStatus: "error" });
-      return;
+    if (!isEditingExistingMessage) {
+      let draftMessage;
+
+      try {
+        draftMessage = await saveDraft(messageContent);
+      } catch (error) {
+        updateAttachment(attachment.id, { uploadStatus: "error" });
+        return;
+      }
+
+      if (!draftMessage?.id) {
+        updateAttachment(attachment.id, { uploadStatus: "error" });
+        return;
+      }
+
+      targetMessageId = draftMessage.id;
     }
 
-    if (!draftMessage?.id) {
+    if (!targetMessageId) {
       updateAttachment(attachment.id, { uploadStatus: "error" });
       return;
     }
@@ -170,16 +182,18 @@ export default function Page({ params }) {
     await uploadAttachmentFile({
       attachment,
       conversationId: id,
-      messageId: draftMessage.id,
+      messageId: targetMessageId,
       onUpdate: updateAttachment,
       onComplete: () => {
         setPendingAttachments((current) => {
           pendingAttachmentsRef.current = current;
-          saveDraft(messageContentRef.current, current).catch((error) => {
-            logError(error, {
-              description: "Failed to save draft after attachment upload:",
+          if (!isEditingExistingMessage) {
+            saveDraft(messageContentRef.current, current).catch((error) => {
+              logError(error, {
+                description: "Failed to save draft after attachment upload:",
+              });
             });
-          });
+          }
           return current;
         });
       },
