@@ -512,8 +512,6 @@ export default function Page({ params }) {
       const updateData = {
         content: nextContent,
         attachments: updatedAttachments,
-        media_url: null,
-        media_type: null,
         created_at: currentTime,
       };
 
@@ -562,8 +560,6 @@ export default function Page({ params }) {
               ...msg,
               content: nextContent,
               attachments: updatedAttachments,
-              media_url: null,
-              media_type: null,
               created_at: currentTime,
             };
           }
