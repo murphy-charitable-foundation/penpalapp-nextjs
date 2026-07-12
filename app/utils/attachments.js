@@ -43,7 +43,7 @@ export const isAllowedMediaUrl = (url) => {
 
 export const createAttachmentFromFile = (file, mediaType) => ({
   id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-  name: file.name,
+  name: sanitizeFileName(file.name),
   size: file.size,
   mediaType,
   file,
@@ -67,13 +67,14 @@ export const getFileNameWithType = (name, mimeType) => {
   const baseName = name?.replace(/\.[^/.]+$/, "") || `attachment_${Date.now()}`;
   const typeBase = (mimeType || "").split(";")[0];
   const ext = typeBase.includes("/") ? typeBase.split("/")[1] : "bin";
-  return `${baseName}.${ext}`;
+  return `${sanitizeFileName(baseName)}.${ext}`;
 };
 
+export const sanitizeFileName = (filename = "") =>
+  filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+
 export const getAttachmentStoragePath = ({ conversationId, messageId, fileName }) => {
-  const safeFileName = fileName
-    .replace(/\s+/g, "_")
-    .replace(/[^a-zA-Z0-9._-]/g, "");
+  const safeFileName = sanitizeFileName(fileName);
 
   if (!conversationId || !messageId) {
     return null;
@@ -102,6 +103,25 @@ export const deleteAttachmentStorageObject = async (attachment) => {
   if (!storagePath) return;
 
   await deleteObject(storageRef(storage, storagePath));
+};
+
+export const hydrateAttachmentUrls = async (attachments = []) => {
+  const resolved = await Promise.all(
+    attachments.map(async (attachment) => {
+      if (!attachment?.storagePath || attachment?.url) {
+        return attachment;
+      }
+
+      try {
+        const url = await getDownloadURL(storageRef(storage, attachment.storagePath));
+        return { ...attachment, url };
+      } catch (error) {
+        return attachment;
+      }
+    }),
+  );
+
+  return resolved;
 };
 
 export const normalizeMessageAttachments = (message) => {
@@ -210,7 +230,11 @@ export const uploadAttachmentFile = async ({
     );
 
     if (compressedMedia instanceof File) {
-      fileToUpload = compressedMedia;
+      fileToUpload = new File(
+        [compressedMedia],
+        sanitizeFileName(compressedMedia.name),
+        { type: compressedMedia.type || attachment.file.type },
+      );
     } else {
       fileToUpload = new File(
         [compressedMedia],

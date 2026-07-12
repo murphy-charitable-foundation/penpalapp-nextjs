@@ -26,6 +26,7 @@ import {
   formatFileSize,
   getCompletedAttachmentsForSave,
   isAllowedMediaUrl,
+  hydrateAttachmentUrls,
   normalizeMessageAttachments,
   normalizeDraftAttachments,
   revokeAttachmentPreview,
@@ -514,8 +515,8 @@ export default function Page({ params }) {
 
       const messageUserRef = userRef || doc(db, "users", user.uid);
       const existingDraft = await fetchDraft(id, messageUserRef, false);
-      const restoredDraftAttachments = normalizeDraftAttachments(
-        existingDraft?.attachments || [],
+      const restoredDraftAttachments = await hydrateAttachmentUrls(
+        normalizeDraftAttachments(existingDraft?.attachments || []),
       );
       const hasRestoredDraftContent =
         Boolean(existingDraft?.content?.trim()) ||
@@ -817,11 +818,13 @@ export default function Page({ params }) {
         const existingDraft = await fetchDraft(id, messageUserRef, false);
 
         if (existingDraft) {
+          const hydratedDraftAttachments = await hydrateAttachmentUrls(
+            normalizeDraftAttachments(existingDraft.attachments || []),
+          );
+
           setDraft(existingDraft);
           setMessageContent(existingDraft.content || "");
-          const restoredAttachments = normalizeDraftAttachments(
-            existingDraft.attachments || [],
-          );
+          const restoredAttachments = hydratedDraftAttachments;
           setPendingAttachments(restoredAttachments);
           setHasDraftContent(
             Boolean(existingDraft.content?.trim()) || restoredAttachments.length > 0,
@@ -839,8 +842,8 @@ export default function Page({ params }) {
       }
     } else {
       setMessageContent(draft.content || "");
-      const restoredAttachments = normalizeDraftAttachments(
-        draft.attachments || [],
+      const restoredAttachments = await hydrateAttachmentUrls(
+        normalizeDraftAttachments(draft.attachments || []),
       );
       setPendingAttachments(restoredAttachments);
       setHasDraftContent(
@@ -959,13 +962,15 @@ export default function Page({ params }) {
           const draftData = await fetchDraft(id, userDocRef, false);
 
           if (draftData && draftData.status === "draft") {
+            const hydratedDraftAttachments = await hydrateAttachmentUrls(
+              normalizeDraftAttachments(draftData.attachments || []),
+            );
+
             setDraft(draftData);
 
             const draftContent = draftData.content || "";
             const hasContent = Boolean(draftContent.trim());
-            const restoredAttachments = normalizeDraftAttachments(
-              draftData.attachments || [],
-            );
+            const restoredAttachments = hydratedDraftAttachments;
             const hasAttachments = restoredAttachments.length > 0;
 
             setMessageContent(draftContent);
@@ -1062,7 +1067,14 @@ export default function Page({ params }) {
                   }
                 }
 
-                return message;
+                const hydratedAttachments = await hydrateAttachmentUrls(
+                  normalizeMessageAttachments(message),
+                );
+
+                return {
+                  ...message,
+                  attachments: hydratedAttachments,
+                };
               })
             );
 
@@ -1206,8 +1218,8 @@ export default function Page({ params }) {
 
                 try {
                   const existingDraft = await fetchDraft(id, messageUserRef, false);
-                  const restoredDraftAttachments = normalizeDraftAttachments(
-                    existingDraft?.attachments || [],
+                  const restoredDraftAttachments = await hydrateAttachmentUrls(
+                    normalizeDraftAttachments(existingDraft?.attachments || []),
                   );
                   const hasRestoredDraftContent =
                     Boolean(existingDraft?.content?.trim()) ||
