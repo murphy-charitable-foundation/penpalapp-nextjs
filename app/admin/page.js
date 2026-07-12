@@ -149,6 +149,7 @@ export default function Admin() {
             country: sender.country ?? "Unknown",
             lastMessage: data.content,
             lastMessageDate: data.created_at,
+            hasAttachments: Array.isArray(data.attachments) && data.attachments.length > 0,
           };
         }),
       );

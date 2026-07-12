@@ -74,6 +74,7 @@ export default function Home() {
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: message.content || "",
+            hasAttachments: Array.isArray(message.attachments) && message.attachments.length > 0,
             lastMessageDate: message.lastMessageDate || "",
             status: message.status || "",
             conversationId: id || "",

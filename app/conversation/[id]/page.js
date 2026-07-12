@@ -64,6 +64,8 @@ export default function Page({ params }) {
   const textAreaRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const messageContentRef = useRef("");
+  const pendingAttachmentsRef = useRef([]);
 
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
@@ -105,7 +107,14 @@ export default function Page({ params }) {
   const [attachmentViewer, setAttachmentViewer] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
-  const completedAttachmentSignatureRef = useRef("");
+
+  useEffect(() => {
+    messageContentRef.current = messageContent;
+  }, [messageContent]);
+
+  useEffect(() => {
+    pendingAttachmentsRef.current = pendingAttachments;
+  }, [pendingAttachments]);
 
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
@@ -162,7 +171,17 @@ export default function Page({ params }) {
       conversationId: id,
       messageId: draftMessage.id,
       onUpdate: updateAttachment,
-      onComplete: () => saveDraft(messageContent),
+      onComplete: () => {
+        setPendingAttachments((current) => {
+          pendingAttachmentsRef.current = current;
+          saveDraft(messageContentRef.current, current).catch((error) => {
+            logError(error, {
+              description: "Failed to save draft after attachment upload:",
+            });
+          });
+          return current;
+        });
+      },
     });
   };
 
@@ -271,11 +290,7 @@ export default function Page({ params }) {
 
   const getMessageContentForSave = (content, attachments = pendingAttachments) => {
     const trimmedContent = (content ?? "").trim();
-    if (trimmedContent) {
-      return trimmedContent;
-    }
-
-    return attachmentsToSave(attachments).length > 0 ? "[Attachments]" : "";
+    return trimmedContent;
   };
 
   const hasUploadingAttachments = pendingAttachments.some(
@@ -359,7 +374,7 @@ export default function Page({ params }) {
         } else if (error?.code === "not-found") {
           setDraft(null);
 
-          if (trimmedContent) {
+          if (trimmedContent || attachmentsToSave(draftAttachments).length > 0) {
             try {
               const newDraftRef = doc(messagesRef);
               const newDraftData = {
@@ -457,8 +472,9 @@ export default function Page({ params }) {
 
   const handleUpdateMessage = async () => {
     const nextContent = getMessageContentForSave(messageContent, pendingAttachments);
+    const hasAttachments = attachmentsToSave(pendingAttachments).length > 0;
 
-    if (!nextContent) {
+    if (!nextContent && !hasAttachments) {
       alert("Please enter a message");
       return;
     }
@@ -566,8 +582,9 @@ export default function Page({ params }) {
     }
 
     const trimmedContent = getMessageContentForSave(messageContent, pendingAttachments);
+    const hasAttachments = attachmentsToSave(pendingAttachments).length > 0;
 
-    if (!trimmedContent) {
+    if (!trimmedContent && !hasAttachments) {
       alert("Please enter a message");
       return;
     }
@@ -605,7 +622,7 @@ export default function Page({ params }) {
       if (draft?.id) {
         messageRef = doc(messagesRef, draft.id);
 
-        await updateDoc(messageRef, messageData);
+        await updateDoc(messageRef, messageDataWithAttachments);
       } else {
         messageRef = doc(messagesRef);
         await setDoc(messageRef, messageDataWithAttachments);
@@ -1083,45 +1100,6 @@ export default function Page({ params }) {
       }
     };
   }, [draftTimer]);
-
-  useEffect(() => {
-    if (!isEditing || editingMessageId || !user?.uid || !messagesRef || isSending) {
-      completedAttachmentSignatureRef.current = "";
-      return;
-    }
-
-    const completed = attachmentsToSave(pendingAttachments);
-    if (completed.length === 0) {
-      completedAttachmentSignatureRef.current = "";
-      return;
-    }
-
-    const signature = completed
-      .map((attachment) => `${attachment.id}:${attachment.url || ""}`)
-      .sort()
-      .join("|");
-
-    if (signature === completedAttachmentSignatureRef.current) {
-      return;
-    }
-
-    completedAttachmentSignatureRef.current = signature;
-
-    saveDraft(messageContent, pendingAttachments).catch((error) => {
-      logError(error, {
-        description: "Failed to save draft after attachment upload:",
-      });
-    });
-  }, [
-    pendingAttachments,
-    isEditing,
-    editingMessageId,
-    user?.uid,
-    messagesRef,
-    isSending,
-    saveDraft,
-    messageContent,
-  ]);
 
   useEffect(() => {
     scrollToBottom();

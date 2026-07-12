@@ -185,10 +185,22 @@ export const fetchLatestMessageFromConversation = async (
   const toDate = (value) =>
     value?.toDate?.() || (value instanceof Date ? value : new Date(0));
 
+  const hasRenderableMessage = (data = {}) => {
+    const hasContent = Boolean((data.content || "").trim());
+    const hasAttachments = Array.isArray(data.attachments) && data.attachments.length > 0;
+    return hasContent || hasAttachments;
+  };
+
   const getFirstMessage = (snap, dateField) => {
     if (snap.empty) return null;
 
-    const messageDoc = snap.docs[0];
+    const messageDoc = snap.docs.find((docSnap) => {
+      const data = docSnap.data();
+      return hasRenderableMessage(data);
+    });
+
+    if (!messageDoc) return null;
+
     const data = messageDoc.data();
 
     return {
@@ -207,16 +219,15 @@ export const fetchLatestMessageFromConversation = async (
       query(
         messagesRef,
         where("sent_by", "==", userRef),
-        where("content", "!=", ""),
         orderBy("drafted_at", "desc"),
-        limit(1)
+        limit(20)
       ),
 
       query(
         messagesRef,
         where("status", "==", "approved"),
         orderBy("moderated_at", "desc"),
-        limit(1)
+        limit(20)
       ),
 
       query(
@@ -224,7 +235,7 @@ export const fetchLatestMessageFromConversation = async (
         where("sent_by", "==", userRef),
         where("status", "==", "rejected"),
         orderBy("moderated_at", "desc"),
-        limit(1)
+        limit(20)
       ),
     ].map(getDocs)
   );

@@ -10,6 +10,7 @@ const ConversationPreview = ({
   name,
   country,
   lastMessage,
+  hasAttachments = false,
   lastMessageDate,
   conversationId,
   status,
@@ -72,6 +73,8 @@ const ConversationPreview = ({
     ? "Message was rejected"
     : "Your message was rejected";
 
+  const previewMessage = lastMessage || (hasAttachments ? "Attachments" : "");
+
   const cardContent = (
     <div
       className={`w-full p-2 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer ${
@@ -130,7 +133,7 @@ const ConversationPreview = ({
               isRecipient && unread ? "font-semibold" : ""
             }`}
           >
-            {lastMessage ? (
+            {previewMessage ? (
               <div className="flex items-start">
                 {getStatusIcon() && (
                   <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
@@ -142,7 +145,7 @@ const ConversationPreview = ({
                       {rejectedText}
                     </div>
                   )}
-                  {lastMessage}
+                  {previewMessage}
                 </div>
               </div>
             ) : (
