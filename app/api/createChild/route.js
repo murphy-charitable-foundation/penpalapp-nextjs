@@ -1,27 +1,22 @@
+import { NextResponse } from "next/server";
 import { auth, db } from "../../firebaseAdmin";
 import { logError } from "../../utils/analytics";
 import { requireAdmin } from "../../utils/requireAdmin";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
+export async function POST(request) {
   try {
-    // Verify admin authorization (delegated to util)
-    await requireAdmin(req);
+    await requireAdmin(request);
 
-    const { email, password, userData } = req.body;
+    const { email, password, userData } = await request.json();
 
     if (!email || !password || !userData) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
     if (typeof password !== "string" || password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
     if (typeof email !== "string") {
-      return res.status(400).json({ error: "Invalid email" });
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 
     // Create the Firebase Authentication user
@@ -33,14 +28,14 @@ export default async function handler(req, res) {
     const uid = userRecord.uid;
 
     // Allowlist permitted fields to prevent arbitrary data injection
-    const allowedFields = ["first_name", "last_name", "user_type", "country", "village", "bio", "education_level", "is_orphan", "guardian", "dream_job", "hobbies", "favorite_color", "favorite_animal","pronouns", "birthday", "connected_penpals", "connected_penpals_count"];
+    const allowedFields = ["first_name", "last_name", "user_type", "country", "village", "bio", "education_level", "is_orphan", "guardian", "dream_job", "hobbies", "favorite_color", "favorite_animal", "pronouns", "birthday", "connected_penpals", "connected_penpals_count"];
     const sanitizedData = Object.fromEntries(
       Object.entries(userData).filter(([key]) => allowedFields.includes(key))
     );
-    
+
     // Ensure user_type is always "child"
     sanitizedData.user_type = "child";
-    
+
     // Save Firestore user document; roll back auth user on failure
     try {
       sanitizedData.created_at = new Date();
@@ -50,15 +45,15 @@ export default async function handler(req, res) {
       throw firestoreError;
     }
 
-    return res.status(200).json({ uid });
+    return NextResponse.json({ uid });
   } catch (error) {
+    logError(error, { description: "Failed to create user via admin API" });
     if (error?.status && error.message) {
-      return res.status(error.status).json({ error: error.message });
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
     if (error.code === "auth/argument-error" || error.message?.includes("Decoding")) {
-      return res.status(401).json({ error: "Invalid authentication token" });
+      return NextResponse.json({ error: "Invalid authentication token" }, { status: 401 });
     }
-    logError(error, { description: "Failed to create user via admin API" });
-    return res.status(500).json({ error: "Server error" });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

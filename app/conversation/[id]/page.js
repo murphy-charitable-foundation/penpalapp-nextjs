@@ -11,16 +11,29 @@ import {
   query,
   where,
   orderBy,
-  limit,
   getDocs,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useUser } from "../../../contexts/UserContext";
 import {
   fetchRecipients,
+  fetchDraft,
   sendNotification,
 } from "../../utils/conversationsFunctions";
 import { getUserPfp } from "../../utils/avatarUtils";
+
+import {
+  createAttachmentFromFile,
+  deleteAttachmentStorageObject,
+  formatFileSize,
+  getCompletedAttachmentsForSave,
+  isAllowedMediaUrl,
+  normalizeMessageAttachments,
+  normalizeDraftAttachments,
+  revokeAttachmentPreview,
+  revokeAttachmentPreviews,
+  uploadAttachmentFile,
+} from "../../utils/attachments";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -31,76 +44,18 @@ import MessagesSkeleton from "../../../components/loading/MessagesSkeleton";
 import Image from "next/image";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
-import { AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Film,
+  Image as ImageIcon,
+  Mic,
+  Paperclip,
+  Trash2,
+  Play,
+} from "lucide-react";
+import AudioRecorder from "../../../components/media/AudioRecorder";
 import { logButtonEvent, logError } from "../../utils/analytics";
 import { usePageAnalytics } from "../../useAnalytics";
-
-
-const fetchDraft = async (conversationId, userRef, shouldCreate = false) => {
-  try {
-    const conversationsRef = doc(db, "conversations", conversationId);
-    const messagesRef = collection(conversationsRef, "messages");
-
-    const draftQuery = query(
-      messagesRef,
-      where("sent_by", "==", userRef),
-      where("status", "==", "draft"),
-      orderBy("drafted_at", "desc"),
-      limit(1),
-    );
-
-    let draftSnapshot = await getDocs(draftQuery);
-
-    if (draftSnapshot.empty) {
-      const fallbackDraftQuery = query (
-        messagesRef,
-        where("sent_by", "==", userRef),
-        where("status", "==", "draft"),
-        orderBy("drafted_at", "desc"),
-        limit(1),
-      );
-
-      draftSnapshot = await getDocs(fallbackDraftQuery);
-    }
-
-    if (!draftSnapshot.empty) {
-      const draftDoc = draftSnapshot.docs[0];
-
-      return {
-        id: draftDoc.id,
-        ...draftDoc.data(),
-        created_at: draftDoc.data().created_at?.toDate?.() || null,
-        drafted_at: draftDoc.data().drafted_at?.toDate?.() || null,
-      };
-    }
-
-    if (shouldCreate) {
-      const now = new Date();
-      const newDraftData = {
-        sent_by: userRef,
-        content: "",
-        status: "draft",
-        created_at: now,
-        drafted_at: now,
-        deleted: null,
-        unread: true,
-      };
-
-      const newDraftRef = doc(messagesRef);
-      await setDoc(newDraftRef, newDraftData);
-
-      return {
-        id: newDraftRef.id,
-        ...newDraftData,
-      };
-    }
-
-    return null;
-  } catch (error) {
-    console.error("❌ fetchDraft error:", error);
-    return null;
-  }
-};
 
 export default function Page({ params }) {
   const { id } = params;
@@ -109,6 +64,8 @@ export default function Page({ params }) {
   const { user } = useUser();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
@@ -141,6 +98,13 @@ export default function Page({ params }) {
   const [showConfirmReportPopup, setShowConfirmReportPopup] = useState(false);
   const [reportContent, setReportContent] = useState(null);
   const [reportSender, setReportSender] = useState(null);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+
+  const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [queuedAttachmentDeletes, setQueuedAttachmentDeletes] = useState([]);
+  const [attachmentToDelete, setAttachmentToDelete] = useState(null);
+  const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
+  const [attachmentViewer, setAttachmentViewer] = useState(null);
 
   const [draftTimer, setDraftTimer] = useState(null);
 
@@ -151,16 +115,189 @@ export default function Page({ params }) {
     });
   };
 
+  const getAttachmentIcon = (mediaType) => {
+    if (mediaType === "image") return <ImageIcon size={18} className="text-emerald-700" />;
+    if (mediaType === "video") return <Film size={18} className="text-emerald-700" />;
+    if (mediaType === "audio") return <Play size={18} className="text-emerald-700" />;
+    return <Paperclip size={18} className="text-emerald-700" />;
+  };
+
+  const updateAttachment = (attachmentId, patch) => {
+    setPendingAttachments((current) =>
+      current.map((item) =>
+        item.id === attachmentId ? { ...item, ...patch } : item,
+      ),
+    );
+  };
+
+  const removeAttachment = (attachmentId) => {
+    setPendingAttachments((current) => {
+      const removed = current.find((item) => item.id === attachmentId);
+      revokeAttachmentPreview(removed);
+      return current.filter((item) => item.id !== attachmentId);
+    });
+  };
+
+  const uploadAttachment = async (attachment) => {
+    if (!attachment || !user?.uid || !messagesRef) {
+      updateAttachment(attachment.id, { uploadStatus: "error" });
+      return;
+    }
+
+    let draftMessage;
+
+    try {
+      draftMessage = await saveDraft(messageContent);
+    } catch (error) {
+      updateAttachment(attachment.id, { uploadStatus: "error" });
+      return;
+    }
+
+    if (!draftMessage?.id) {
+      updateAttachment(attachment.id, { uploadStatus: "error" });
+      return;
+    }
+
+    await uploadAttachmentFile({
+      attachment,
+      conversationId: id,
+      messageId: draftMessage.id,
+      onUpdate: updateAttachment,
+      onComplete: () => saveDraft(messageContent),
+    });
+  };
+
+  const handleAddAttachment = ({ file, mediaType }) => {
+    const newAttachment = createAttachmentFromFile(file, mediaType);
+    setPendingAttachments((current) => [...current, newAttachment]);
+    setIsEditing(true);
+    setHasDraftContent(true);
+    uploadAttachment(newAttachment);
+  };
+
+  const handlePickImage = () => {
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    imageInputRef.current?.click();
+  };
+
+  const handlePickVideo = () => {
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    videoInputRef.current?.click();
+  };
+
+  const handleImageFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      return;
+    }
+    handleAddAttachment({ file, mediaType: "image" });
+  };
+
+  const handleVideoFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+    if (!file.type.startsWith("video/")) {
+      alert("Please select a valid video file.");
+      return;
+    }
+    handleAddAttachment({ file, mediaType: "video" });
+  };
+
+  const handleRequestDeleteAttachment = (attachment) => {
+    setAttachmentToDelete(attachment);
+    setShowAttachmentDeleteDialog(true);
+  };
+
+  const handleConfirmDeleteAttachment = async () => {
+    if (!attachmentToDelete) {
+      setShowAttachmentDeleteDialog(false);
+      return;
+    }
+
+    const att = attachmentToDelete;
+    const remainingAttachments = pendingAttachments.filter(
+      (item) => item.id !== att.id,
+    );
+
+    // Remove from pending UI immediately
+    removeAttachment(att.id);
+
+    try {
+      if (editingMessageId) {
+        setQueuedAttachmentDeletes((current) => [...current, att]);
+        const hasContent = Boolean(messageContent.trim());
+        setHasDraftContent(hasContent || remainingAttachments.length > 0);
+      } else {
+        await saveDraft(messageContent, remainingAttachments);
+        await deleteAttachmentStorageObject(att);
+      }
+    } catch (error) {
+      console.error("Error during attachment deletion:", error);
+    } finally {
+      setAttachmentToDelete(null);
+      setShowAttachmentDeleteDialog(false);
+    }
+  };
+
+  const handleOpenAttachment = (attachment) => {
+    const source = attachment?.url || attachment?.previewUrl;
+    if (!source) return;
+
+    // If attachment has a remote URL, ensure it's from an allowed origin
+    if (attachment?.url && !isAllowedMediaUrl(attachment.url)) {
+      console.warn("Blocked attachment from disallowed origin:", attachment.url);
+      return;
+    }
+
+    setAttachmentViewer({
+      ...attachment,
+      source,
+    });
+  };
+
+  const messageAttachments = normalizeMessageAttachments;
+
+  const attachmentsToSave = (attachments = pendingAttachments) =>
+    getCompletedAttachmentsForSave(attachments);
+
+  const getMessageContentForSave = (content, attachments = pendingAttachments) => {
+    const trimmedContent = (content ?? "").trim();
+    if (trimmedContent) {
+      return trimmedContent;
+    }
+
+    return attachmentsToSave(attachments).length > 0 ? "[Attachments]" : "";
+  };
+
+  const hasUploadingAttachments = pendingAttachments.some(
+    (attachment) => attachment.uploadStatus !== "done",
+  );
+
+  const clearPendingAttachments = () => {
+    revokeAttachmentPreviews(pendingAttachments);
+    setPendingAttachments([]);
+  };
+
   const saveDraft = useCallback(
-    async (content) => {
+    async (content, draftAttachments = pendingAttachments) => {
       if (!user?.uid || !messagesRef || isSending) {
-        return Promise.resolve();
+        return null;
       }
 
       setIsUpdatingFirebase(true);
 
       const messageUserRef = userRef || doc(db, "users", user.uid);
-      const trimmedContent = (content ?? "").trim();
+      const trimmedContent = getMessageContentForSave(content, draftAttachments);
       const currentTime = new Date();
 
       const baseDraftData = {
@@ -168,12 +305,13 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "draft",
         drafted_at: currentTime,
-        deleted: null,
         unread: true,
+        attachments: attachmentsToSave(draftAttachments),
       };
 
       try {
         let existingDraft = draft;
+        let savedDraft = null;
 
         if (!existingDraft?.id) {
           existingDraft = await fetchDraft(id, messageUserRef, false);
@@ -188,30 +326,32 @@ export default function Page({ params }) {
 
           const updateData = {
             ...baseDraftData,
-            created_at: existingDraft.created_at || currentTime,
+            drafted_at: currentTime,
           };
 
           await updateDoc(draftDocRef, updateData);
           setDraft({ ...updateData, id: existingDraft.id });
+          savedDraft = { ...updateData, id: existingDraft.id };
         } else {
           const newDraftRef = doc(messagesRef);
           const newDraftData = {
             ...baseDraftData,
-            created_at: currentTime,
+            drafted_at: currentTime,
           };
 
           await setDoc(newDraftRef, newDraftData);
           setDraft({ ...newDraftData, id: newDraftRef.id });
+          savedDraft = { ...newDraftData, id: newDraftRef.id };
         }
 
         const hasContent = Boolean(trimmedContent);
-        setHasDraftContent(hasContent);
+        setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
 
-        if (!hasContent && isEditing) {
+        if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
           setIsEditing(false);
         }
 
-        return Promise.resolve();
+        return savedDraft;
       } catch (error) {
         console.error("❌ saveDraft error:", error);
 
@@ -225,11 +365,19 @@ export default function Page({ params }) {
               const newDraftRef = doc(messagesRef);
               const newDraftData = {
                 ...baseDraftData,
-                created_at: currentTime,
+                drafted_at: currentTime,
               };
 
               await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
+              const hasContent = Boolean(trimmedContent);
+              setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
+
+              if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
+                setIsEditing(false);
+              }
+
+              return { ...newDraftData, id: newDraftRef.id };
             } catch (retryError) {
               logError(retryError, {
                 description: "Retry Error:",
@@ -238,12 +386,21 @@ export default function Page({ params }) {
           }
         }
 
-        return Promise.reject(error);
+        throw error;
       } finally {
         setIsUpdatingFirebase(false);
       }
     },
-    [user?.uid, messagesRef, isSending, draft, userRef, isEditing, id]
+    [
+      user?.uid,
+      messagesRef,
+      isSending,
+      draft,
+      userRef,
+      isEditing,
+      id,
+      pendingAttachments,
+    ]
   );
 
   const handleMessageChange = async (e) => {
@@ -275,8 +432,9 @@ export default function Page({ params }) {
         setDraftTimer(timer);
       }
     } else {
-      setHasDraftContent(false);
-      setIsEditing(false);
+      const hasAttachments = pendingAttachments.length > 0;
+      setHasDraftContent(hasAttachments);
+      setIsEditing(hasAttachments);
 
       if (!editingMessageId) {
         setIsSendButtonDisabled(true);
@@ -299,9 +457,9 @@ export default function Page({ params }) {
   };
 
   const handleUpdateMessage = async () => {
-    const trimmedContent = messageContent.trim();
+    const nextContent = getMessageContentForSave(messageContent, pendingAttachments);
 
-    if (!trimmedContent) {
+    if (!nextContent) {
       alert("Please enter a message");
       return;
     }
@@ -319,31 +477,52 @@ export default function Page({ params }) {
 
       const currentTime = new Date();
       const messageRef = doc(messagesRef, editingMessageId);
+      const updatedAttachments = attachmentsToSave(pendingAttachments);
 
       const updateData = {
-        content: trimmedContent,
-        drafted_at: currentTime,
+        content: nextContent,
+        attachments: updatedAttachments,
+        media_url: null,
+        media_type: null,
+        created_at: currentTime,
       };
 
       await updateDoc(messageRef, updateData);
 
+      if (queuedAttachmentDeletes.length > 0) {
+        await Promise.allSettled(
+          queuedAttachmentDeletes.map((attachment) =>
+            deleteAttachmentStorageObject(attachment),
+          ),
+        );
+      }
+
       const messageUserRef = userRef || doc(db, "users", user.uid);
       const existingDraft = await fetchDraft(id, messageUserRef, false);
+      const restoredDraftAttachments = normalizeDraftAttachments(
+        existingDraft?.attachments || [],
+      );
+      const hasRestoredDraftContent =
+        Boolean(existingDraft?.content?.trim()) ||
+        restoredDraftAttachments.length > 0;
 
-      if (existingDraft && existingDraft.content?.trim()) {
+      if (existingDraft && hasRestoredDraftContent) {
         setDraft(existingDraft);
         setMessageContent(existingDraft.content);
-        setHasDraftContent(true);
+        setPendingAttachments(restoredDraftAttachments);
+        setHasDraftContent(hasRestoredDraftContent);
         setIsEditing(true);
       } else {
         setMessageContent("");
         setDraft(null);
         setHasDraftContent(false);
         setIsEditing(false);
+        clearPendingAttachments();
       }
 
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
+      setQueuedAttachmentDeletes([]);
       setSelectedMessageId(null);
 
       setAllMessages((prev) => {
@@ -351,8 +530,11 @@ export default function Page({ params }) {
           if (msg.id === editingMessageId) {
             return {
               ...msg,
-              content: trimmedContent,
-              drafted_at: currentTime,
+              content: nextContent,
+              attachments: updatedAttachments,
+              media_url: null,
+              media_type: null,
+              created_at: currentTime,
             };
           }
           return msg;
@@ -384,7 +566,7 @@ export default function Page({ params }) {
       return handleUpdateMessage();
     }
 
-    const trimmedContent = messageContent.trim();
+    const trimmedContent = getMessageContentForSave(messageContent, pendingAttachments);
 
     if (!trimmedContent) {
       alert("Please enter a message");
@@ -410,29 +592,28 @@ export default function Page({ params }) {
         content: trimmedContent,
         status: "pending_review",
         created_at: currentTime,
-        drafted_at: currentTime,
-        deleted: null,
         unread: true,
       };
 
       let messageRef;
 
+      const attachments = attachmentsToSave();
+      const messageDataWithAttachments = {
+        ...messageData,
+        attachments,
+      };
+
       if (draft?.id) {
         messageRef = doc(messagesRef, draft.id);
 
-        const updateData = {
-          ...messageData,
-          created_at: draft.created_at || currentTime,
-        };
-
-        await updateDoc(messageRef, updateData);
+        await updateDoc(messageRef, messageData);
       } else {
         messageRef = doc(messagesRef);
-        await setDoc(messageRef, messageData);
+        await setDoc(messageRef, messageDataWithAttachments);
       }
       
       if (globalConversationReference) {
-        sendNotification(globalConversationReference, "").catch(error => {
+        sendNotification(globalConversationReference, "").catch((error) => {
           console.error("Failed to send notification:", error);
         });
       }
@@ -442,9 +623,10 @@ export default function Page({ params }) {
       setDraft(null);
       setHasDraftContent(false);
       setIsEditing(false);
+      clearPendingAttachments();
 
       const messageWithId = {
-        ...messageData,
+        ...messageDataWithAttachments,
         id: messageRef.id,
         sent_by: { id: user.uid },
       };
@@ -469,12 +651,38 @@ export default function Page({ params }) {
     }
   };
 
+  const handleRequireLogin = () => {
+    const shouldLogin = window.confirm(
+      "You must be logged in to send media. Go to login now?"
+    );
+
+    if (shouldLogin) {
+      router.push("/login");
+    }
+  };
+
+  const handleAudioRecordComplete = ({ blob, fileName }) => {
+    const audioFile = new File(
+      [blob],
+      fileName || `voice_${Date.now()}.webm`,
+      {
+        type: blob?.type || "audio/webm",
+      },
+    );
+
+    // TODO: record them at the desired bitrate from AudioRecorder instead of recording high-quality audio
+    // and recompressing it in the following function. Maybe propagate a skipCompression argument?
+    handleAddAttachment({ file: audioFile, mediaType: "audio" });
+    setShowAudioRecorder(false);
+  };
+
   const handleCloseMessage = async () => {
     if (isSendButtonDisabled || isUpdatingFirebase) {
       return;
     }
 
     const trimmedMessageContent = messageContent.trim();
+    const hasAttachments = pendingAttachments.length > 0;
 
     if (editingMessageId) {
       if (trimmedMessageContent !== editingMessageOriginalContent.trim()) {
@@ -483,9 +691,11 @@ export default function Page({ params }) {
         setMessageContent("");
         setEditingMessageId(null);
         setEditingMessageOriginalContent("");
+        setQueuedAttachmentDeletes([]);
         setIsEditing(false);
         setHasDraftContent(false);
         setSelectedMessageId(null);
+        clearPendingAttachments();
         router.push("/inbox");
       }
       return;
@@ -501,7 +711,7 @@ export default function Page({ params }) {
       }
     }
 
-    if (trimmedMessageContent.length > 0) {
+    if (trimmedMessageContent.length > 0 || hasAttachments) {
       setShowCloseDialog(true);
     } else {
       router.push("/inbox");
@@ -515,11 +725,13 @@ export default function Page({ params }) {
       setMessageContent("");
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
+      setQueuedAttachmentDeletes([]);
       setIsEditing(false);
       setHasDraftContent(false);
       setSelectedMessageId(null);
     }
 
+    clearPendingAttachments();
     router.push("/inbox");
   };
 
@@ -560,8 +772,15 @@ export default function Page({ params }) {
     setEditingMessageId(message.id);
     setEditingMessageOriginalContent(message.content);
     setMessageContent(message.content);
+    const restoredAttachments = normalizeDraftAttachments(
+      messageAttachments(message),
+    );
+    setPendingAttachments(restoredAttachments);
+    setQueuedAttachmentDeletes([]);
     setIsEditing(true);
-    setHasDraftContent(true);
+    setHasDraftContent(
+      Boolean(message.content?.trim()) || restoredAttachments.length > 0,
+    );
     setSelectedMessageId(null);
 
     setTimeout(() => {
@@ -584,19 +803,33 @@ export default function Page({ params }) {
         if (existingDraft) {
           setDraft(existingDraft);
           setMessageContent(existingDraft.content || "");
-          setHasDraftContent(Boolean(existingDraft.content?.trim()));
+          const restoredAttachments = normalizeDraftAttachments(
+            existingDraft.attachments || [],
+          );
+          setPendingAttachments(restoredAttachments);
+          setHasDraftContent(
+            Boolean(existingDraft.content?.trim()) || restoredAttachments.length > 0,
+          );
         } else {
           setMessageContent("");
+          setPendingAttachments([]);
           setHasDraftContent(false);
         }
       } catch (error) {
         console.error("❌ Error fetching draft:", error);
         setMessageContent("");
+        setPendingAttachments([]);
         setHasDraftContent(false);
       }
     } else {
       setMessageContent(draft.content || "");
-      setHasDraftContent(Boolean(draft.content?.trim()));
+      const restoredAttachments = normalizeDraftAttachments(
+        draft.attachments || [],
+      );
+      setPendingAttachments(restoredAttachments);
+      setHasDraftContent(
+        Boolean(draft.content?.trim()) || restoredAttachments.length > 0,
+      );
     }
 
     setTimeout(() => {
@@ -628,6 +861,7 @@ export default function Page({ params }) {
       setMessageContent("");
       setDraft(null);
       setHasDraftContent(false);
+      clearPendingAttachments();
 
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
@@ -719,11 +953,16 @@ export default function Page({ params }) {
 
             const draftContent = draftData.content || "";
             const hasContent = Boolean(draftContent.trim());
+            const restoredAttachments = normalizeDraftAttachments(
+              draftData.attachments || [],
+            );
+            const hasAttachments = restoredAttachments.length > 0;
 
             setMessageContent(draftContent);
-            setHasDraftContent(hasContent);
+            setPendingAttachments(restoredAttachments);
+            setHasDraftContent(hasContent || hasAttachments);
 
-            if (hasContent) {
+            if (hasContent || hasAttachments) {
               setIsEditing(true);
               setTimeout(() => {
                 textAreaRef.current?.focus();
@@ -884,7 +1123,11 @@ export default function Page({ params }) {
   };
 
   const canSendMessage = () => {
-    return messageContent.trim().length > 0 && !isSending;
+    return (
+      (messageContent.trim().length > 0 || pendingAttachments.length > 0) &&
+      !isSending &&
+      !hasUploadingAttachments
+    );
   };
 
   return (
@@ -953,21 +1196,33 @@ export default function Page({ params }) {
 
                 try {
                   const existingDraft = await fetchDraft(id, messageUserRef, false);
+                  const restoredDraftAttachments = normalizeDraftAttachments(
+                    existingDraft?.attachments || [],
+                  );
+                  const hasRestoredDraftContent =
+                    Boolean(existingDraft?.content?.trim()) ||
+                    restoredDraftAttachments.length > 0;
 
-                  if (existingDraft && existingDraft.content?.trim()) {
+                  if (existingDraft && hasRestoredDraftContent) {
                     setDraft(existingDraft);
                     setMessageContent(existingDraft.content);
-                    setHasDraftContent(true);
+                    setPendingAttachments(restoredDraftAttachments);
+                    setQueuedAttachmentDeletes([]);
+                    setHasDraftContent(hasRestoredDraftContent);
                     setIsEditing(true);
                   } else {
                     setMessageContent("");
                     setDraft(null);
+                    clearPendingAttachments();
+                    setQueuedAttachmentDeletes([]);
                     setHasDraftContent(false);
                     setIsEditing(false);
                   }
                 } catch {
                   setMessageContent("");
                   setDraft(null);
+                  clearPendingAttachments();
+                  setQueuedAttachmentDeletes([]);
                   setHasDraftContent(false);
                   setIsEditing(false);
                 }
@@ -1048,6 +1303,74 @@ export default function Page({ params }) {
                         <p className="text-gray-800 whitespace-pre-wrap">
                           {message.content}
                         </p>
+
+                        {messageAttachments(message).length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {messageAttachments(message)
+                          .filter((attachment) => {
+                            // Allow preview blobs (local File previews) or validated remote URLs
+                            const src = attachment?.url || attachment?.previewUrl;
+                            if (!src) return false;
+                            // If this is a local preview (no remote url), allow it
+                            if (attachment?.previewUrl && !attachment?.url) return true;
+                            return isAllowedMediaUrl(src);
+                          })
+                          .map((attachment) => (
+                              <button
+                                key={attachment.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenAttachment(attachment);
+                                }}
+                                className="w-full flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-left hover:bg-emerald-100 transition-colors"
+                              >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
+                                  {getAttachmentIcon(attachment.mediaType)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-sm font-semibold text-emerald-900 truncate">
+                                    {attachment.name}
+                                  </div>
+                                  <div className="text-xs text-emerald-700">
+                                    {formatFileSize(attachment.size)}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {message.media_url && isAllowedMediaUrl(message.media_url) ? (
+                          <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                            {message.media_type === "image" ? (
+                              <img
+                                src={message.media_url}
+                                alt="Shared media"
+                                className="w-full h-auto object-cover"
+                              />
+                            ) : message.media_type === "video" ? (
+                              <video
+                                src={message.media_url}
+                                controls
+                                className="w-full h-auto max-h-[320px] bg-black"
+                              />
+                            ) : message.media_type === "audio" ? (
+                              <div className="p-3">
+                                <audio
+                                  src={message.media_url}
+                                  controls
+                                  className="w-full"
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : message.media_url ? (
+                          <div className="mt-3 p-3 text-sm text-gray-500">
+                            Media from this source is not allowed.
+                          </div>
+                        ) : null}
+
                         <div className="flex items-center justify-end w-full">
                           {!isSenderUser && (
                             <button
@@ -1151,6 +1474,38 @@ export default function Page({ params }) {
 
         {/* ===== REPLY ===== */}
         <div className="bg-white">
+          <div className="flex items-center justify-center px-4 py-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handlePickImage}
+                className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                title="Send photo"
+              >
+                <ImageIcon size={18} className="text-slate-600" />
+              </button>
+              <button
+                type="button"
+                onClick={handlePickVideo}
+                className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                title="Send video"
+              >
+                <Film size={18} className="text-slate-600" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAudioRecorder((prev) => !prev)}
+                className={`p-2 rounded-full transition-colors ${
+                  showAudioRecorder
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+                title="Send voice message"
+              >
+                <Mic size={18} />
+              </button>
+            </div>
+          </div>
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center">
               <Image
@@ -1163,6 +1518,64 @@ export default function Page({ params }) {
               <span className="text-gray-700">To {recipientName}</span>
             </div>
           </div>
+
+          {showAudioRecorder && (
+            <div className="px-4 pb-2">
+              <AudioRecorder
+                onRecordingComplete={handleAudioRecordComplete}
+                onRequireLogin={handleRequireLogin}
+              />
+            </div>
+          )}
+
+          {pendingAttachments.length > 0 && (
+            <div className="px-4 pb-3 space-y-2">
+              {pendingAttachments.map((attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
+                    {getAttachmentIcon(attachment.mediaType)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-emerald-900 truncate">
+                      {attachment.name}
+                    </div>
+                    <div className="text-xs text-emerald-700">
+                      {formatFileSize(attachment.size)}
+                      {attachment.uploadStatus === "compressing" && " • Compressing..."}
+                      {attachment.uploadStatus === "uploading" && " • Uploading..."}
+                      {attachment.uploadStatus === "error" && " • Upload failed"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRequestDeleteAttachment(attachment)}
+                    className="text-emerald-700 hover:text-emerald-900"
+                    title="Delete attachment"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageFileChange}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={handleVideoFileChange}
+          />
 
           {!isEditing ? (
             <div className="p-4">
@@ -1217,6 +1630,73 @@ export default function Page({ params }) {
                 >
                   {editingMessageId ? "Discard" : "Close"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showAttachmentDeleteDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
+            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
+              <h2 className="text-xl font-semibold mb-1 text-black">
+                Delete Attachment?
+              </h2>
+              <p className="text-gray-600 mb-6 text-sm">
+                Are you sure you want to delete this attachment? This is permanent action!
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleConfirmDeleteAttachment}
+                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
+                >
+                  Continue
+                </button>
+                <button
+                  onClick={() => {
+                    setAttachmentToDelete(null);
+                    setShowAttachmentDeleteDialog(false);
+                  }}
+                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {attachmentViewer && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm px-4 py-6">
+            <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <button
+                onClick={() => setAttachmentViewer(null)}
+                className="absolute top-4 right-4 z-10 rounded-full bg-white p-2 text-gray-700 shadow hover:bg-gray-100"
+              >
+                ✕
+              </button>
+              <div className="p-4">
+                {attachmentViewer.mediaType === "image" ? (
+                  <img
+                    src={attachmentViewer.source}
+                    alt={attachmentViewer.name}
+                    className="w-full h-[70vh] object-contain rounded-2xl bg-slate-900"
+                  />
+                ) : attachmentViewer.mediaType === "video" ? (
+                  <video
+                    src={attachmentViewer.source}
+                    controls
+                    className="w-full h-[70vh] rounded-2xl bg-black"
+                  />
+                ) : (
+                  <div className="rounded-2xl bg-slate-100 p-6">
+                    <audio
+                      src={attachmentViewer.source}
+                      controls
+                      className="w-full"
+                    />
+                  </div>
+                )}
+                <div className="mt-3 text-sm text-slate-600">
+                  {attachmentViewer.name}
+                </div>
               </div>
             </div>
           </div>

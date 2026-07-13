@@ -423,6 +423,7 @@ export default function Admin() {
                     <div className="h-full overflow-hidden">
                       <AdminMessageReview
                         message={currentMessage}
+                        attachments={currentMessage?.attachments || []}
                         isSubmitting={isReviewSubmitting}
                         onClose={() => {
                           if (isReviewSubmitting) return;

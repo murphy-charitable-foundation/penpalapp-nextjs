@@ -9,10 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2",
     "@firebase/storage": "^0.12.3",
     "@sentry/nextjs": "^8.26.0",
+    "browser-image-compression": "^2.0.2",
     "firebase": "^11.5.0",
     "firebase-admin": "^13.0.2",
     "html2canvas": "^1.4.1",

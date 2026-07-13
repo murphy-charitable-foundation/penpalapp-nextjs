@@ -39,6 +39,24 @@ async function uploadScreenshot(base64Image, fileName) {
   return await getDownloadURL(storageRef);
 }
 
+// Generate a RFC4122-compliant UUID safely across older browsers.
+function fallbackRandomUUID() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch (e) {
+    // fall through to Math.random fallback
+  }
+
+  // Non-crypto fallback (best-effort)
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 const captureClickArea = async function(normalizedX, normalizedY, radius = 300) {
   if (typeof window !== "undefined") {
     const html2canvas = (await import("html2canvas")).default;
@@ -122,8 +140,8 @@ const usePageAnalytics = (pagePath) => {
           const normalizedY = (e.clientY + window.scrollY) / viewportHeight;
 
           const screenshot = await captureClickArea(normalizedX, normalizedY);
-          // Use a UUID for the filename
-          const fileName = `${crypto.randomUUID()}`;
+          // Use a UUID for the filename (safe across older browsers)
+          const fileName = fallbackRandomUUID();
           await uploadScreenshot(screenshot, fileName);
           logDeadClick(
             e.target.tagName,

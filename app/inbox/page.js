@@ -56,11 +56,10 @@ export default function Home() {
       }
 
       const conversationIds = conversations.map((conversation) => conversation.id);
-
+      
+      const userRef = doc(db, "users", uid);
       const fetchedConversations = await Promise.all(
         conversationIds.map(async (id) => {
-          const userRef = doc(db, "users", uid);
-
           const message =
             (await fetchLatestMessageFromConversation(id, userRef)) || {};
 
@@ -74,7 +73,7 @@ export default function Home() {
             country: recipient.country ?? "Unknown",
             lastMessage: message.content || "",
             attachments: message.attachments || [],
-            lastMessageDate: message.created_at || "",
+            lastMessageDate: message.lastMessageDate || "",
             status: message.status || "",
             conversationId: id || "",
             isRecipient: message?.sent_by?.id !== uid,

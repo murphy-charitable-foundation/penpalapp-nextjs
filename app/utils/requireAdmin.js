@@ -2,7 +2,9 @@ import { auth, db } from "../firebaseAdmin";
 
 export async function requireAdmin(req) {
   // Verify admin authorization
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers?.authorization ||
+  (typeof req.headers?.get === "function" ? req.headers.get("authorization") : undefined);
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     const err = new Error("Missing or invalid authorization header");
     err.status = 401;

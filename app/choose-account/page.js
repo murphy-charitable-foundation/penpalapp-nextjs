@@ -69,7 +69,11 @@ export default function ChooseAccountPage() {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         await refreshCachedUserPhoto(uid, updateCachedUserLogin);
-        await initializeNotifications()
+
+        await initializeNotifications().catch((err) => {
+          console.error("Notification setup failed:", err);
+        });
+
         if (userSnap.data().user_type === "admin") {
           router.push("/admin");
         } else {

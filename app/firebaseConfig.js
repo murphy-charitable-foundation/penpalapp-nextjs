@@ -3,7 +3,7 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore"
 
 // import { getAnalytics } from "firebase/analytics";
@@ -52,13 +52,41 @@ const VAPID_KEY =
   process.env.NODE_ENV === "production"
     ? "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc"
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
-let messaging;
-if (typeof window !== "undefined") {
+let messaging = null;
+
+const hasBasicMessagingSupportSync = () =>
+  typeof window !== "undefined" &&
+  typeof navigator !== "undefined" &&
+  navigator.serviceWorker != null &&
+  typeof navigator.serviceWorker.addEventListener === "function" &&
+  "PushManager" in window;
+
+const hasBasicMessagingSupport = async () => {
+  if (!hasBasicMessagingSupportSync()) return false;
+
+  try {
+    return await isSupported();
+  } catch (err) {
+    console.warn("Firebase messaging support check failed:", err);
+    return false;
+  }
+};
+
+const initializeMessaging = async () => {
+  if (messaging) {
+    return messaging;
+  }
+
   if (process.env.NODE_ENV === "development") {
     console.log("Firebase client project:", firebaseConfig.projectId);
   }
+
+  const supported = await hasBasicMessagingSupport();
+  if (!supported) return null;
+
   messaging = getMessaging(app);
-}
+  return messaging;
+};
 
 // ---------- PERMISSION + API CALL ----------
 
@@ -77,8 +105,10 @@ export const requestNotificationPermission = async () => {
 };
 
 export const handleNotificationSetup = async () => {
-  if (!messaging) {
-    console.warn("Messaging not initialized (probably server environment).");
+  const initializedMessaging = await initializeMessaging();
+
+  if (!initializedMessaging) {
+    console.warn("Messaging not initialized (probably server environment or unsupported browser).");
     return;
   }
 
@@ -93,7 +123,7 @@ export const handleNotificationSetup = async () => {
   }
 
   try {
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(initializedMessaging, { vapidKey: VAPID_KEY });
     const user = auth.currentUser;
 
     if (!token || !user) {

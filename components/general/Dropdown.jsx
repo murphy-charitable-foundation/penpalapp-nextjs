@@ -19,11 +19,11 @@ export default function Dropdown({
         setOpen(false);
       }
     };
+
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  //safety guard
   const safeValue =
     typeof currentValue === "string" && currentValue.trim()
       ? currentValue
@@ -32,7 +32,7 @@ export default function Dropdown({
   const displayText = safeValue || placeholder;
 
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={ref} className={`relative text-gray-900 ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -44,11 +44,10 @@ export default function Dropdown({
           font-semibold
           transition-colors
           focus:outline-none
+          text-gray-900
           ${safeValue ? "border-black" : "border-gray-300"}
         `}
       >
-
-
         <span
           className={`truncate ${
             safeValue ? "text-gray-900" : "text-gray-500"
@@ -56,11 +55,12 @@ export default function Dropdown({
         >
           {displayText}
         </span>
+
         <span className={`text-gray-600 ${caretClass}`}>▾</span>
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-md">
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white text-gray-900 shadow-md">
           {safeValue && (
             <button
               type="button"
@@ -73,6 +73,7 @@ export default function Dropdown({
               ✕ Clear Selection
             </button>
           )}
+
           {options.map((opt) => (
             <button
               key={opt}
@@ -81,7 +82,7 @@ export default function Dropdown({
                 valueChange(opt);
                 setOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+              className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-50"
             >
               {opt}
             </button>
