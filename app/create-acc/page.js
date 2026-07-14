@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,7 +25,7 @@ import InfoDisplay from "../../components/general/profile/InfoDisplay";
 import { PageHeader } from "../../components/general/PageHeader";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from "../../contexts/UserContext";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -36,13 +43,11 @@ export default function CreateAccount() {
   const [dialogTitle, setDialogTitle] = useState("");
   const router = useRouter();
 
-
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track if there are unsaved changes
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const pendingNavRef = useRef(null);
 
   const { user, userDocRef } = useUser();
-
 
   usePageAnalytics("/create-acc");
 
@@ -58,16 +63,15 @@ export default function CreateAccount() {
   }, []);
 
   useEffect(() => {
-  const handleBeforeUnload = (e) => {
-    if (!hasUnsavedChanges) return;
-    e.preventDefault();
-    e.returnValue = "";
-  };
+    const handleBeforeUnload = (e) => {
+      if (!hasUnsavedChanges) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
 
-  window.addEventListener("beforeunload", handleBeforeUnload);
-  return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-}, [hasUnsavedChanges]);
-
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -110,7 +114,7 @@ export default function CreateAccount() {
           setIsDialogOpen(true);
           setDialogTitle("Oops!");
           setDialogMessage(
-            "Account creation timed out. Please try logging in again."
+            "Account creation timed out. Please try logging in again.",
           );
           await signOut(auth);
           router.push("/login");
@@ -125,10 +129,12 @@ export default function CreateAccount() {
       const matchingUsersSnap = await getDocs(
         query(
           collection(db, "users"),
-          where("connected_penpals", "array-contains", userDocRef)
-        )
+          where("connected_penpals", "array-contains", userDocRef),
+        ),
       );
-      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) => doc(db, "users", userDoc.id));
+      const connectedPenpals = matchingUsersSnap.docs.map((userDoc) =>
+        doc(db, "users", userDoc.id),
+      );
 
       // Create a document in Firestore in "users" collection with UID as the document key
       await setDoc(doc(db, "users", uid), {
@@ -157,214 +163,222 @@ export default function CreateAccount() {
     }
   };
 
-
   const attemptNavigateWithGuard = (navigate) => {
-  if (!hasUnsavedChanges) {
-    navigate();
-    return;
-  }
+    if (!hasUnsavedChanges) {
+      navigate();
+      return;
+    }
 
-  pendingNavRef.current = navigate;
-  setShowLeaveDialog(true);
-};
+    pendingNavRef.current = navigate;
+    setShowLeaveDialog(true);
+  };
 
+  return (
+    <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
+      {/* ===== DIALOG ===== */}
+      <Dialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        title={dialogTitle}
+        content={dialogMessage}
+      />
 
-return (
-  <PageBackground className="bg-gray-100 h-screen overflow-hidden flex flex-col">
-    {/* ===== DIALOG ===== */}
-    <Dialog
-      isOpen={isDialogOpen}
-      onClose={() => setIsDialogOpen(false)}
-      title={dialogTitle}
-      content={dialogMessage}
-    />
+      <Dialog
+        isOpen={showLeaveDialog}
+        onClose={() => {
+          setShowLeaveDialog(false);
+          pendingNavRef.current = null;
+        }}
+        variant="confirmation"
+        title="Unsaved changes"
+        content={
+          <p className="text-base leading-relaxed">
+            You have unsaved changes. Are you sure you want to leave this page?
+          </p>
+        }
+        buttons={[
+          {
+            text: "Cancel",
+            variant: "secondary",
+            onClick: () => {
+              setShowLeaveDialog(false);
+              pendingNavRef.current = null;
+            },
+          },
+          {
+            text: "Leave",
+            variant: "primary",
+            onClick: () => {
+              setShowLeaveDialog(false);
+              pendingNavRef.current?.();
+              pendingNavRef.current = null;
+            },
+          },
+        ]}
+      />
 
-    <Dialog
-  isOpen={showLeaveDialog}
-  onClose={() => {
-    setShowLeaveDialog(false);
-    pendingNavRef.current = null;
-  }}
-  variant="confirmation"
-  title="Unsaved changes"
-  content={
-    <p className="text-base leading-relaxed">
-      You have unsaved changes. Are you sure you want to leave this page?
-    </p>
-  }
-  buttons={[
-    {
-      text: "Cancel",
-      variant: "secondary",
-      onClick: () => {
-        setShowLeaveDialog(false);
-        pendingNavRef.current = null;
-      },
-    },
-    {
-      text: "Leave",
-      variant: "primary",
-      onClick: () => {
-        setShowLeaveDialog(false);
-        pendingNavRef.current?.();
-        pendingNavRef.current = null;
-      },
-    },
-  ]}
-/>
-
-
-    <div className="flex-1 min-h-0 flex justify-center py-2">
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
-        {/* ===== HEADER ===== */}
-       <PageHeader
+      <div className="flex-1 min-h-0 flex justify-center py-2">
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <PageHeader
             title="Create account"
             image={false}
-            onBack={() =>
-              attemptNavigateWithGuard(() => router.push("/login"))
-            }
+            onBack={() => attemptNavigateWithGuard(() => router.push("/login"))}
           />
-        {/* ===== SINGLE SCROLLER ===== */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-4">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <Image
-              src="/murphylogo.png"
-              alt="Your Logo"
-              width={150}
-              height={150}
-            />
-          </div>
-
-          <form
-                className="space-y-6"
-                onSubmit={handleSubmit}
-                onChange={() => setHasUnsavedChanges(true)}
-              >
-            <div className="flex gap-4">
-              <div className="w-1/2">
-                <Input
-                  label="First name"
-                  id="first-name"
-                  placeholder="Ex: Jane"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => {
-                    setFirstName(e.target.value);
-                  }}
-                  error={errors.firstName || ""}
-                />
-              </div>
-              <div className="w-1/2">
-                <Input
-                  label="Last Name"
-                  id="last-name"
-                  placeholder="Ex: Doe"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value);
-                  }}
-                  error={errors.lastName || ""}
-                />
-              </div>
-            </div>
-
-            <Input
-              id="birthday"
-              type="date"
-              label="Birthday"
-              value={birthday}
-              onChange={(e) => {
-                setBirthday(e.target.value);
-                setHasUnsavedChanges(true);
-              }}
-            />
-
-            <InfoDisplay title="Email" info={email} />
-
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              label="New Password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setShowPasswordChecklist(e.target.value.length > 0);
-              }}
-              error={errors.isValidPassword || ""}
-            />
-
-            {showPasswordChecklist && (
-              <PasswordChecklist
-                rules={["minLength", "specialChar", "number", "capital", "match"]}
-                minLength={8}
-                value={password}
-                valueAgain={repeatPassword}
-                onChange={(isValid, failedRules) => {
-                  setisValidPassword(isValid);
-                  if (
-                    failedRules.length === 1 &&
-                    failedRules.includes("match")
-                  ) {
-                    setisValidPassword(true);
-                  }
-                }}
-                className="text-sm"
+          {/* ===== SINGLE SCROLLER ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-4">
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <Image
+                src="/murphylogo.png"
+                alt="Your Logo"
+                width={150}
+                height={150}
               />
-            )}
-
-            <Input
-              id="repeat-password"
-              name="repeatPassword"
-              type="password"
-              label="Repeat Password"
-              value={repeatPassword}
-              onChange={(e) => {
-                setRepeatPassword(e.target.value);
-              }}
-              error={errors.repeatPassword || ""}
-            />
-
-            <div>
-              <div className="flex items-start gap-2">
-                <Input
-                  id="terms-check"
-                  name="terms-check"
-                  type="checkbox"
-                  onChange={(e) => {
-                    setTermsCheck(e.target.checked);
-                  }}
-                  className="h-4 w-4"
-                />
-                <label className="text-sm text-gray-900">
-                  See the{" "}
-                  <Link href="/terms-conditions" className="underline">
-                    terms and conditions
-                  </Link>{" "}
-                  and{" "}
-                  <Link href="/privacy-policy" className="underline">
-                    privacy policy
-                  </Link>
-                </label>
-              </div>
-
-              {errors.termsCheck && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.termsCheck}
-                </p>
-              )}
             </div>
 
-            <div className="pt-4 flex flex-col justify-center items-center gap-2">
-              <Button btnType="submit" btnText="Create Account" color="green" />
+            <form
+              className="space-y-6"
+              onSubmit={handleSubmit}
+              onChange={() => setHasUnsavedChanges(true)}
+            >
+              <div className="flex gap-4">
+                <div className="w-1/2">
+                  <Input
+                    label="First name"
+                    id="first-name"
+                    placeholder="Ex: Jane"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                    }}
+                    error={errors.firstName || ""}
+                  />
+                </div>
+                <div className="w-1/2">
+                  <Input
+                    label="Last Name"
+                    id="last-name"
+                    placeholder="Ex: Doe"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                    }}
+                    error={errors.lastName || ""}
+                  />
+                </div>
+              </div>
+
+              <Input
+                id="birthday"
+                type="date"
+                label="Birthday"
+                value={birthday}
+                onChange={(e) => {
+                  setBirthday(e.target.value);
+                  setHasUnsavedChanges(true);
+                }}
+              />
+
+              <InfoDisplay title="Email" info={email} />
+
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                label="New Password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setShowPasswordChecklist(e.target.value.length > 0);
+                }}
+                error={errors.isValidPassword || ""}
+              />
+
+              {showPasswordChecklist && (
+                <PasswordChecklist
+                  rules={[
+                    "minLength",
+                    "specialChar",
+                    "number",
+                    "capital",
+                    "match",
+                  ]}
+                  minLength={8}
+                  value={password}
+                  valueAgain={repeatPassword}
+                  onChange={(isValid, failedRules) => {
+                    setisValidPassword(isValid);
+                    if (
+                      failedRules.length === 1 &&
+                      failedRules.includes("match")
+                    ) {
+                      setisValidPassword(true);
+                    }
+                  }}
+                  className="text-sm"
+                />
+              )}
+
+              <Input
+                id="repeat-password"
+                name="repeatPassword"
+                type="password"
+                label="Repeat Password"
+                value={repeatPassword}
+                onChange={(e) => {
+                  setRepeatPassword(e.target.value);
+                }}
+                error={errors.repeatPassword || ""}
+              />
+
+              <div>
+                <div className="flex items-start gap-2">
+                  <input
+                    id="terms-check"
+                    name="terms-check"
+                    type="checkbox"
+                    checked={termsCheck}
+                    onChange={(e) => setTermsCheck(e.target.checked)}
+                    className="mt-1 ml-2 h-4 w-4 flex-none appearance-auto accent-green-600"
+                  />
+
+                  <label
+                    htmlFor="terms-check"
+                    className="text-sm text-gray-900"
+                  >
+                    See the{" "}
+                    <Link href="/terms-conditions" className="underline">
+                      terms and conditions
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy-policy" className="underline">
+                      privacy policy
+                    </Link>
+                  </label>
+                </div>
+
+                {errors.termsCheck && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.termsCheck}
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-4 flex flex-col justify-center items-center gap-2">
+                <Button
+                  btnType="submit"
+                  btnText="Create Account"
+                  color="green"
+                />
                 <Button
                   btnType="button"
                   btnText="Log Out"
@@ -374,13 +388,11 @@ return (
                     router.push("/");
                   }}
                 />
-            </div>
-          </form>
-        </div>
-      </PageContainer>
-    </div>
-  </PageBackground>
-);
-
-
+              </div>
+            </form>
+          </div>
+        </PageContainer>
+      </div>
+    </PageBackground>
+  );
 }
