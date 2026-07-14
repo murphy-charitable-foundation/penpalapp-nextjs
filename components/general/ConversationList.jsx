@@ -16,6 +16,7 @@ const ConversationList = ({
             country={conversation.country}
             lastMessage={conversation.lastMessage}
             lastMessageDate={conversation.lastMessageDate}
+            attachments={conversation.attachments}
             conversationId={conversation.conversationId}
             status={conversation.status}
             isRecipient={conversation.isRecipient}

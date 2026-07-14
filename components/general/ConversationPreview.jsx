@@ -18,9 +18,43 @@ const ConversationPreview = ({
   isAdmin = false,
   onClick = () => {},
   id,
+  attachments = [],
 }) => {
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
+
+  const getAttachmentPreviewText = (attachment) => {
+    const attachmentName =
+      attachment?.name ||
+      attachment?.fileName ||
+      attachment?.filename ||
+      attachment?.originalName ||
+      attachment?.url?.split("/").pop() ||
+      "attachment";
+
+    const normalizedName = attachmentName.toLowerCase();
+
+    if (/\.(mp4|mov|avi|mkv|webm)$/i.test(normalizedName)) {
+      return `[video] ${attachmentName}`;
+    }
+
+    if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(normalizedName)) {
+      return `[image] ${attachmentName}`;
+    }
+
+    if (/\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(normalizedName)) {
+      return `[audio] ${attachmentName}`;
+    }
+
+    return `[attachment] ${attachmentName}`;
+  };
+
+  const previewText =
+    typeof lastMessage === "string" && lastMessage.trim()
+      ? lastMessage
+      : attachments?.length
+      ? getAttachmentPreviewText(attachments[0])
+      : "";
 
   const handleProfileClick = (e) => {
     e.preventDefault();
@@ -130,7 +164,7 @@ const ConversationPreview = ({
               isRecipient && unread ? "font-semibold" : ""
             }`}
           >
-            {lastMessage ? (
+            {previewText ? (
               <div className="flex items-start">
                 {getStatusIcon() && (
                   <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
@@ -142,7 +176,7 @@ const ConversationPreview = ({
                       {rejectedText}
                     </div>
                   )}
-                  {lastMessage}
+                  {previewText}
                 </div>
               </div>
             ) : (

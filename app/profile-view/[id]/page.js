@@ -8,6 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../firebaseConfig";
 import { useUser } from "../../../contexts/UserContext";
 import { logButtonEvent } from "../../utils/analytics";
+import { getUserPfp } from "../../utils/avatarUtils";
 
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageHeader } from "../../../components/general/PageHeader";
@@ -62,7 +63,15 @@ export default function Page({ params }) {
         setDreamJob(u.dream_job || "");
         setHobbies(u.hobbies || []);
         setFavoriteColor(u.favorite_color || "");
-        setPhotoUri(u.photo_uri || "");
+
+        try {
+          const downloaded = await getUserPfp(id);
+          setPhotoUri(downloaded || "");
+        } catch (error) {
+          console.error("Failed to load profile image", error);
+          setPhotoUri("");
+        }
+
         setUserType(u.user_type || "");
         setFavoriteAnimal(u.favorite_animal || "");
         setProfession(u.profession || "");

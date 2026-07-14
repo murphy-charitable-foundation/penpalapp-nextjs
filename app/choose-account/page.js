@@ -17,6 +17,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { initializeNotifications } from '../utils/notification'
+import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 
 export default function ChooseAccountPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -30,8 +31,8 @@ export default function ChooseAccountPage() {
   const {
     cachedUserLogins,
     hydrated,
-    clearAllCachedUserLogins,
     removeCachedUserLogin,
+    updateCachedUserLogin,
   } = useCachedUserLogins();
 
   const hasRedirected = useRef(false);
@@ -60,7 +61,6 @@ export default function ChooseAccountPage() {
     try {
       const userCredential =await signInWithEmailAndPassword(auth, selectedUser.email, passwordInput);
       setSelectedUser(null);
-      setIsLoading(true);
       setPasswordInput("");
       setIsLoading(true);
 
@@ -68,9 +68,12 @@ export default function ChooseAccountPage() {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
+        await refreshCachedUserPhoto(uid, updateCachedUserLogin);
+
         await initializeNotifications().catch((err) => {
           console.error("Notification setup failed:", err);
         });
+
         if (userSnap.data().user_type === "admin") {
           router.push("/admin");
         } else {
@@ -123,8 +126,8 @@ export default function ChooseAccountPage() {
         <div className="flex justify-center">
           <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
             <ProfileImage
-              photo_uri={selectedUser.photo_uri}
-              name={selectedUser.name}
+              photo_uri={selectedUser?.photo_uri || ""}
+              name={selectedUser?.name}
               size={20}
             />
           </div>
@@ -191,13 +194,13 @@ export default function ChooseAccountPage() {
                 }}
                 className="bg-white rounded-lg p-4 shadow-md border border-gray-200 flex flex-col items-center hover:shadow-lg transition focus:outline-none focus:ring-2 focus:ring-dark-green focus:ring-offset-2 w-full"
               >
-                <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
-                  <ProfileImage
-                    photo_uri={user.photo_uri}
-                    name={user.name}
-                    size={20}
-                  />
-                </div>
+                    <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100">
+                      <ProfileImage
+                        photo_uri={user.photo_uri || ""}
+                        name={user.name}
+                        size={20}
+                      />
+                    </div>
 
                 <p className="mt-3 font-semibold text-gray-900 text-sm text-center line-clamp-2">
                   {user.name}

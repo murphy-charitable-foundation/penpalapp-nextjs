@@ -1,7 +1,23 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment, setDoc } from "firebase/firestore"
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  updateDoc,
+  where,
+  arrayUnion,
+  increment,
+  setDoc,
+} from "firebase/firestore";
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
-import { auth, db } from "../firebaseConfig"
+import { auth, db } from "../firebaseConfig";
+import { getUserPfp } from "./avatarUtils";
 import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
@@ -12,25 +28,6 @@ const getUserDoc = async () => {
   return { userDocRef, userDocSnapshot };
 };
 
-export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
-  try {
-    const photoRef = storageRef(storage, path);
-    const downloaded = await getDownloadURL(photoRef)
-    return downloaded;
-  } catch (error) {
-    // Return null if there is no profile; default should be handled by UI
-    if (error.code === 'storage/object-not-found') {
-      return null;
-    }
-    logError(error, {
-      description: "Error fetching user profile:",
-    });
-    // Returns null for all other errors so it only has one fallback mechanism
-    return null;
-  }
-  
-}
 
 export const fetchConversations = async () => {
   const retryFetch = () => setTimeout(() => fetchConversations(), DELAY);
@@ -192,9 +189,12 @@ export const fetchLatestMessageFromConversation = async (
     const messageDoc = snap.docs[0];
     const data = messageDoc.data();
 
+    const createdAt = data?.created_at?.toDate?.() || data?.created_at || null;
+
     return {
       id: messageDoc.id,
       ...data,
+      created_at: createdAt,
       lastMessageDate: toDate(data?.[dateField]),
     };
   };
@@ -281,8 +281,17 @@ export const fetchRecipients = async (id) => {
     const selUser = await getDoc(selectedUserDocRef);
     const userData = selUser.data();    // utility/helper variable
 
-    // Call the only source of profile
-    const pfpUrl = await getUserPfp(user.id);
+    // Call the only source of profile; protect against unexpected throws
+    let pfpUrl = null;
+    try {
+      pfpUrl = await getUserPfp(user.id);
+    } catch (error) {
+      logError(error, {
+        description: "Error fetching profile image for recipient",
+        userId: user.id,
+      });
+      pfpUrl = null;
+    }
 
     // Push the data; if pfpUrl is null, pfp is null as well; UI should handle the default
     members.push({ ...userData, id: user.id, pfp: pfpUrl });

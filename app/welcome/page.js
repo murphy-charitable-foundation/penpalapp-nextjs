@@ -8,9 +8,11 @@ import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { uploadFile } from "../utils/uploadFile";
+import { uploadProfilePicture } from "../utils/avatarUtils";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
+import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
+import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 
 const COUNTRIES = [
@@ -190,6 +192,7 @@ const COUNTRIES = [
 
 export default function Page() {
   const { user, displayName } = useUser();
+  const { updateCachedUserLogin } = useCachedUserLogins();
   const router = useRouter();
   const dropdownRef = useRef(null);
   const avatarUploadPromiseRef = useRef(null);
@@ -265,49 +268,28 @@ export default function Page() {
 
     setIsUploading(true);
 
-    avatarUploadPromiseRef.current = new Promise((resolve) => {
+    avatarUploadPromiseRef.current = new Promise(async (resolve) => {
       try {
-        uploadFile(
-          blob,
-          `profile/${user.uid}/profile-image`,
-          () => {},
-          (error) => {
-            console.error("Profile image upload error", error);
-            setErrorMsg(
-              "Your profile photo could not be saved. You can still continue."
-            );
-            setIsUploading(false);
-            resolve();
-          },
-          async (url) => {
-            try {
-              if (!url) {
-                console.error("Profile image upload returned empty URL");
-                setErrorMsg(
-                  "Your profile photo could not be saved. You can still continue."
-                );
-                return;
-              }
+        const url = await uploadProfilePicture(user.uid, blob, () => {}, (error) => {
+          console.error("Profile image upload error", error);
+          setErrorMsg(
+            "Your profile photo could not be saved. You can still continue."
+          );
+        });
 
-              await updateDoc(doc(db, "users", user.uid), {
-                photo_uri: url,
-              });
-            } catch (error) {
-              console.error("Failed to update user photo_uri", error);
-              setErrorMsg(
-                "Your profile photo could not be saved. You can still continue."
-              );
-            } finally {
-              setIsUploading(false);
-              resolve();
-            }
+        if (url) {
+          try {
+            await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
+          } catch (e) {
+            console.warn("refreshCachedUserPhoto failed", e);
           }
-        );
+        }
       } catch (error) {
         console.error("Profile image upload failed to start", error);
         setErrorMsg(
           "Your profile photo could not be saved. You can still continue."
         );
+      } finally {
         setIsUploading(false);
         resolve();
       }
@@ -330,7 +312,6 @@ export default function Page() {
       setShowFinalSpinner(true);
       await avatarUploadPromise;
     }
-
     router.push("/inbox");  // change to discovery when we are ready to onboard new international buddy users
   };
 

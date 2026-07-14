@@ -22,7 +22,7 @@ import HobbySelect from "../../components/general/HobbySelect";
 import { createConnection } from "../utils/conversationsFunctions";
 import Image from "next/image";
 import AvatarUploadModal from "../../components/general/AvatarUploadModal";
-import { uploadFile } from "../utils/uploadFile";
+import { uploadProfilePicture } from "../utils/avatarUtils";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 
 export default function CreateChildProfile() {
@@ -261,22 +261,22 @@ const handleSubmit = async (e) => {
         // Upload profile image if available
         if (croppedBlob) {
           setLoading(true);
-          uploadFile(croppedBlob, `profile/${kidId}/profile-image`, 
-            (progress) => {
-              console.log('Upload progress:', progress);
-              if (progress === 100) {
-                setLoading(false);
-              }
-            },
-            (error) => {
-              logError(error, { description: "Error uploading profile image" });
-            },
-            async (url) => {
-              // Update user photo_uri
-              const userRef = doc(db, "users", kidId);
-              await updateDoc(userRef, { photo_uri: url });
+          try {
+            const uploadResult = await uploadProfilePicture(
+              kidId,
+              croppedBlob,
+              (progress) => {
+                console.log("Upload progress:", progress);
+              },
+              () => {}
+            );
+
+            if (!uploadResult) {
+              throw new Error("Profile image upload failed");
             }
-          );
+          } finally {
+            setLoading(false);
+          }
         }
 
       // Reset form

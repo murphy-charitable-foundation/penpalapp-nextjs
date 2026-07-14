@@ -38,6 +38,12 @@ export function CachedUserLoginsProvider({ children }) {
     });
   };
 
+  const updateCachedUserLogin = (id, updates) => {
+    setCachedUserLogins((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, ...updates } : u))
+    );
+  };
+
   const removeCachedUserLogin = (id) => {
     setCachedUserLogins((prev) => prev.filter((u) => u.id !== id));
   };
@@ -55,6 +61,7 @@ export function CachedUserLoginsProvider({ children }) {
       value={{
         cachedUserLogins,
         addCachedUserLogin,
+        updateCachedUserLogin,
         removeCachedUserLogin,
         clearAllCachedUserLogins,
         getCachedUserLogin,
