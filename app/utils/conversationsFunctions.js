@@ -220,14 +220,14 @@ export const fetchLatestMessageFromConversation = async (
         messagesRef,
         where("sent_by", "==", userRef),
         orderBy("drafted_at", "desc"),
-        limit(20)
+        limit(1)
       ),
 
       query(
         messagesRef,
         where("status", "==", "approved"),
         orderBy("moderated_at", "desc"),
-        limit(20)
+        limit(1)
       ),
 
       query(
@@ -235,7 +235,7 @@ export const fetchLatestMessageFromConversation = async (
         where("sent_by", "==", userRef),
         where("status", "==", "rejected"),
         orderBy("moderated_at", "desc"),
-        limit(20)
+        limit(1)
       ),
     ].map(getDocs)
   );
