@@ -1,7 +1,7 @@
 // src/lib/avatarUtils.js
 
 import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
-import { updateDoc, doc } from "firebase/firestore";
+import { updateDoc, doc, getDoc } from "firebase/firestore";
 import { auth, storage, db } from "@/app/firebaseConfig";
 import { logError } from "./analytics";
 
@@ -40,10 +40,10 @@ export const uploadProfilePicture = async (
         async () => {
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(url || null);
             if (url) {
               try {
                 await updateDoc(doc(db, "users", uid), { photo_uri: url });
+                resolve(url);
               } catch (firestoreError) {
                 logError(firestoreError, {
                   description: "Failed to update Firestore after profile upload",
@@ -53,7 +53,10 @@ export const uploadProfilePicture = async (
                 } catch (e) {
                   // ignore
                 }
+                resolve(null);
               }
+            } else {
+              resolve(null);
             }
           } catch (e) {
             try {
@@ -80,6 +83,13 @@ export const uploadProfilePicture = async (
 export const getUserPfp = async (uid) => {
   const path = `users/${uid}/profile-image`;
   try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists() || !userDoc.data().photo_uri) {
+      return null;
+    }
+
     const photoRef = ref(storage, path);
     const downloaded = await getDownloadURL(photoRef);
     return downloaded;
