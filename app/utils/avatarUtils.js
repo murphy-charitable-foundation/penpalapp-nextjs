@@ -1,7 +1,7 @@
 // src/lib/avatarUtils.js
 
 import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
-import { updateDoc, doc, getDoc } from "firebase/firestore";
+import { updateDoc, doc } from "firebase/firestore";
 import { auth, storage, db } from "@/app/firebaseConfig";
 import { logError } from "./analytics";
 
@@ -81,19 +81,23 @@ export const uploadProfilePicture = async (
 };
 
 export const getUserPfp = async (uid) => {
-  try {
-    const userDoc = await getDoc(doc(db, "users", uid));
+  if (!uid) {
+    return null;
+  }
 
-    if (!userDoc.exists()) {
+  try {
+    const imageRef = ref(storage, `users/${uid}/profile-image`);
+    return await getDownloadURL(imageRef);
+  } catch (error) {
+    if (error?.code === "storage/object-not-found") {
       return null;
     }
 
-    return userDoc.data().photo_uri || null;
-  } catch (error) {
     logError(error, {
       description: "Error fetching user profile",
       userId: uid,
     });
+
     return null;
   }
 };
@@ -114,7 +118,6 @@ export const base64ToBlob = (base64, type = "image/jpeg") => {
 
     return new Blob([new Uint8Array(byteArrays)], { type });
   } catch (error) {
-    console.error("base64ToBlob failed:", error);
     throw new Error("Invalid base64 string");
   }
 };
@@ -147,31 +150,30 @@ export const saveAvatar = async ({
     return;
   }
 
-    try {
-      const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
-        setLoading(false);
-        console.error(error);
-        onError(error);
-      });
-
-      if (!url) {
-        setLoading(false);
-        onError?.(new Error("Upload returned empty URL"));
-        return;
-      }
-
-      try {
-        setStorageUrl?.(url);
-        onSuccess(url);
-      } catch (e) {
-        onError?.(new Error("Save Error!"));
-      } finally {
-        setLoading(false);
-      }
-    } catch (error) {
+  try {
+    const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
       setLoading(false);
-      onError?.(error);
+      onError(error);
+    });
+
+    if (!url) {
+      setLoading(false);
+      onError?.(new Error("Upload returned empty URL"));
+      return;
     }
+
+    try {
+      setStorageUrl?.(url);
+      onSuccess(url);
+    } catch (e) {
+      onError?.(new Error("Save Error!"));
+    } finally {
+      setLoading(false);
+    }
+  } catch (error) {
+    setLoading(false);
+    onError?.(error);
+  }
 };
 
 export const confirmDeleteAvatar = async ({
