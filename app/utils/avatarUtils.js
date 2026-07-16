@@ -91,7 +91,8 @@ export const getUserPfp = async (uid) => {
     return userDoc.data().photo_uri || null;
   } catch (error) {
     logError(error, {
-      description: "Error fetching user profile:",
+      description: "Error fetching user profile",
+      userId: uid,
     });
     return null;
   }
