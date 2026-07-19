@@ -159,27 +159,14 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
       limit(1),
     );
 
-    const latestDraftQuery = query(
-      messagesRef,
-      where("sent_by", "==", userRef),
-      where("status", "==", "draft"),
-      orderBy("drafted_at", "desc"),
-      limit(10),
-    );
-
-    const [contentDraftSnapshot, attachmentDraftSnapshot, latestDraftSnapshot] = await Promise.all([
+    const [contentDraftSnapshot, attachmentDraftSnapshot] = await Promise.all([
       safeGetDocs(contentDraftQuery, "Error fetching content draft:"),
       safeGetDocs(attachmentDraftQuery, "Error fetching attachment draft:"),
-      safeGetDocs(latestDraftQuery, "Error fetching latest drafts fallback:"),
     ]);
 
     const latestDraftDoc = [
       contentDraftSnapshot.docs[0],
-      attachmentDraftSnapshot.docs[0],
-      ...(latestDraftSnapshot.docs || []).filter((docSnap) => {
-        const data = docSnap.data();
-        return Boolean((data.content || "").trim()) || hasMessageAttachments(data);
-      }),
+      attachmentDraftSnapshot.docs[0]
     ]
       .filter(Boolean)
       .sort(
@@ -303,13 +290,6 @@ export const fetchLatestMessageFromConversation = async (
     limit(1)
   );
 
-  const userLatestFallbackQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    orderBy("drafted_at", "desc"),
-    limit(10)
-  );
-
   const approvedQuery = query(
     messagesRef,
     where("status", "==", "approved"),
@@ -323,13 +303,6 @@ export const fetchLatestMessageFromConversation = async (
     where("has_attachments", "==", true),
     orderBy("moderated_at", "desc"),
     limit(1)
-  );
-
-  const approvedLatestFallbackQuery = query(
-    messagesRef,
-    where("status", "==", "approved"),
-    orderBy("moderated_at", "desc"),
-    limit(10)
   );
 
   const rejectedQuery = query(
@@ -349,48 +322,34 @@ export const fetchLatestMessageFromConversation = async (
     limit(1)
   );
 
-  const rejectedLatestFallbackQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    where("status", "==", "rejected"),
-    orderBy("moderated_at", "desc"),
-    limit(10)
-  );
-
   const [
     userConversationsSnap,
     userAttachmentConversationsSnap,
     approvedConversationsSnap,
     approvedAttachmentConversationsSnap,
-    approvedLatestFallbackSnap,
     rejectedConversationsSnap,
     rejectedAttachmentConversationsSnap,
-    rejectedLatestFallbackSnap,
-    userLatestFallbackSnap,
   ] = await Promise.all([
     safeGetDocs(userContentQuery, "Error fetching latest user content message:"),
     safeGetDocs(userAttachmentQuery, "Error fetching latest user attachment message:"),
     safeGetDocs(approvedQuery, "Error fetching latest approved message:"),
     safeGetDocs(approvedAttachmentQuery, "Error fetching latest approved attachment message:"),
-    safeGetDocs(approvedLatestFallbackQuery, "Error fetching latest approved fallback messages:"),
     safeGetDocs(rejectedQuery, "Error fetching latest rejected message:"),
     safeGetDocs(rejectedAttachmentQuery, "Error fetching latest rejected attachment message:"),
-    safeGetDocs(rejectedLatestFallbackQuery, "Error fetching latest rejected fallback messages:"),
-    safeGetDocs(userLatestFallbackQuery, "Error fetching latest user fallback messages:"),
   ]);
 
   const latestUserMessage = getLatestFromSnaps(
-    [userConversationsSnap, userAttachmentConversationsSnap, userLatestFallbackSnap],
+    [userConversationsSnap, userAttachmentConversationsSnap],
     "drafted_at"
   );
 
   const latestApprovedMessage = getLatestFromSnaps(
-    [approvedConversationsSnap, approvedAttachmentConversationsSnap, approvedLatestFallbackSnap],
+    [approvedConversationsSnap, approvedAttachmentConversationsSnap],
     "moderated_at"
   );
 
   const latestRejectedMessage = getLatestFromSnaps(
-    [rejectedConversationsSnap, rejectedAttachmentConversationsSnap, rejectedLatestFallbackSnap],
+    [rejectedConversationsSnap, rejectedAttachmentConversationsSnap],
     "moderated_at"
   );
 
