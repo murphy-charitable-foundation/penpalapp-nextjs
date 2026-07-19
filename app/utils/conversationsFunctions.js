@@ -131,6 +131,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
       messagesRef,
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
+      where("content", "!=", ""),
       orderBy("drafted_at", "desc"),
       limit(1),
     );
@@ -219,6 +220,7 @@ export const fetchLatestMessageFromConversation = async (
       query(
         messagesRef,
         where("sent_by", "==", userRef),
+        where("content", "!=", ""),
         orderBy("drafted_at", "desc"),
         limit(1)
       ),
