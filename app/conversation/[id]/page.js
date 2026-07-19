@@ -374,9 +374,10 @@ export default function Page({ params }) {
         }
 
         const hasContent = Boolean(trimmedContent);
-        setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
+        const hasAnyLocalAttachments = draftAttachments.length > 0;
+        setHasDraftContent(hasContent || hasAnyLocalAttachments);
 
-        if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
+        if (!hasContent && !hasAnyLocalAttachments && isEditing) {
           setIsEditing(false);
         }
 
@@ -400,9 +401,10 @@ export default function Page({ params }) {
               await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
               const hasContent = Boolean(trimmedContent);
-              setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
+              const hasAnyLocalAttachments = draftAttachments.length > 0;
+              setHasDraftContent(hasContent || hasAnyLocalAttachments);
 
-              if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
+              if (!hasContent && !hasAnyLocalAttachments && isEditing) {
                 setIsEditing(false);
               }
 
@@ -821,6 +823,25 @@ export default function Page({ params }) {
 
   const handleReplyClick = async () => {
     setIsEditing(true);
+
+    // Preserve local unsent/in-flight attachment state instead of replacing
+    // it with potentially stale draft data from Firestore.
+    const hasLocalComposerState =
+      Boolean(messageContent.trim()) || pendingAttachments.length > 0;
+
+    if (hasLocalComposerState) {
+      setHasDraftContent(true);
+
+      setTimeout(() => {
+        textAreaRef.current?.focus();
+        if (textAreaRef.current) {
+          const length = textAreaRef.current.value.length;
+          textAreaRef.current.setSelectionRange(length, length);
+        }
+      }, 100);
+
+      return;
+    }
 
     if (!draft?.id) {
       try {
