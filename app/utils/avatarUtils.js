@@ -1,6 +1,11 @@
 // src/lib/avatarUtils.js
 
-import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  list,
+} from "@firebase/storage";
 import { updateDoc, doc } from "firebase/firestore";
 import { auth, storage, db } from "@/app/firebaseConfig";
 import { logError } from "./analytics";
@@ -86,8 +91,17 @@ export const getUserPfp = async (uid) => {
   }
 
   try {
-    const imageRef = ref(storage, `users/${uid}/profile-image`);
-    return await getDownloadURL(imageRef);
+    const userFolderRef = ref(storage, `users/${uid}`);
+    const result = await list(userFolderRef, { maxResults: 10 });
+    const profileImageRef = result.items.find(
+      (item) => item.name === "profile-image"
+    );
+
+    if (!profileImageRef) {
+      return null;
+    }
+
+    return await getDownloadURL(profileImageRef);
   } catch (error) {
     if (error?.code === "storage/object-not-found") {
       return null;
