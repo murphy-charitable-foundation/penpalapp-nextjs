@@ -11,6 +11,8 @@ const ConversationPreview = ({
   country,
   lastMessage,
   hasAttachments = false,
+  attachmentCount = 0,
+  attachmentTypes = [],
   lastMessageDate,
   conversationId,
   status,
@@ -73,7 +75,51 @@ const ConversationPreview = ({
     ? "Message was rejected"
     : "Your message was rejected";
 
-  const previewMessage = lastMessage || (hasAttachments ? "Attachments" : "");
+  const getAttachmentSummary = () => {
+    if (!hasAttachments) return "";
+
+    const normalizedTypes = (Array.isArray(attachmentTypes) ? attachmentTypes : [])
+      .map((type) => {
+        if (type === "image") return "image";
+        if (type === "audio") return "audio";
+        if (type === "video") return "video";
+        return "file";
+      })
+      .filter(Boolean);
+
+    const resolvedCount =
+      Number.isFinite(Number(attachmentCount)) && Number(attachmentCount) > 0
+        ? Number(attachmentCount)
+        : normalizedTypes.length > 0
+        ? normalizedTypes.length
+        : 1;
+
+    const uniqueTypes = Array.from(new Set(normalizedTypes));
+
+    if (uniqueTypes.length !== 1) {
+      return `${resolvedCount} ${resolvedCount === 1 ? "File" : "Files"}`;
+    }
+
+    const type = uniqueTypes[0];
+
+    if (type === "image") {
+      return `${resolvedCount} ${resolvedCount === 1 ? "Photo" : "Photos"}`;
+    }
+
+    if (type === "audio") {
+      return `${resolvedCount} ${
+        resolvedCount === 1 ? "Voice Message" : "Voice Messages"
+      }`;
+    }
+
+    if (type === "video") {
+      return `${resolvedCount} ${resolvedCount === 1 ? "Video" : "Videos"}`;
+    }
+
+    return `${resolvedCount} ${resolvedCount === 1 ? "File" : "Files"}`;
+  };
+
+  const previewMessage = lastMessage || getAttachmentSummary();
 
   const cardContent = (
     <div

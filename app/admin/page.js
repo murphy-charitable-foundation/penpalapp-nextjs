@@ -109,6 +109,17 @@ export default function Admin() {
         snap.docs.map(async (d) => {
           const data = d.data();
           const conversationId = d.ref.parent.parent?.id || "";
+          const attachments = Array.isArray(data.attachments) ? data.attachments : [];
+          const legacyAttachmentType =
+            attachments.length === 0 && data.media_url ? data.media_type : null;
+          const attachmentTypes =
+            attachments.length > 0
+              ? attachments.map((attachment) => attachment.media_type || attachment.mediaType || "file")
+              : legacyAttachmentType
+              ? [legacyAttachmentType]
+              : [];
+          const attachmentCount =
+            attachments.length > 0 ? attachments.length : legacyAttachmentType ? 1 : 0;
           let pfp = "/usericon.png";
 
           try {
@@ -149,7 +160,9 @@ export default function Admin() {
             country: sender.country ?? "Unknown",
             lastMessage: data.content,
             lastMessageDate: data.created_at,
-            hasAttachments: Array.isArray(data.attachments) && data.attachments.length > 0,
+            hasAttachments: attachmentCount > 0,
+            attachmentCount,
+            attachmentTypes,
           };
         }),
       );
