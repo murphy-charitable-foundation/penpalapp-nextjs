@@ -103,10 +103,6 @@ export const getUserPfp = async (uid) => {
 
     return await getDownloadURL(profileImageRef);
   } catch (error) {
-    if (error?.code === "storage/object-not-found") {
-      return null;
-    }
-
     logError(error, {
       description: "Error fetching user profile",
       userId: uid,
