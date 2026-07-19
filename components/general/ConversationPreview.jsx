@@ -108,7 +108,7 @@ const ConversationPreview = ({
           <div className="flex justify-between items-start gap-2">
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 truncate">
-                {status === "draft" && lastMessage !== "" && (
+                {status === "draft" && (lastMessage !== "" || hasAttachments) && (
                   <span
                   className="text-red-500 mr-1"
                   title="Draft"
