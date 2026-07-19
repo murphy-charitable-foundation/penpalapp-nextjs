@@ -329,13 +329,16 @@ export default function Page({ params }) {
       const trimmedContent = getMessageContentForSave(content, draftAttachments);
       const currentTime = new Date();
 
+      const savedAttachments = attachmentsToSave(draftAttachments);
+
       const baseDraftData = {
         sent_by: messageUserRef,
         content: trimmedContent,
         status: "draft",
         drafted_at: currentTime,
         unread: true,
-        attachments: attachmentsToSave(draftAttachments),
+        attachments: savedAttachments,
+        has_attachments: savedAttachments.length > 0,
       };
 
       try {
@@ -514,6 +517,7 @@ export default function Page({ params }) {
       const updateData = {
         content: nextContent,
         attachments: updatedAttachments,
+        has_attachments: updatedAttachments.length > 0,
         created_at: currentTime,
       };
 
@@ -562,6 +566,7 @@ export default function Page({ params }) {
               ...msg,
               content: nextContent,
               attachments: updatedAttachments,
+              has_attachments: updatedAttachments.length > 0,
               created_at: currentTime,
             };
           }
@@ -630,6 +635,7 @@ export default function Page({ params }) {
       const messageDataWithAttachments = {
         ...messageData,
         attachments,
+        has_attachments: attachments.length > 0,
       };
 
       if (draft?.id) {
