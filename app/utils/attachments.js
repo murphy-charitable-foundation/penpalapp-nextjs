@@ -80,7 +80,7 @@ export const getAttachmentStoragePath = ({ conversationId, messageId, fileName }
     return null;
   }
 
-  return `conversations/${conversationId}/${messageId}/${Date.now()}_${safeFileName}`;
+  return `conversations/${conversationId}/messages/${messageId}/${Date.now()}_${safeFileName}`;
 };
 
 export const extractStoragePathFromDownloadUrl = (url) => {
