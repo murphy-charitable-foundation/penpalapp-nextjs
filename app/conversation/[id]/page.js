@@ -390,7 +390,7 @@ export default function Page({ params }) {
         } else if (error?.code === "not-found") {
           setDraft(null);
 
-          if (trimmedContent || attachmentsToSave(draftAttachments).length > 0) {
+          if (trimmedContent || attachmentsToSave(draftAttachments)?.length > 0) {
             try {
               const newDraftRef = doc(messagesRef);
               const newDraftData = {
@@ -489,7 +489,7 @@ export default function Page({ params }) {
 
   const handleUpdateMessage = async () => {
     const nextContent = getMessageContentForSave(messageContent, pendingAttachments);
-    const hasAttachments = attachmentsToSave(pendingAttachments).length > 0;
+    const hasAttachments = attachmentsToSave(pendingAttachments)?.length > 0;
 
     if (!nextContent && !hasAttachments) {
       alert("Please enter a message");
@@ -595,7 +595,7 @@ export default function Page({ params }) {
     }
 
     const trimmedContent = getMessageContentForSave(messageContent, pendingAttachments);
-    const hasAttachments = attachmentsToSave(pendingAttachments).length > 0;
+    const hasAttachments = attachmentsToSave(pendingAttachments)?.length > 0;
 
     if (!trimmedContent && !hasAttachments) {
       alert("Please enter a message");

@@ -161,8 +161,8 @@ export const normalizeMessageAttachments = (message) => {
   return normalized;
 };
 
-export const getCompletedAttachmentsForSave = (attachments) =>
-  attachments
+export const getCompletedAttachmentsForSave = (attachments) => {
+  const completedAttachments = attachments
     .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)
     .map((attachment) => ({
       id: attachment.id,
@@ -172,6 +172,9 @@ export const getCompletedAttachmentsForSave = (attachments) =>
       size: attachment.size,
       storagePath: attachment.storagePath || null,
     }));
+
+  return completedAttachments.length > 0 ? completedAttachments : null;
+};
 
 export const normalizeDraftAttachments = (attachments = []) =>
   attachments
