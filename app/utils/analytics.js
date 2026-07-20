@@ -64,6 +64,10 @@ const logError = (error, errorInfo) => {
       ? error
       : new Error(typeof error === "string" ? error : "Unknown error");
 
+  if (process.env.NODE_ENV === "development") {
+    console.error(errorObject, errorInfo);
+  }
+
   if (analytics) {
     logEvent(analytics, "uncaught_error", {
       error_name: errorObject.name || "Unknown",
