@@ -1,27 +1,26 @@
-import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, updateDoc, where, arrayUnion, increment, setDoc } from "firebase/firestore"
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  updateDoc,
+  where,
+  arrayUnion,
+  increment,
+  setDoc,
+} from "firebase/firestore";
 import { ref as storageRef, getDownloadURL } from "@firebase/storage";
 import { storage } from "../firebaseConfig.js";
-import { auth, db } from "../firebaseConfig"
+import { auth, db } from "../firebaseConfig";
+import { getUserPfp } from "./avatarUtils";
 import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
-const EMPTY_QUERY_SNAPSHOT = { empty: true, docs: [] };
-
-const safeGetDocs = async (queryRef, context) => {
-  try {
-    return await getDocs(queryRef);
-  } catch (error) {
-    logError(error, {
-      description: context,
-    });
-    return EMPTY_QUERY_SNAPSHOT;
-  }
-};
-
-const hasMessageAttachments = (message = {}) =>
-  message.has_attachments === true ||
-  (Array.isArray(message.attachments) && message.attachments.length > 0) ||
-  Boolean(message.media_url);
 
 const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
@@ -29,25 +28,6 @@ const getUserDoc = async () => {
   return { userDocRef, userDocSnapshot };
 };
 
-export const getUserPfp = async(uid) => {
-  const path = `profile/${uid}/profile-image`;
-  try {
-    const photoRef = storageRef(storage, path);
-    const downloaded = await getDownloadURL(photoRef)
-    return downloaded;
-  } catch (error) {
-    // Return null if there is no profile; default should be handled by UI
-    if (error.code === 'storage/object-not-found') {
-      return null;
-    }
-    logError(error, {
-      description: "Error fetching user profile:",
-    });
-    // Returns null for all other errors so it only has one fallback mechanism
-    return null;
-  }
-  
-}
 
 export const fetchConversations = async () => {
   const retryFetch = () => setTimeout(() => fetchConversations(), DELAY);
@@ -69,15 +49,9 @@ export const fetchConversations = async () => {
   return conversations;
 };
 
-export const fetchConversation = async (
-  id,
-  lim = false,
-  lastVisible = null,
-  options = {}
-) => {
-  const { attachmentsOnly = false } = options;
+export const fetchConversation = async (id, lim = false, lastVisible = null) => {
   const retryFetch = () =>
-    setTimeout(() => fetchConversation(id, lim, lastVisible, options), DELAY);
+    setTimeout(() => fetchConversation(id, lim, lastVisible), DELAY);
 
   if (!auth.currentUser?.uid) {
     retryFetch();
@@ -89,21 +63,36 @@ export const fetchConversation = async (
 
   const conversationRef = doc(collection(db, "conversations"), id);
   const lRef = collection(conversationRef, "messages");
-  const queryConstraints = [
-    where("status", "==", "approved"),
-    ...(attachmentsOnly ? [where("has_attachments", "==", true)] : []),
-    orderBy("created_at", "desc"),
-  ];
   let conversationQuery;
 
   if (lim) {
     conversationQuery = lastVisible
-      ? query(lRef, ...queryConstraints, startAfter(lastVisible), limit(lim))
-      : query(lRef, ...queryConstraints, limit(lim));
+      ? query(
+          lRef,
+          where("status", "==", "approved"),
+          orderBy("created_at", "desc"),
+          startAfter(lastVisible),
+          limit(lim)
+        )
+      : query(
+          lRef,
+          where("status", "==", "approved"),
+          orderBy("created_at", "desc"),
+          limit(lim)
+        );
   } else {
     conversationQuery = lastVisible
-      ? query(lRef, ...queryConstraints, startAfter(lastVisible))
-      : query(lRef, ...queryConstraints);
+      ? query(
+          lRef,
+          where("status", "==", "approved"),
+          orderBy("created_at", "desc"),
+          startAfter(lastVisible)
+        )
+      : query(
+          lRef,
+          where("status", "==", "approved"),
+          orderBy("created_at", "desc")
+        );
   }
 
   try {
@@ -130,18 +119,12 @@ export const fetchConversation = async (
   }
 };
 
-export const fetchAttachmentMessages = async (
-  id,
-  lim = false,
-  lastVisible = null
-) => fetchConversation(id, lim, lastVisible, { attachmentsOnly: true });
-
 export const fetchDraft = async (id, userRef, createNew = false) => {
   try {
     const conversationRef = doc(db, "conversations", id);
     const messagesRef = collection(conversationRef, "messages");
 
-    const contentDraftQuery = query(
+    const draftQuery = query(
       messagesRef,
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
@@ -150,46 +133,10 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
       limit(1),
     );
 
-    const attachmentDraftQuery = query(
-      messagesRef,
-      where("sent_by", "==", userRef),
-      where("status", "==", "draft"),
-      where("has_attachments", "==", true),
-      orderBy("drafted_at", "desc"),
-      limit(1),
-    );
+    const draftSnapshot = await getDocs(draftQuery);
 
-    const latestDraftQuery = query(
-      messagesRef,
-      where("sent_by", "==", userRef),
-      where("status", "==", "draft"),
-      orderBy("drafted_at", "desc"),
-      limit(1),
-    );
-
-    const [contentDraftSnapshot, attachmentDraftSnapshot, latestDraftSnapshot] = await Promise.all([
-      safeGetDocs(contentDraftQuery, "Error fetching content draft:"),
-      safeGetDocs(attachmentDraftQuery, "Error fetching attachment draft:"),
-      safeGetDocs(latestDraftQuery, "Error fetching latest draft:"),
-    ]);
-
-    const latestDraftDoc = [
-      contentDraftSnapshot.docs[0],
-      attachmentDraftSnapshot.docs[0],
-      ...(latestDraftSnapshot.docs || []).filter((docSnap) => {
-        const data = docSnap.data();
-        return Boolean((data.content || "").trim()) || hasMessageAttachments(data);
-      }),
-    ]
-      .filter(Boolean)
-      .sort(
-        (a, b) =>
-          (b.data().drafted_at?.toDate?.() || new Date(0)) -
-          (a.data().drafted_at?.toDate?.() || new Date(0))
-      )[0];
-
-    if (latestDraftDoc) {
-      const draftDoc = latestDraftDoc;
+    if (!draftSnapshot.empty) {
+      const draftDoc = draftSnapshot.docs[0];
 
       return {
         id: draftDoc.id,
@@ -206,8 +153,6 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
         status: "draft",
         drafted_at: now,
         unread: true,
-        attachments: [],
-        has_attachments: false,
       };
 
       const newDraftRef = doc(messagesRef);
@@ -238,144 +183,67 @@ export const fetchLatestMessageFromConversation = async (
   const toDate = (value) =>
     value?.toDate?.() || (value instanceof Date ? value : new Date(0));
 
-  const getBestMessageDate = (data = {}, preferredField) => {
-    const preferred = toDate(data?.[preferredField]);
-    const created = toDate(data?.created_at);
-    const drafted = toDate(data?.drafted_at);
-    const moderated = toDate(data?.moderated_at);
-
-    return [preferred, created, drafted, moderated].reduce(
-      (latest, current) => (current > latest ? current : latest),
-      new Date(0)
-    );
-  };
-
-  const hasRenderableMessage = (data = {}) => {
-    const hasContent = Boolean((data.content || "").trim());
-    const hasAttachments = hasMessageAttachments(data);
-    return hasContent || hasAttachments;
-  };
-
   const getFirstMessage = (snap, dateField) => {
     if (snap.empty) return null;
 
-    const messageDoc = snap.docs.find((docSnap) => {
-      const data = docSnap.data();
-      return hasRenderableMessage(data);
-    });
-
-    if (!messageDoc) return null;
-
+    const messageDoc = snap.docs[0];
     const data = messageDoc.data();
+
+    const createdAt = data?.created_at?.toDate?.() || data?.created_at || null;
 
     return {
       id: messageDoc.id,
       ...data,
-      lastMessageDate: getBestMessageDate(data, dateField),
+      created_at: createdAt,
+      lastMessageDate: toDate(data?.[dateField]),
     };
   };
 
-  const getLatestFromSources = (sources) =>
-    sources
-      .map(({ snap, dateField }) => getFirstMessage(snap, dateField))
-      .filter(Boolean)
-      .reduce(
-        (latest, message) =>
-          !latest || message.lastMessageDate > latest.lastMessageDate
-            ? message
-            : latest,
-        null
-      );
-
-  const userCreatedQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    orderBy("created_at", "desc"),
-    limit(1)
-  );
-
-  const userDraftQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    where("status", "==", "draft"),
-    orderBy("drafted_at", "desc"),
-    limit(1)
-  );
-
-  const userAttachmentQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    where("has_attachments", "==", true),
-    orderBy("created_at", "desc"),
-    limit(1)
-  );
-
-  const approvedQuery = query(
-    messagesRef,
-    where("status", "==", "approved"),
-    orderBy("moderated_at", "desc"),
-    limit(1)
-  );
-
-  const approvedAttachmentQuery = query(
-    messagesRef,
-    where("status", "==", "approved"),
-    where("has_attachments", "==", true),
-    orderBy("moderated_at", "desc"),
-    limit(1)
-  );
-
-
-  const rejectedQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    where("status", "==", "rejected"),
-    orderBy("moderated_at", "desc"),
-    limit(1)
-  );
-
-  const rejectedAttachmentQuery = query(
-    messagesRef,
-    where("sent_by", "==", userRef),
-    where("status", "==", "rejected"),
-    where("has_attachments", "==", true),
-    orderBy("moderated_at", "desc"),
-    limit(1)
-  );
-
   const [
-    userCreatedSnap,
-    userDraftSnap,
-    userAttachmentConversationsSnap,
+    userConversationsSnap,
     approvedConversationsSnap,
-    approvedAttachmentConversationsSnap,
     rejectedConversationsSnap,
-    rejectedAttachmentConversationsSnap,
-  ] = await Promise.all([
-    safeGetDocs(userCreatedQuery, "Error fetching latest user created message:"),
-    safeGetDocs(userDraftQuery, "Error fetching latest user draft message:"),
-    safeGetDocs(userAttachmentQuery, "Error fetching latest user attachment message:"),
-    safeGetDocs(approvedQuery, "Error fetching latest approved message:"),
-    safeGetDocs(approvedAttachmentQuery, "Error fetching latest approved attachment message:"),
-    safeGetDocs(rejectedQuery, "Error fetching latest rejected message:"),
-    safeGetDocs(rejectedAttachmentQuery, "Error fetching latest rejected attachment message:"),
-  ]);
+  ] = await Promise.all(
+    [
+      query(
+        messagesRef,
+        where("sent_by", "==", userRef),
+        where("content", "!=", ""),
+        orderBy("drafted_at", "desc"),
+        limit(1)
+      ),
 
-  const latestUserMessage = getLatestFromSources([
-    { snap: userCreatedSnap, dateField: "created_at" },
-    { snap: userDraftSnap, dateField: "drafted_at" },
-    { snap: userAttachmentConversationsSnap, dateField: "created_at" },
-  ]);
+      query(
+        messagesRef,
+        where("status", "==", "approved"),
+        orderBy("moderated_at", "desc"),
+        limit(1)
+      ),
 
-  const latestApprovedMessage = getLatestFromSources([
-    { snap: approvedConversationsSnap, dateField: "moderated_at" },
-    { snap: approvedAttachmentConversationsSnap, dateField: "moderated_at" },
-  ]);
+      query(
+        messagesRef,
+        where("sent_by", "==", userRef),
+        where("status", "==", "rejected"),
+        orderBy("moderated_at", "desc"),
+        limit(1)
+      ),
+    ].map(getDocs)
+  );
 
-  const latestRejectedMessage = getLatestFromSources([
-    { snap: rejectedConversationsSnap, dateField: "moderated_at" },
-    { snap: rejectedAttachmentConversationsSnap, dateField: "moderated_at" },
-  ]);
+  const latestUserMessage = getFirstMessage(
+    userConversationsSnap,
+    "drafted_at"
+  );
+
+  const latestApprovedMessage = getFirstMessage(
+    approvedConversationsSnap,
+    "moderated_at"
+  );
+
+  const latestRejectedMessage = getFirstMessage(
+    rejectedConversationsSnap,
+    "moderated_at"
+  );
 
   const latestSentMessage =
     latestApprovedMessage?.sent_by?.id !== userRef?.id
@@ -413,8 +281,17 @@ export const fetchRecipients = async (id) => {
     const selUser = await getDoc(selectedUserDocRef);
     const userData = selUser.data();    // utility/helper variable
 
-    // Call the only source of profile
-    const pfpUrl = await getUserPfp(user.id);
+    // Call the only source of profile; protect against unexpected throws
+    let pfpUrl = null;
+    try {
+      pfpUrl = await getUserPfp(user.id);
+    } catch (error) {
+      logError(error, {
+        description: "Error fetching profile image for recipient",
+        userId: user.id,
+      });
+      pfpUrl = null;
+    }
 
     // Push the data; if pfpUrl is null, pfp is null as well; UI should handle the default
     members.push({ ...userData, id: user.id, pfp: pfpUrl });
