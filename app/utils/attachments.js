@@ -161,6 +161,55 @@ export const normalizeMessageAttachments = (message) => {
   return normalized;
 };
 
+export const getAttachmentSummary = (message = {}) => {
+  const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+  const legacyAttachmentType =
+    attachments.length === 0 && message.media_url ? message.media_type : null;
+  const attachmentTypes =
+    attachments.length > 0
+      ? attachments.map(
+          (attachment) =>
+            attachment.media_type || attachment.mediaType || "file",
+        )
+      : legacyAttachmentType
+      ? [legacyAttachmentType]
+      : [];
+  const attachmentCount =
+    attachments.length > 0 ? attachments.length : legacyAttachmentType ? 1 : 0;
+
+  if (attachmentCount === 0) return "";
+
+  const normalizedTypes = attachmentTypes.map((attachmentType) => {
+    if (attachmentType === "image") return "image";
+    if (attachmentType === "audio") return "audio";
+    if (attachmentType === "video") return "video";
+    return "file";
+  });
+  const uniqueTypes = new Set(normalizedTypes);
+
+  if (uniqueTypes.size !== 1) {
+    return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+  }
+
+  const [attachmentType] = uniqueTypes;
+
+  if (attachmentType === "image") {
+    return `${attachmentCount} ${attachmentCount === 1 ? "Photo" : "Photos"}`;
+  }
+
+  if (attachmentType === "audio") {
+    return `${attachmentCount} ${
+      attachmentCount === 1 ? "Voice Message" : "Voice Messages"
+    }`;
+  }
+
+  if (attachmentType === "video") {
+    return `${attachmentCount} ${attachmentCount === 1 ? "Video" : "Videos"}`;
+  }
+
+  return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+};
+
 export const getCompletedAttachmentsForSave = (attachments) => {
   const completedAttachments = attachments
     .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)

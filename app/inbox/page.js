@@ -21,6 +21,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import { getAttachmentSummary } from "../utils/attachments";
 
 const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
 
@@ -63,23 +64,6 @@ export default function Home() {
           const message =
             (await fetchLatestMessageFromConversation(id, userRef)) || {};
 
-          const attachments = Array.isArray(message.attachments)
-            ? message.attachments
-            : [];
-
-          const legacyAttachmentType =
-            attachments.length === 0 && message.media_url ? message.media_type : null;
-
-          const attachmentTypes =
-            attachments.length > 0
-              ? attachments.map((attachment) => attachment.media_type || attachment.mediaType || "file")
-              : legacyAttachmentType
-              ? [legacyAttachmentType]
-              : [];
-
-          const attachmentCount =
-            attachments.length > 0 ? attachments.length : legacyAttachmentType ? 1 : 0;
-
           const rec = await fetchRecipients(id);
           const recipient = rec?.[0] ?? {};
 
@@ -89,7 +73,7 @@ export default function Home() {
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: message.content || "",
-            attachments: message.attachments || [],
+            attachmentSummary: getAttachmentSummary(message),
             lastMessageDate: message.lastMessageDate || "",
             status: message.status || "",
             conversationId: id || "",

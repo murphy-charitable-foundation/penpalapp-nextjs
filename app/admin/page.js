@@ -33,6 +33,7 @@ import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
+import { getAttachmentSummary } from "../utils/attachments";
 import { useDormantConversation } from "../../contexts/DormantConversationContext";
 
 export default function Admin() {
@@ -107,17 +108,6 @@ export default function Admin() {
         snap.docs.map(async (d) => {
           const data = d.data();
           const conversationId = d.ref.parent.parent?.id || "";
-          const attachments = Array.isArray(data.attachments) ? data.attachments : [];
-          const legacyAttachmentType =
-            attachments.length === 0 && data.media_url ? data.media_type : null;
-          const attachmentTypes =
-            attachments.length > 0
-              ? attachments.map((attachment) => attachment.media_type || attachment.mediaType || "file")
-              : legacyAttachmentType
-              ? [legacyAttachmentType]
-              : [];
-          const attachmentCount =
-            attachments.length > 0 ? attachments.length : legacyAttachmentType ? 1 : 0;
           let pfp = "/usericon.png";
 
           try {
@@ -155,9 +145,7 @@ export default function Admin() {
             country: sender.country ?? "Unknown",
             lastMessage: data.content,
             lastMessageDate: data.created_at,
-            hasAttachments: attachmentCount > 0,
-            attachmentCount,
-            attachmentTypes,
+            attachmentSummary: getAttachmentSummary(data),
           };
         }),
       );

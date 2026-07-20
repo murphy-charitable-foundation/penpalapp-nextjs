@@ -10,9 +10,7 @@ const ConversationPreview = ({
   name,
   country,
   lastMessage,
-  hasAttachments = false,
-  attachmentCount = 0,
-  attachmentTypes = [],
+  attachmentSummary = "",
   lastMessageDate,
   conversationId,
   status,
@@ -25,39 +23,6 @@ const ConversationPreview = ({
 }) => {
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
-
-  const getAttachmentPreviewText = (attachment) => {
-    const attachmentName =
-      attachment?.name ||
-      attachment?.fileName ||
-      attachment?.filename ||
-      attachment?.originalName ||
-      attachment?.url?.split("/").pop() ||
-      "attachment";
-
-    const normalizedName = attachmentName.toLowerCase();
-
-    if (/\.(mp4|mov|avi|mkv|webm)$/i.test(normalizedName)) {
-      return `[video] ${attachmentName}`;
-    }
-
-    if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(normalizedName)) {
-      return `[image] ${attachmentName}`;
-    }
-
-    if (/\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(normalizedName)) {
-      return `[audio] ${attachmentName}`;
-    }
-
-    return `[attachment] ${attachmentName}`;
-  };
-
-  const previewText =
-    typeof lastMessage === "string" && lastMessage.trim()
-      ? lastMessage
-      : attachments?.length
-      ? getAttachmentPreviewText(attachments[0])
-      : "";
 
   const handleProfileClick = (e) => {
     e.preventDefault();
@@ -109,51 +74,7 @@ const ConversationPreview = ({
     ? "Message was rejected"
     : "Your message was rejected";
 
-  const getAttachmentSummary = () => {
-    if (!hasAttachments) return "";
-
-    const normalizedTypes = (Array.isArray(attachmentTypes) ? attachmentTypes : [])
-      .map((type) => {
-        if (type === "image") return "image";
-        if (type === "audio") return "audio";
-        if (type === "video") return "video";
-        return "file";
-      })
-      .filter(Boolean);
-
-    const resolvedCount =
-      Number.isFinite(Number(attachmentCount)) && Number(attachmentCount) > 0
-        ? Number(attachmentCount)
-        : normalizedTypes.length > 0
-        ? normalizedTypes.length
-        : 1;
-
-    const uniqueTypes = Array.from(new Set(normalizedTypes));
-
-    if (uniqueTypes.length !== 1) {
-      return `${resolvedCount} ${resolvedCount === 1 ? "File" : "Files"}`;
-    }
-
-    const type = uniqueTypes[0];
-
-    if (type === "image") {
-      return `${resolvedCount} ${resolvedCount === 1 ? "Photo" : "Photos"}`;
-    }
-
-    if (type === "audio") {
-      return `${resolvedCount} ${
-        resolvedCount === 1 ? "Voice Message" : "Voice Messages"
-      }`;
-    }
-
-    if (type === "video") {
-      return `${resolvedCount} ${resolvedCount === 1 ? "Video" : "Videos"}`;
-    }
-
-    return `${resolvedCount} ${resolvedCount === 1 ? "File" : "Files"}`;
-  };
-
-  const previewMessage = lastMessage || getAttachmentSummary();
+  const previewMessage = lastMessage || attachmentSummary;
 
   const cardContent = (
     <div
@@ -188,15 +109,15 @@ const ConversationPreview = ({
           <div className="flex justify-between items-start gap-2">
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 truncate">
-                {status === "draft" && (lastMessage !== "" || hasAttachments) && (
+                {status === "draft" && (lastMessage !== "" || attachmentSummary) && (
                   <span
-                  className="text-red-500 mr-1"
-                  title="Draft"
-                  aria-label="Draft"
-                >
-                  [Draft]
-                </span>
-                        )}
+                    className="text-red-500 mr-1"
+                    title="Draft"
+                    aria-label="Draft"
+                  >
+                    [Draft]
+                  </span>
+                )}
                 {name}
               </div>
 
