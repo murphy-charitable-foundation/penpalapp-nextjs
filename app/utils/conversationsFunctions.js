@@ -201,6 +201,7 @@ export const fetchLatestMessageFromConversation = async (
 
   const [
     userConversationsSnap,
+    userAttachmentsSnap,
     approvedConversationsSnap,
     rejectedConversationsSnap,
   ] = await Promise.all(
@@ -209,6 +210,14 @@ export const fetchLatestMessageFromConversation = async (
         messagesRef,
         where("sent_by", "==", userRef),
         where("content", "!=", ""),
+        orderBy("drafted_at", "desc"),
+        limit(1)
+      ),
+
+      query(
+        messagesRef,
+        where("sent_by", "==", userRef),
+        where("attachments", "!=", null),
         orderBy("drafted_at", "desc"),
         limit(1)
       ),
@@ -235,6 +244,11 @@ export const fetchLatestMessageFromConversation = async (
     "drafted_at"
   );
 
+  const latestUserAttachmentMessage = getFirstMessage(
+    userAttachmentsSnap,
+    "drafted_at"
+  );
+
   const latestApprovedMessage = getFirstMessage(
     approvedConversationsSnap,
     "moderated_at"
@@ -250,7 +264,7 @@ export const fetchLatestMessageFromConversation = async (
       ? latestApprovedMessage
       : null;
 
-  return [latestUserMessage, latestSentMessage, latestRejectedMessage]
+  return [latestUserMessage, latestUserAttachmentMessage, latestSentMessage, latestRejectedMessage]
     .filter(Boolean)
     .reduce(
       (latest, message) =>

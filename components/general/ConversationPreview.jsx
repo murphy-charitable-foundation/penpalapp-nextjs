@@ -10,6 +10,7 @@ const ConversationPreview = ({
   name,
   country,
   lastMessage,
+  attachmentSummary = "",
   lastMessageDate,
   conversationId,
   status,
@@ -22,39 +23,6 @@ const ConversationPreview = ({
 }) => {
   const router = useRouter();
   const imageSrc = profileImage || "/usericon.png";
-
-  const getAttachmentPreviewText = (attachment) => {
-    const attachmentName =
-      attachment?.name ||
-      attachment?.fileName ||
-      attachment?.filename ||
-      attachment?.originalName ||
-      attachment?.url?.split("/").pop() ||
-      "attachment";
-
-    const normalizedName = attachmentName.toLowerCase();
-
-    if (/\.(mp4|mov|avi|mkv|webm)$/i.test(normalizedName)) {
-      return `[video] ${attachmentName}`;
-    }
-
-    if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(normalizedName)) {
-      return `[image] ${attachmentName}`;
-    }
-
-    if (/\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(normalizedName)) {
-      return `[audio] ${attachmentName}`;
-    }
-
-    return `[attachment] ${attachmentName}`;
-  };
-
-  const previewText =
-    typeof lastMessage === "string" && lastMessage.trim()
-      ? lastMessage
-      : attachments?.length
-      ? getAttachmentPreviewText(attachments[0])
-      : "";
 
   const handleProfileClick = (e) => {
     e.preventDefault();
@@ -106,6 +74,8 @@ const ConversationPreview = ({
     ? "Message was rejected"
     : "Your message was rejected";
 
+  const previewMessage = lastMessage || attachmentSummary;
+
   const cardContent = (
     <div
       className={`w-full p-2 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer ${
@@ -139,15 +109,15 @@ const ConversationPreview = ({
           <div className="flex justify-between items-start gap-2">
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 truncate">
-                {status === "draft" && lastMessage !== "" && (
+                {status === "draft" && (lastMessage !== "" || attachmentSummary) && (
                   <span
-                  className="text-red-500 mr-1"
-                  title="Draft"
-                  aria-label="Draft"
-                >
-                  [Draft]
-                </span>
-                        )}
+                    className="text-red-500 mr-1"
+                    title="Draft"
+                    aria-label="Draft"
+                  >
+                    [Draft]
+                  </span>
+                )}
                 {name}
               </div>
 
@@ -164,7 +134,7 @@ const ConversationPreview = ({
               isRecipient && unread ? "font-semibold" : ""
             }`}
           >
-            {previewText ? (
+            {previewMessage ? (
               <div className="flex items-start">
                 {getStatusIcon() && (
                   <div className="mr-2 mt-0.5 shrink-0">{getStatusIcon()}</div>
@@ -176,7 +146,7 @@ const ConversationPreview = ({
                       {rejectedText}
                     </div>
                   )}
-                  {previewText}
+                  {previewMessage}
                 </div>
               </div>
             ) : (

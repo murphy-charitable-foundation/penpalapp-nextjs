@@ -28,6 +28,7 @@ import {
   formatFileSize,
   getCompletedAttachmentsForSave,
   isAllowedMediaUrl,
+  hydrateAttachmentUrls,
   normalizeMessageAttachments,
   normalizeDraftAttachments,
   revokeAttachmentPreview,
@@ -67,6 +68,8 @@ export default function Page({ params }) {
   const textAreaRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const messageContentRef = useRef("");
+  const pendingAttachmentsRef = useRef([]);
 
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
@@ -109,6 +112,35 @@ export default function Page({ params }) {
 
   const [draftTimer, setDraftTimer] = useState(null);
 
+  useEffect(() => {
+    if (!attachmentViewer && !showAttachmentDeleteDialog) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        if (attachmentViewer) {
+          setAttachmentViewer(null);
+        } else {
+          setAttachmentToDelete(null);
+          setShowAttachmentDeleteDialog(false);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [attachmentViewer, showAttachmentDeleteDialog]);
+
+  useEffect(() => {
+    messageContentRef.current = messageContent;
+  }, [messageContent]);
+
+  useEffect(() => {
+    pendingAttachmentsRef.current = pendingAttachments;
+  }, [pendingAttachments]);
+
   const scrollToBottom = (instant = false) => {
     messagesEndRef.current?.scrollIntoView({
       behavior: instant ? "auto" : "smooth",
@@ -145,16 +177,28 @@ export default function Page({ params }) {
       return;
     }
 
-    let draftMessage;
+    const isEditingExistingMessage = Boolean(editingMessageId);
+    let targetMessageId = editingMessageId;
 
-    try {
-      draftMessage = await saveDraft(messageContent);
-    } catch (error) {
-      updateAttachment(attachment.id, { uploadStatus: "error" });
-      return;
+    if (!isEditingExistingMessage) {
+      let draftMessage;
+
+      try {
+        draftMessage = await saveDraft(messageContent);
+      } catch (error) {
+        updateAttachment(attachment.id, { uploadStatus: "error" });
+        return;
+      }
+
+      if (!draftMessage?.id) {
+        updateAttachment(attachment.id, { uploadStatus: "error" });
+        return;
+      }
+
+      targetMessageId = draftMessage.id;
     }
 
-    if (!draftMessage?.id) {
+    if (!targetMessageId) {
       updateAttachment(attachment.id, { uploadStatus: "error" });
       return;
     }
@@ -162,9 +206,21 @@ export default function Page({ params }) {
     await uploadAttachmentFile({
       attachment,
       conversationId: id,
-      messageId: draftMessage.id,
+      messageId: targetMessageId,
       onUpdate: updateAttachment,
-      onComplete: () => saveDraft(messageContent),
+      onComplete: () => {
+        setPendingAttachments((current) => {
+          pendingAttachmentsRef.current = current;
+          if (!isEditingExistingMessage) {
+            saveDraft(messageContentRef.current, current).catch((error) => {
+              logError(error, {
+                description: "Failed to save draft after attachment upload:",
+              });
+            });
+          }
+          return current;
+        });
+      },
     });
   };
 
@@ -273,11 +329,7 @@ export default function Page({ params }) {
 
   const getMessageContentForSave = (content, attachments = pendingAttachments) => {
     const trimmedContent = (content ?? "").trim();
-    if (trimmedContent) {
-      return trimmedContent;
-    }
-
-    return attachmentsToSave(attachments).length > 0 ? "[Attachments]" : "";
+    return trimmedContent;
   };
 
   const hasUploadingAttachments = pendingAttachments.some(
@@ -346,9 +398,10 @@ export default function Page({ params }) {
         }
 
         const hasContent = Boolean(trimmedContent);
-        setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
+        const hasAnyLocalAttachments = draftAttachments.length > 0;
+        setHasDraftContent(hasContent || hasAnyLocalAttachments);
 
-        if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
+        if (!hasContent && !hasAnyLocalAttachments && isEditing) {
           setIsEditing(false);
         }
 
@@ -361,7 +414,7 @@ export default function Page({ params }) {
         } else if (error?.code === "not-found") {
           setDraft(null);
 
-          if (trimmedContent) {
+          if (trimmedContent || attachmentsToSave(draftAttachments)?.length > 0) {
             try {
               const newDraftRef = doc(messagesRef);
               const newDraftData = {
@@ -372,9 +425,10 @@ export default function Page({ params }) {
               await setDoc(newDraftRef, newDraftData);
               setDraft({ ...newDraftData, id: newDraftRef.id });
               const hasContent = Boolean(trimmedContent);
-              setHasDraftContent(hasContent || attachmentsToSave(draftAttachments).length > 0);
+              const hasAnyLocalAttachments = draftAttachments.length > 0;
+              setHasDraftContent(hasContent || hasAnyLocalAttachments);
 
-              if (!hasContent && attachmentsToSave(draftAttachments).length === 0 && isEditing) {
+              if (!hasContent && !hasAnyLocalAttachments && isEditing) {
                 setIsEditing(false);
               }
 
@@ -459,8 +513,9 @@ export default function Page({ params }) {
 
   const handleUpdateMessage = async () => {
     const nextContent = getMessageContentForSave(messageContent, pendingAttachments);
+    const hasAttachments = attachmentsToSave(pendingAttachments)?.length > 0;
 
-    if (!nextContent) {
+    if (!nextContent && !hasAttachments) {
       alert("Please enter a message");
       return;
     }
@@ -483,8 +538,6 @@ export default function Page({ params }) {
       const updateData = {
         content: nextContent,
         attachments: updatedAttachments,
-        media_url: null,
-        media_type: null,
         created_at: currentTime,
       };
 
@@ -500,8 +553,8 @@ export default function Page({ params }) {
 
       const messageUserRef = userRef || doc(db, "users", user.uid);
       const existingDraft = await fetchDraft(id, messageUserRef, false);
-      const restoredDraftAttachments = normalizeDraftAttachments(
-        existingDraft?.attachments || [],
+      const restoredDraftAttachments = await hydrateAttachmentUrls(
+        normalizeDraftAttachments(existingDraft?.attachments || []),
       );
       const hasRestoredDraftContent =
         Boolean(existingDraft?.content?.trim()) ||
@@ -533,8 +586,6 @@ export default function Page({ params }) {
               ...msg,
               content: nextContent,
               attachments: updatedAttachments,
-              media_url: null,
-              media_type: null,
               created_at: currentTime,
             };
           }
@@ -568,8 +619,9 @@ export default function Page({ params }) {
     }
 
     const trimmedContent = getMessageContentForSave(messageContent, pendingAttachments);
+    const hasAttachments = attachmentsToSave(pendingAttachments)?.length > 0;
 
-    if (!trimmedContent) {
+    if (!trimmedContent && !hasAttachments) {
       alert("Please enter a message");
       return;
     }
@@ -607,7 +659,7 @@ export default function Page({ params }) {
       if (draft?.id) {
         messageRef = doc(messagesRef, draft.id);
 
-        await updateDoc(messageRef, messageData);
+        await updateDoc(messageRef, messageDataWithAttachments);
       } else {
         messageRef = doc(messagesRef);
         await setDoc(messageRef, messageDataWithAttachments);
@@ -796,17 +848,38 @@ export default function Page({ params }) {
   const handleReplyClick = async () => {
     setIsEditing(true);
 
+    // Preserve local unsent/in-flight attachment state instead of replacing
+    // it with potentially stale draft data from Firestore.
+    const hasLocalComposerState =
+      Boolean(messageContent.trim()) || pendingAttachments.length > 0;
+
+    if (hasLocalComposerState) {
+      setHasDraftContent(true);
+
+      setTimeout(() => {
+        textAreaRef.current?.focus();
+        if (textAreaRef.current) {
+          const length = textAreaRef.current.value.length;
+          textAreaRef.current.setSelectionRange(length, length);
+        }
+      }, 100);
+
+      return;
+    }
+
     if (!draft?.id) {
       try {
         const messageUserRef = userRef || doc(db, "users", user?.uid);
         const existingDraft = await fetchDraft(id, messageUserRef, false);
 
         if (existingDraft) {
+          const hydratedDraftAttachments = await hydrateAttachmentUrls(
+            normalizeDraftAttachments(existingDraft.attachments || []),
+          );
+
           setDraft(existingDraft);
           setMessageContent(existingDraft.content || "");
-          const restoredAttachments = normalizeDraftAttachments(
-            existingDraft.attachments || [],
-          );
+          const restoredAttachments = hydratedDraftAttachments;
           setPendingAttachments(restoredAttachments);
           setHasDraftContent(
             Boolean(existingDraft.content?.trim()) || restoredAttachments.length > 0,
@@ -824,8 +897,8 @@ export default function Page({ params }) {
       }
     } else {
       setMessageContent(draft.content || "");
-      const restoredAttachments = normalizeDraftAttachments(
-        draft.attachments || [],
+      const restoredAttachments = await hydrateAttachmentUrls(
+        normalizeDraftAttachments(draft.attachments || []),
       );
       setPendingAttachments(restoredAttachments);
       setHasDraftContent(
@@ -950,13 +1023,15 @@ export default function Page({ params }) {
           const draftData = await fetchDraft(id, userDocRef, false);
 
           if (draftData && draftData.status === "draft") {
+            const hydratedDraftAttachments = await hydrateAttachmentUrls(
+              normalizeDraftAttachments(draftData.attachments || []),
+            );
+
             setDraft(draftData);
 
             const draftContent = draftData.content || "";
             const hasContent = Boolean(draftContent.trim());
-            const restoredAttachments = normalizeDraftAttachments(
-              draftData.attachments || [],
-            );
+            const restoredAttachments = hydratedDraftAttachments;
             const hasAttachments = restoredAttachments.length > 0;
 
             setMessageContent(draftContent);
@@ -1053,7 +1128,14 @@ export default function Page({ params }) {
                   }
                 }
 
-                return message;
+                const hydratedAttachments = await hydrateAttachmentUrls(
+                  normalizeMessageAttachments(message),
+                );
+
+                return {
+                  ...message,
+                  attachments: hydratedAttachments,
+                };
               })
             );
 
@@ -1197,8 +1279,8 @@ export default function Page({ params }) {
 
                 try {
                   const existingDraft = await fetchDraft(id, messageUserRef, false);
-                  const restoredDraftAttachments = normalizeDraftAttachments(
-                    existingDraft?.attachments || [],
+                  const restoredDraftAttachments = await hydrateAttachmentUrls(
+                    normalizeDraftAttachments(existingDraft?.attachments || []),
                   );
                   const hasRestoredDraftContent =
                     Boolean(existingDraft?.content?.trim()) ||

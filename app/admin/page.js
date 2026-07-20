@@ -33,6 +33,7 @@ import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
+import { getAttachmentSummary } from "../utils/attachments";
 import { useDormantConversation } from "../../contexts/DormantConversationContext";
 
 export default function Admin() {
@@ -144,6 +145,7 @@ export default function Admin() {
             country: sender.country ?? "Unknown",
             lastMessage: data.content,
             lastMessageDate: data.created_at,
+            attachmentSummary: getAttachmentSummary(data),
           };
         }),
       );

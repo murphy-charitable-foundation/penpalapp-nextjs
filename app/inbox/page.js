@@ -21,6 +21,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
+import { getAttachmentSummary } from "../utils/attachments";
 
 const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
 
@@ -72,7 +73,7 @@ export default function Home() {
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
             lastMessage: message.content || "",
-            attachments: message.attachments || [],
+            attachmentSummary: getAttachmentSummary(message),
             lastMessageDate: message.lastMessageDate || "",
             status: message.status || "",
             conversationId: id || "",

@@ -43,7 +43,7 @@ export const isAllowedMediaUrl = (url) => {
 
 export const createAttachmentFromFile = (file, mediaType) => ({
   id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-  name: file.name,
+  name: sanitizeFileName(file.name),
   size: file.size,
   mediaType,
   file,
@@ -67,19 +67,20 @@ export const getFileNameWithType = (name, mimeType) => {
   const baseName = name?.replace(/\.[^/.]+$/, "") || `attachment_${Date.now()}`;
   const typeBase = (mimeType || "").split(";")[0];
   const ext = typeBase.includes("/") ? typeBase.split("/")[1] : "bin";
-  return `${baseName}.${ext}`;
+  return `${sanitizeFileName(baseName)}.${ext}`;
 };
 
+export const sanitizeFileName = (filename = "") =>
+  filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+
 export const getAttachmentStoragePath = ({ conversationId, messageId, fileName }) => {
-  const safeFileName = fileName
-    .replace(/\s+/g, "_")
-    .replace(/[^a-zA-Z0-9._-]/g, "");
+  const safeFileName = sanitizeFileName(fileName);
 
   if (!conversationId || !messageId) {
     return null;
   }
 
-  return `conversations/${conversationId}/${messageId}/${Date.now()}_${safeFileName}`;
+  return `conversations/${conversationId}/messages/${messageId}/${Date.now()}_${safeFileName}`;
 };
 
 export const extractStoragePathFromDownloadUrl = (url) => {
@@ -102,6 +103,25 @@ export const deleteAttachmentStorageObject = async (attachment) => {
   if (!storagePath) return;
 
   await deleteObject(storageRef(storage, storagePath));
+};
+
+export const hydrateAttachmentUrls = async (attachments = []) => {
+  const resolved = await Promise.all(
+    attachments.map(async (attachment) => {
+      if (!attachment?.storagePath || attachment?.url) {
+        return attachment;
+      }
+
+      try {
+        const url = await getDownloadURL(storageRef(storage, attachment.storagePath));
+        return { ...attachment, url };
+      } catch (error) {
+        return attachment;
+      }
+    }),
+  );
+
+  return resolved;
 };
 
 export const normalizeMessageAttachments = (message) => {
@@ -141,8 +161,57 @@ export const normalizeMessageAttachments = (message) => {
   return normalized;
 };
 
-export const getCompletedAttachmentsForSave = (attachments) =>
-  attachments
+export const getAttachmentSummary = (message = {}) => {
+  const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+  const legacyAttachmentType =
+    attachments.length === 0 && message.media_url ? message.media_type : null;
+  const attachmentTypes =
+    attachments.length > 0
+      ? attachments.map(
+          (attachment) =>
+            attachment.media_type || attachment.mediaType || "file",
+        )
+      : legacyAttachmentType
+      ? [legacyAttachmentType]
+      : [];
+  const attachmentCount =
+    attachments.length > 0 ? attachments.length : legacyAttachmentType ? 1 : 0;
+
+  if (attachmentCount === 0) return "";
+
+  const normalizedTypes = attachmentTypes.map((attachmentType) => {
+    if (attachmentType === "image") return "image";
+    if (attachmentType === "audio") return "audio";
+    if (attachmentType === "video") return "video";
+    return "file";
+  });
+  const uniqueTypes = new Set(normalizedTypes);
+
+  if (uniqueTypes.size !== 1) {
+    return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+  }
+
+  const [attachmentType] = uniqueTypes;
+
+  if (attachmentType === "image") {
+    return `${attachmentCount} ${attachmentCount === 1 ? "Photo" : "Photos"}`;
+  }
+
+  if (attachmentType === "audio") {
+    return `${attachmentCount} ${
+      attachmentCount === 1 ? "Voice Message" : "Voice Messages"
+    }`;
+  }
+
+  if (attachmentType === "video") {
+    return `${attachmentCount} ${attachmentCount === 1 ? "Video" : "Videos"}`;
+  }
+
+  return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+};
+
+export const getCompletedAttachmentsForSave = (attachments) => {
+  const completedAttachments = attachments
     .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)
     .map((attachment) => ({
       id: attachment.id,
@@ -152,6 +221,9 @@ export const getCompletedAttachmentsForSave = (attachments) =>
       size: attachment.size,
       storagePath: attachment.storagePath || null,
     }));
+
+  return completedAttachments.length > 0 ? completedAttachments : null;
+};
 
 export const normalizeDraftAttachments = (attachments = []) =>
   attachments
@@ -210,7 +282,11 @@ export const uploadAttachmentFile = async ({
     );
 
     if (compressedMedia instanceof File) {
-      fileToUpload = compressedMedia;
+      fileToUpload = new File(
+        [compressedMedia],
+        sanitizeFileName(compressedMedia.name),
+        { type: compressedMedia.type || attachment.file.type },
+      );
     } else {
       fileToUpload = new File(
         [compressedMedia],
