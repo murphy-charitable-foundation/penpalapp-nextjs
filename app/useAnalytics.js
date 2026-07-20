@@ -35,8 +35,7 @@ import { storage } from "./firebaseConfig";
 
 async function uploadScreenshot(base64Image, fileName) {
   const storageRef = ref(storage, `analytics/deadclicks/${fileName}.png`);
-  await uploadString(storageRef, base64Image, "data_url");
-  return await getDownloadURL(storageRef);
+  return await uploadString(storageRef, base64Image, "data_url");
 }
 
 // Generate a RFC4122-compliant UUID safely across older browsers.
