@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Button from "../Button";
 import LoadingSpinner from "../../loading/LoadingSpinner";
@@ -25,6 +25,22 @@ export default function AdminMessageReview({
 }) {
 
   const [attachmentViewer, setAttachmentViewer] = useState(null);
+
+  useEffect(() => {
+    if (!attachmentViewer) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setAttachmentViewer(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [attachmentViewer]);
 
   if (!message) return null;
 

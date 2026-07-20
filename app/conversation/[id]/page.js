@@ -113,6 +113,27 @@ export default function Page({ params }) {
   const [draftTimer, setDraftTimer] = useState(null);
 
   useEffect(() => {
+    if (!attachmentViewer && !showAttachmentDeleteDialog) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        if (attachmentViewer) {
+          setAttachmentViewer(null);
+        } else {
+          setAttachmentToDelete(null);
+          setShowAttachmentDeleteDialog(false);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [attachmentViewer, showAttachmentDeleteDialog]);
+
+  useEffect(() => {
     messageContentRef.current = messageContent;
   }, [messageContent]);
 
