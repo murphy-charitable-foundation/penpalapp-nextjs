@@ -1,8 +1,98 @@
 // src/lib/avatarUtils.js
 
-import { doc, updateDoc } from "firebase/firestore";
-import { auth, db } from "@/app/firebaseConfig";
-import { uploadFile } from "@/app/utils/uploadFile";
+import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
+import { updateDoc, doc } from "firebase/firestore";
+import { auth, storage, db } from "@/app/firebaseConfig";
+import { logError } from "./analytics";
+
+export const uploadProfilePicture = async (
+  uid,
+  file,
+  onProgress = () => {},
+  onError = () => {},
+) => {
+  if (!file) return null;
+
+  return new Promise((resolve) => {
+    try {
+      const storageRef = ref(storage, `users/${uid}/profile-image`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          try {
+            onProgress(progress);
+          } catch (e) {
+            // ignore progress handler errors
+          }
+        },
+        (error) => {
+          try {
+            onError(error);
+          } catch (e) {
+            // ignore
+          }
+          logError(error, { description: "Profile upload failed" });
+          resolve(null);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url || null);
+            if (url) {
+              try {
+                await updateDoc(doc(db, "users", uid), { photo_uri: url });
+              } catch (firestoreError) {
+                logError(firestoreError, {
+                  description: "Failed to update Firestore after profile upload",
+                });
+                try {
+                  onError(firestoreError);
+                } catch (e) {
+                  // ignore
+                }
+              }
+            }
+          } catch (e) {
+            try {
+              onError(e);
+            } catch (er) {
+              // ignore
+            }
+            logError(e, { description: "Getting download URL failed" });
+            resolve(null);
+          }
+        },
+      );
+    } catch (e) {
+      try {
+        onError(e);
+      } catch (er) {
+        // ignore
+      }
+      resolve(null);
+    }
+  });
+};
+
+export const getUserPfp = async (uid) => {
+  const path = `users/${uid}/profile-image`;
+  try {
+    const photoRef = ref(storage, path);
+    const downloaded = await getDownloadURL(photoRef);
+    return downloaded;
+  } catch (error) {
+    if (error?.code === "storage/object-not-found") {
+      return null;
+    }
+    logError(error, {
+      description: "Error fetching user profile:",
+    });
+    return null;
+  }
+};
 
 export const base64ToBlob = (base64, type = "image/jpeg") => {
   try {
@@ -53,60 +143,31 @@ export const saveAvatar = async ({
     return;
   }
 
-  /*
-  uploadFile(
-    base64ToBlob(avatar),
-    `profile/${uid}/profile-image`,
-    () => {}, // optional progress callback
-    (error) => {
-      console.error("Upload error:", error);
-      setLoading(false);
-      onError(new Error("Upload error"));
-    },
-    async (url) => {
-      if (!url) return;
+    try {
+      const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
+        setLoading(false);
+        console.error(error);
+        onError(error);
+      });
+
+      if (!url) {
+        setLoading(false);
+        onError?.(new Error("Upload returned empty URL"));
+        return;
+      }
+
       try {
-        await updateDoc(doc(db, "users", uid), { photo_uri: url });
         setStorageUrl?.(url);
         onSuccess(url);
       } catch (e) {
-        console.error("Firestore update error:", e);
         onError?.(new Error("Save Error!"));
       } finally {
         setLoading(false);
       }
-    },
-  ); */
-    try {
-    uploadFile(
-      avatarBlob,
-      `profile/${uid}/profile-image`,
-      () => {}, // optional progress callback
-     (error) => {
-        setLoading(false);
-        onError(new Error("Upload error"));
-      },
-      async (url) => {
-        if (!url) {
-          setLoading(false);
-          onError?.(new Error("Upload returned empty URL"));
-          return;
-        }
-        try {
-          await updateDoc(doc(db, "users", uid), { photo_uri: url });
-          setStorageUrl?.(url);
-          onSuccess(url);
-        } catch (e) {
-          onError?.(new Error("Save Error!"));
-        } finally {
-          setLoading(false);
-        }
-      },
-    );
-  } catch (error) {
-    setLoading(false);
-    onError?.(error);
-  }
+    } catch (error) {
+      setLoading(false);
+      onError?.(error);
+    }
 };
 
 export const confirmDeleteAvatar = async ({

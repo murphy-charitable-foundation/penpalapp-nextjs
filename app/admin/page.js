@@ -22,9 +22,7 @@ import {
   where,
 } from "firebase/firestore";
 
-import { storage } from "../firebaseConfig.js";
-import { ref as storageRef, getDownloadURL } from "@firebase/storage";
-
+import { getUserPfp } from "../utils/avatarUtils";
 import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import ConversationList from "../../components/general/ConversationList";
@@ -124,11 +122,8 @@ export default function Admin() {
 
           try {
             if (data.sent_by?.id) {
-              const imgRef = storageRef(
-                storage,
-                `profile/${data.sent_by.id}/profile-image`,
-              );
-              pfp = await getDownloadURL(imgRef);
+              const fetchedPfp = await getUserPfp(data.sent_by.id);
+              pfp = fetchedPfp || "/usericon.png";
             }
           } catch {
             pfp = "/usericon.png";

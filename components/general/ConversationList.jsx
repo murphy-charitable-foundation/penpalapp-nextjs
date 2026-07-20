@@ -19,6 +19,7 @@ const ConversationList = ({
             attachmentCount={conversation.attachmentCount}
             attachmentTypes={conversation.attachmentTypes}
             lastMessageDate={conversation.lastMessageDate}
+            attachments={conversation.attachments}
             conversationId={conversation.conversationId}
             status={conversation.status}
             isRecipient={conversation.isRecipient}

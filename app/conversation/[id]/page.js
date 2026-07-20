@@ -20,6 +20,8 @@ import {
   fetchDraft,
   sendNotification,
 } from "../../utils/conversationsFunctions";
+import { getUserPfp } from "../../utils/avatarUtils";
+
 import {
   createAttachmentFromFile,
   deleteAttachmentStorageObject,
@@ -41,6 +43,7 @@ import ConfirmReportPopup from "../../../components/general/message/ConfirmRepor
 import { useRouter } from "next/navigation";
 import MessagesSkeleton from "../../../components/loading/MessagesSkeleton";
 import Image from "next/image";
+import Dialog from "../../../components/general/Dialog";
 import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
 import {
@@ -975,7 +978,13 @@ export default function Page({ params }) {
               setUserLocation(userData.location);
             }
 
-            setProfileImage(userData?.photo_uri || "");
+            try {
+              const downloaded = await getUserPfp(currentUser.uid);
+              setProfileImage(downloaded || "");
+            } catch (error) {
+              console.error("Failed to load profile image", error);
+              setProfileImage("");
+            }
           }
 
           const fetchedRecipients = await fetchRecipients(id);
@@ -1317,7 +1326,7 @@ export default function Page({ params }) {
                           photo_uri={
                             isSenderUser
                               ? profileImage
-                              : recipients[0]?.photo_uri
+                              : recipients[0]?.pfp
                           }
                           name={isSenderUser ? "Me" : recipients[0]?.first_name}
                           size={12}
@@ -1660,32 +1669,33 @@ export default function Page({ params }) {
 
         {/* ===== POPUPS ===== */}
         {showCloseDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
-            <div className="bg-gray-100 p-6 rounded-2xl shadow-lg w-[345px] mx-auto max-h-[80vh] overflow-auto">
-              <h2 className="text-xl font-semibold mb-1 text-black">
-                {editingMessageId ? "Discard changes?" : "Close this message?"}
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                {editingMessageId
-                  ? "Your changes will not be saved."
-                  : "Your message will be saved as a draft."}
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleContinueEditing}
-                  className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
-                >
-                  Stay on page
-                </button>
-                <button
-                  onClick={handleConfirmClose}
-                  className="flex-1 bg-gray-200 text-[#4E802A] py-3 px-4 rounded-2xl"
-                >
-                  {editingMessageId ? "Discard" : "Close"}
-                </button>
-              </div>
-            </div>
-          </div>
+          <Dialog
+            isOpen={showCloseDialog}
+            onClose={handleContinueEditing}
+            variant="closeDialog"
+            closeOnOverlay={false}
+            containerClassName="max-h-[80vh] overflow-auto"
+            title={editingMessageId ? "Discard changes?" : "Close this message?"}
+            subtitle={
+              editingMessageId
+                ? "Your changes will not be saved."
+                : "Your message will be saved as a draft."
+            }
+            buttons={[
+              {
+                text: "Stay on page",
+                onClick: handleContinueEditing,
+                variant: "primary",
+                className: "flex-1",
+              },
+              {
+                text: editingMessageId ? "Discard" : "Close",
+                onClick: handleConfirmClose,
+                variant: "secondary",
+                className: "flex-1",
+              },
+            ]}
+          />
         )}
         {showAttachmentDeleteDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">

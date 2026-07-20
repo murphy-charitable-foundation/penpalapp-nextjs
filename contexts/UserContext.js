@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '../app/firebaseConfig';
-import { getUserPfp } from '../app/utils/conversationsFunctions';
+import { getUserPfp } from '../app/utils/avatarUtils';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 import { PUBLIC_PATHS } from "../app/utils/publicPaths";
 
