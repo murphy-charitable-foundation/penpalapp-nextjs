@@ -33,7 +33,7 @@ import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
-import { getAttachmentSummary } from "../utils/attachments";
+import { getMessageSummary } from "../utils/conversationsFunctions";
 import { useDormantConversation } from "../../contexts/DormantConversationContext";
 
 export default function Admin() {
@@ -108,6 +108,11 @@ export default function Admin() {
         snap.docs.map(async (d) => {
           const data = d.data();
           const conversationId = d.ref.parent.parent?.id || "";
+          const messageSummaryPromise = getMessageSummary(
+            data,
+            conversationId,
+            d.id,
+          );
           let pfp = "/usericon.png";
 
           try {
@@ -143,9 +148,8 @@ export default function Admin() {
               sender.last_name ?? ""
             }`.trim(),
             country: sender.country ?? "Unknown",
-            lastMessage: data.content,
+            messageSummary: await messageSummaryPromise,
             lastMessageDate: data.created_at,
-            attachmentSummary: getAttachmentSummary(data),
           };
         }),
       );
@@ -425,7 +429,6 @@ export default function Admin() {
                     <div className="h-full overflow-hidden">
                       <AdminMessageReview
                         message={currentMessage}
-                        attachments={currentMessage?.attachments || []}
                         isSubmitting={isReviewSubmitting}
                         onClose={() => {
                           if (isReviewSubmitting) return;

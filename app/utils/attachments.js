@@ -1,11 +1,143 @@
 import {
   deleteObject,
   getDownloadURL,
+  getMetadata,
   ref as storageRef,
   uploadBytesResumable,
 } from "@firebase/storage";
 import { storage } from "../firebaseConfig";
 import { compressMedia } from "./compressMedia";
+
+const attachmentResolutionCache = new Map();
+
+const getAttachmentCacheEntry = (objectPath) => {
+  let entry = attachmentResolutionCache.get(objectPath);
+
+  if (!entry) {
+    entry = {};
+    attachmentResolutionCache.set(objectPath, entry);
+  }
+
+  return entry;
+};
+
+const loadAttachmentMetadata = (entry, objectRef) => {
+  if (entry.metadata !== undefined) {
+    return Promise.resolve(entry.metadata);
+  }
+
+  if (entry.metadataRequest) return entry.metadataRequest;
+
+  const request = getMetadata(objectRef)
+    .then((metadata) => {
+      entry.metadata = {
+        size: metadata.size ?? null,
+        contentType: metadata.contentType || "",
+      };
+      return entry.metadata;
+    })
+    .catch(() => null)
+    .finally(() => {
+      if (entry.metadataRequest === request) {
+        entry.metadataRequest = null;
+      }
+    });
+
+  entry.metadataRequest = request;
+  return request;
+};
+
+const loadAttachmentDownloadUrl = (entry, objectRef) => {
+  if (entry.downloadUrl !== undefined) {
+    return Promise.resolve(entry.downloadUrl);
+  }
+
+  if (entry.downloadUrlRequest) return entry.downloadUrlRequest;
+
+  const request = getDownloadURL(objectRef)
+    .then((downloadUrl) => {
+      entry.downloadUrl = downloadUrl;
+      return downloadUrl;
+    })
+    .catch(() => null)
+    .finally(() => {
+      if (entry.downloadUrlRequest === request) {
+        entry.downloadUrlRequest = null;
+      }
+    });
+
+  entry.downloadUrlRequest = request;
+  return request;
+};
+
+const loadAttachmentBlob = (entry, downloadUrl) => {
+  if (entry.blob !== undefined) {
+    return Promise.resolve(entry.blob);
+  }
+
+  if (entry.blobRequest) return entry.blobRequest;
+  if (!isAllowedMediaUrl(downloadUrl)) return Promise.resolve(null);
+
+  const request = fetch(downloadUrl, {
+    credentials: "omit",
+    mode: "cors",
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Attachment download failed with ${response.status}`);
+      }
+
+      return response.blob();
+    })
+    .then((blob) => {
+      entry.blob = blob;
+
+      if (entry.metadata === undefined) {
+        entry.metadata = {
+          size: blob.size,
+          contentType: blob.type || "",
+        };
+      }
+
+      return blob;
+    })
+    .catch(() => null)
+    .finally(() => {
+      if (entry.blobRequest === request) {
+        entry.blobRequest = null;
+      }
+    });
+
+  entry.blobRequest = request;
+  return request;
+};
+
+const getAttachmentBlobUrl = (entry, blob) => {
+  if (entry.blobUrl) return entry.blobUrl;
+  if (
+    !blob ||
+    typeof URL === "undefined" ||
+    typeof URL.createObjectURL !== "function"
+  ) {
+    return null;
+  }
+
+  entry.blobUrl = URL.createObjectURL(blob);
+  return entry.blobUrl;
+};
+
+const revokeAttachmentBlobUrl = (entry) => {
+  if (
+    !entry?.blobUrl ||
+    typeof URL === "undefined" ||
+    typeof URL.revokeObjectURL !== "function"
+  ) {
+    return;
+  }
+
+  URL.revokeObjectURL(entry.blobUrl);
+  entry.blobUrl = null;
+};
 
 export const formatFileSize = (bytes) => {
   if (bytes === 0 || bytes == null) return "0 KB";
@@ -21,234 +153,290 @@ export const getAllowedMediaOrigins = () => {
         ? process.env.NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS
         : undefined;
 
-    if (env && env.length) {
-      return env.split(",").map((s) => s.trim()).filter(Boolean);
+    if (env?.length) {
+      return env.split(",").map((value) => value.trim()).filter(Boolean);
     }
   } catch (error) {
-    // Ignore and use the default origin below.
+    // Use the Firebase Storage origin below.
   }
 
   return ["https://firebasestorage.googleapis.com"];
 };
 
-export const isAllowedMediaUrl = (url) => {
-  if (!url) return false;
+export const isAllowedMediaUrl = (downloadUrl) => {
+  if (!downloadUrl) return false;
+
   try {
-    const parsed = new URL(url);
-    return getAllowedMediaOrigins().includes(parsed.origin);
+    return getAllowedMediaOrigins().includes(new URL(downloadUrl).origin);
   } catch (error) {
     return false;
   }
 };
 
-export const createAttachmentFromFile = (file, mediaType) => ({
-  id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-  name: sanitizeFileName(file.name),
-  size: file.size,
-  mediaType,
+export const sanitizeFileName = (fileName = "") =>
+  fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+const isValidStoredFileName = (value) =>
+  typeof value === "string" &&
+  value.length > 0 &&
+  sanitizeFileName(value) === value;
+
+export const getAttachmentFileNames = (attachments) => {
+  if (!Array.isArray(attachments)) return [];
+
+  return [...new Set(attachments.filter(isValidStoredFileName))];
+};
+
+export const getMessageAttachmentFileNames = (message = {}) =>
+  getAttachmentFileNames(message.attachments);
+
+export const getMessageAttachmentObjectPath = ({
+  conversationId,
+  messageId,
+  fileName,
+}) => {
+  if (!conversationId || !messageId || !isValidStoredFileName(fileName)) {
+    return null;
+  }
+
+  return `conversations/${conversationId}/messages/${messageId}/${fileName}`;
+};
+
+export const getMediaKind = (contentType = "", fileName = "") => {
+  if (contentType.startsWith("image/")) return "image";
+  if (contentType.startsWith("video/")) return "video";
+  if (contentType.startsWith("audio/")) return "audio";
+
+  const extension = fileName.split(".").pop()?.toLowerCase();
+
+  if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"].includes(extension)) {
+    return "image";
+  }
+
+  if (["mp4", "mov", "webm", "m4v"].includes(extension)) {
+    return "video";
+  }
+
+  if (["mp3", "m4a", "aac", "wav", "ogg", "opus"].includes(extension)) {
+    return "audio";
+  }
+
+  return "file";
+};
+
+export const createAttachmentFromFile = (file, mediaKind) => ({
+  clientKey: `attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  fileName: sanitizeFileName(file.name),
+  byteSize: file.size,
+  mediaKind,
   file,
-  url: null,
-  previewUrl: URL.createObjectURL(file),
-  uploadStatus: "pending",
+  status: "pending",
   progress: 0,
 });
 
-export const revokeAttachmentPreview = (attachment) => {
-  if (attachment?.previewUrl?.startsWith("blob:")) {
-    URL.revokeObjectURL(attachment.previewUrl);
-  }
-};
-
-export const revokeAttachmentPreviews = (attachments) => {
-  attachments.forEach(revokeAttachmentPreview);
-};
-
-export const getFileNameWithType = (name, mimeType) => {
-  const baseName = name?.replace(/\.[^/.]+$/, "") || `attachment_${Date.now()}`;
+const getFileNameWithType = (fileName, mimeType) => {
+  const baseName = fileName?.replace(/\.[^/.]+$/, "") || "attachment";
   const typeBase = (mimeType || "").split(";")[0];
-  const ext = typeBase.includes("/") ? typeBase.split("/")[1] : "bin";
-  return `${sanitizeFileName(baseName)}.${ext}`;
+  const extension = typeBase.includes("/") ? typeBase.split("/")[1] : "bin";
+  return `${sanitizeFileName(baseName)}.${extension}`;
 };
 
-export const sanitizeFileName = (filename = "") =>
-  filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+const createResolvedAttachment = ({
+  fileName,
+  metadata,
+  downloadUrl = null,
+}) => {
+  const contentType = metadata?.contentType || "";
 
-export const getAttachmentStoragePath = ({ conversationId, messageId, fileName }) => {
-  const safeFileName = sanitizeFileName(fileName);
+  return {
+    fileName,
+    byteSize: metadata?.size ?? null,
+    contentType,
+    mediaKind: getMediaKind(contentType, fileName),
+    downloadUrl,
+  };
+};
 
-  if (!conversationId || !messageId) {
-    return null;
+export const getCachedMessageAttachments = ({
+  conversationId,
+  messageId,
+  fileNames,
+  includeDownloadUrls = true,
+}) =>
+  getAttachmentFileNames(fileNames).map((fileName) => {
+    const objectPath = getMessageAttachmentObjectPath({
+      conversationId,
+      messageId,
+      fileName,
+    });
+    const entry = objectPath
+      ? attachmentResolutionCache.get(objectPath)
+      : null;
+
+    return createResolvedAttachment({
+      fileName,
+      metadata: entry?.metadata,
+      downloadUrl: includeDownloadUrls ? entry?.downloadUrl || null : null,
+    });
+  });
+
+export const resolveMessageAttachment = async ({
+  conversationId,
+  messageId,
+  fileName,
+  includeDownloadUrl = true,
+}) => {
+  const objectPath = getMessageAttachmentObjectPath({
+    conversationId,
+    messageId,
+    fileName,
+  });
+
+  if (!objectPath) return null;
+
+  const objectRef = storageRef(storage, objectPath);
+  const cacheEntry = getAttachmentCacheEntry(objectPath);
+  const [metadata, downloadUrl] = await Promise.all([
+    loadAttachmentMetadata(cacheEntry, objectRef),
+    includeDownloadUrl
+      ? loadAttachmentDownloadUrl(cacheEntry, objectRef)
+      : Promise.resolve(null),
+  ]);
+
+  return createResolvedAttachment({
+    fileName,
+    downloadUrl,
+    metadata,
+  });
+};
+
+export const resolveMessageAttachmentPreview = async ({
+  conversationId,
+  messageId,
+  fileName,
+}) => {
+  const objectPath = getMessageAttachmentObjectPath({
+    conversationId,
+    messageId,
+    fileName,
+  });
+
+  if (!objectPath) return null;
+
+  const objectRef = storageRef(storage, objectPath);
+  const cacheEntry = getAttachmentCacheEntry(objectPath);
+  const [metadata, downloadUrl] = await Promise.all([
+    loadAttachmentMetadata(cacheEntry, objectRef),
+    loadAttachmentDownloadUrl(cacheEntry, objectRef),
+  ]);
+  const blob = await loadAttachmentBlob(cacheEntry, downloadUrl);
+  const blobUrl = getAttachmentBlobUrl(cacheEntry, blob);
+
+  if (blobUrl) {
+    return createResolvedAttachment({
+      fileName,
+      metadata: metadata || cacheEntry.metadata,
+      downloadUrl: blobUrl,
+    });
   }
 
-  return `conversations/${conversationId}/messages/${messageId}/${Date.now()}_${safeFileName}`;
+  return createResolvedAttachment({
+    fileName,
+    metadata: metadata || cacheEntry.metadata,
+    downloadUrl,
+  });
 };
 
-export const extractStoragePathFromDownloadUrl = (url) => {
-  try {
-    const parsed = new URL(url);
-    const marker = "/o/";
-    const idx = parsed.pathname.indexOf(marker);
-    if (idx === -1) return null;
-    return decodeURIComponent(parsed.pathname.substring(idx + marker.length));
-  } catch (error) {
-    return null;
-  }
-};
-
-export const deleteAttachmentStorageObject = async (attachment) => {
-  const storagePath =
-    attachment?.storagePath ||
-    (attachment?.url ? extractStoragePathFromDownloadUrl(attachment.url) : null);
-
-  if (!storagePath) return;
-
-  await deleteObject(storageRef(storage, storagePath));
-};
-
-export const hydrateAttachmentUrls = async (attachments = []) => {
+export const resolveMessageAttachments = async ({
+  conversationId,
+  messageId,
+  fileNames,
+  includeDownloadUrls = true,
+}) => {
   const resolved = await Promise.all(
-    attachments.map(async (attachment) => {
-      if (!attachment?.storagePath || attachment?.url) {
-        return attachment;
-      }
+    getAttachmentFileNames(fileNames).map((fileName) =>
+      resolveMessageAttachment({
+        conversationId,
+        messageId,
+        fileName,
+        includeDownloadUrl: includeDownloadUrls,
+      }),
+    ),
+  );
 
-      try {
-        const url = await getDownloadURL(storageRef(storage, attachment.storagePath));
-        return { ...attachment, url };
-      } catch (error) {
-        return attachment;
-      }
+  return resolved.filter(Boolean);
+};
+
+const createAttachmentQueue = (messageId, attachments) =>
+  attachments.map(({ fileName, byteSize, mediaKind }) => ({
+    clientKey: `stored-${messageId}-${fileName}`,
+    fileName,
+    byteSize,
+    mediaKind,
+    status: "done",
+    progress: 100,
+  }));
+
+export const restoreAttachmentQueue = async ({
+  conversationId,
+  messageId,
+  fileNames,
+}) => {
+  const resolved = await resolveMessageAttachments({
+    conversationId,
+    messageId,
+    fileNames,
+    includeDownloadUrls: false,
+  });
+
+  return createAttachmentQueue(messageId, resolved);
+};
+
+export const getCachedAttachmentQueue = ({
+  conversationId,
+  messageId,
+  fileNames,
+}) =>
+  createAttachmentQueue(
+    messageId,
+    getCachedMessageAttachments({
+      conversationId,
+      messageId,
+      fileNames,
+      includeDownloadUrls: false,
     }),
   );
 
-  return resolved;
-};
-
-export const normalizeMessageAttachments = (message) => {
-  const normalized = [];
-
-  if (Array.isArray(message.attachments) && message.attachments.length > 0) {
-    message.attachments.forEach((att, index) => {
-      normalized.push({
-        id: att.id || `${message.id}-att-${index}`,
-        name: att.file_name || att.name || `Attachment ${index + 1}`,
-        size: att.size || 0,
-        mediaType: att.media_type || att.mediaType || "image",
-        url: att.url,
-        storagePath:
-          att.storagePath ||
-          (att.url ? extractStoragePathFromDownloadUrl(att.url) : null),
-      });
-    });
-  }
-
-  if (normalized.length === 0 && message.media_url) {
-    normalized.push({
-      id: `${message.id}-legacy`,
-      name:
-        message.media_type === "image"
-          ? "Image"
-          : message.media_type === "video"
-          ? "Video"
-          : "Audio",
-      size: 0,
-      mediaType: message.media_type,
-      url: message.media_url,
-      storagePath: extractStoragePathFromDownloadUrl(message.media_url),
-    });
-  }
-
-  return normalized;
-};
-
-export const getAttachmentSummary = (message = {}) => {
-  const attachments = Array.isArray(message.attachments) ? message.attachments : [];
-  const legacyAttachmentType =
-    attachments.length === 0 && message.media_url ? message.media_type : null;
-  const attachmentTypes =
-    attachments.length > 0
-      ? attachments.map(
-          (attachment) =>
-            attachment.media_type || attachment.mediaType || "file",
-        )
-      : legacyAttachmentType
-      ? [legacyAttachmentType]
-      : [];
-  const attachmentCount =
-    attachments.length > 0 ? attachments.length : legacyAttachmentType ? 1 : 0;
-
-  if (attachmentCount === 0) return "";
-
-  const normalizedTypes = attachmentTypes.map((attachmentType) => {
-    if (attachmentType === "image") return "image";
-    if (attachmentType === "audio") return "audio";
-    if (attachmentType === "video") return "video";
-    return "file";
+export const deleteMessageAttachment = async ({
+  conversationId,
+  messageId,
+  fileName,
+}) => {
+  const objectPath = getMessageAttachmentObjectPath({
+    conversationId,
+    messageId,
+    fileName,
   });
-  const uniqueTypes = new Set(normalizedTypes);
 
-  if (uniqueTypes.size !== 1) {
-    return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
-  }
+  if (!objectPath) return;
 
-  const [attachmentType] = uniqueTypes;
-
-  if (attachmentType === "image") {
-    return `${attachmentCount} ${attachmentCount === 1 ? "Photo" : "Photos"}`;
-  }
-
-  if (attachmentType === "audio") {
-    return `${attachmentCount} ${
-      attachmentCount === 1 ? "Voice Message" : "Voice Messages"
-    }`;
-  }
-
-  if (attachmentType === "video") {
-    return `${attachmentCount} ${attachmentCount === 1 ? "Video" : "Videos"}`;
-  }
-
-  return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+  await deleteObject(storageRef(storage, objectPath));
+  revokeAttachmentBlobUrl(attachmentResolutionCache.get(objectPath));
+  attachmentResolutionCache.delete(objectPath);
 };
 
-export const getCompletedAttachmentsForSave = (attachments) => {
-  const completedAttachments = attachments
-    .filter((attachment) => attachment.uploadStatus === "done" && attachment.url)
-    .map((attachment) => ({
-      id: attachment.id,
-      url: attachment.url,
-      media_type: attachment.mediaType,
-      file_name: attachment.name,
-      size: attachment.size,
-      storagePath: attachment.storagePath || null,
-    }));
+export const getCompletedAttachmentFileNamesForSave = (attachments = []) => {
+  const fileNames = attachments
+    .filter(
+      (attachment) =>
+        attachment?.status === "done" &&
+        isValidStoredFileName(attachment.fileName),
+    )
+    .map((attachment) => attachment.fileName);
+  const uniqueFileNames = [...new Set(fileNames)];
 
-  return completedAttachments.length > 0 ? completedAttachments : null;
+  return uniqueFileNames.length > 0 ? uniqueFileNames : null;
 };
-
-export const normalizeDraftAttachments = (attachments = []) =>
-  attachments
-    .filter(Boolean)
-    .map((attachment, index) => ({
-      id: attachment.id || `draft-att-${index}`,
-      name: attachment.file_name || attachment.name || `Attachment ${index + 1}`,
-      size: attachment.size || 0,
-      mediaType: attachment.media_type || attachment.mediaType || "image",
-      url: attachment.url || null,
-      storagePath:
-        attachment.storagePath ||
-        (attachment.url ? extractStoragePathFromDownloadUrl(attachment.url) : null),
-      uploadStatus: "done",
-      progress: 100,
-    }));
-
-export const legacyAttachmentFromMedia = ({ mediaUrl, mediaType }) => ({
-  id: `legacy_${Date.now()}`,
-  name:
-    mediaType === "image" ? "Photo" : mediaType === "video" ? "Video" : "Audio",
-  size: 0,
-  mediaType,
-  url: mediaUrl,
-});
 
 export const uploadAttachmentFile = async ({
   attachment,
@@ -256,16 +444,17 @@ export const uploadAttachmentFile = async ({
   messageId,
   onUpdate,
   onComplete,
+  onDuplicate,
 }) => {
-  if (!attachment || !conversationId || !messageId) {
-    onUpdate?.(attachment?.id, { uploadStatus: "error" });
+  if (!attachment?.clientKey || !attachment.file || !conversationId || !messageId) {
+    onUpdate?.(attachment?.clientKey, { status: "error" });
     return;
   }
 
   let fileToUpload = attachment.file;
 
   try {
-    onUpdate?.(attachment.id, { uploadStatus: "compressing", progress: 0 });
+    onUpdate?.(attachment.clientKey, { status: "compressing", progress: 0 });
 
     const compressedMedia = await compressMedia(
       attachment.file,
@@ -274,8 +463,8 @@ export const uploadAttachmentFile = async ({
           Math.max(0, Math.min(1, compressionProgress)) * 40,
         );
 
-        onUpdate?.(attachment.id, {
-          uploadStatus: "compressing",
+        onUpdate?.(attachment.clientKey, {
+          status: "compressing",
           progress,
         });
       },
@@ -291,36 +480,55 @@ export const uploadAttachmentFile = async ({
       fileToUpload = new File(
         [compressedMedia],
         getFileNameWithType(
-          attachment.name,
+          attachment.fileName,
           compressedMedia.type || attachment.file.type,
         ),
         { type: compressedMedia.type || attachment.file.type },
       );
     }
 
-    onUpdate?.(attachment.id, {
+    onUpdate?.(attachment.clientKey, {
       file: fileToUpload,
-      name: fileToUpload.name,
-      size: fileToUpload.size,
+      fileName: fileToUpload.name,
+      byteSize: fileToUpload.size,
+      mediaKind: getMediaKind(fileToUpload.type, fileToUpload.name),
     });
   } catch (error) {
-    console.error("❌ attachment compression error:", error);
-    onUpdate?.(attachment.id, { uploadStatus: "error" });
+    console.error("Attachment compression failed:", error);
+    onUpdate?.(attachment.clientKey, { status: "error" });
     return;
   }
 
-  const storagePath = getAttachmentStoragePath({
+  const fileName = sanitizeFileName(fileToUpload.name);
+  const objectPath = getMessageAttachmentObjectPath({
     conversationId,
     messageId,
-    fileName: fileToUpload.name,
+    fileName,
   });
 
-  if (!storagePath) {
-    onUpdate?.(attachment.id, { uploadStatus: "error" });
+  if (!objectPath) {
+    onUpdate?.(attachment.clientKey, { status: "error" });
     return;
   }
 
-  const task = uploadBytesResumable(storageRef(storage, storagePath), fileToUpload);
+  const objectRef = storageRef(storage, objectPath);
+
+  try {
+    await getMetadata(objectRef);
+    onDuplicate?.(fileName);
+    return;
+  } catch (error) {
+    if (error?.code !== "storage/object-not-found") {
+      console.error("Attachment existence check failed:", error);
+      onUpdate?.(attachment.clientKey, { status: "error" });
+      return;
+    }
+  }
+
+  const uploadMetadata = fileToUpload.type
+    ? { contentType: fileToUpload.type }
+    : undefined;
+  const task = uploadBytesResumable(objectRef, fileToUpload, uploadMetadata);
 
   task.on(
     "state_changed",
@@ -329,26 +537,34 @@ export const uploadAttachmentFile = async ({
         ? snapshot.bytesTransferred / snapshot.totalBytes
         : 0;
       const progress = Math.round(40 + uploadProgress * 60);
-      onUpdate?.(attachment.id, { progress, uploadStatus: "uploading" });
+      onUpdate?.(attachment.clientKey, { progress, status: "uploading" });
     },
     (error) => {
-      console.error("❌ uploadAttachment error:", error);
-      onUpdate?.(attachment.id, { uploadStatus: "error" });
+      console.error("Attachment upload failed:", error);
+      onUpdate?.(attachment.clientKey, { status: "error" });
     },
     async () => {
+      const cacheEntry = getAttachmentCacheEntry(objectPath);
+      revokeAttachmentBlobUrl(cacheEntry);
+      cacheEntry.blob = fileToUpload;
+      cacheEntry.metadata = {
+        size: fileToUpload.size,
+        contentType: fileToUpload.type || "",
+      };
+
+      onUpdate?.(attachment.clientKey, {
+        fileName,
+        file: null,
+        status: "done",
+        progress: 100,
+        byteSize: fileToUpload.size,
+        mediaKind: getMediaKind(fileToUpload.type, fileName),
+      });
+
       try {
-        const url = await getDownloadURL(task.snapshot.ref);
-        onUpdate?.(attachment.id, {
-          url,
-          uploadStatus: "done",
-          progress: 100,
-          size: fileToUpload.size,
-          storagePath,
-        });
-        await onComplete?.();
+        await onComplete?.(fileName);
       } catch (error) {
-        console.error("❌ uploadAttachment download URL error:", error);
-        onUpdate?.(attachment.id, { uploadStatus: "error" });
+        console.error("Attachment completion handler failed:", error);
       }
     },
   );

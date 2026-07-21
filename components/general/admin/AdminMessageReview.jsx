@@ -1,47 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Button from "../Button";
 import LoadingSpinner from "../../loading/LoadingSpinner";
-import {
-  ChevronLeft,
-  AlertTriangle,
-  Film,
-  Image as ImageIcon,
-  Mic,
-  Paperclip,
-  Play,
-} from "lucide-react";
+import { ChevronLeft, AlertTriangle } from "lucide-react";
+import MessageAttachments from "../message/MessageAttachments";
 
 export default function AdminMessageReview({
   message,
-  attachments = [],
   onApprove,
   onReject,
   onRevert,
   onClose,
   isSubmitting = false,
 }) {
-
-  const [attachmentViewer, setAttachmentViewer] = useState(null);
-
-  useEffect(() => {
-    if (!attachmentViewer) return;
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setAttachmentViewer(null);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [attachmentViewer]);
-
   if (!message) return null;
 
   const status =
@@ -70,63 +42,6 @@ export default function AdminMessageReview({
         })
     : "";
 
-
-  const getAllowedOrigins = () => {
-    try {
-      const env = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_ALLOWED_MEDIA_ORIGINS : undefined;
-      if (env && env.length) {
-        return env.split(",").map((s) => s.trim()).filter(Boolean);
-      }
-    } catch (e) {
-      // ignore and fallback
-    }
-
-    // Default fallback to common Firebase storage origin
-    return ["https://firebasestorage.googleapis.com"];
-  };
-
-  const isAllowedMediaUrl = (url) => {
-    if (!url) return false;
-    try {
-      const parsed = new URL(url);
-      const origin = parsed.origin;
-      const allowed = getAllowedOrigins();
-      return allowed.includes(origin);
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0 || bytes == null) return "0 KB";
-    const kb = bytes / 1024;
-    if (kb < 1024) return `${Math.round(kb)} KB`;
-    return `${(kb / 1024).toFixed(1)} MB`;
-  };
-
-  const getAttachmentIcon = (mediaType) => {
-    if (mediaType === "image") return <ImageIcon size={18} className="text-emerald-700" />;
-    if (mediaType === "video") return <Film size={18} className="text-emerald-700" />;
-    if (mediaType === "audio") return <Play size={18} className="text-emerald-700" />;
-    return <Paperclip size={18} className="text-emerald-700" />;
-  };
-  const handleOpenAttachment = (attachment) => {
-    const source = attachment?.url || attachment?.previewUrl;
-    if (!source) return;
-
-    // If attachment has a remote URL, ensure it's from an allowed origin
-    if (attachment?.url && !isAllowedMediaUrl(attachment.url)) {
-      console.warn("Blocked attachment from disallowed origin:", attachment.url);
-      return;
-    }
-
-    setAttachmentViewer({
-      ...attachment,
-      source,
-      mediaType: attachment.media_type || "file",
-      name: attachment.file_name || "Attachment",
-    });
-  };
 
   return (
     <div className="h-full bg-gray-100">
@@ -195,36 +110,15 @@ export default function AdminMessageReview({
 
               <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
                 <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {message.lastMessage}
+                  {message.content}
                 </p>
 
-                {attachments.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {attachments.map((attachment, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleOpenAttachment(attachment);
-                        }}
-                        className="w-full flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-left hover:bg-emerald-100 transition-colors"
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100">
-                          {getAttachmentIcon(attachment.media_type)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-emerald-900 truncate">
-                            {attachment.file_name}
-                          </div>
-                          <div className="text-xs text-emerald-700">
-                            {formatFileSize(attachment.size)}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <MessageAttachments
+                  conversationId={message.conversationId}
+                  messageId={message.id}
+                  fileNames={message.attachments}
+                  className="mt-4"
+                />
               </div>
             </div>
 
@@ -274,45 +168,6 @@ export default function AdminMessageReview({
 
             <div className="flex-grow" />
           </div>
-
-          {attachmentViewer && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm px-4 py-6">
-              <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-                <button
-                  onClick={() => setAttachmentViewer(null)}
-                  className="absolute top-4 right-4 z-10 rounded-full bg-white p-2 text-gray-700 shadow hover:bg-gray-100"
-                >
-                  ✕
-                </button>
-                <div className="p-4">
-                  {attachmentViewer.mediaType === "image" ? (
-                    <img
-                      src={attachmentViewer.source}
-                      alt={attachmentViewer.name}
-                      className="w-full h-[70vh] object-contain rounded-2xl bg-slate-900"
-                    />
-                  ) : attachmentViewer.mediaType === "video" ? (
-                    <video
-                      src={attachmentViewer.source}
-                      controls
-                      className="w-full h-[70vh] rounded-2xl bg-black"
-                    />
-                  ) : (
-                    <div className="rounded-2xl bg-slate-100 p-6">
-                      <audio
-                        src={attachmentViewer.source}
-                        controls
-                        className="w-full"
-                      />
-                    </div>
-                  )}
-                  <div className="mt-3 text-sm text-slate-600">
-                    {attachmentViewer.name}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="shrink-0 bg-white border-t px-6 py-4">
             {status === "approved" && (
