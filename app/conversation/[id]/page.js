@@ -84,6 +84,8 @@ export default function Page({ params }) {
   const draftAttachmentPreviewCacheRef = useRef(new Map());
   const draftAttachmentPreviewRequestRef = useRef(0);
   const editingMessageIdRef = useRef(null);
+  const editSessionUploadFileNamesRef = useRef(new Set());
+  const editSessionUploadPromisesRef = useRef(new Set());
 
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
@@ -355,12 +357,17 @@ export default function Page({ params }) {
       return;
     }
 
-    await uploadAttachmentFile({
+    if (isEditingExistingMessage) {
+      editSessionUploadFileNamesRef.current.add(attachment.fileName);
+    }
+
+    const uploadPromise = uploadAttachmentFile({
       attachment,
       conversationId: id,
       messageId: targetMessageId,
       onUpdate: updateAttachment,
       onDuplicate: (fileName) => {
+        editSessionUploadFileNamesRef.current.delete(fileName);
         removeAttachment(attachment.clientKey);
         alert(`A file named "${fileName}" has already been uploaded.`);
       },
@@ -383,6 +390,16 @@ export default function Page({ params }) {
         }
       },
     });
+
+    if (isEditingExistingMessage) {
+      editSessionUploadPromisesRef.current.add(uploadPromise);
+    }
+
+    try {
+      await uploadPromise;
+    } finally {
+      editSessionUploadPromisesRef.current.delete(uploadPromise);
+    }
   };
 
   const handleAddAttachment = ({ file, mediaKind }) => {
@@ -499,6 +516,28 @@ export default function Page({ params }) {
     pendingAttachmentsRef.current = [];
     setPendingAttachments([]);
   }, [closeDraftAttachmentViewer]);
+
+  const deleteEditSessionUploads = useCallback(async () => {
+    const messageId = editingMessageIdRef.current;
+
+    if (!messageId) return;
+
+    await Promise.allSettled([...editSessionUploadPromisesRef.current]);
+
+    const fileNames = [...editSessionUploadFileNamesRef.current];
+    if (fileNames.length === 0) return;
+
+    await Promise.allSettled(
+      fileNames.map((fileName) =>
+        deleteMessageAttachment({
+          conversationId: id,
+          messageId,
+          fileName,
+        }),
+      ),
+    );
+    editSessionUploadFileNamesRef.current.clear();
+  }, [id]);
 
   const performSaveDraft = useCallback(
     async (
@@ -729,6 +768,7 @@ export default function Page({ params }) {
       };
 
       await updateDoc(messageRef, updateData);
+      editSessionUploadFileNamesRef.current.clear();
 
       if (queuedAttachmentDeletes.length > 0) {
         await Promise.allSettled(
@@ -942,9 +982,15 @@ export default function Page({ params }) {
     const hasAttachments = pendingAttachments.length > 0;
 
     if (editingMessageId) {
-      if (trimmedMessageContent !== editingMessageOriginalContent.trim()) {
+      const hasEditChanges =
+        trimmedMessageContent !== editingMessageOriginalContent.trim() ||
+        editSessionUploadFileNamesRef.current.size > 0 ||
+        queuedAttachmentDeletes.length > 0;
+
+      if (hasEditChanges) {
         setShowCloseDialog(true);
       } else {
+        await deleteEditSessionUploads();
         setMessageContent("");
         setEditingMessageId(null);
         setEditingMessageOriginalContent("");
@@ -979,6 +1025,7 @@ export default function Page({ params }) {
     setShowCloseDialog(false);
 
     if (editingMessageId) {
+      await deleteEditSessionUploads();
       setMessageContent("");
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
@@ -1494,6 +1541,8 @@ export default function Page({ params }) {
             <button
               onClick={async () => {
                 const messageUserRef = userRef || doc(db, "users", user?.uid);
+
+                await deleteEditSessionUploads();
 
                 try {
                   const existingDraft = await fetchDraft(id, messageUserRef, false);
