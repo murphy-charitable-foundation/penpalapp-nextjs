@@ -1,6 +1,11 @@
 // src/lib/avatarUtils.js
 
-import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  list,
+} from "@firebase/storage";
 import { updateDoc, doc } from "firebase/firestore";
 import { auth, storage, db } from "@/app/firebaseConfig";
 import { logError } from "./analytics";
@@ -40,10 +45,10 @@ export const uploadProfilePicture = async (
         async () => {
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(url || null);
             if (url) {
               try {
                 await updateDoc(doc(db, "users", uid), { photo_uri: url });
+                resolve(url);
               } catch (firestoreError) {
                 logError(firestoreError, {
                   description: "Failed to update Firestore after profile upload",
@@ -53,7 +58,10 @@ export const uploadProfilePicture = async (
                 } catch (e) {
                   // ignore
                 }
+                resolve(null);
               }
+            } else {
+              resolve(null);
             }
           } catch (e) {
             try {
@@ -78,18 +86,28 @@ export const uploadProfilePicture = async (
 };
 
 export const getUserPfp = async (uid) => {
-  const path = `users/${uid}/profile-image`;
+  if (!uid) {
+    return null;
+  }
+
   try {
-    const photoRef = ref(storage, path);
-    const downloaded = await getDownloadURL(photoRef);
-    return downloaded;
-  } catch (error) {
-    if (error?.code === "storage/object-not-found") {
+    const userFolderRef = ref(storage, `users/${uid}`);
+    const result = await list(userFolderRef, { maxResults: 10 });
+    const profileImageRef = result.items.find(
+      (item) => item.name === "profile-image",
+    );
+
+    if (!profileImageRef) {
       return null;
     }
+
+    return await getDownloadURL(profileImageRef);
+  } catch (error) {
     logError(error, {
-      description: "Error fetching user profile:",
+      description: "Error fetching user profile",
+      userId: uid,
     });
+
     return null;
   }
 };
@@ -110,7 +128,6 @@ export const base64ToBlob = (base64, type = "image/jpeg") => {
 
     return new Blob([new Uint8Array(byteArrays)], { type });
   } catch (error) {
-    console.error("base64ToBlob failed:", error);
     throw new Error("Invalid base64 string");
   }
 };
@@ -143,31 +160,30 @@ export const saveAvatar = async ({
     return;
   }
 
-    try {
-      const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
-        setLoading(false);
-        console.error(error);
-        onError(error);
-      });
-
-      if (!url) {
-        setLoading(false);
-        onError?.(new Error("Upload returned empty URL"));
-        return;
-      }
-
-      try {
-        setStorageUrl?.(url);
-        onSuccess(url);
-      } catch (e) {
-        onError?.(new Error("Save Error!"));
-      } finally {
-        setLoading(false);
-      }
-    } catch (error) {
+  try {
+    const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
       setLoading(false);
-      onError?.(error);
+      onError(error);
+    });
+
+    if (!url) {
+      setLoading(false);
+      onError?.(new Error("Upload returned empty URL"));
+      return;
     }
+
+    try {
+      setStorageUrl?.(url);
+      onSuccess(url);
+    } catch (e) {
+      onError?.(new Error("Save Error!"));
+    } finally {
+      setLoading(false);
+    }
+  } catch (error) {
+    setLoading(false);
+    onError?.(error);
+  }
 };
 
 export const confirmDeleteAvatar = async ({
