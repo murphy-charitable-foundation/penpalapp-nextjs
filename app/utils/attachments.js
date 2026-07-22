@@ -513,18 +513,6 @@ export const uploadAttachmentFile = async ({
 
   const objectRef = storageRef(storage, objectPath);
 
-  try {
-    await getMetadata(objectRef);
-    onDuplicate?.(fileName);
-    return;
-  } catch (error) {
-    if (error?.code !== "storage/object-not-found") {
-      console.error("Attachment existence check failed:", error);
-      onUpdate?.(attachment.clientKey, { status: "error" });
-      return;
-    }
-  }
-
   const uploadMetadata = fileToUpload.type
     ? { contentType: fileToUpload.type }
     : undefined;
@@ -539,7 +527,22 @@ export const uploadAttachmentFile = async ({
       const progress = Math.round(40 + uploadProgress * 60);
       onUpdate?.(attachment.clientKey, { progress, status: "uploading" });
     },
-    (error) => {
+    async (error) => {
+      if (error?.code === "storage/unauthorized") {
+        try {
+          await getMetadata(objectRef);
+          onDuplicate?.(fileName);
+          return;
+        } catch (metadataError) {
+          if (metadataError?.code !== "storage/object-not-found") {
+            console.error(
+              "Attachment duplicate check failed:",
+              metadataError,
+            );
+          }
+        }
+      }
+
       console.error("Attachment upload failed:", error);
       onUpdate?.(attachment.clientKey, { status: "error" });
     },

@@ -367,17 +367,20 @@ export default function Page({ params }) {
       onComplete: () => {
         setPendingAttachments((current) => {
           pendingAttachmentsRef.current = current;
-          if (!isEditingExistingMessage) {
-            saveDraft(messageContentRef.current, current, targetMessageId).catch(
-              (error) => {
-                logError(error, {
-                  description: "Failed to save draft after attachment upload:",
-                });
-              },
-            );
-          }
           return current;
         });
+
+        if (!isEditingExistingMessage) {
+          saveDraft(
+            messageContentRef.current,
+            pendingAttachmentsRef.current,
+            targetMessageId,
+          ).catch((error) => {
+            logError(error, {
+              description: "Failed to save draft after attachment upload:",
+            });
+          });
+        }
       },
     });
   };
