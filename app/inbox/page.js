@@ -11,6 +11,7 @@ import {
   fetchLatestMessageFromConversation,
   fetchConversations,
   fetchRecipients,
+  getMessageSummary,
 } from "../utils/conversationsFunctions";
 import { getUserPfp } from "../utils/avatarUtils";
 
@@ -21,7 +22,6 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
 import { logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
-import { getAttachmentSummary } from "../utils/attachments";
 
 const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
 
@@ -63,6 +63,7 @@ export default function Home() {
         conversationIds.map(async (id) => {
           const message =
             (await fetchLatestMessageFromConversation(id, userRef)) || {};
+          const messageSummaryPromise = getMessageSummary(message, id);
 
           const rec = await fetchRecipients(id);
           const recipient = rec?.[0] ?? {};
@@ -72,8 +73,7 @@ export default function Home() {
             profileImage: recipient?.pfp || "",
             name: `${recipient.first_name ?? "Unknown"} ${recipient.last_name ?? ""}`.trim(),
             country: recipient.country ?? "Unknown",
-            lastMessage: message.content || "",
-            attachmentSummary: getAttachmentSummary(message),
+            messageSummary: await messageSummaryPromise,
             lastMessageDate: message.lastMessageDate || "",
             status: message.status || "",
             conversationId: id || "",

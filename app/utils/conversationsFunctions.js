@@ -14,10 +14,12 @@ import {
   increment,
   setDoc,
 } from "firebase/firestore";
-import { ref as storageRef, getDownloadURL } from "@firebase/storage";
-import { storage } from "../firebaseConfig.js";
 import { auth, db } from "../firebaseConfig";
 import { getUserPfp } from "./avatarUtils";
+import {
+  getMessageAttachmentFileNames,
+  resolveMessageAttachments,
+} from "./attachments";
 import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
@@ -128,7 +130,6 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
       messagesRef,
       where("sent_by", "==", userRef),
       where("status", "==", "draft"),
-      where("content", "!=", ""),
       orderBy("drafted_at", "desc"),
       limit(1),
     );
@@ -153,6 +154,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
         status: "draft",
         drafted_at: now,
         unread: true,
+        attachments: null,
       };
 
       const newDraftRef = doc(messagesRef);
@@ -275,6 +277,53 @@ export const fetchLatestMessageFromConversation = async (
     );
 };
 
+export const getMessageSummary = async (
+  message = {},
+  conversationId,
+  messageId = message.id,
+) => {
+  const textContent =
+    typeof message.content === "string" ? message.content.trim() : "";
+
+  if (textContent) return textContent;
+
+  const attachments = await resolveMessageAttachments({
+    conversationId,
+    messageId,
+    fileNames: getMessageAttachmentFileNames(message),
+    includeDownloadUrls: false,
+  });
+  const attachmentCount = attachments.length;
+
+  if (attachmentCount === 0) return "";
+
+  const uniqueKinds = new Set(
+    attachments.map((attachment) => attachment.mediaKind || "file"),
+  );
+
+  if (uniqueKinds.size !== 1) {
+    return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+  }
+
+  const [mediaKind] = uniqueKinds;
+
+  if (mediaKind === "image") {
+    return `${attachmentCount} ${attachmentCount === 1 ? "Photo" : "Photos"}`;
+  }
+
+  if (mediaKind === "audio") {
+    return `${attachmentCount} ${
+      attachmentCount === 1 ? "Voice Message" : "Voice Messages"
+    }`;
+  }
+
+  if (mediaKind === "video") {
+    return `${attachmentCount} ${attachmentCount === 1 ? "Video" : "Videos"}`;
+  }
+
+  return `${attachmentCount} ${attachmentCount === 1 ? "File" : "Files"}`;
+};
+
 export const fetchRecipients = async (id) => {
   const conversationRef = doc(collection(db, "conversations"), id);
   const conversation = await getDoc(conversationRef);
@@ -311,23 +360,6 @@ export const fetchRecipients = async (id) => {
     members.push({ ...userData, id: user.id, pfp: pfpUrl });
   }
   return members;
-};
-
-let sendingMessage = false;
-export const sendMessage = async (messageData, messageRef, draftId) => {
-  if (sendingMessage) return;
-  try {
-    sendingMessage = true;
-    await updateDoc(doc(messageRef, draftId), messageData);
-    sendingMessage = false;
-    return true;
-  } catch (e) {
-    logError(e, {
-      description: "Failed to send message: ",
-    });
-    sendingMessage = false;
-    return false;
-  }
 };
 
 export const sendNotification = async (conversationRef, message) => {
@@ -445,6 +477,7 @@ export const createConnection = async (userDocRef, kidDocRef) => {
               content: "Please complete your first message here...",
               status: "draft",
               drafted_at: now,
+              attachments: null,
             });
 
             console.log(conversationRef);

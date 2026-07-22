@@ -1,7 +1,7 @@
 "use client";
 
 
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import Dialog from "../Dialog";
 import { logError } from "../../../app/utils/analytics";
 
@@ -9,13 +9,12 @@ const ReportPopup = ({
   setShowPopup,
   setShowConfirmReportPopup,
   sender,
-  content,
+  messageSummary,
 }) => {
   const auth = getAuth();
 
-  async function handleButtonClick(content) {
+  async function handleButtonClick() {
     try {
-      const excerpt = content.length > 100 ? content.substring(0, 100) + "..." : content;
       const token = await auth.currentUser.getIdToken(true);
       const receiver_email = auth.currentUser.email;
       const currentUrl = `${window.location.origin}${window.location.pathname}`;
@@ -25,7 +24,12 @@ const ReportPopup = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ receiver_email, currentUrl, sender, excerpt }), // Send data as JSON
+        body: JSON.stringify({
+          receiver_email,
+          currentUrl,
+          sender,
+          messageSummary,
+        }),
       });
 
       if (!response.ok) {
@@ -56,7 +60,7 @@ const ReportPopup = ({
         {
           text: "Report",
           onClick: () => {
-            handleButtonClick(content);
+            handleButtonClick();
             setShowPopup(false);
             setShowConfirmReportPopup(true);
           },

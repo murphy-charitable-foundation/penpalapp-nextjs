@@ -7,7 +7,7 @@
  * {
  *   receiver_email: string,
  *   currentUrl: string,
- *   excerpt: string
+ *   messageSummary: string
  * }
  *
  * Requires:
@@ -99,11 +99,21 @@ export async function POST(request) {
       return jsonError("Invalid JSON payload.", 400, jsonParseError);
     }
 
-    const { receiver_email, currentUrl, excerpt } = body || {};
+    const { receiver_email, currentUrl, messageSummary } = body || {};
 
-    if (!receiver_email || !currentUrl || !excerpt) {
+    if (
+      !receiver_email ||
+      !currentUrl ||
+      typeof messageSummary !== "string" ||
+      !messageSummary
+    ) {
       return jsonError("Missing required report fields.", 400);
     }
+
+    const excerpt =
+      messageSummary.length > 100
+        ? `${messageSummary.substring(0, 100)}...`
+        : messageSummary;
 
     let userData = {};
 

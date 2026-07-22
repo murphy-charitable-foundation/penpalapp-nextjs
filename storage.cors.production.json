@@ -1,0 +1,19 @@
+[
+  {
+    "origin": [
+      "https://penpal.murphycharity.org",
+      "https://penpalmagicapp.web.app",
+      "https://penpalmagicapp.firebaseapp.com"
+    ],
+    "method": ["GET", "HEAD"],
+    "responseHeader": [
+      "Accept-Ranges",
+      "Content-Disposition",
+      "Content-Length",
+      "Content-Range",
+      "Content-Type",
+      "ETag"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
