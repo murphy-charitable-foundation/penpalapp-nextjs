@@ -26,8 +26,7 @@ export const uploadProfilePicture = async (
       uploadTask.on(
         "state_changed",
         (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           try {
             onProgress(progress);
           } catch (e) {
@@ -52,8 +51,7 @@ export const uploadProfilePicture = async (
                 resolve(url);
               } catch (firestoreError) {
                 logError(firestoreError, {
-                  description:
-                    "Failed to update Firestore after profile upload",
+                  description: "Failed to update Firestore after profile upload",
                 });
                 try {
                   onError(firestoreError);
@@ -93,14 +91,17 @@ export const getUserPfp = async (uid) => {
   }
 
   try {
-    const profileImageRef = ref(storage, `users/${uid}/profile-image`);
-    const result = await list(profileImageRef, { maxResults: 1 });
+    const userFolderRef = ref(storage, `users/${uid}`);
+    const result = await list(userFolderRef, { maxResults: 10 });
+    const profileImageRef = result.items.find(
+      (item) => item.name === "profile-image",
+    );
 
-    if (result.items.length === 0) {
+    if (!profileImageRef) {
       return null;
     }
 
-    return await getDownloadURL(result.items[0]);
+    return await getDownloadURL(profileImageRef);
   } catch (error) {
     logError(error, {
       description: "Error fetching user profile",
@@ -113,9 +114,7 @@ export const getUserPfp = async (uid) => {
 
 export const base64ToBlob = (base64, type = "image/jpeg") => {
   try {
-    const base64Data = base64.includes(",")
-      ? base64.split(",")[1]
-      : base64;
+    const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
 
     const byteCharacters =
       typeof atob === "function"
@@ -162,15 +161,10 @@ export const saveAvatar = async ({
   }
 
   try {
-    const url = await uploadProfilePicture(
-      uid,
-      avatarBlob,
-      () => {},
-      (error) => {
-        setLoading(false);
-        onError(error);
-      },
-    );
+    const url = await uploadProfilePicture(uid, avatarBlob, () => {}, (error) => {
+      setLoading(false);
+      onError(error);
+    });
 
     if (!url) {
       setLoading(false);
