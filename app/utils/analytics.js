@@ -88,17 +88,27 @@ const logError = (error, errorInfo) => {
  * @param {string} screenshotUrl The URL of the screenshot of the page where the click occurred. If not provided, the value will be set to null.
  * @param {string} elementId The ID of the element that was clicked. If not provided, the value will be set to "unknown".
  * @param {string} ariaLabel The ARIA label of the element that was clicked. If not provided, the value will be set to "unknown".
+ * @param {Object} meta Optional dead-click metadata (score and rule outcomes).
  * @returns {void}
  */
-const logDeadClick = (elementClicked, pagePath, screenshotUrl, elementId, ariaLabel) => {
+const logDeadClick = (
+  elementClicked,
+  pagePath,
+  screenshotUrl,
+  elementId,
+  ariaLabel,
+  meta = {}
+) => {
   if (analytics) {
+    console.log("Logging dead click event");
     logEvent(analytics, "dead_click", {
       clicked_element: elementClicked || "unknown",
       page_path: pagePath,
       timestamp: new Date().toISOString(),
       screenshot_url: screenshotUrl || null,
       element_id: elementId || "unknown",
-      aria_label: ariaLabel || "unknown"
+      aria_label: ariaLabel || "unknown",
+      ...meta,
     });
   }
 };
