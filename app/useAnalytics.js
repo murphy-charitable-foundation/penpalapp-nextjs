@@ -261,6 +261,9 @@ function computeDeadnessScore({
 }
 
 async function uploadScreenshot(base64Image, fileName) {
+  if (typeof base64Image !== "string" || !base64Image.startsWith("data:")) {
+    return;
+  }
   console.log("Uploading screenshot to Firebase Storage:", fileName);
   const storageRef = ref(storage, `analytics/deadclicks/${fileName}.png`);
   return await uploadString(storageRef, base64Image, "data_url");
@@ -292,9 +295,13 @@ const captureClickArea = async function(normalizedX, normalizedY, radius = 300) 
     const renderedWidth = canvas.width;
     const renderedHeight = canvas.height;
 
+    const clamp01 = (value) => Math.max(0, Math.min(1, value));
+    const safeNormalizedX = clamp01(normalizedX);
+    const safeNormalizedY = clamp01(normalizedY);
+
     // Convert normalized coordinates to actual pixel positions in the rendered canvas
-    const centerX = Math.round(normalizedX * renderedWidth);
-    const centerY = Math.round(normalizedY * renderedHeight);
+    const centerX = Math.max(0, Math.min(renderedWidth - 1, Math.round(safeNormalizedX * renderedWidth)));
+    const centerY = Math.max(0, Math.min(renderedHeight - 1, Math.round(safeNormalizedY * renderedHeight)));
 
     // Crop a region around the click
     const croppedCanvas = document.createElement("canvas");
@@ -454,9 +461,6 @@ const usePageAnalytics = (pagePath) => {
 
             if (nearTarget && isClassOrStateMutation) {
               signals.stateMutationNearTarget = true;
-              if (elapsed <= T1_WINDOW_MS) {
-                signals.routeTransitionStarted = true;
-              }
             }
 
             if (
@@ -567,15 +571,25 @@ const usePageAnalytics = (pagePath) => {
           return;
         }
 
-        // Normalize coordinates to viewport and incorporate scroll
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const normalizedX = (e.clientX + window.scrollX) / viewportWidth;
-        const normalizedY = (e.clientY + window.scrollY) / viewportHeight;
+        // Normalize click point in document space to match body-canvas coordinates.
+        const doc = document.documentElement;
+        const body = document.body;
+        const documentWidth = Math.max(doc.scrollWidth, body.scrollWidth, window.innerWidth);
+        const documentHeight = Math.max(doc.scrollHeight, body.scrollHeight, window.innerHeight);
+        const documentX = e.clientX + window.scrollX;
+        const documentY = e.clientY + window.scrollY;
+        const normalizedX = Math.max(0, Math.min(1, documentX / Math.max(1, documentWidth)));
+        const normalizedY = Math.max(0, Math.min(1, documentY / Math.max(1, documentHeight)));
 
-        const screenshot = await captureClickArea(normalizedX, normalizedY);
-        const fileName = fallbackRandomUUID();
-        await uploadScreenshot(screenshot, fileName);
+        let fileName = null;
+        try {
+          const screenshot = await captureClickArea(normalizedX, normalizedY);
+          fileName = fallbackRandomUUID();
+          await uploadScreenshot(screenshot, fileName);
+        } catch (error) {
+          console.warn("Dead click screenshot capture/upload failed", error);
+          fileName = null;
+        }
 
         logDeadClick(
           target.tagName,
