@@ -7,6 +7,11 @@ import { auth, db } from '../app/firebaseConfig';
 import { getUserPfp } from '../app/utils/avatarUtils';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 import { PUBLIC_PATHS } from "../app/utils/publicPaths";
+import {
+  getCachedUser,
+  setCachedUser,
+  clearCachedUser,
+} from "@/app/utils/sessionUserCache";
 
 const UserContext = createContext();
 
@@ -28,6 +33,25 @@ export function UserProvider({ children }) {
 
         const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
         setUserDocRef(userDocRef);  // Set it in state
+
+        // Check sessionStorage cache before hitting Firestore
+        const cachedUser = getCachedUser(authUser.uid);
+        if (cachedUser) {
+          setUserData(cachedUser);
+          setUserType(cachedUser.user_type || 'Unknown Type');
+          setDisplayName(cachedUser.first_name || '');
+
+          try {
+            const pfp = await getUserPfp(authUser.uid);
+            setProfileImage(pfp || '');
+          } catch (error) {
+            console.error('Error fetching profile image:', error);
+            setProfileImage('');
+          }
+
+          setLoading(false);
+          return;
+        }
         
         // Fetch user type from Firestore
         try {
@@ -35,6 +59,7 @@ export function UserProvider({ children }) {
           
           if (userDoc.exists()) {
             const fetchedUserData = userDoc.data();
+            setCachedUser(authUser.uid, fetchedUserData);
             setUserData(fetchedUserData);
             setUserType(fetchedUserData.user_type || 'Unknown Type');
             setDisplayName(fetchedUserData.first_name || '');
@@ -64,6 +89,7 @@ export function UserProvider({ children }) {
           setLoading(false);
         }
       } else {
+        clearCachedUser(authUser?.uid);
         setUser(null);
         setUserType(null);
         setUserData(null);
