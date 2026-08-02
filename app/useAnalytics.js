@@ -156,6 +156,11 @@ function hasExpectedBrowserHandledBehavior(target) {
     return true;
   }
 
+  const labelWithControl = target.closest("label[for]");
+  if (labelWithControl) {
+    return true;
+  }
+
   const submitter = target.closest("button[type='submit'],input[type='submit']");
   if (submitter) {
     return true;
@@ -217,8 +222,18 @@ function distanceBetweenRects(rectA, rectB) {
 function hasExpectedAsyncUiIndicator() {
   return Boolean(
     document.querySelector(
-      '[aria-busy="true"], .spinner, .loading, .toast, [role="alert"], [role="dialog"], [data-state="open"], [data-open="true"]'
+      '[aria-busy="true"], .spinner, .loading, .toast, [role="alert"], [role="dialog"], [role="menu"], [aria-modal="true"], [data-state="open"], [data-open="true"]'
     )
+  );
+}
+
+function isUiFeedbackNode(node) {
+  if (!(node instanceof Element)) {
+    return false;
+  }
+
+  return node.matches(
+    "[role='dialog'],[role='alert'],[role='menu'],[role='listbox'],[role='tooltip'],[aria-modal='true'],.toast,.modal,.dropdown-menu,.menu-dropdown,[data-state='open'],[data-open='true']"
   );
 }
 
@@ -465,10 +480,29 @@ const usePageAnalytics = (pagePath) => {
 
             if (
               mutation.type === "childList" &&
-              (mutationTarget.matches?.("[role='dialog'],[role='alert'],.toast,.modal,[data-open='true']") ||
-                mutationTarget.querySelector?.("[role='dialog'],[role='alert'],.toast,.modal,[data-open='true']"))
+              nearTarget &&
+              (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)
+            ) {
+              signals.stateMutationNearTarget = true;
+            }
+
+            if (
+              mutation.type === "childList" &&
+              (isUiFeedbackNode(mutationTarget) ||
+                mutationTarget.querySelector?.(
+                  "[role='dialog'],[role='alert'],[role='menu'],[role='listbox'],[role='tooltip'],[aria-modal='true'],.toast,.modal,.dropdown-menu,.menu-dropdown,[data-state='open'],[data-open='true']"
+                ))
             ) {
               signals.uiOpenSignal = true;
+            }
+
+            if (mutation.type === "childList") {
+              const addedOrRemovedUi = [...mutation.addedNodes, ...mutation.removedNodes].some(
+                (node) => isUiFeedbackNode(node)
+              );
+              if (addedOrRemovedUi) {
+                signals.uiOpenSignal = true;
+              }
             }
           }
         });
@@ -482,8 +516,20 @@ const usePageAnalytics = (pagePath) => {
           if (
             focusTarget === target ||
             target.contains(focusTarget) ||
-            focusTarget.matches("input,textarea,select,[contenteditable='true']")
+            focusTarget.contains(target)
           ) {
+            signals.focusChangeExpectedNode = true;
+            return;
+          }
+
+          const focusedEditable = focusTarget.matches(
+            "input,textarea,select,[contenteditable='true']"
+          );
+          const clickedEditableTrigger = Boolean(
+            target.closest(".cursor-text,[data-focus-target],label,[role='textbox']")
+          );
+
+          if (focusedEditable && clickedEditableTrigger) {
             signals.focusChangeExpectedNode = true;
           }
         };
@@ -544,10 +590,9 @@ const usePageAnalytics = (pagePath) => {
           signals.networkRequestStarted ||
           signals.routeCompleted ||
           signals.uiOpenSignal ||
-          (clickableRole &&
-            (signals.stateMutationNearTarget ||
-              signals.focusChangeExpectedNode ||
-              signals.optimisticUpdateSignal));
+          signals.stateMutationNearTarget ||
+          signals.focusChangeExpectedNode ||
+          signals.optimisticUpdateSignal;
 
         const isTinyTarget = targetRect.width < 24 || targetRect.height < 24;
         const hasKnownBenignClass = Boolean(
