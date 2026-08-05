@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 
 // --- REQUIRED ENV VARS ---
 const adminApp = getOrInitApp();
+
 const envError = !adminApp
   ? "Missing or invalid Firebase Admin env var: FIREBASE_SERVICE_ACCOUNT_JSON"
   : null;
@@ -27,36 +28,73 @@ async function removeStaleToken(userRef, token) {
 }
 
 /**
- * Verify user belongs in conversation
+ * Verify that a user is an admin.
  */
-async function isInConversation(senderUid, conversationId) {
-  const convoRef = db.collection("conversations").doc(conversationId);
-  const convoSnap = await convoRef.get();
-  if (!convoSnap.exists) return false;
+async function isAdmin(userId) {
+  const userRef = db.collection("users").doc(userId);
+  const userSnap = await userRef.get();
 
-  return (convoSnap.data().members || []).some((m) => m.id === senderUid);
+  if (!userSnap.exists) {
+    return false;
+  }
+
+  return userSnap.data()?.user_type === "admin";
 }
 
 /**
- * Fetch all tokens for all users in the same "device group"
+ * Verify that the original sender belongs to the conversation.
+ */
+async function isInConversation(senderUid, conversationId) {
+  const conversationRef = db
+    .collection("conversations")
+    .doc(conversationId);
+
+  const conversationSnap = await conversationRef.get();
+
+  if (!conversationSnap.exists) {
+    return false;
+  }
+
+  const members = conversationSnap.data()?.members || [];
+
+  return members.some((member) => member.id === senderUid);
+}
+
+/**
+ * Fetch FCM tokens for conversation members other than the original sender.
  */
 async function getConversationTokens(conversationId, senderUid) {
-  const convoRef = db.collection("conversations").doc(conversationId);
-  const convoSnap = await convoRef.get();
-  if (!convoSnap.exists) return [];
+  const conversationRef = db
+    .collection("conversations")
+    .doc(conversationId);
 
-  const members = convoSnap.data()?.members || [];
-  const recipients = members.filter((m) => m.id !== senderUid);
+  const conversationSnap = await conversationRef.get();
+
+  if (!conversationSnap.exists) {
+    return [];
+  }
+
+  const members = conversationSnap.data()?.members || [];
+
+  const recipients = members.filter(
+    (member) => member.id !== senderUid,
+  );
 
   const tokens = [];
 
   for (const member of recipients) {
     const userRef = db.collection("users").doc(member.id);
     const userSnap = await userRef.get();
-    if (!userSnap.exists) continue;
+
+    if (!userSnap.exists) {
+      continue;
+    }
 
     const user = userSnap.data();
-    if (!user.fcmToken) continue;
+
+    if (!user.fcmToken) {
+      continue;
+    }
 
     tokens.push({
       token: user.fcmToken,
@@ -71,54 +109,158 @@ async function getConversationTokens(conversationId, senderUid) {
 export async function POST(req) {
   try {
     if (envError) {
-      console.error("Environment Configuration Error:", envError);
-      return new Response(JSON.stringify({
-        error: "Internal Server Error. Firebase environment variables are not configured.",
-      }), { status: 500 });
+      console.error(
+        "Environment Configuration Error:",
+        envError,
+      );
+
+      return new Response(
+        JSON.stringify({
+          error:
+            "Internal Server Error. Firebase environment variables are not configured.",
+        }),
+        { status: 500 },
+      );
     }
 
     // --- AUTH ---
     const authHeader = req.headers.get("Authorization");
+
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Missing or invalid Authorization header." }), { status: 401 });
+      return new Response(
+        JSON.stringify({
+          error: "Missing or invalid Authorization header.",
+        }),
+        { status: 401 },
+      );
     }
 
     const idToken = authHeader.split("Bearer ")[1];
+
     let decodedToken;
 
     try {
       decodedToken = await auth.verifyIdToken(idToken);
     } catch {
-      return new Response(JSON.stringify({ error: "Authentication failed." }), { status: 403 });
+      return new Response(
+        JSON.stringify({
+          error: "Authentication failed.",
+        }),
+        { status: 403 },
+      );
     }
 
-    const senderUid = decodedToken.uid;
+    // Only admins can send notifications from the moderation flow.
+    const requesterIsAdmin = await isAdmin(decodedToken.uid);
+
+    if (!requesterIsAdmin) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Only administrators can send approved-message notifications.",
+        }),
+        { status: 403 },
+      );
+    }
 
     // --- BODY ---
-    const { conversationId, message } = await req.json();
-    if (!conversationId) {
-      return new Response(JSON.stringify({ error: "conversationId is required." }), { status: 400 });
+    const { conversationId, messageId } = await req.json();
+
+    if (!conversationId || !messageId) {
+      return new Response(
+        JSON.stringify({
+          error: "conversationId and messageId are required.",
+        }),
+        { status: 400 },
+      );
     }
-    // --- VERIFY ---
-    const allowed = await isInConversation(senderUid, conversationId);
-    if (!allowed) {
-      return new Response(JSON.stringify({ error: "Sender is not part of this conversation." }), { status: 403 });
+    // --- FETCH MESSAGE ---
+    const messageRef = db
+      .collection("conversations")
+      .doc(conversationId)
+      .collection("messages")
+      .doc(messageId);
+
+    const messageSnap = await messageRef.get();
+
+    if (!messageSnap.exists) {
+      return new Response(
+        JSON.stringify({
+          error: "Message not found.",
+        }),
+        { status: 404 },
+      );
     }
 
-    // --- FETCH TOKENS ---
-    const tokens = await getConversationTokens(conversationId, senderUid);
+    const messageData = messageSnap.data();
+
+    // Notification should only be sent after moderation approval.
+    if (messageData.status !== "approved") {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Notification can only be sent for an approved message.",
+        }),
+        { status: 409 },
+      );
+    }
+
+    // Identify the original sender from the approved message,
+    // rather than from the currently logged-in admin.
+    const senderUid = messageData.sent_by?.id;
+
+    if (!senderUid) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Original message sender could not be identified.",
+        }),
+        { status: 400 },
+      );
+    }
+
+    // --- VERIFY ORIGINAL SENDER ---
+    const senderIsMember = await isInConversation(
+      senderUid,
+      conversationId,
+    );
+
+    if (!senderIsMember) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Original sender is not part of this conversation.",
+        }),
+        { status: 403 },
+      );
+    }
+
+    // --- FETCH RECIPIENT TOKENS ---
+    const tokens = await getConversationTokens(
+      conversationId,
+      senderUid,
+    );
+
     if (tokens.length === 0) {
-      return new Response(JSON.stringify({ message: "No FCM tokens found for recipients." }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          message: "No FCM tokens found for recipients.",
+          results: [],
+        }),
+        { status: 200 },
+      );
     }
 
-    // --- SEND ---
+    // --- SEND NOTIFICATIONS ---
     const notificationTitle = "New Conversation Message";
     const clickAction = `/conversation/${conversationId}`;
     const requestOrigin = new URL(req.url).origin;
     const absoluteLink = `${requestOrigin}${clickAction}`;
 
     const sendPromises = tokens.map(({ token, name, userRef }) => {
-      const notificationBody = message || `New message for ${name}`;
+      const notificationBody = name
+        ? `You have a new message, ${name}.`
+        : "You have a new message.";
 
       return messaging.send({
         token,
@@ -158,7 +300,11 @@ export async function POST(req) {
             };
           }
 
-          console.error(`Failed to send to ${name}:`, sendError);
+          console.error(
+            `Failed to send notification to ${name}:`,
+            sendError,
+          );
+
           return {
             success: false,
             error: `Failed to send notification to ${name}.`,
@@ -180,10 +326,16 @@ export async function POST(req) {
     }), { status });
 
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error(
+      "Error processing notification request:",
+      error,
+    );
+
     return new Response(
-      JSON.stringify({ error: "Failed to process notification request." }),
-      { status: 500 }
+      JSON.stringify({
+        error: "Failed to process notification request.",
+      }),
+      { status: 500 },
     );
   }
 }
