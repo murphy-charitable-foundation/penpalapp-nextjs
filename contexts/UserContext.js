@@ -27,8 +27,15 @@ export function UserProvider({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    let lastUid = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
+        if (lastUid && lastUid !== authUser.uid) {
+          clearCachedUser(lastUid);
+        }
+
+        lastUid = authUser.uid;
         setUser(authUser);
 
         const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
@@ -37,6 +44,7 @@ export function UserProvider({ children }) {
         // Check sessionStorage cache before hitting Firestore
         const cachedUser = getCachedUser(authUser.uid);
         if (cachedUser) {
+          console.log('✅ Cache hit for user:', authUser.uid);
           setUserData(cachedUser);
           setUserType(cachedUser.user_type || 'Unknown Type');
           setDisplayName(cachedUser.first_name || '');
@@ -54,6 +62,7 @@ export function UserProvider({ children }) {
         }
         
         // Fetch user type from Firestore
+        console.log('⬇️ Fetching user from Firestore for user:', authUser.uid);
         try {
           const userDoc = await getDoc(userDocRef);
           
@@ -89,7 +98,10 @@ export function UserProvider({ children }) {
           setLoading(false);
         }
       } else {
-        clearCachedUser(authUser?.uid);
+        if (lastUid) {
+          clearCachedUser(lastUid);
+        }
+        lastUid = null;
         setUser(null);
         setUserType(null);
         setUserData(null);
