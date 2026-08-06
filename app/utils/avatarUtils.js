@@ -4,8 +4,9 @@ import {
   ref,
   uploadBytesResumable,
   getDownloadURL,
+  list,
 } from "@firebase/storage";
-import { updateDoc, doc, getDoc } from "firebase/firestore";
+import { updateDoc, doc } from "firebase/firestore";
 import { auth, storage, db } from "@/app/firebaseConfig";
 import { logError } from "./analytics";
 
@@ -90,14 +91,17 @@ export const getUserPfp = async (uid) => {
   }
 
   try {
-    const userDoc = await getDoc(doc(db, "users", uid));
-    if (!userDoc.exists()) return null;
+    const userFolderRef = ref(storage, `users/${uid}`);
+    const result = await list(userFolderRef, { maxResults: 10 });
+    const profileImageRef = result.items.find(
+      (item) => item.name === "profile-image",
+    );
 
-    const data = userDoc.data();
-    // Prefer the Firestore-stored URL if present
-    if (data?.photo_uri) return data.photo_uri;
+    if (!profileImageRef) {
+      return null;
+    }
 
-    return null;
+    return await getDownloadURL(profileImageRef);
   } catch (error) {
     logError(error, {
       description: "Error fetching user profile",
@@ -164,6 +168,7 @@ export const saveAvatar = async ({
 
     if (!url) {
       setLoading(false);
+      onError?.(new Error("Upload returned empty URL"));
       return;
     }
 
