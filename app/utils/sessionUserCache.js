@@ -64,7 +64,11 @@ export const getCachedUser = (uid) => {
     // Guard against malformed JSON or a sandboxed environment
     // where sessionStorage throws. Remove the bad entry so we
     // don't keep hitting this path on every read.
-    sessionStorage.removeItem(storageKey(uid));
+    try {
+      sessionStorage.removeItem(storageKey(uid));
+    } catch {
+      // Ignore storage cleanup failures.
+    }
     return null;
   }
 };
