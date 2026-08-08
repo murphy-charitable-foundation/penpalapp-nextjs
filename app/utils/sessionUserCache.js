@@ -41,16 +41,30 @@ export const getCachedUser = (uid) => {
 
     const { user, cachedAt } = JSON.parse(raw);
 
+    // Reject malformed cache entries. If cachedAt is not a valid number,
+    // the TTL check below would evaluate against NaN and the entry would
+    // never expire.
+    if (
+      !Number.isFinite(cachedAt) ||
+      !user ||
+      typeof user !== "object"
+    ) {
+      sessionStorage.removeItem(storageKey(uid));
+      return null;
+    }
+
     // If the entry is older than the TTL, treat it as a cache miss.
     if (Date.now() - cachedAt > CACHE_TTL_MS) {
       sessionStorage.removeItem(storageKey(uid));
       return null;
     }
 
-    return user ?? null;
+    return user;
   } catch {
     // Guard against malformed JSON or a sandboxed environment
-    // where sessionStorage throws.
+    // where sessionStorage throws. Remove the bad entry so we
+    // don't keep hitting this path on every read.
+    sessionStorage.removeItem(storageKey(uid));
     return null;
   }
 };
