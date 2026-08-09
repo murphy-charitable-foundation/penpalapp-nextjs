@@ -18,6 +18,8 @@ import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { initializeNotifications } from '../utils/notification'
 import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
+import { usePageAnalytics } from "../useAnalytics";
+import { logInEvent, logError } from "../utils/analytics";
 
 export default function ChooseAccountPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +39,8 @@ export default function ChooseAccountPage() {
 
   const hasRedirected = useRef(false);
   const users = cachedUserLogins ?? [];
+
+  usePageAnalytics("/choose-account");
 
   useEffect(() => {
     if (!hydrated) return;
@@ -71,8 +75,10 @@ export default function ChooseAccountPage() {
         await refreshCachedUserPhoto(uid, updateCachedUserLogin);
 
         await initializeNotifications().catch((err) => {
-          console.error("Notification setup failed:", err);
+          logError(err, "Notification setup failed");
         });
+
+        logInEvent("success", userSnap.data().user_type);
 
         if (userSnap.data().user_type === "admin") {
           router.push("/admin");
@@ -80,10 +86,13 @@ export default function ChooseAccountPage() {
           router.push("/inbox");
         }
       } else {
+
+        logInEvent("success", "new_user");
+
         router.push("/create-acc");
       }
     } catch (err) {
-      console.error(err);
+      logError(err, "Error signing in");
 
       if (
         err.code === "auth/wrong-password" ||
