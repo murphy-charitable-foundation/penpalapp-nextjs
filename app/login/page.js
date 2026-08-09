@@ -14,7 +14,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { useEffect, useRef } from "react";
-import { logInEvent } from "../utils/analytics";
+import { logInEvent, logError } from "../utils/analytics";
 import { initializeNotifications } from "../utils/notification";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
@@ -111,11 +111,11 @@ export default function Login() {
     } catch (err) {
 
       logInEvent("failure", data?.user_type || err.code || "unknown");
-      
+
       setLoading(false);
       setIsNavigating(false);
 
-      console.error("Authentication error:", err.message);
+      logError(err, {description: "Error logging in: "});
 
       switch (err.code) {
         case "auth/user-not-found":
