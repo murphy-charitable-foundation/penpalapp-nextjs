@@ -18,6 +18,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { useNavigation } from "../../contexts/NavigationContext";
+import { logButtonEvent } from "../../app/utils/analytics";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
