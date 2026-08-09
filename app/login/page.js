@@ -14,7 +14,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { useEffect, useRef } from "react";
-import { logInEvent, logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logInEvent } from "../utils/analytics";
 import { initializeNotifications } from "../utils/notification";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
@@ -95,15 +95,23 @@ export default function Login() {
           console.error("Notification setup failed:", err);
         });
 
+        logInEvent("success", data.user_type);
+
         if (data.user_type === "admin") {
           router.push("/admin");
         } else {
           router.push("/inbox");
         }
       } else {
+
+        logInEvent("success", "new_user");
+
         router.replace("/create-acc");
       }
     } catch (err) {
+
+      logInEvent("failure", data?.user_type || err.code || "unknown");
+      
       setLoading(false);
       setIsNavigating(false);
 
