@@ -1,3 +1,5 @@
+"use client";
+
 export const dynamic = "force-static";
 
 export const metadata = {
@@ -16,8 +18,11 @@ import { PageBackground } from "../../components/general/PageBackground";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import NavBar from "../../components/bottom-nav-bar";
+import { usePageAnalytics } from "../useAnalytics";
 
 export default function Contact() {
+  usePageAnalytics("/contact");
+
   const socialLinks = [
     {
       name: "Instagram",
@@ -86,6 +91,7 @@ export default function Contact() {
                       ? { target: "_blank", rel: "noopener noreferrer" }
                       : {})}
                     className="mx-auto grid w-full max-w-[500px] grid-cols-[48px_1fr_48px] items-center rounded-2xl border border-[#DCE6F3] bg-white px-5 py-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
+                    onClick={() => {logButtonEvent(link.name, "/contact")}}
                   >
                     <div
                       className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${link.accent} text-white shadow-sm`}
