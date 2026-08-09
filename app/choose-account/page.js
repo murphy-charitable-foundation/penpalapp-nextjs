@@ -75,7 +75,7 @@ export default function ChooseAccountPage() {
         await refreshCachedUserPhoto(uid, updateCachedUserLogin);
 
         await initializeNotifications().catch((err) => {
-          logError(err, "Notification setup failed");
+          logError(err, { description: "Notification setup failed" });
         });
 
         logInEvent("success", userSnap.data().user_type);
@@ -92,7 +92,7 @@ export default function ChooseAccountPage() {
         router.push("/create-acc");
       }
     } catch (err) {
-      logError(err, "Error signing in");
+      logError(err, { description: "Error signing in" });
 
       if (
         err.code === "auth/wrong-password" ||
