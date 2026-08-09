@@ -110,8 +110,6 @@ export default function Login() {
       }
     } catch (err) {
 
-      logInEvent("failure", data?.user_type || err.code || "unknown");
-
       setLoading(false);
       setIsNavigating(false);
 

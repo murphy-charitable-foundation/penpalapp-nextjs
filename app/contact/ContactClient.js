@@ -19,6 +19,7 @@ import { PageContainer } from "../../components/general/PageContainer";
 import { PageHeader } from "../../components/general/PageHeader";
 import NavBar from "../../components/bottom-nav-bar";
 import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent } from "../utils/analytics";
 
 export default function Contact() {
   usePageAnalytics("/contact");
