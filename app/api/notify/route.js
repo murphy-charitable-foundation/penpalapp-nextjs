@@ -99,6 +99,11 @@ export async function POST(req) {
     // --- SEND ---
     const notificationTitle = "New Conversation Message";
     const clickAction = `/conversation/${conversationId}`;
+    const requestOrigin = req.headers.get('origin') || new URL(req.url).origin;
+    const absoluteOrigin = requestOrigin?.startsWith('http://')
+      ? requestOrigin.replace('http://', 'https://')
+      : requestOrigin;
+    const absoluteLink = `${absoluteOrigin}${clickAction}`;
 
     const sendPromises = tokens.map(({ token, name }) => {
       const notificationBody = message || `New message for ${name}`;
@@ -116,7 +121,7 @@ export async function POST(req) {
         },
         webpush: {
           fcmOptions: {
-            link: clickAction,
+            link: absoluteLink,
           },
         },
       })

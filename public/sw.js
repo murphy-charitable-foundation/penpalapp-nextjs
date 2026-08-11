@@ -1,11 +1,15 @@
 self.addEventListener('notificationclick', (event) => {
+  event.stopImmediatePropagation();
   event.notification.close();
 
   event.waitUntil(
     (async () => {
+      const fcmPayload = event.notification?.data?.FCM_MSG;
       const clickAction =
         event.notification?.data?.click_action ||
         event.notification?.data?.link ||
+        fcmPayload?.data?.click_action ||
+        fcmPayload?.fcmOptions?.link ||
         '/inbox';
 
       const allClients = await self.clients.matchAll({
