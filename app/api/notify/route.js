@@ -97,12 +97,22 @@ export async function POST(req) {
     }
 
     // --- SEND ---
+    const notificationTitle = "New Conversation Message";
+    const notificationBody = message || `New message for ${name}`;
+    const clickAction = `/conversation/${conversationId}`;
+
     const sendPromises = tokens.map(({ token, name }) =>
       messaging.send({
         token,
         notification: {
-          title: "New Conversation Message",
-          body: message || `New message for ${name}`,
+          title: notificationTitle,
+          body: notificationBody,
+          click_action: clickAction,
+        },
+        data: {
+          click_action: clickAction,
+          conversationId,
+          recipientName: name,
         },
       })
         .then(response => ({ success: true, name, response }))

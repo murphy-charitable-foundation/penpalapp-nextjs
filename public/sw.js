@@ -1,3 +1,38 @@
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      const clickAction =
+        event.notification?.data?.click_action ||
+        event.notification?.data?.link ||
+        '/inbox';
+
+      const allClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+
+      const matchingClient = allClients.find((client) => {
+        try {
+          const clientUrl = new URL(client.url);
+          return clientUrl.pathname === clickAction || clientUrl.pathname.startsWith(clickAction);
+        } catch {
+          return false;
+        }
+      });
+
+      if (matchingClient && 'focus' in matchingClient) {
+        return matchingClient.focus();
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(clickAction);
+      }
+    })(),
+  );
+});
+
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -32,45 +67,6 @@ const firebaseConfig = ['localhost', '127.0.0.1', '[::1]'].includes(self.locatio
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-  console.log('[sw] Received background message', payload);
-
-  const notificationTitle = payload.notification?.title || 'Pen Pal Magic App';
-  const notificationOptions = {
-    body: payload.notification?.body || '',
-    icon: '/murphylogo.png',
-    data: payload.data || {},
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    (async () => {
-      const clickAction = event.notification?.data?.click_action || '/inbox';
-      const allClients = await self.clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true,
-      });
-
-      const matchingClient = allClients.find((client) =>
-        client.url.includes(clickAction) && 'focus' in client,
-      );
-
-      if (matchingClient) {
-        return matchingClient.focus();
-      }
-
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(clickAction);
-      }
-    })(),
-  );
-});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

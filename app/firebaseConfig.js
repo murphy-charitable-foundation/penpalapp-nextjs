@@ -4,8 +4,8 @@ import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
-import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore"
-
+import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
+import { getOrRegisterAppServiceWorker, isLocalhost } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -122,16 +122,15 @@ export const handleNotificationSetup = async () => {
     return;
   }
 
-  if (!('serviceWorker' in navigator)) {
-    console.warn('Service Workers are not supported in this browser.');
+  if (isLocalhost()) {
+    console.log('Skipping notification setup on localhost.');
     return;
   }
 
-  let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration('/');
+  const serviceWorkerRegistration = await getOrRegisterAppServiceWorker();
   if (!serviceWorkerRegistration) {
-    serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
-    });
+    console.warn('No service worker registration available for notification setup.');
+    return;
   }
 
   try {
