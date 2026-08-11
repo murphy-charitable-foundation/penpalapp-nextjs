@@ -122,8 +122,23 @@ export const handleNotificationSetup = async () => {
     return;
   }
 
+  if (!('serviceWorker' in navigator)) {
+    console.warn('Service Workers are not supported in this browser.');
+    return;
+  }
+
+  let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration('/');
+  if (!serviceWorkerRegistration) {
+    serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+    });
+  }
+
   try {
-    const token = await getToken(initializedMessaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(initializedMessaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration,
+    });
     const user = auth.currentUser;
 
     if (!token || !user) {

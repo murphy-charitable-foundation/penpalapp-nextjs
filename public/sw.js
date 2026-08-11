@@ -1,18 +1,84 @@
-// Give your cache a version name
-const CACHE_NAME = 'offline-cache-v2';
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+
+const CACHE_NAME = 'offline-cache-v3';
 const CACHE_PREFIX = 'offline-cache-';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = ['/offline.html','/murphylogo.png'];
 
-// When the SW installs: cache the listed resources
+const productionFirebaseConfig = {
+  apiKey: "AIzaSyBpYg-KAzwWGaT3g7J8smjnNqP8N8Nj8vQ",
+  authDomain: "penpalmagicapp.firebaseapp.com",
+  projectId: "penpalmagicapp",
+  storageBucket: "penpalmagicapp.appspot.com",
+  messagingSenderId: "45289060638",
+  appId: "1:45289060638:web:33121bc47d40ceef83f10f",
+  measurementId: "G-FG3MPZ8JV6",
+};
+
+const developmentFirebaseConfig = {
+  apiKey: "AIzaSyDKph6qj7ojAf9pg6o0N8Lq1Zd7eUBC_YQ",
+  authDomain: "penpalmagicapp-dev.firebaseapp.com",
+  projectId: "penpalmagicapp-dev",
+  storageBucket: "penpalmagicapp-dev.firebasestorage.app",
+  messagingSenderId: "793782879682",
+  appId: "1:793782879682:web:7e1ebb814edd688892025b",
+  measurementId: "G-6TCJ7JEMZ0",
+};
+
+const firebaseConfig = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname)
+  ? developmentFirebaseConfig
+  : productionFirebaseConfig;
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[sw] Received background message', payload);
+
+  const notificationTitle = payload.notification?.title || 'Pen Pal Magic App';
+  const notificationOptions = {
+    body: payload.notification?.body || '',
+    icon: '/murphylogo.png',
+    data: payload.data || {},
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      const clickAction = event.notification?.data?.click_action || '/inbox';
+      const allClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+
+      const matchingClient = allClients.find((client) =>
+        client.url.includes(clickAction) && 'focus' in client,
+      );
+
+      if (matchingClient) {
+        return matchingClient.focus();
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(clickAction);
+      }
+    })(),
+  );
+});
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
       await cache.addAll(ASSETS_TO_CACHE);
-    })()
+    })(),
   );
-  // Optional but recommended: This is to make the waiting service worker to be the active service worker
   self.skipWaiting();
 });
 
@@ -26,38 +92,30 @@ self.addEventListener('activate', (event) => {
             return caches.delete(key);
           }
           return Promise.resolve(false);
-        })
+        }),
       );
-      // Optional but recommended: Ensure that the Service Worker takes control immediately
       await self.clients.claim();
-    })()
+    })(),
   );
 });
 
-// Handle GET requests only: return cached static assets when available,
-// and serve the offline page if a navigation request fails.
 self.addEventListener('fetch', (event) => {
-
   const { request } = event;
 
-  // Allow the non-GET requests to go to the network normally
   if (request.method !== 'GET') {
     return;
   }
 
   event.respondWith(
     (async () => {
+      const cacheOffline = await caches.open(CACHE_NAME);
 
-      const cacheOffline = await caches.open(CACHE_NAME);      
-      
-      // For navigation, network first, then fallback to offline page
       if (request.mode === 'navigate') {
         try {
           return await fetch(request);
         } catch (error) {
           const cachedOfflinePage = await cacheOffline.match(OFFLINE_URL);
-
-          if (cachedOfflinePage){
+          if (cachedOfflinePage) {
             return cachedOfflinePage;
           }
 
@@ -66,27 +124,24 @@ self.addEventListener('fetch', (event) => {
             statusText: 'Service Unavailable',
             headers: { 'Content-Type': 'text/plain' },
           });
-        } 
+        }
       }
 
-      // For other GET requests (like the logo), use cache first
       const cachedResponse = await cacheOffline.match(request);
       if (cachedResponse) {
         return cachedResponse;
       }
-      
-      // For the rest, try network first, and fail gracefully 
+
       try {
         return await fetch(request);
       } catch (error) {
-        // Return a fallback response if the network request fails
         return new Response('Failed to fetch resource.', {
           status: 500,
           statusText: 'Internal Server Error',
           headers: { 'Content-Type': 'text/plain' },
         });
       }
-    }) ()
+    })(),
   );
 });
 

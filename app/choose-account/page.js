@@ -70,7 +70,7 @@ export default function ChooseAccountPage() {
       if (userSnap.exists()) {
         await refreshCachedUserPhoto(uid, updateCachedUserLogin);
 
-        await initializeNotifications().catch((err) => {
+        initializeNotifications().catch((err) => {
           console.error("Notification setup failed:", err);
         });
 

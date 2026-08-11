@@ -91,7 +91,7 @@ export default function Login() {
 
         await refreshCachedUserPhoto(uid, updateCachedUserLogin);
 
-        await initializeNotifications().catch((err) => {
+        initializeNotifications().catch((err) => {
           console.error("Notification setup failed:", err);
         });
 
