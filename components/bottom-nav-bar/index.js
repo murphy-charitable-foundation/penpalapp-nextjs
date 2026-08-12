@@ -147,8 +147,6 @@ export default function NavBar() {
 
         {isMenuOpen && (
           <div
-            role="menu"
-            data-menu="true"
             className="absolute bottom-full right-0 mb-3 w-48 bg-blue-200 rounded-xl shadow-lg p-2"
             onClick={(e) => e.stopPropagation()}
           >
