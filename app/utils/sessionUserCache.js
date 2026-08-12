@@ -15,8 +15,6 @@
  *   falls through to a fresh Firestore read automatically.
  *
  * Open questions / TODO:
- *   - Profile updates: when the user edits their profile, we need to
- *     either invalidate the cache or update it in place.
  *   - Multi-tab: sessionStorage is per-tab, so each tab will still
  *     hit Firestore once. That's probably fine for now.
  */
