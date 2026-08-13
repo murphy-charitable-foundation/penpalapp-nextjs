@@ -279,7 +279,7 @@ async function uploadScreenshot(base64Image, fileName) {
   if (typeof base64Image !== "string" || !base64Image.startsWith("data:")) {
     return;
   }
-  console.log("Uploading screenshot to Firebase Storage:", fileName);
+  //console.log("Uploading screenshot to Firebase Storage:", fileName);
   const storageRef = ref(storage, `analytics/deadclicks/${fileName}.png`);
   return await uploadString(storageRef, base64Image, "data_url");
 }

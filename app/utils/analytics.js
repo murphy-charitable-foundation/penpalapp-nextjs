@@ -100,7 +100,7 @@ const logDeadClick = (
   meta = {}
 ) => {
   if (analytics) {
-    console.log("Logging dead click event");
+    //console.log("Logging dead click event");
     logEvent(analytics, "dead_click", {
       clicked_element: elementClicked || "unknown",
       page_path: pagePath,
