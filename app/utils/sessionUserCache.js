@@ -19,6 +19,8 @@
  *     hit Firestore once. That's probably fine for now.
  */
 
+import { getDoc } from 'firebase/firestore';
+
 /** Build a per-user storage key so different accounts never collide. */
 const storageKey = (uid) => `cached-user-${uid}`;
 
@@ -100,3 +102,31 @@ export const clearCachedUser = (uid) => {
     // Fail silently.
   }
 };
+
+/**
+ * Fetch user data using a cache-first strategy:
+ * 1. Return cached user data if fresh in sessionStorage.
+ * 2. Fall back to Firestore getDoc if missing or stale.
+ * 3. Update sessionStorage cache with fetched data before returning.
+ * @param {string} uid – the user ID
+ * @param {DocumentReference} userDocRef – the Firestore document reference
+ * @returns {Promise<Object|null>} user data object, or null if doc doesn't exist
+ */
+export const getUserData = async (uid, userDocRef) => {
+  const cachedUser = getCachedUser(uid);
+  if (cachedUser) {
+    console.log('✅ Cache hit for user:', uid);
+    return cachedUser;
+  }
+
+  console.log('⬇️ Fetching user from Firestore for user:', uid);
+  const userDoc = await getDoc(userDocRef);
+  if (userDoc.exists()) {
+    const fetchedUserData = userDoc.data();
+    setCachedUser(uid, fetchedUserData);
+    return fetchedUserData;
+  }
+
+  return null;
+};
+

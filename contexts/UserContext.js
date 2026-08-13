@@ -1,15 +1,14 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '../app/firebaseConfig';
 import { getUserPfp } from '../app/utils/avatarUtils';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 import { PUBLIC_PATHS } from "../app/utils/publicPaths";
 import {
-  getCachedUser,
-  setCachedUser,
+  getUserData,
   clearCachedUser,
 } from "@/app/utils/sessionUserCache";
 
@@ -57,27 +56,10 @@ export function UserProvider({ children }) {
         const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
         setUserDocRef(userDocRef);  // Set it in state
 
-        // Check sessionStorage cache before hitting Firestore
-        const cachedUser = getCachedUser(authUser.uid);
-        if (cachedUser) {
-          console.log('✅ Cache hit for user:', authUser.uid);
-
-          applyUserData(cachedUser);
-          await loadProfileImage(authUser.uid);
-
-          setLoading(false);
-          return;
-        }
-        
-        // Fetch user type from Firestore
-        console.log('⬇️ Fetching user from Firestore for user:', authUser.uid);
         try {
-          const userDoc = await getDoc(userDocRef);
-          
-          if (userDoc.exists()) {
-            const fetchedUserData = userDoc.data();
-            setCachedUser(authUser.uid, fetchedUserData);
+          const fetchedUserData = await getUserData(authUser.uid, userDocRef);
 
+          if (fetchedUserData) {
             applyUserData(fetchedUserData);
             await loadProfileImage(authUser.uid);
           } else {
