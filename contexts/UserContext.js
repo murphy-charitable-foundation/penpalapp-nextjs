@@ -26,6 +26,22 @@ export function UserProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const applyUserData = (data) => {
+    setUserData(data);
+    setUserType(data.user_type || 'Unknown Type');
+    setDisplayName(data.first_name || '');
+  };
+
+  const loadProfileImage = async (uid) => {
+    try {
+      const pfp = await getUserPfp(uid);
+      setProfileImage(pfp || '');
+    } catch (error) {
+      console.error('Error fetching profile image:', error);
+      setProfileImage('');
+    }
+  };
+
   useEffect(() => {
     let lastUid = null;
 
@@ -45,17 +61,9 @@ export function UserProvider({ children }) {
         const cachedUser = getCachedUser(authUser.uid);
         if (cachedUser) {
           console.log('✅ Cache hit for user:', authUser.uid);
-          setUserData(cachedUser);
-          setUserType(cachedUser.user_type || 'Unknown Type');
-          setDisplayName(cachedUser.first_name || '');
 
-          try {
-            const pfp = await getUserPfp(authUser.uid);
-            setProfileImage(pfp || '');
-          } catch (error) {
-            console.error('Error fetching profile image:', error);
-            setProfileImage('');
-          }
+          applyUserData(cachedUser);
+          await loadProfileImage(authUser.uid);
 
           setLoading(false);
           return;
@@ -69,17 +77,9 @@ export function UserProvider({ children }) {
           if (userDoc.exists()) {
             const fetchedUserData = userDoc.data();
             setCachedUser(authUser.uid, fetchedUserData);
-            setUserData(fetchedUserData);
-            setUserType(fetchedUserData.user_type || 'Unknown Type');
-            setDisplayName(fetchedUserData.first_name || '');
 
-            try {
-              const pfp = await getUserPfp(authUser.uid);
-              setProfileImage(pfp || '');
-            } catch (error) {
-              console.error('Error fetching profile image:', error);
-              setProfileImage('');
-            }
+            applyUserData(fetchedUserData);
+            await loadProfileImage(authUser.uid);
           } else {
             setUserData(null);
             setUserType('Unknown Type');
