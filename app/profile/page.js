@@ -21,7 +21,7 @@ import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import NavBar from "../../components/bottom-nav-bar";
 
 import { usePageAnalytics } from "../useAnalytics";
-import { logError } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 
@@ -101,7 +101,9 @@ export default function EditProfile() {
         const downloaded = await getUserPfp(user.uid);
         setPhotoUri(downloaded || "");
       } catch (error) {
-        console.error("Failed to load profile image", error);
+        logError(error, {
+          description: "Failed to load profile image",
+        })
         setPhotoUri("");
       }
 
@@ -177,6 +179,7 @@ export default function EditProfile() {
       } catch (e) {
         // Refresh failure should not block success flow
         console.warn("refreshCachedUserPhoto failed", e);
+        logError(e, { description: "Failed to refresh cached user photo" });
       }
 
       setPhotoUri(url);
@@ -195,6 +198,9 @@ export default function EditProfile() {
   };
 
   const saveProfileData = async () => {
+
+    logButtonEvent("Save profile", "/profile");
+
     if (!user?.uid) return;
 
     const ref = doc(db, "users", user.uid);
