@@ -17,6 +17,7 @@ import InfoDisplay from "../../../components/general/profile/InfoDisplay";
 import ArrayDisplay from "../../../components/general/profile/ArrayDisplay";
 import NavBar from "../../../components/bottom-nav-bar";
 import { PageBackground } from "../../../components/general/PageBackground";
+import { usePageAnalytics } from "../../useAnalytics";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and create-child-profile page */
 
@@ -43,6 +44,8 @@ export default function Page({ params }) {
   const [hobbies, setHobbies] = useState([]);
   const { user } = useUser();
   const router = useRouter();
+
+  usePageAnalytics(`/profile-view/${id}`);
 
   useEffect(() => {
     const fetchUserData = async () => {
