@@ -1,4 +1,5 @@
 import ConversationPreview from "./ConversationPreview";
+import { logButtonEvent } from "../../app/utils/analytics";
 
 const ConversationList = ({
   conversations,
@@ -22,7 +23,10 @@ const ConversationList = ({
             unread={conversation.unread}
             isAdmin={isAdmin}
             id={conversation.sent_by?.id}
-            onClick={() => onSelectConversation(conversation)}
+            onClick={() => {
+              logButtonEvent(`Conversation ${conversation.conversationId}-${conversation.id} clicked`, "/inbox");
+              onSelectConversation(conversation)
+            }}
           />
         </div>
       ))}
