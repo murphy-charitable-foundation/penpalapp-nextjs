@@ -232,6 +232,7 @@ export default function ChooseKid() {
     setPronouns(pronouns ?? "");
     setHobbies(hobbies ?? []);
     setFiltersOpen(false);
+    logButtonEvent("Apply filters", "/discovery");
   };
 
   const handleClearFilters = () => {
@@ -239,6 +240,7 @@ export default function ChooseKid() {
     setPronouns("");
     setHobbies([]);
     setFiltersOpen(false);
+    logButtonEvent("Clear filters", "/discovery");
   };
 
   return (
