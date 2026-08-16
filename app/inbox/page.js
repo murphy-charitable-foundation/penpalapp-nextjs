@@ -79,6 +79,7 @@ export default function Home() {
             conversationId: id || "",
             isRecipient: message?.sent_by?.id !== uid,
             unread: message?.unread || false,
+            sent_by: recipient,
           };
         })
       );
