@@ -399,6 +399,14 @@ export const sendNotification = async (conversationId, messageId) => {
       throw new Error(result.error || "Failed to send notifications.");
     }
 
+    const hasFailedNotifications = result.results?.some(
+      (notification) => notification.success === false,
+    );
+
+    if (hasFailedNotifications) {
+      throw new Error("One or more notifications failed to send.");
+    }
+
     console.log("Notifications sent successfully:", result);
 
     return result;
