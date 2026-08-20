@@ -2,21 +2,17 @@
  * sessionUserCache.js
  *
  * Lightweight helpers for reading/writing the current user object
- * to sessionStorage so we can potentially avoid unnecessary
- * Firestore getDoc() calls during the same browser session.
- *
- * Integration plan:
- *   - Before calling getDoc() in UserContext, check getCachedUser(uid).
- *   - After fetching the user from Firestore, call setCachedUser(uid, user).
+ * to localStorage so we can potentially avoid unnecessary
+ * Firestore getDoc() calls across page loads and browser tabs.
  *
  * TTL:
  *   Cached entries expire after CACHE_TTL_MS (default 5 min).
  *   getCachedUser() returns null for stale entries so the caller
  *   falls through to a fresh Firestore read automatically.
  *
- * Open questions / TODO:
- *   - Multi-tab: sessionStorage is per-tab, so each tab will still
- *     hit Firestore once. That's probably fine for now.
+ * Multi-tab:
+ *   localStorage is shared across tabs for the same origin, so
+ *   multiple tabs can reuse the same cached user data.
  */
 
 import { getDoc } from 'firebase/firestore';
@@ -28,7 +24,7 @@ const storageKey = (uid) => `cached-user-${uid}`;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
- * Read the cached user object from sessionStorage.
+ * Read the cached user object from localStorage.
  * Returns the parsed user object, or null if nothing is cached
  * or the entry has expired past CACHE_TTL_MS.
  * @param {string} uid – the Firebase auth uid for the current user.
@@ -36,7 +32,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 export const getCachedUser = (uid) => {
   try {
     if (!uid) return null;
-    const raw = sessionStorage.getItem(storageKey(uid));
+    const raw = localStorage.getItem(storageKey(uid));
     if (!raw) return null;
 
     const { user, cachedAt } = JSON.parse(raw);
@@ -49,23 +45,23 @@ export const getCachedUser = (uid) => {
       !user ||
       typeof user !== "object"
     ) {
-      sessionStorage.removeItem(storageKey(uid));
+      localStorage.removeItem(storageKey(uid));
       return null;
     }
 
     // If the entry is older than the TTL, treat it as a cache miss.
     if (Date.now() - cachedAt > CACHE_TTL_MS) {
-      sessionStorage.removeItem(storageKey(uid));
+      localStorage.removeItem(storageKey(uid));
       return null;
     }
 
     return user;
   } catch {
     // Guard against malformed JSON or a sandboxed environment
-    // where sessionStorage throws. Remove the bad entry so we
+    // where localStorage throws. Remove the bad entry so we
     // don't keep hitting this path on every read.
     try {
-      sessionStorage.removeItem(storageKey(uid));
+      localStorage.removeItem(storageKey(uid));
     } catch {
       // Ignore storage cleanup failures.
     }
@@ -74,7 +70,7 @@ export const getCachedUser = (uid) => {
 };
 
 /**
- * Write the user object to sessionStorage wrapped in a
+ * Write the user object to localStorage wrapped in a
  * timestamped envelope so getCachedUser() can enforce TTL.
  * @param {string} uid – the Firebase auth uid for the current user.
  * @param {Object} user – the user document data to cache.
@@ -83,21 +79,21 @@ export const setCachedUser = (uid, user) => {
   try {
     if (!uid) return;
     const envelope = JSON.stringify({ user, cachedAt: Date.now() });
-    sessionStorage.setItem(storageKey(uid), envelope);
+    localStorage.setItem(storageKey(uid), envelope);
   } catch {
-    // sessionStorage may be full or unavailable; fail silently.
+    // localStorage may be full or unavailable; fail silently.
   }
 };
 
 /**
- * Remove the cached user from sessionStorage.
+ * Remove the cached user from localStorage.
  * Call this on logout to prevent stale data.
  * @param {string} uid – the Firebase auth uid for the user to clear.
  */
 export const clearCachedUser = (uid) => {
   try {
     if (!uid) return;
-    sessionStorage.removeItem(storageKey(uid));
+    localStorage.removeItem(storageKey(uid));
   } catch {
     // Fail silently.
   }
@@ -105,9 +101,9 @@ export const clearCachedUser = (uid) => {
 
 /**
  * Fetch user data using a cache-first strategy:
- * 1. Return cached user data if fresh in sessionStorage.
+ * 1. Return cached user data if fresh in localStorage.
  * 2. Fall back to Firestore getDoc if missing or stale.
- * 3. Update sessionStorage cache with fetched data before returning.
+ * 3. Update localStorage cache with fetched data before returning.
  * @param {string} uid – the user ID
  * @param {DocumentReference} userDocRef – the Firestore document reference
  * @returns {Promise<Object|null>} user data object, or null if doc doesn't exist
