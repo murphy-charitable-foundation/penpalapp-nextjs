@@ -4,8 +4,8 @@ import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
-import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore"
-
+import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
+import { getOrRegisterAppServiceWorker, isLocalhost } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -122,8 +122,22 @@ export const handleNotificationSetup = async () => {
     return;
   }
 
+  if (isLocalhost()) {
+    console.log('Skipping notification setup on localhost.');
+    return;
+  }
+
+  const serviceWorkerRegistration = await getOrRegisterAppServiceWorker();
+  if (!serviceWorkerRegistration) {
+    console.warn('No service worker registration available for notification setup.');
+    return;
+  }
+
   try {
-    const token = await getToken(initializedMessaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(initializedMessaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration,
+    });
     const user = auth.currentUser;
 
     if (!token || !user) {

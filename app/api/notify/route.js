@@ -97,12 +97,29 @@ export async function POST(req) {
     }
 
     // --- SEND ---
-    const sendPromises = tokens.map(({ token, name }) =>
-      messaging.send({
+    const notificationTitle = "New Conversation Message";
+    const clickAction = `/conversation/${conversationId}`;
+    const requestOrigin = new URL(req.url).origin;
+    const absoluteLink = `${requestOrigin}${clickAction}`;
+
+    const sendPromises = tokens.map(({ token, name }) => {
+      const notificationBody = message || `New message for ${name}`;
+
+      return messaging.send({
         token,
         notification: {
-          title: "New Conversation Message",
-          body: message || `New message for ${name}`,
+          title: notificationTitle,
+          body: notificationBody,
+        },
+        data: {
+          click_action: clickAction,
+          conversationId,
+          recipientName: name,
+        },
+        webpush: {
+          fcmOptions: {
+            link: absoluteLink,
+          },
         },
       })
         .then(response => ({ success: true, name, response }))
@@ -114,8 +131,8 @@ export async function POST(req) {
             token,
             name,
           };
-        })
-    );
+        });
+    });
     const results = await Promise.all(sendPromises);
 
     return new Response(JSON.stringify({
