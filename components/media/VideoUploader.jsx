@@ -4,7 +4,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
-import { logError } from "../../app/utils/analytics";
+import { logError, logButtonEvent } from "../../app/utils/analytics";
 
 // Fix: Detect supported mimeType at runtime instead of hardcoding
 const getSupportedMimeType = () => {
@@ -88,6 +88,9 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   };
 
   const handleCancel = () => {
+
+    logButtonEvent("video upload cancel button clicked", "/conversation/[id]");
+
     setFile(null);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
@@ -207,6 +210,9 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
 
   const handleSend = async () => {
     if (!file || !user) return;
+
+    logButtonEvent("video upload send button clicked", "/conversation/[id]");
+
     try {
       setStatus("compressing");
       setProgress(0);

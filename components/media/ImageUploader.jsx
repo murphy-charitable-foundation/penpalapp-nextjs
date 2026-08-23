@@ -7,7 +7,7 @@ import imageCompression from "browser-image-compression";
 
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
-import { logError } from "../../app/utils/analytics";
+import { logError, logButtonEvent } from "../../app/utils/analytics";
 
 const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   const [file, setFile] = useState(null);
@@ -61,12 +61,15 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   };
 
   const handleCancel = () => {
+    logButtonEvent("image upload cancel button clicked", "/conversation/[id]");
     resetState();
   };
 
   const handleSend = async () => {
     if (!file || !user) return;
 
+    logButtonEvent("image upload send button clicked", "/conversation/[id]");
+    
     setStatus("compressing");
 
     try {

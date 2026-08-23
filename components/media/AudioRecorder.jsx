@@ -14,7 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
-import { logError } from "../../app/utils/analytics";
+import { logError, logButtonEvent } from "../../app/utils/analytics";
 
 /**
  * Audio Recording and Upload Component
@@ -73,6 +73,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
 
   // --- 3. Recording Logic ---
   const startRecording = async () => {
+    logButtonEvent("voice message record button clicked", "/conversation/[id]");
+
     if (authLoading) return;
     if (!user) {
       if (onRequireLogin) onRequireLogin();
@@ -152,6 +154,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   };
 
   const stopRecording = () => {
+    logButtonEvent("voice message stop button clicked", "/conversation/[id]");
+
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive"
@@ -162,6 +166,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   };
 
   const handleDelete = () => {
+    logButtonEvent("voice message delete button clicked", "/conversation/[id]");
+
     if (status === "recording") {
       cancelNextRecordingRef.current = true;
       stopRecording();
@@ -184,11 +190,14 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   };
 
   const handleSendWhileRecording = () => {
+    logButtonEvent("voice message send while recording button clicked", "/conversation/[id]");
     sendAfterStopRef.current = true;
     stopRecording();
   };
 
   const handleSendInReview = () => {
+    logButtonEvent("voice message send button clicked", "/conversation/[id]");
+
     if (audioBlob && user) {
       const fileName = `voice_${Date.now()}.webm`;
       if (onRecordingComplete) {
@@ -203,6 +212,11 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   // --- 4. Preview Playback Logic ---
   const togglePlayPreview = () => {
     if (!audioPlayerRef.current) return;
+
+    logButtonEvent(
+      isPlaying ? "voice message pause button clicked" : "voice message play button clicked",
+      "/conversation/[id]"
+    );
 
     if (isPlaying) {
       audioPlayerRef.current.pause();
