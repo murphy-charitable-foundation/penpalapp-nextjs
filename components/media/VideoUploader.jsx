@@ -4,6 +4,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "@firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
+import { logError } from "../../app/utils/analytics";
 
 // Fix: Detect supported mimeType at runtime instead of hardcoding
 const getSupportedMimeType = () => {
@@ -96,7 +97,7 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   };
 
   const compressWithMediaRecorder = async (file, onProgress) => {
-    console.log("Using MediaRecorder compression...");
+    //console.log("Using MediaRecorder compression...");
     return new Promise((resolve, reject) => {
       const video = document.createElement("video");
       const videoUrl = URL.createObjectURL(file);
@@ -141,10 +142,7 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           });
         } catch (e) {
           // Fix: Graceful fallback — let the browser choose its own format
-          console.warn(
-            "Specified mimeType not supported, falling back to browser default.",
-            e,
-          );
+          logError(e, {description: "Specified mimeType not supported, falling back to browser default."});
           try {
             mediaRecorder = new MediaRecorder(stream, {
               videoBitsPerSecond: 1500000,
@@ -230,11 +228,11 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
             );
           }
         } catch (error) {
-          console.warn("Compression failed, using original.", error);
+          logError(error, {description: "Video compression failed, using original file."});
           compressedBlob = file;
         }
       } else {
-        console.log("File < 20MB, skipping compression.");
+        //console.log("File < 20MB, skipping compression.");
         setProgress(100);
       }
 
@@ -255,7 +253,7 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           setProgress(p);
         },
         (error) => {
-          console.error("Upload failed", error);
+          logError(error, {description: "Video upload failed"});
           alert("Upload failed");
           setStatus("idle");
         },
@@ -265,14 +263,14 @@ const VideoUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
             onUploadSuccess(downloadURL);
             handleCancel();
           } catch (error) {
-            console.error("Failed to get download URL:", error);
+            logError(error, {description: "Failed to get download URL after upload"});
             alert("Upload failed, please try again");
             setStatus("idle");
           }
         },
       );
     } catch (error) {
-      console.error("Error processing video", error);
+      logError(error, {description: "Error processing video"});
       alert("Error processing video.");
       handleCancel();
     }

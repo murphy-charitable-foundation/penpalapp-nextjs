@@ -14,6 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
+import { logError } from "../../app/utils/analytics";
 
 /**
  * Audio Recording and Upload Component
@@ -145,7 +146,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
         });
       }, 1000);
     } catch (error) {
-      console.error("Microphone access failed:", error);
+      logError(error, {description: "Microphone access failed"});
       alert("Please grant microphone permission");
     }
   };
@@ -208,7 +209,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
       setIsPlaying(false);
     } else {
       audioPlayerRef.current.play().catch((error) => {
-        console.error("Playback failed:", error);
+        logError(error, {description: "Audio playback failed"});
         setIsPlaying(false);
       });
       setIsPlaying(true);
@@ -229,9 +230,9 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   // --- 5. Upload Logic ---
   const handleUploadToFirebase = async (blob, uid) => {
     setStatus("uploading");
-        console.log("uid:", uid);
-    console.log("blob:", blob);
-    console.log("storage object:", storage);
+        //console.log("uid:", uid);
+    //console.log("blob:", blob);
+    //console.log("storage object:", storage);
     
     try {
       const fileName = `voice_${Date.now()}.webm`;
@@ -243,25 +244,25 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
         "state_changed",
         null,
         (error) => {
-          console.error("Upload failed:", error);
+          logError(error, {description: "Upload failed"});
           setStatus("review");
           alert("Upload failed, please try again");
         },
         async () => {
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            console.log("Upload successful:", downloadURL);
+            //console.log("Upload successful:", downloadURL);
             if (onUploadSuccess) onUploadSuccess(downloadURL);
             handleDelete();
           } catch (error) {
-            console.error("Failed to get download URL:", error);
+            logError(error, {description: "Failed to get download URL"});
             setStatus("review");
             alert("Upload failed, please try again");
           }
         },
       );
     } catch (error) {
-      console.error("Processing error:", error);
+      logError(error, {description: "Processing error"});
       setStatus("review");
     }
   };
