@@ -4,11 +4,12 @@ import { useCallback, useEffect } from "react";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 import { ChevronLeft, Camera, ImageIcon, Smile, Trash2, X } from "lucide-react";
-import { logButtonEvent } from "@/app/utils/analytics";
+import { logButtonEvent, logError } from "@/app/utils/analytics";
 import { saveAvatar } from "@/app/utils/avatarUtils";
 import Dialog from "@/components/general/Dialog";
 import { useAvatarUpload } from "@/app/utils/useAvatarUpload";
 import Image from "next/image";
+
 
 /**
  * AvatarUploadModal - A reusable avatar upload & crop component
@@ -95,7 +96,7 @@ export default function AvatarUploadModal({
             message: error.message || "An unexpected error occurred.",
           });
           setErrorMsg("Failed to save avatar. Please try again.");
-          console.error("Avatar upload error:", error);
+          logError(error, {description: "Avatar upload error"});
         }
       },
     });
