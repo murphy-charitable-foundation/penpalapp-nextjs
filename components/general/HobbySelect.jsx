@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../app/firebaseConfig";
+import { logError } from "../../app/utils/analytics";
 
 function slugify(label) {
   return label.toLowerCase().trim().replace(/\s+/g, "-");
@@ -55,7 +56,7 @@ export default function HobbySelect({
         const uniq = Array.from(new Map(opts.map((o) => [o.id, o])).values());
         if (alive) setServerOptions(uniq);
       } catch (e) {
-        console.error("Failed to fetch hobbies:", e);
+        logError(e, {description: "failed to fetch hobbies"});
         if (alive) setServerOptions([]);
       } finally {
         if (alive) setIsLoading(false);
@@ -117,7 +118,7 @@ export default function HobbySelect({
           hobby: label.toLowerCase().trim(),
         });
       } catch (e) {
-        console.error("Error creating hobby:", e);
+        logError(e, {description: "failed to create hobby"});
       } finally {
         setIsLoading(false);
       }
