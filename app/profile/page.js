@@ -178,7 +178,6 @@ export default function EditProfile() {
         await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
       } catch (e) {
         // Refresh failure should not block success flow
-        console.warn("refreshCachedUserPhoto failed", e);
         logError(e, { description: "Failed to refresh cached user photo" });
       }
 
