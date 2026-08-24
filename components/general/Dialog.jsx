@@ -133,9 +133,12 @@ export default function Dialog({
 
     return (
       <div
+        role="presentation"
         className={`fixed inset-0 z-50 flex items-center justify-center bg-black ${backgroundOpacity} backdrop-blur-sm`}
         onClick={() => closeOnOverlay && onClose()}>
         <div
+          role="dialog"
+          aria-modal="true"
           className={`${containerBg} ${containerPadding} ${containerRounding} shadow-lg ${containerWidth} mx-auto ${contentAlignment} ${containerClassName}`}
           onClick={(e) => e.stopPropagation()}>
           <h2
@@ -172,7 +175,10 @@ export default function Dialog({
 
   // Default Modal Layout
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm">
+    <div
+      role="presentation"
+      className="fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm"
+    >
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[1001]`}
         onClick={() => closeOnOverlay && onClose()}
@@ -180,6 +186,8 @@ export default function Dialog({
 
       <div
         ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
         className={`relative ${sizes[width]} bg-white rounded-xl shadow-xl p-6 text-gray-800 border border-gray-200 transform transition-all z-[1002] ${containerClassName}`}>
         {showCloseButton && (
           <div className="absolute top-1 right-1 text-xl">

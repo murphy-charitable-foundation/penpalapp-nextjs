@@ -70,6 +70,18 @@ It consists of two main files:
 - Internet connectivity tracking (offline/online events)
 - Sentry integration for debugging
 
+### Accessibility Semantics and Dead Clicks (Important)
+
+Dead click analytics uses accessibility semantics as part of the classification logic.
+
+- `aria-label` is captured and logged on dead click events (`aria_label`) to help identify what was clicked.
+- `aria-disabled="true"` is treated as disabled behavior and excluded from dead-click eligibility.
+- Elements with attributes like `aria-controls` and `aria-expanded` are treated as potentially actionable UI controls.
+- UI state changes such as `aria-expanded`, `aria-pressed`, and `aria-selected` are interpreted as valid click outcomes (which can prevent a dead-click classification).
+- `aria-busy="true"` is treated as an in-progress/loading signal and can suppress dead-click logging.
+
+When adding or changing ARIA attributes, remember that this can change dead-click reporting. Keep ARIA accurate to both accessibility intent and analytics quality.
+
 ---
 
 ## 🔧 Adding More Analytics
