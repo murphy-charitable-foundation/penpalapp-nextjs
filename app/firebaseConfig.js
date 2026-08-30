@@ -3,7 +3,7 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
-import { getMessaging, getToken, isSupported } from "firebase/messaging";
+import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
 import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
@@ -74,6 +74,7 @@ const hasBasicMessagingSupport = async () => {
 
 const initializeMessaging = async () => {
   if (messaging) {
+    console.log("[Notifications] Reusing initialized Firebase Messaging instance.");
     return messaging;
   }
 
@@ -82,9 +83,37 @@ const initializeMessaging = async () => {
   }
 
   const supported = await hasBasicMessagingSupport();
+  console.log("[Notifications] Firebase Messaging support check:", {
+    supported,
+    hasServiceWorker: typeof navigator !== "undefined" && "serviceWorker" in navigator,
+    hasPushManager: typeof window !== "undefined" && "PushManager" in window,
+  });
   if (!supported) return null;
 
   messaging = getMessaging(app);
+  onMessage(messaging, async (payload) => {
+    console.log("[Notifications] Foreground FCM message received:", {
+      title: payload.notification?.title,
+      hasBody: Boolean(payload.notification?.body),
+      conversationId: payload.data?.conversationId,
+    });
+
+    if (Notification.permission !== "granted") return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(
+        payload.notification?.title || "New Conversation Message",
+        {
+          body: payload.notification?.body || "You have a new message.",
+          data: { click_action: payload.data?.click_action || "/inbox" },
+        },
+      );
+    } catch (error) {
+      console.error("[Notifications] Failed to display foreground FCM message:", error);
+    }
+  });
+  console.log("[Notifications] Firebase Messaging initialized.");
   return messaging;
 };
 
@@ -96,7 +125,9 @@ export const requestNotificationPermission = async () => {
     return null;
   }
   try {
+    console.log("[Notifications] Requesting browser notification permission.");
     const permission = await Notification.requestPermission();
+    console.log("[Notifications] Browser notification permission result:", permission);
     return permission;
   } catch (err) {
     console.error("Failed to request notification permission:", err);
@@ -105,6 +136,10 @@ export const requestNotificationPermission = async () => {
 };
 
 export const handleNotificationSetup = async () => {
+  console.log("[Notifications] Starting notification setup:", {
+    permission: typeof Notification !== "undefined" ? Notification.permission : "unsupported",
+    hostname: typeof window !== "undefined" ? window.location.hostname : "server",
+  });
   const initializedMessaging = await initializeMessaging();
 
   if (!initializedMessaging) {
@@ -127,6 +162,12 @@ export const handleNotificationSetup = async () => {
     console.warn('No service worker registration available for notification setup.');
     return;
   }
+  console.log("[Notifications] Service worker ready:", {
+    scope: serviceWorkerRegistration.scope,
+    active: Boolean(serviceWorkerRegistration.active),
+    installing: Boolean(serviceWorkerRegistration.installing),
+    waiting: Boolean(serviceWorkerRegistration.waiting),
+  });
 
   try {
     const token = await getToken(initializedMessaging, {
@@ -134,6 +175,11 @@ export const handleNotificationSetup = async () => {
       serviceWorkerRegistration,
     });
     const user = auth.currentUser;
+    console.log("[Notifications] FCM token request completed:", {
+      hasToken: Boolean(token),
+      tokenLength: token?.length ?? 0,
+      authenticatedUid: user?.uid ?? null,
+    });
 
     if (!token || !user) {
       console.warn("Missing FCM token or no authenticated user.");
@@ -149,9 +195,15 @@ export const handleNotificationSetup = async () => {
 
     const data = await res.json();
     if (res.ok) {
-      console.log("Notification setup complete:");
+      console.log("[Notifications] Notification setup API succeeded:", {
+        status: res.status,
+        response: data,
+      });
     } else {
-      console.error("Server error setting up notifications:");
+      console.error("[Notifications] Notification setup API failed:", {
+        status: res.status,
+        response: data,
+      });
     }
   } catch (err) {
     console.error("Error during notification setup:", err);

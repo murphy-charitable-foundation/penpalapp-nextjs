@@ -72,6 +72,23 @@ const firebaseConfig = ['localhost', '127.0.0.1', '[::1]'].includes(self.locatio
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
+messaging.onBackgroundMessage((payload) => {
+  console.log('[Notifications] Background FCM message received:', {
+    title: payload.notification?.title,
+    hasBody: Boolean(payload.notification?.body),
+    conversationId: payload.data?.conversationId,
+  });
+
+  const clickAction = payload.data?.click_action || payload.fcmOptions?.link || '/inbox';
+  return self.registration.showNotification(
+    payload.notification?.title || 'New Conversation Message',
+    {
+      body: payload.notification?.body || 'You have a new message.',
+      data: { click_action: clickAction },
+    },
+  );
+});
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
