@@ -24,6 +24,29 @@ import { logError } from "../utils/analytics";
 
 const DELAY = 1000;
 
+const showMessageSentNotification = async () => {
+  if (
+    typeof window === "undefined" ||
+    !("Notification" in window) ||
+    Notification.permission !== "granted" ||
+    !("serviceWorker" in navigator)
+  ) {
+    console.warn("[Notifications] Skipping local message-sent notification:", {
+      permission: typeof Notification === "undefined" ? "unsupported" : Notification.permission,
+      hasServiceWorker: typeof navigator !== "undefined" && "serviceWorker" in navigator,
+    });
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification("Message sent");
+    console.log("[Notifications] Displayed local message-sent notification.");
+  } catch (error) {
+    console.error("[Notifications] Failed to display local message-sent notification:", error);
+  }
+};
+
 const getUserDoc = async () => {
   const userDocRef = doc(collection(db, "users"), auth.currentUser.uid);
   const userDocSnapshot = await getDoc(userDocRef);
@@ -387,6 +410,11 @@ export const sendNotification = async (conversationRef, message) => {
       conversationId: conversationId,
       message: message,
     };
+    console.log("[Notifications] Sending notification request:", {
+      conversationId,
+      hasMessage: Boolean(message),
+      messageLength: message?.length ?? 0,
+    });
 
     // Send to notify API with auth header.
     const response = await fetch("/api/notify", {
@@ -399,6 +427,17 @@ export const sendNotification = async (conversationRef, message) => {
     });
 
     const result = await response.json();
+    console.log("[Notifications] Notification API response:", {
+      status: response.status,
+      ok: response.ok,
+      message: result.message,
+      error: result.error,
+      results: result.results?.map(({ success, name, error }) => ({
+        success,
+        name,
+        error,
+      })),
+    });
 
     if (!response.ok) {
       console.error("Failed to send notifications:", result.error);
@@ -406,6 +445,7 @@ export const sendNotification = async (conversationRef, message) => {
     }
 
     console.log("Notifications sent successfully:", result);
+    await showMessageSentNotification();
     return result;
   } catch (e) {
     console.error("Error in sendNotification:", e);
