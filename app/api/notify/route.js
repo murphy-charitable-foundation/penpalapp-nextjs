@@ -99,15 +99,25 @@ export async function POST(req) {
     if (!conversationId) {
       return new Response(JSON.stringify({ error: "conversationId is required." }), { status: 400 });
     }
+    console.log("[Notifications] Processing notification request:", {
+      conversationId,
+      senderUid,
+      hasMessage: Boolean(message),
+    });
 
     // --- VERIFY ---
     const allowed = await isInConversation(senderUid, conversationId);
     if (!allowed) {
+      console.warn("[Notifications] Sender is not a conversation member:", { conversationId, senderUid });
       return new Response(JSON.stringify({ error: "Sender is not part of this conversation." }), { status: 403 });
     }
 
     // --- FETCH TOKENS ---
     const tokens = await getConversationTokens(conversationId, senderUid);
+    console.log("[Notifications] Recipient token lookup completed:", {
+      conversationId,
+      recipientTokenCount: tokens.length,
+    });
 
     if (tokens.length === 0) {
       return new Response(JSON.stringify({ message: "No FCM tokens found for recipients." }), { status: 200 });
@@ -164,12 +174,16 @@ export async function POST(req) {
           return {
             success: false,
             error: `Failed to send notification to ${name}.`,
-            token,
             name,
           };
         });
     });
     const results = await Promise.all(sendPromises);
+    console.log("[Notifications] FCM send results:", {
+      conversationId,
+      successCount: results.filter((result) => result.success).length,
+      failureCount: results.filter((result) => !result.success).length,
+    });
 
     return new Response(JSON.stringify({
       message: "Notification processing complete.",
