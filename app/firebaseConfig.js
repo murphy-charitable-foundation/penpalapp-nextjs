@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
-import { getOrRegisterAppServiceWorker, isLocalhost } from "./utils/serviceWorker";
+import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -119,11 +119,6 @@ export const handleNotificationSetup = async () => {
 
   if (permission !== "granted") {
     console.log("Notification permission denied or dismissed.");
-    return;
-  }
-
-  if (isLocalhost()) {
-    console.log('Skipping notification setup on localhost.');
     return;
   }
 
