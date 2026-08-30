@@ -1,13 +1,12 @@
-const LOCALHOST_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]'];
 const SW_SCRIPT = '/sw.js';
 const SW_SCOPE = '/';
 
 const isServiceWorkerSupported = () =>
   typeof window !== 'undefined' && 'serviceWorker' in navigator;
 
-export const isLocalhost = () =>
-  typeof window !== 'undefined' &&
-  LOCALHOST_HOSTNAMES.includes(window.location.hostname);
+// export const isLocalhost = () =>
+//   typeof window !== 'undefined' &&
+//   ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 
 const cleanupLegacyFirebaseMessagingWorkers = async () => {
   if (!isServiceWorkerSupported()) return;
