@@ -25,7 +25,7 @@ const cleanupLegacyFirebaseMessagingWorkers = async () => {
 };
 
 export const getAppServiceWorkerRegistration = async () => {
-  if (!isServiceWorkerSupported() || isLocalhost()) {
+  if (!isServiceWorkerSupported()) {
     return null;
   }
 
@@ -33,7 +33,7 @@ export const getAppServiceWorkerRegistration = async () => {
 };
 
 export const registerAppServiceWorker = async () => {
-  if (!isServiceWorkerSupported() || isLocalhost()) {
+  if (!isServiceWorkerSupported()) {
     return null;
   }
 
@@ -42,8 +42,7 @@ export const registerAppServiceWorker = async () => {
 };
 
 export const getOrRegisterAppServiceWorker = async () => {
-  if (!isServiceWorkerSupported() || isLocalhost()) {
-    await cleanupLegacyFirebaseMessagingWorkers();
+  if (!isServiceWorkerSupported()) {
     return null;
   }
 
