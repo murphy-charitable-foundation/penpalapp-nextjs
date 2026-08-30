@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect } from 'react';
-import { messaging } from '../app/firebaseConfig';
+import { useEffect, useRef } from "react";
+import { useUser } from "../contexts/UserContext";
+import { initializeNotifications } from "../app/utils/notification";
 
 export function NotificationHandler({ children }) {
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!('Notification' in window)) return;
-    if (!messaging) return;
+  const { user } = useUser();
+  const initializedUserIdRef = useRef(null);
 
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
-    }
-  }, []);
+  useEffect(() => {
+    if (!user?.uid || initializedUserIdRef.current === user.uid) return;
+
+    initializedUserIdRef.current = user.uid;
+    initializeNotifications().catch((error) => {
+      initializedUserIdRef.current = null;
+      console.error("Notification setup failed:", error);
+    });
+  }, [user?.uid]);
 
   return children;
 }
