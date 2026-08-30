@@ -3,7 +3,7 @@ import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
-import { getMessaging, getToken, isSupported } from "firebase/messaging";
+import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
 import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
@@ -85,6 +85,22 @@ const initializeMessaging = async () => {
   if (!supported) return null;
 
   messaging = getMessaging(app);
+  onMessage(messaging, async (payload) => {
+    if (Notification.permission !== "granted") return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(
+        payload.data?.title || "New Conversation Message",
+        {
+          body: payload.data?.body || "You have a new message.",
+          data: { click_action: payload.data?.click_action || "/inbox" },
+        },
+      );
+    } catch (error) {
+      console.error("[Notifications] Failed to display foreground FCM message:", error);
+    }
+  });
   return messaging;
 };
 
@@ -149,9 +165,9 @@ export const handleNotificationSetup = async () => {
 
     const data = await res.json();
     if (res.ok) {
-      console.log("Notification setup complete:");
+      console.log("Notification setup complete.");
     } else {
-      console.error("Server error setting up notifications:");
+      console.error("Server error setting up notifications:", data.error);
     }
   } catch (err) {
     console.error("Error during notification setup:", err);

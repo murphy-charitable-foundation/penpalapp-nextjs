@@ -142,11 +142,9 @@ export async function POST(req) {
 
       return messaging.send({
         token,
-        notification: {
+        data: {
           title: notificationTitle,
           body: notificationBody,
-        },
-        data: {
           click_action: clickAction,
           conversationId,
           recipientName: name,
@@ -182,7 +180,6 @@ export async function POST(req) {
           return {
             success: false,
             error: `Failed to send notification to ${name}.`,
-            token,
             name,
           };
         });
