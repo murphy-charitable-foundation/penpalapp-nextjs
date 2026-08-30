@@ -132,6 +132,24 @@ export async function POST(req) {
     const sendPromises = tokens.map(({ token, name, userRef }) => {
       const notificationBody = message || `New message for ${name}`;
 
+      console.log("[Notifications] Sending FCM message:", {
+        recipient: name,
+        notification: {
+          title: notificationTitle,
+          body: notificationBody,
+        },
+        data: {
+          click_action: clickAction,
+          conversationId,
+          recipientName: name,
+        },
+        webpush: {
+          fcmOptions: {
+            link: absoluteLink,
+          },
+        },
+      });
+
       return messaging.send({
         token,
         notification: {
@@ -179,16 +197,23 @@ export async function POST(req) {
         });
     });
     const results = await Promise.all(sendPromises);
+    const successCount = results.filter((result) => result.success).length;
+    const failureCount = results.length - successCount;
     console.log("[Notifications] FCM send results:", {
       conversationId,
-      successCount: results.filter((result) => result.success).length,
-      failureCount: results.filter((result) => !result.success).length,
+      successCount,
+      failureCount,
     });
+
+    const status =
+      failureCount === 0 ? 200 : successCount === 0 ? 502 : 207;
 
     return new Response(JSON.stringify({
       message: "Notification processing complete.",
+      successCount,
+      failureCount,
       results,
-    }), { status: 207 });
+    }), { status });
 
   } catch (error) {
     console.error("Error processing request:", error);
