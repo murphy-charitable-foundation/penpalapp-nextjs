@@ -73,12 +73,6 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('[Notifications] Background FCM message received:', {
-    title: payload.notification?.title,
-    hasBody: Boolean(payload.notification?.body),
-    conversationId: payload.data?.conversationId,
-  });
-
   const clickAction = payload.data?.click_action || payload.fcmOptions?.link || '/inbox';
   return self.registration.showNotification(
     payload.notification?.title || 'New Conversation Message',
@@ -161,4 +155,3 @@ self.addEventListener('fetch', (event) => {
     })(),
   );
 });
-

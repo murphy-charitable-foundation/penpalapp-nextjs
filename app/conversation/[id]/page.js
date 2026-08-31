@@ -110,7 +110,6 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
-  const [globalConversationReference, setGlobalConversationReference] = useState(null);
   const [messagesRef, setMessagesRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -909,10 +908,9 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageDataWithAttachments);
       }
       
-      if (globalConversationReference) {
-        sendNotification(globalConversationReference, "").catch((error) => {
-          console.error("Failed to send notification:", error);
-        });
+      const notificationResult = await sendNotification({ id }, "");
+      if (notificationResult?.error) {
+        console.error("Failed to send notification:", notificationResult.error);
       }
 
       // Clear states
@@ -1201,7 +1199,6 @@ export default function Page({ params }) {
       setRecipients([]);
       setRecipientName("");
       setMessagesRef(null);
-      setGlobalConversationReference(null);
 
       setMessageContent("");
       setDraft(null);
@@ -1289,7 +1286,6 @@ export default function Page({ params }) {
 
           const lRef = collection(conversationRef, "messages");
           setMessagesRef(lRef);
-          setGlobalConversationReference(conversationRef);
 
           const draftData = await fetchDraft(id, userDocRef, false);
 
