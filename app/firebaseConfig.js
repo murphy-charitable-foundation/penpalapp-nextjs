@@ -53,6 +53,7 @@ const VAPID_KEY =
     ? "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc"
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
 let messaging = null;
+let messagingInitializationPromise = null;
 
 const hasBasicMessagingSupportSync = () =>
   typeof window !== "undefined" &&
@@ -77,31 +78,46 @@ const initializeMessaging = async () => {
     return messaging;
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("Firebase client project:", firebaseConfig.projectId);
+  if (!messagingInitializationPromise) {
+    messagingInitializationPromise = (async () => {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Firebase client project:", firebaseConfig.projectId);
+      }
+
+      const supported = await hasBasicMessagingSupport();
+      if (!supported) return null;
+
+      const initializedMessaging = getMessaging(app);
+      onMessage(initializedMessaging, async (payload) => {
+        if (Notification.permission !== "granted") return;
+
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification(
+            payload.notification?.title || "New Conversation Message",
+            {
+              body: payload.notification?.body || "You have a new message.",
+              data: { click_action: payload.data?.click_action || "/inbox" },
+            },
+          );
+        } catch (error) {
+          console.error(
+            "[Notifications] Failed to display foreground FCM message:",
+            error,
+          );
+        }
+      });
+      messaging = initializedMessaging;
+      return initializedMessaging;
+    })();
   }
 
-  const supported = await hasBasicMessagingSupport();
-  if (!supported) return null;
-
-  messaging = getMessaging(app);
-  onMessage(messaging, async (payload) => {
-    if (Notification.permission !== "granted") return;
-
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification(
-        payload.notification?.title || "New Conversation Message",
-        {
-          body: payload.notification?.body || "You have a new message.",
-          data: { click_action: payload.data?.click_action || "/inbox" },
-        },
-      );
-    } catch (error) {
-      console.error("[Notifications] Failed to display foreground FCM message:", error);
-    }
-  });
-  return messaging;
+  try {
+    return await messagingInitializationPromise;
+  } catch (error) {
+    messagingInitializationPromise = null;
+    throw error;
+  }
 };
 
 // ---------- PERMISSION + API CALL ----------
