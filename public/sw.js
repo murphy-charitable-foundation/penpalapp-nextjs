@@ -37,51 +37,52 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+const getPushPayload = (event) => {
+  try {
+    return event.data?.json() || null;
+  } catch (error) {
+    console.error('[Notifications] Failed to parse push payload:', error);
+    return null;
+  }
+};
+
+self.addEventListener('push', (event) => {
+  const payload = getPushPayload(event);
+  if (!payload) return;
+
+  event.stopImmediatePropagation();
+
+  const title =
+    payload.notification?.title ||
+    payload.data?.title ||
+    'New Conversation Message';
+  const body =
+    payload.notification?.body ||
+    payload.data?.body ||
+    'You have a new message.';
+  const clickAction =
+    payload.data?.click_action ||
+    payload.fcmOptions?.link ||
+    payload.notification?.click_action ||
+    '/inbox';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: payload.notification?.icon || '/murphylogo.png',
+      image: payload.notification?.image,
+      data: {
+        click_action: clickAction,
+        FCM_MSG: payload,
+      },
+    }),
+  );
+});
 
 const CACHE_NAME = 'offline-cache-v3';
 const CACHE_PREFIX = 'offline-cache-';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = ['/offline.html','/murphylogo.png'];
-
-const productionFirebaseConfig = {
-  apiKey: "AIzaSyBpYg-KAzwWGaT3g7J8smjnNqP8N8Nj8vQ",
-  authDomain: "penpalmagicapp.firebaseapp.com",
-  projectId: "penpalmagicapp",
-  storageBucket: "penpalmagicapp.appspot.com",
-  messagingSenderId: "45289060638",
-  appId: "1:45289060638:web:33121bc47d40ceef83f10f",
-  measurementId: "G-FG3MPZ8JV6",
-};
-
-const developmentFirebaseConfig = {
-  apiKey: "AIzaSyDKph6qj7ojAf9pg6o0N8Lq1Zd7eUBC_YQ",
-  authDomain: "penpalmagicapp-dev.firebaseapp.com",
-  projectId: "penpalmagicapp-dev",
-  storageBucket: "penpalmagicapp-dev.firebasestorage.app",
-  messagingSenderId: "793782879682",
-  appId: "1:793782879682:web:7e1ebb814edd688892025b",
-  measurementId: "G-6TCJ7JEMZ0",
-};
-
-const firebaseConfig = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname)
-  ? developmentFirebaseConfig
-  : productionFirebaseConfig;
-
-firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-  const clickAction = payload.data?.click_action || payload.fcmOptions?.link || '/inbox';
-  return self.registration.showNotification(
-    payload.notification?.title || 'New Conversation Message',
-    {
-      body: payload.notification?.body || 'You have a new message.',
-      data: { click_action: clickAction },
-    },
-  );
-});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
