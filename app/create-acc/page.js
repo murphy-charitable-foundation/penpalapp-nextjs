@@ -14,6 +14,7 @@ import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
+import { clearCachedUser } from "@/app/utils/sessionUserCache";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";
@@ -116,6 +117,7 @@ export default function CreateAccount() {
           setDialogMessage(
             "Account creation timed out. Please try logging in again.",
           );
+          clearCachedUser(user?.uid);
           await signOut(auth);
           router.push("/login");
           return;
@@ -384,6 +386,7 @@ export default function CreateAccount() {
                   btnText="Log Out"
                   color="grayBlue"
                   onClick={async () => {
+                    clearCachedUser(user?.uid);
                     await signOut(auth);
                     router.push("/");
                   }}

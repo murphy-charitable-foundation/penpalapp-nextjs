@@ -1,12 +1,16 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '../app/firebaseConfig';
 import { getUserPfp } from '../app/utils/avatarUtils';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 import { PUBLIC_PATHS } from "../app/utils/publicPaths";
+import {
+  getUserData,
+  clearCachedUser,
+} from "@/app/utils/sessionUserCache";
 
 const UserContext = createContext();
 
@@ -21,31 +25,43 @@ export function UserProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const applyUserData = (data) => {
+    setUserData(data);
+    setUserType(data.user_type || 'Unknown Type');
+    setDisplayName(data.first_name || '');
+  };
+
+  const loadProfileImage = async (uid) => {
+    try {
+      const pfp = await getUserPfp(uid);
+      setProfileImage(pfp || '');
+    } catch (error) {
+      console.error('Error fetching profile image:', error);
+      setProfileImage('');
+    }
+  };
+
   useEffect(() => {
+    let lastUid = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
+        if (lastUid && lastUid !== authUser.uid) {
+          clearCachedUser(lastUid);
+        }
+
+        lastUid = authUser.uid;
         setUser(authUser);
 
         const userDocRef = doc(db, 'users', authUser.uid);  // Create the ref
         setUserDocRef(userDocRef);  // Set it in state
-        
-        // Fetch user type from Firestore
-        try {
-          const userDoc = await getDoc(userDocRef);
-          
-          if (userDoc.exists()) {
-            const fetchedUserData = userDoc.data();
-            setUserData(fetchedUserData);
-            setUserType(fetchedUserData.user_type || 'Unknown Type');
-            setDisplayName(fetchedUserData.first_name || '');
 
-            try {
-              const pfp = await getUserPfp(authUser.uid);
-              setProfileImage(pfp || '');
-            } catch (error) {
-              console.error('Error fetching profile image:', error);
-              setProfileImage('');
-            }
+        try {
+          const fetchedUserData = await getUserData(authUser.uid, userDocRef);
+
+          if (fetchedUserData) {
+            applyUserData(fetchedUserData);
+            await loadProfileImage(authUser.uid);
           } else {
             setUserData(null);
             setUserType('Unknown Type');
@@ -64,6 +80,10 @@ export function UserProvider({ children }) {
           setLoading(false);
         }
       } else {
+        if (lastUid) {
+          clearCachedUser(lastUid);
+        }
+        lastUid = null;
         setUser(null);
         setUserType(null);
         setUserData(null);
