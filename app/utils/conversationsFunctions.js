@@ -387,7 +387,6 @@ export const sendNotification = async (conversationRef, message) => {
       conversationId: conversationId,
       message: message,
     };
-
     // Send to notify API with auth header.
     const response = await fetch("/api/notify", {
       method: "POST",
@@ -399,7 +398,6 @@ export const sendNotification = async (conversationRef, message) => {
     });
 
     const result = await response.json();
-
     if (!response.ok) {
       console.error("Failed to send notifications:", result.error);
       return result;

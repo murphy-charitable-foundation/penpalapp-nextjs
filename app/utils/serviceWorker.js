@@ -1,13 +1,12 @@
-const LOCALHOST_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]'];
 const SW_SCRIPT = '/sw.js';
 const SW_SCOPE = '/';
 
 const isServiceWorkerSupported = () =>
   typeof window !== 'undefined' && 'serviceWorker' in navigator;
 
-export const isLocalhost = () =>
-  typeof window !== 'undefined' &&
-  LOCALHOST_HOSTNAMES.includes(window.location.hostname);
+// export const isLocalhost = () =>
+//   typeof window !== 'undefined' &&
+//   ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 
 const cleanupLegacyFirebaseMessagingWorkers = async () => {
   if (!isServiceWorkerSupported()) return;
@@ -25,7 +24,7 @@ const cleanupLegacyFirebaseMessagingWorkers = async () => {
 };
 
 export const getAppServiceWorkerRegistration = async () => {
-  if (!isServiceWorkerSupported() || isLocalhost()) {
+  if (!isServiceWorkerSupported()) {
     return null;
   }
 
@@ -33,7 +32,7 @@ export const getAppServiceWorkerRegistration = async () => {
 };
 
 export const registerAppServiceWorker = async () => {
-  if (!isServiceWorkerSupported() || isLocalhost()) {
+  if (!isServiceWorkerSupported()) {
     return null;
   }
 
@@ -42,8 +41,7 @@ export const registerAppServiceWorker = async () => {
 };
 
 export const getOrRegisterAppServiceWorker = async () => {
-  if (!isServiceWorkerSupported() || isLocalhost()) {
-    await cleanupLegacyFirebaseMessagingWorkers();
+  if (!isServiceWorkerSupported()) {
     return null;
   }
 
