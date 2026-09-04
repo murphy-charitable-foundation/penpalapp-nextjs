@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, use } from "react";
 import { db } from "../../firebaseConfig";
 import {
   collection,
@@ -67,7 +67,8 @@ const attachmentFileNamesToSave = (attachments) =>
 
 const getMessageContentForSave = (content) => (content ?? "").trim();
 
-export default function Page({ params }) {
+export default function Page(props) {
+  const params = use(props.params);
   const { id } = params;
 
   const router = useRouter();
