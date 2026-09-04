@@ -14,6 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
+import { logError, logButtonEvent } from "../../app/utils/analytics";
 
 /**
  * Audio Recording and Upload Component
@@ -72,6 +73,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
 
   // --- 3. Recording Logic ---
   const startRecording = async () => {
+    logButtonEvent("voice message record button clicked", "/conversation/[id]");
+
     if (authLoading) return;
     if (!user) {
       if (onRequireLogin) onRequireLogin();
@@ -145,12 +148,14 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
         });
       }, 1000);
     } catch (error) {
-      console.error("Microphone access failed:", error);
+      logError(error, {description: "Microphone access failed"});
       alert("Please grant microphone permission");
     }
   };
 
   const stopRecording = () => {
+    logButtonEvent("voice message stop button clicked", "/conversation/[id]");
+
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive"
@@ -161,6 +166,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   };
 
   const handleDelete = () => {
+    logButtonEvent("voice message delete button clicked", "/conversation/[id]");
+
     if (status === "recording") {
       cancelNextRecordingRef.current = true;
       stopRecording();
@@ -183,11 +190,14 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   };
 
   const handleSendWhileRecording = () => {
+    logButtonEvent("voice message send while recording button clicked", "/conversation/[id]");
     sendAfterStopRef.current = true;
     stopRecording();
   };
 
   const handleSendInReview = () => {
+    logButtonEvent("voice message send button clicked", "/conversation/[id]");
+
     if (audioBlob && user) {
       const fileName = `voice_${Date.now()}.webm`;
       if (onRecordingComplete) {
@@ -203,12 +213,17 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   const togglePlayPreview = () => {
     if (!audioPlayerRef.current) return;
 
+    logButtonEvent(
+      isPlaying ? "voice message pause button clicked" : "voice message play button clicked",
+      "/conversation/[id]"
+    );
+
     if (isPlaying) {
       audioPlayerRef.current.pause();
       setIsPlaying(false);
     } else {
       audioPlayerRef.current.play().catch((error) => {
-        console.error("Playback failed:", error);
+        logError(error, {description: "Audio playback failed"});
         setIsPlaying(false);
       });
       setIsPlaying(true);
@@ -229,9 +244,9 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   // --- 5. Upload Logic ---
   const handleUploadToFirebase = async (blob, uid) => {
     setStatus("uploading");
-        console.log("uid:", uid);
-    console.log("blob:", blob);
-    console.log("storage object:", storage);
+        //console.log("uid:", uid);
+    //console.log("blob:", blob);
+    //console.log("storage object:", storage);
     
     try {
       const fileName = `voice_${Date.now()}.webm`;
@@ -243,25 +258,25 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
         "state_changed",
         null,
         (error) => {
-          console.error("Upload failed:", error);
+          logError(error, {description: "Upload failed"});
           setStatus("review");
           alert("Upload failed, please try again");
         },
         async () => {
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            console.log("Upload successful:", downloadURL);
+            //console.log("Upload successful:", downloadURL);
             if (onUploadSuccess) onUploadSuccess(downloadURL);
             handleDelete();
           } catch (error) {
-            console.error("Failed to get download URL:", error);
+            logError(error, {description: "Failed to get download URL"});
             setStatus("review");
             alert("Upload failed, please try again");
           }
         },
       );
     } catch (error) {
-      console.error("Processing error:", error);
+      logError(error, {description: "Processing error"});
       setStatus("review");
     }
   };

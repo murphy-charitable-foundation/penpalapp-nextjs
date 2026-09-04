@@ -6,8 +6,13 @@ import { PageContainer } from "../components/general/PageContainer";
 import Button from "../components/general/Button";
 import logo from "../public/murphylogo.png";
 import { useRouter } from "next/navigation";
+import { usePageAnalytics } from "./useAnalytics";
+import { logButtonEvent } from "./utils/analytics";
 
 export default function Home() {
+
+  usePageAnalytics("/");
+
   const router = useRouter();
 
   const handleNavigation = (href) => {
@@ -78,13 +83,17 @@ export default function Home() {
             <Button
               btnText="Log in"
               color="green"
-              onClick={() => handleNavigation("/login")}
+              onClick={() => {
+                logButtonEvent("login button clicked", "/");
+                handleNavigation("/login");
+              }}
             />
 
             <Button
               btnText="Become a Pen Pal Volunteer"
               color="blue"
               href="https://calendly.com/murphycharity/60min"
+              onClick={() => logButtonEvent("become a pen pal button clicked", "/")}
               external
             />
           </div>

@@ -64,6 +64,9 @@ export default function CreateChildProfile() {
       setDialogTitle("Access Denied");
       setDialogMessage("You do not have authorization to access this page. Only admins can create child profiles.");
       setIsDialogOpen(true);
+      logError(new Error("Unauthorized access attempt to create child profile"), {
+        description: "User attempted to access create child profile page without admin privileges.",
+      });
       
       // Redirect to login after dialog closes
       const timer = setTimeout(() => {

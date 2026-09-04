@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Button from "../general/Button";
 import { createConnection } from "../../app/utils/conversationsFunctions";
+import { logError, logButtonEvent } from "../../app/utils/analytics";
 
 //This is the send message button in the kid card. It also creates the connection between the user and the kid
 export default function SendMessage({ kid }) {
@@ -26,14 +27,15 @@ export default function SendMessage({ kid }) {
             setUserRef(docRef);
           }
         } else {
-          console.error("No user logged in");
+          logError(new Error("No user logged in"), {
+            description: "Attempted to fetch user data without a logged-in user.",
+          });
           router.push("/login");
         }
       } catch (error) {
-        console.error(
-          "There has been a error fetching the logged in user",
-          error
-        );
+        logError(error, {
+          description: "There has been a error fetching the logged in user",
+        });
       }
     };
 
@@ -41,7 +43,7 @@ export default function SendMessage({ kid }) {
   }, [router]);
 
   const handleClick = async () => {
-
+    logButtonEvent("send message button clicked", "/discovery");
     createConnection(userRef, kid.ref).then((conversationsRef) => {
       router.push("/conversation/" + conversationsRef.id);
     });

@@ -296,7 +296,9 @@ export default function Page({ params }) {
         );
         replaceDraftAttachmentViewer(previewAttachment);
       } catch (error) {
-        console.error("Failed to preview draft attachment:", error);
+        logError(error, {
+          description: "Failed to preview draft attachment",
+        });
       }
     },
     [editingMessageId, id, replaceDraftAttachmentViewer],
@@ -425,6 +427,7 @@ export default function Page({ params }) {
   };
 
   const handlePickImage = () => {
+    logButtonEvent("Pick image clicked", "/conversation/[id]");
     if (!user?.uid) {
       handleRequireLogin();
       return;
@@ -433,6 +436,7 @@ export default function Page({ params }) {
   };
 
   const handlePickVideo = () => {
+    logButtonEvent("Pick video clicked", "/conversation/[id]");
     if (!user?.uid) {
       handleRequireLogin();
       return;
@@ -468,6 +472,8 @@ export default function Page({ params }) {
   };
 
   const handleConfirmDeleteAttachment = async () => {
+    logButtonEvent("Confirm delete attachment clicked", "/conversation/[id]");
+
     if (!attachmentToDelete) {
       setShowAttachmentDeleteDialog(false);
       return;
@@ -499,7 +505,9 @@ export default function Page({ params }) {
         }
       }
     } catch (error) {
-      console.error("Error during attachment deletion:", error);
+      logError(error, {
+        description: "Error during attachment deletion",
+      });
     } finally {
       setAttachmentToDelete(null);
       setShowAttachmentDeleteDialog(false);
@@ -610,7 +618,9 @@ export default function Page({ params }) {
 
         return savedDraft;
       } catch (error) {
-        console.error("❌ saveDraft error:", error);
+        logError(error, {
+          description: "saveDraft error",
+        });
 
         if (error?.code === "permission-denied") {
           alert("Permission denied. Please check your access rights.");
@@ -721,7 +731,6 @@ export default function Page({ params }) {
           await saveDraft(newContent);
           setIsSendButtonDisabled(false);
         } catch (error) {
-          console.error("❌ Failed to save empty draft:", error);
           logError(error, {
             description: "Failed to save empty draft:",
           });
@@ -747,6 +756,8 @@ export default function Page({ params }) {
     if (isSending || !editingMessageId) {
       return;
     }
+
+    logButtonEvent("Update message clicked", "/conversation/[id]");
 
     setIsSending(true);
 
@@ -831,7 +842,9 @@ export default function Page({ params }) {
         scrollToBottom(true);
       }, 100);
     } catch (error) {
-      console.error("❌ handleUpdateMessage error:", error);
+      logError(error, {
+        description: "handleUpdateMessage error",
+      });
 
       if (error?.code === "permission-denied") {
         alert(
@@ -864,6 +877,8 @@ export default function Page({ params }) {
     if (isSending) {
       return;
     }
+
+    logButtonEvent("Send message clicked", "/conversation/[id]");
 
     if (draftTimer) {
       clearTimeout(draftTimer);
@@ -908,9 +923,12 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageDataWithAttachments);
       }
       
-      const notificationResult = await sendNotification({ id }, "");
-      if (notificationResult?.error) {
-        console.error("Failed to send notification:", notificationResult.error);
+      if (globalConversationReference) {
+        sendNotification(globalConversationReference, "").catch((error) => {
+          logError(error, {
+            description: "Failed to send notification",
+          });
+        });
       }
 
       // Clear states
@@ -972,6 +990,8 @@ export default function Page({ params }) {
   };
 
   const handleCloseMessage = async () => {
+    logButtonEvent("Close conversation clicked", "/conversation/[id]");
+
     if (isSendButtonDisabled || isUpdatingFirebase) {
       return;
     }
@@ -1020,6 +1040,7 @@ export default function Page({ params }) {
   };
 
   const handleConfirmClose = async () => {
+    logButtonEvent("Confirm close dialog clicked", "/conversation/[id]");
     setShowCloseDialog(false);
 
     if (editingMessageId) {
@@ -1038,6 +1059,7 @@ export default function Page({ params }) {
   };
 
   const handleContinueEditing = () => {
+    logButtonEvent("Stay on page clicked", "/conversation/[id]");
     setShowCloseDialog(false);
     setIsEditing(true);
 
@@ -1059,7 +1081,9 @@ export default function Page({ params }) {
       try {
         await saveDraft(messageContent);
       } catch (error) {
-        console.error("❌ Failed to save draft before editing message:", error);
+        logError(error, {
+          description: "Failed to save draft before editing message",
+        });
 
         const confirmSwitch = window.confirm(
           "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
@@ -1112,6 +1136,7 @@ export default function Page({ params }) {
   };
 
   const handleReplyClick = async () => {
+    logButtonEvent("Reply composer clicked", "/conversation/[id]");
     setIsEditing(true);
 
     // Preserve local unsent/in-flight attachment state instead of replacing
@@ -1157,7 +1182,9 @@ export default function Page({ params }) {
           setHasDraftContent(false);
         }
       } catch (error) {
-        console.error("❌ Error fetching draft:", error);
+        logError(error, {
+          description: "Error fetching draft",
+        });
         setMessageContent("");
         setPendingAttachments([]);
         setHasDraftContent(false);
@@ -1252,7 +1279,10 @@ export default function Page({ params }) {
           const conversationDoc = await getDoc(conversationRef);
 
           if (!conversationDoc.exists()) {
-            console.error("❌ Conversation does not exist:", id);
+            logError(new Error("Conversation does not exist"), {
+              description: "Conversation does not exist",
+              conversationId: id,
+            });
             return;
           }
 
@@ -1271,7 +1301,9 @@ export default function Page({ params }) {
               const downloaded = await getUserPfp(currentUser.uid);
               setProfileImage(downloaded || "");
             } catch (error) {
-              console.error("Failed to load profile image", error);
+              logError(error, {
+                description: "Failed to load profile image",
+              });
               setProfileImage("");
             }
           }
@@ -1405,7 +1437,6 @@ export default function Page({ params }) {
             setAllMessages([]);
           }
         } catch (error) {
-          console.error("❌ INITIALIZATION ERROR:", error);
           logError(error, {
             description: "INITIALIZATION ERROR:",
           });
