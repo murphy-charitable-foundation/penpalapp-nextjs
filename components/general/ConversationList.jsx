@@ -24,7 +24,7 @@ const ConversationList = ({
             isAdmin={isAdmin}
             id={conversation.sent_by?.id}
             onClick={() => {
-              logButtonEvent(`Conversation ${conversation.conversationId}-${conversation.id} clicked`, "/inbox");
+              logButtonEvent("Conversation clicked", "/inbox");
               onSelectConversation(conversation)
             }}
           />

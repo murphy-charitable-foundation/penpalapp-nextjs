@@ -46,7 +46,7 @@ export default function Page({ params }) {
   const { user } = useUser();
   const router = useRouter();
 
-  usePageAnalytics(`/profile-view/${id}`);
+  usePageAnalytics("/profile-view/$[id]");
 
   useEffect(() => {
     const fetchUserData = async () => {
