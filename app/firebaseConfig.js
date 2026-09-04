@@ -4,8 +4,8 @@ import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
-import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore"
-
+import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
+import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -53,6 +53,7 @@ const VAPID_KEY =
     ? "BL0rVqsgVKnkhFuzly4i471txifurrzYLpa2681lkzisSwfxbTf75lQ4vZTAffy_NExQBhFWr8jDupiuUT5BOsc"
     : "BHkY4hckETSNt5L7jYKcoLjgCNXmdiKcHWNvZrGXMHe06NQQ_9CDQ_XQ4bYNGUnCz9C5HvOHdJUO0LHWK7zPdaw";
 let messaging = null;
+let messagingInitializationPromise = null;
 
 const hasBasicMessagingSupportSync = () =>
   typeof window !== "undefined" &&
@@ -77,15 +78,27 @@ const initializeMessaging = async () => {
     return messaging;
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("Firebase client project:", firebaseConfig.projectId);
+  if (!messagingInitializationPromise) {
+    messagingInitializationPromise = (async () => {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Firebase client project:", firebaseConfig.projectId);
+      }
+
+      const supported = await hasBasicMessagingSupport();
+      if (!supported) return null;
+
+      const initializedMessaging = getMessaging(app);
+      messaging = initializedMessaging;
+      return initializedMessaging;
+    })();
   }
 
-  const supported = await hasBasicMessagingSupport();
-  if (!supported) return null;
-
-  messaging = getMessaging(app);
-  return messaging;
+  try {
+    return await messagingInitializationPromise;
+  } catch (error) {
+    messagingInitializationPromise = null;
+    throw error;
+  }
 };
 
 // ---------- PERMISSION + API CALL ----------
@@ -122,10 +135,17 @@ export const handleNotificationSetup = async () => {
     return;
   }
 
+  const serviceWorkerRegistration = await getOrRegisterAppServiceWorker();
+  if (!serviceWorkerRegistration) {
+    console.warn('No service worker registration available for notification setup.');
+    return;
+  }
   try {
-    const token = await getToken(initializedMessaging, { vapidKey: VAPID_KEY });
+    const token = await getToken(initializedMessaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration,
+    });
     const user = auth.currentUser;
-
     if (!token || !user) {
       console.warn("Missing FCM token or no authenticated user.");
       return;
@@ -140,9 +160,9 @@ export const handleNotificationSetup = async () => {
 
     const data = await res.json();
     if (res.ok) {
-      console.log("Notification setup complete:");
+      console.log("Notification setup complete.");
     } else {
-      console.error("Server error setting up notifications:");
+      console.error("Server error setting up notifications:", data.error);
     }
   } catch (err) {
     console.error("Error during notification setup:", err);

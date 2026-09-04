@@ -143,6 +143,9 @@ export default function NavBar() {
       <div className="relative">
         <button
           onClick={() => setIsMenuOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={isMenuOpen}
+          data-menu-trigger="true"
           className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
         >
           <FaBars className="h-4 w-4" />
@@ -157,6 +160,7 @@ export default function NavBar() {
             {navLinks.map((link) => (
               <button
                 key={link.label || link.href}
+                role="menuitem"
                 onClick={
                   link.onClick
                     ? link.onClick

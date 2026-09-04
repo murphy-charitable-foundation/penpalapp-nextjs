@@ -110,7 +110,6 @@ export default function Page({ params }) {
   const [allMessages, setAllMessages] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [recipientName, setRecipientName] = useState("");
-  const [globalConversationReference, setGlobalConversationReference] = useState(null);
   const [messagesRef, setMessagesRef] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -1227,7 +1226,6 @@ export default function Page({ params }) {
       setRecipients([]);
       setRecipientName("");
       setMessagesRef(null);
-      setGlobalConversationReference(null);
 
       setMessageContent("");
       setDraft(null);
@@ -1320,7 +1318,6 @@ export default function Page({ params }) {
 
           const lRef = collection(conversationRef, "messages");
           setMessagesRef(lRef);
-          setGlobalConversationReference(conversationRef);
 
           const draftData = await fetchDraft(id, userDocRef, false);
 

@@ -1,4 +1,5 @@
 import { getOrInitApp } from "../../firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 
 // --- REQUIRED ENV VARS ---
 const adminApp = getOrInitApp();
@@ -9,6 +10,21 @@ const envError = !adminApp
 const auth = adminApp?.auth();
 const db = adminApp?.firestore();
 const messaging = adminApp?.messaging();
+
+const TERMINAL_TOKEN_ERROR_CODES = new Set([
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+]);
+
+async function removeStaleToken(userRef, token) {
+  await db.runTransaction(async (transaction) => {
+    const userSnap = await transaction.get(userRef);
+
+    if (userSnap.data()?.fcmToken === token) {
+      transaction.update(userRef, { fcmToken: FieldValue.delete() });
+    }
+  });
+}
 
 /**
  * Verify user belongs in conversation
@@ -45,6 +61,7 @@ async function getConversationTokens(conversationId, senderUid) {
     tokens.push({
       token: user.fcmToken,
       name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+      userRef,
     });
   }
 
@@ -82,7 +99,6 @@ export async function POST(req) {
     if (!conversationId) {
       return new Response(JSON.stringify({ error: "conversationId is required." }), { status: 400 });
     }
-
     // --- VERIFY ---
     const allowed = await isInConversation(senderUid, conversationId);
     if (!allowed) {
@@ -91,37 +107,77 @@ export async function POST(req) {
 
     // --- FETCH TOKENS ---
     const tokens = await getConversationTokens(conversationId, senderUid);
-
     if (tokens.length === 0) {
       return new Response(JSON.stringify({ message: "No FCM tokens found for recipients." }), { status: 200 });
     }
 
     // --- SEND ---
-    const sendPromises = tokens.map(({ token, name }) =>
-      messaging.send({
+    const notificationTitle = "New Conversation Message";
+    const clickAction = `/conversation/${conversationId}`;
+    const requestOrigin = new URL(req.url).origin;
+    const absoluteLink = `${requestOrigin}${clickAction}`;
+
+    const sendPromises = tokens.map(({ token, name, userRef }) => {
+      const notificationBody = message || `New message for ${name}`;
+
+      return messaging.send({
         token,
         notification: {
-          title: "New Conversation Message",
-          body: message || `New message for ${name}`,
+          title: notificationTitle,
+          body: notificationBody,
+        },
+        data: {
+          click_action: clickAction,
+          conversationId,
+          recipientName: name,
+        },
+        webpush: {
+          fcmOptions: {
+            link: absoluteLink,
+          },
         },
       })
         .then(response => ({ success: true, name, response }))
-        .catch(sendError => {
+        .catch(async sendError => {
+          if (TERMINAL_TOKEN_ERROR_CODES.has(sendError?.code)) {
+            try {
+              await removeStaleToken(userRef, token);
+              console.info(`Removed stale notification token for ${name}.`);
+            } catch (cleanupError) {
+              console.error(
+                `Failed to remove stale notification token for ${name}:`,
+                cleanupError,
+              );
+            }
+
+            return {
+              success: false,
+              staleTokenRemoved: true,
+              error: `Notification token for ${name} is no longer registered.`,
+              name,
+            };
+          }
+
           console.error(`Failed to send to ${name}:`, sendError);
           return {
             success: false,
             error: `Failed to send notification to ${name}.`,
-            token,
             name,
           };
-        })
-    );
+        });
+    });
     const results = await Promise.all(sendPromises);
+    const successCount = results.filter((result) => result.success).length;
+    const failureCount = results.length - successCount;
+    const status =
+      failureCount === 0 ? 200 : successCount === 0 ? 502 : 207;
 
     return new Response(JSON.stringify({
       message: "Notification processing complete.",
+      successCount,
+      failureCount,
       results,
-    }), { status: 207 });
+    }), { status });
 
   } catch (error) {
     console.error("Error processing request:", error);

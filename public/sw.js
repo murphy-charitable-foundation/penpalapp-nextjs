@@ -1,18 +1,96 @@
-// Give your cache a version name
-const CACHE_NAME = 'offline-cache-v2';
+self.addEventListener('notificationclick', (event) => {
+  event.stopImmediatePropagation();
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      const fcmPayload = event.notification?.data?.FCM_MSG;
+      const clickAction =
+        event.notification?.data?.click_action ||
+        event.notification?.data?.link ||
+        fcmPayload?.data?.click_action ||
+        fcmPayload?.fcmOptions?.link ||
+        '/inbox';
+
+      const allClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+
+      const matchingClient = allClients.find((client) => {
+        try {
+          const clientUrl = new URL(client.url);
+          return clientUrl.pathname === clickAction || clientUrl.pathname.startsWith(clickAction);
+        } catch {
+          return false;
+        }
+      });
+
+      if (matchingClient && 'focus' in matchingClient) {
+        return matchingClient.focus();
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(clickAction);
+      }
+    })(),
+  );
+});
+
+const getPushPayload = (event) => {
+  try {
+    return event.data?.json() || null;
+  } catch (error) {
+    console.error('[Notifications] Failed to parse push payload:', error);
+    return null;
+  }
+};
+
+self.addEventListener('push', (event) => {
+  const payload = getPushPayload(event);
+  if (!payload) return;
+
+  event.stopImmediatePropagation();
+
+  const title =
+    payload.notification?.title ||
+    payload.data?.title ||
+    'New Conversation Message';
+  const body =
+    payload.notification?.body ||
+    payload.data?.body ||
+    'You have a new message.';
+  const clickAction =
+    payload.data?.click_action ||
+    payload.fcmOptions?.link ||
+    payload.notification?.click_action ||
+    '/inbox';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: payload.notification?.icon || '/murphylogo.png',
+      image: payload.notification?.image,
+      data: {
+        click_action: clickAction,
+        FCM_MSG: payload,
+      },
+    }),
+  );
+});
+
+const CACHE_NAME = 'offline-cache-v3';
 const CACHE_PREFIX = 'offline-cache-';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = ['/offline.html','/murphylogo.png'];
 
-// When the SW installs: cache the listed resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
       await cache.addAll(ASSETS_TO_CACHE);
-    })()
+    })(),
   );
-  // Optional but recommended: This is to make the waiting service worker to be the active service worker
   self.skipWaiting();
 });
 
@@ -26,38 +104,30 @@ self.addEventListener('activate', (event) => {
             return caches.delete(key);
           }
           return Promise.resolve(false);
-        })
+        }),
       );
-      // Optional but recommended: Ensure that the Service Worker takes control immediately
       await self.clients.claim();
-    })()
+    })(),
   );
 });
 
-// Handle GET requests only: return cached static assets when available,
-// and serve the offline page if a navigation request fails.
 self.addEventListener('fetch', (event) => {
-
   const { request } = event;
 
-  // Allow the non-GET requests to go to the network normally
   if (request.method !== 'GET') {
     return;
   }
 
   event.respondWith(
     (async () => {
+      const cacheOffline = await caches.open(CACHE_NAME);
 
-      const cacheOffline = await caches.open(CACHE_NAME);      
-      
-      // For navigation, network first, then fallback to offline page
       if (request.mode === 'navigate') {
         try {
           return await fetch(request);
         } catch (error) {
           const cachedOfflinePage = await cacheOffline.match(OFFLINE_URL);
-
-          if (cachedOfflinePage){
+          if (cachedOfflinePage) {
             return cachedOfflinePage;
           }
 
@@ -66,27 +136,23 @@ self.addEventListener('fetch', (event) => {
             statusText: 'Service Unavailable',
             headers: { 'Content-Type': 'text/plain' },
           });
-        } 
+        }
       }
 
-      // For other GET requests (like the logo), use cache first
       const cachedResponse = await cacheOffline.match(request);
       if (cachedResponse) {
         return cachedResponse;
       }
-      
-      // For the rest, try network first, and fail gracefully 
+
       try {
         return await fetch(request);
       } catch (error) {
-        // Return a fallback response if the network request fails
         return new Response('Failed to fetch resource.', {
           status: 500,
           statusText: 'Internal Server Error',
           headers: { 'Content-Type': 'text/plain' },
         });
       }
-    }) ()
+    })(),
   );
 });
-
