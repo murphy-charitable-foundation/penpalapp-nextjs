@@ -30,7 +30,6 @@ const getUserDoc = async () => {
   return { userDocRef, userDocSnapshot };
 };
 
-
 export const fetchConversations = async () => {
   const retryFetch = () => setTimeout(() => fetchConversations(), DELAY);
 
@@ -44,14 +43,18 @@ export const fetchConversations = async () => {
   const conversationQuery = query(
     collection(db, "conversations"),
     where("members", "array-contains", userDocRef),
-    where("deleted_at", '==', null)
+    where("deleted_at", "==", null),
   );
   const conversationQuerySnapshot = await getDocs(conversationQuery);
   const conversations = conversationQuerySnapshot.docs;
   return conversations;
 };
 
-export const fetchConversation = async (id, lim = false, lastVisible = null) => {
+export const fetchConversation = async (
+  id,
+  lim = false,
+  lastVisible = null,
+) => {
   const retryFetch = () =>
     setTimeout(() => fetchConversation(id, lim, lastVisible), DELAY);
 
@@ -74,13 +77,13 @@ export const fetchConversation = async (id, lim = false, lastVisible = null) => 
           where("status", "==", "approved"),
           orderBy("created_at", "desc"),
           startAfter(lastVisible),
-          limit(lim)
+          limit(lim),
         )
       : query(
           lRef,
           where("status", "==", "approved"),
           orderBy("created_at", "desc"),
-          limit(lim)
+          limit(lim),
         );
   } else {
     conversationQuery = lastVisible
@@ -88,12 +91,12 @@ export const fetchConversation = async (id, lim = false, lastVisible = null) => 
           lRef,
           where("status", "==", "approved"),
           orderBy("created_at", "desc"),
-          startAfter(lastVisible)
+          startAfter(lastVisible),
         )
       : query(
           lRef,
           where("status", "==", "approved"),
-          orderBy("created_at", "desc")
+          orderBy("created_at", "desc"),
         );
   }
 
@@ -177,7 +180,7 @@ export const fetchDraft = async (id, userRef, createNew = false) => {
 
 export const fetchLatestMessageFromConversation = async (
   conversationId,
-  userRef
+  userRef,
 ) => {
   const conversationRef = doc(collection(db, "conversations"), conversationId);
   const messagesRef = collection(conversationRef, "messages");
@@ -213,7 +216,7 @@ export const fetchLatestMessageFromConversation = async (
         where("sent_by", "==", userRef),
         where("content", "!=", ""),
         orderBy("drafted_at", "desc"),
-        limit(1)
+        limit(1),
       ),
 
       query(
@@ -221,14 +224,14 @@ export const fetchLatestMessageFromConversation = async (
         where("sent_by", "==", userRef),
         where("attachments", "!=", null),
         orderBy("drafted_at", "desc"),
-        limit(1)
+        limit(1),
       ),
 
       query(
         messagesRef,
         where("status", "==", "approved"),
         orderBy("moderated_at", "desc"),
-        limit(1)
+        limit(1),
       ),
 
       query(
@@ -236,29 +239,29 @@ export const fetchLatestMessageFromConversation = async (
         where("sent_by", "==", userRef),
         where("status", "==", "rejected"),
         orderBy("moderated_at", "desc"),
-        limit(1)
+        limit(1),
       ),
-    ].map(getDocs)
+    ].map(getDocs),
   );
 
   const latestUserMessage = getFirstMessage(
     userConversationsSnap,
-    "drafted_at"
+    "drafted_at",
   );
 
   const latestUserAttachmentMessage = getFirstMessage(
     userAttachmentsSnap,
-    "drafted_at"
+    "drafted_at",
   );
 
   const latestApprovedMessage = getFirstMessage(
     approvedConversationsSnap,
-    "moderated_at"
+    "moderated_at",
   );
 
   const latestRejectedMessage = getFirstMessage(
     rejectedConversationsSnap,
-    "moderated_at"
+    "moderated_at",
   );
 
   const latestSentMessage =
@@ -266,14 +269,19 @@ export const fetchLatestMessageFromConversation = async (
       ? latestApprovedMessage
       : null;
 
-  return [latestUserMessage, latestUserAttachmentMessage, latestSentMessage, latestRejectedMessage]
+  return [
+    latestUserMessage,
+    latestUserAttachmentMessage,
+    latestSentMessage,
+    latestRejectedMessage,
+  ]
     .filter(Boolean)
     .reduce(
       (latest, message) =>
         !latest || message.lastMessageDate > latest.lastMessageDate
           ? message
           : latest,
-      null
+      null,
     );
 };
 
@@ -336,13 +344,15 @@ export const fetchRecipients = async (id) => {
 
   const currentUserUid = auth.currentUser.uid;
 
-  const users = conversation.data().members.filter((m) => m.id !== currentUserUid);
+  const users = conversation
+    .data()
+    .members.filter((m) => m.id !== currentUserUid);
   const members = [];
 
   for (const user of users) {
     const selectedUserDocRef = doc(db, "users", user.id);
     const selUser = await getDoc(selectedUserDocRef);
-    const userData = selUser.data();    // utility/helper variable
+    const userData = selUser.data(); // utility/helper variable
 
     // Call the only source of profile; protect against unexpected throws
     let pfpUrl = null;
@@ -362,30 +372,17 @@ export const fetchRecipients = async (id) => {
   return members;
 };
 
-export const sendNotification = async (conversationRef, message) => {
-  // Verify that the user is authenticated.
+export const sendNotification = async (conversationId, messageId) => {
   if (!auth.currentUser) {
-    console.error("User not authenticated.");
-    return;
-  }
-
-  // Validate conversationRef parameter.
-  if (!conversationRef || !conversationRef.id) {
-    console.error("Invalid conversationRef: missing or has no id property.");
-    return;
+    throw new Error("User not authenticated.");
   }
 
   try {
-    // Retrieve Firebase Auth ID token for authorization.
     const idToken = await auth.currentUser.getIdToken();
 
-    // Retrieve the conversation (conversation) ID.
-    const conversationId = conversationRef.id;
-
-    // Build payload.
     const payload = {
-      conversationId: conversationId,
-      message: message,
+      conversationId,
+      messageId,
     };
     // Send to notify API with auth header.
     const response = await fetch("/api/notify", {
@@ -399,93 +396,104 @@ export const sendNotification = async (conversationRef, message) => {
 
     const result = await response.json();
     if (!response.ok) {
-      console.error("Failed to send notifications:", result.error);
-      return result;
+      throw new Error(result.error || "Failed to send notifications.");
+    }
+
+    const hasFailedNotifications = result.results?.some(
+      (notification) => notification.success === false,
+    );
+
+    if (hasFailedNotifications) {
+      throw new Error("One or more notifications failed to send.");
     }
 
     console.log("Notifications sent successfully:", result);
+
     return result;
-  } catch (e) {
-    console.error("Error in sendNotification:", e);
-    return { error: e.message };
+  } catch (error) {
+    console.error("Error in sendNotification:", error);
+    throw error;
   }
 };
 
 export const createConnection = async (userDocRef, kidDocRef) => {
-    try {
-        const kidSnap = await getDoc(kidDocRef);
-        const buddySnap = await getDoc(userDocRef);
-        
-          if (!kidSnap.exists() && !buddySnap.exists()) {
-            throw new Error("Neither of child nor international buddy exist in the users collection");
-          }
-          console.log("Kid:", kidSnap);
-          console.log("User:", buddySnap);
+  try {
+    const kidSnap = await getDoc(kidDocRef);
+    const buddySnap = await getDoc(userDocRef);
 
-          if (kidSnap.exists()) {
-            if (kidSnap.data().connected_penpals_count >= 3) {
-              throw new Error("Kid has exceeded penpal limit");
-            }
-            await updateDoc(kidDocRef, {
-              connected_penpals: arrayUnion(userDocRef),
-              connected_penpals_count: increment(1),
-            });
-          }
-
-          if (buddySnap.exists()) {
-            await updateDoc(userDocRef, {
-              connected_penpals: arrayUnion(kidDocRef),
-              connected_penpals_count: increment(1),
-            });
-          }
-
-          // query DB to check for existing conversation
-          let conversationQuery = query(
-            collection(db, "conversations"),
-            where("members", "==", [userDocRef, kidDocRef]), // Use reference, not string
-            where("deleted_at", '==', null)
-          );
-
-          let querySnapshot = await getDocs(conversationQuery);
-          
-          if (querySnapshot.empty) {
-            conversationQuery = query(
-              collection(db, "conversations"),
-              where("members", "==", [kidDocRef, userDocRef]),
-              where("deleted_at", '==', null)
-            );
-            querySnapshot = await getDocs(conversationQuery);
-          }
-
-          let conversationRef;
-
-          if (querySnapshot.empty) { // if there's no conversation, create one.
-            conversationRef = await addDoc(collection(db, "conversations"), {
-              members: [
-                userDocRef, 
-                kidDocRef   
-              ],
-              created_at: new Date(),
-              deleted_at: null,
-            });
-
-            const now = new Date();
-            await addDoc(collection(conversationRef, "messages"), {
-              sent_by: userDocRef,
-              content: "Please complete your first message here...",
-              status: "draft",
-              drafted_at: now,
-              attachments: null,
-            });
-
-            console.log(conversationRef);
-            return conversationRef;
-          } else {
-            // Penpal and kid are already connected, do nothing
-            return querySnapshot.ref;
-          }
-    } catch (error) {
-      logError("There has been a error creating the connection: " + error.message, { error });
-      throw error; // rethrow so callers can handle it
+    if (!kidSnap.exists() && !buddySnap.exists()) {
+      throw new Error(
+        "Neither of child nor international buddy exist in the users collection",
+      );
     }
-  };
+    console.log("Kid:", kidSnap);
+    console.log("User:", buddySnap);
+
+    if (kidSnap.exists()) {
+      if (kidSnap.data().connected_penpals_count >= 3) {
+        throw new Error("Kid has exceeded penpal limit");
+      }
+      await updateDoc(kidDocRef, {
+        connected_penpals: arrayUnion(userDocRef),
+        connected_penpals_count: increment(1),
+      });
+    }
+
+    if (buddySnap.exists()) {
+      await updateDoc(userDocRef, {
+        connected_penpals: arrayUnion(kidDocRef),
+        connected_penpals_count: increment(1),
+      });
+    }
+
+    // query DB to check for existing conversation
+    let conversationQuery = query(
+      collection(db, "conversations"),
+      where("members", "==", [userDocRef, kidDocRef]), // Use reference, not string
+      where("deleted_at", "==", null),
+    );
+
+    let querySnapshot = await getDocs(conversationQuery);
+
+    if (querySnapshot.empty) {
+      conversationQuery = query(
+        collection(db, "conversations"),
+        where("members", "==", [kidDocRef, userDocRef]),
+        where("deleted_at", "==", null),
+      );
+      querySnapshot = await getDocs(conversationQuery);
+    }
+
+    let conversationRef;
+
+    if (querySnapshot.empty) {
+      // if there's no conversation, create one.
+      conversationRef = await addDoc(collection(db, "conversations"), {
+        members: [userDocRef, kidDocRef],
+        created_at: new Date(),
+        deleted_at: null,
+      });
+
+      const now = new Date();
+      await addDoc(collection(conversationRef, "messages"), {
+        sent_by: userDocRef,
+        content: "Please complete your first message here...",
+        status: "draft",
+        drafted_at: now,
+        attachments: null,
+      });
+
+      console.log(conversationRef);
+      return conversationRef;
+    } else {
+      // Penpal and kid are already connected, do nothing
+      return querySnapshot.ref;
+    }
+  } catch (error) {
+    logError(
+      "There has been a error creating the connection: " + error.message,
+      { error },
+    );
+    throw error; // rethrow so callers can handle it
+  }
+};

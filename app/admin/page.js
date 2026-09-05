@@ -33,7 +33,10 @@ import AdminRejectModal from "../../components/general/admin/AdminRejectModal";
 import Button from "../../components/general/Button";
 import InboxSkeleton from "../../components/loading/InboxSkeleton";
 import { dateToTimestamp } from "../utils/dateHelpers";
-import { getMessageSummary } from "../utils/conversationsFunctions";
+import {
+  getMessageSummary,
+  sendNotification,
+} from "../utils/conversationsFunctions";
 import { useDormantConversation } from "../../contexts/DormantConversationContext";
 
 export default function Admin() {
@@ -74,97 +77,102 @@ export default function Admin() {
     (selectedMessage && documents.find((d) => d.id === selectedMessage.id)) ||
     selectedMessage;
 
-  const fetchConversations = useCallback(async (nextPage = false, pageCursor = null) => {
-    try {
-      setError("");
+  const fetchConversations = useCallback(
+    async (nextPage = false, pageCursor = null) => {
+      try {
+        setError("");
 
-      const constraints = [
-        where("status", "==", selectedStatus),
-        orderBy("created_at", "desc"),
-        limit(PAGE_SIZE),
-      ];
+        const constraints = [
+          where("status", "==", selectedStatus),
+          orderBy("created_at", "desc"),
+          limit(PAGE_SIZE),
+        ];
 
-      if (nextPage && pageCursor) {
-        constraints.push(startAfter(pageCursor));
-      }
+        if (nextPage && pageCursor) {
+          constraints.push(startAfter(pageCursor));
+        }
 
-      if (startDate) {
-        constraints.push(where("created_at", ">=", dateToTimestamp(startDate)));
-      }
-
-      if (endDate) {
-        constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
-      }
-
-      const q = query(collectionGroup(db, "messages"), ...constraints);
-      const snap = await getDocs(q);
-
-      if (snap.empty) {
-        setHasMore(false);
-        return;
-      }
-
-      const newDocs = await Promise.all(
-        snap.docs.map(async (d) => {
-          const data = d.data();
-          const conversationId = d.ref.parent.parent?.id || "";
-          const messageSummaryPromise = getMessageSummary(
-            data,
-            conversationId,
-            d.id,
+        if (startDate) {
+          constraints.push(
+            where("created_at", ">=", dateToTimestamp(startDate)),
           );
-          let pfp = "/usericon.png";
+        }
 
-          try {
-            if (data.sent_by?.id) {
-              const fetchedPfp = await getUserPfp(data.sent_by.id);
-              pfp = fetchedPfp || "/usericon.png";
-            }
-          } catch {
-            pfp = "/usericon.png";
-          }
+        if (endDate) {
+          constraints.push(where("created_at", "<=", dateToTimestamp(endDate)));
+        }
 
-          let sender = {};
+        const q = query(collectionGroup(db, "messages"), ...constraints);
+        const snap = await getDocs(q);
 
-          try {
-            if (data.sent_by?.id) {
-              const senderRef = doc(db, "users", data.sent_by.id);
-              const senderSnap = await getDoc(senderRef);
+        if (snap.empty) {
+          setHasMore(false);
+          return;
+        }
 
-              if (senderSnap.exists()) {
-                sender = senderSnap.data();
+        const newDocs = await Promise.all(
+          snap.docs.map(async (d) => {
+            const data = d.data();
+            const conversationId = d.ref.parent.parent?.id || "";
+            const messageSummaryPromise = getMessageSummary(
+              data,
+              conversationId,
+              d.id,
+            );
+            let pfp = "/usericon.png";
+
+            try {
+              if (data.sent_by?.id) {
+                const fetchedPfp = await getUserPfp(data.sent_by.id);
+                pfp = fetchedPfp || "/usericon.png";
               }
+            } catch {
+              pfp = "/usericon.png";
             }
-          } catch {
-            sender = {};
-          }
 
-          return {
-            id: d.id,
-            conversationId,
-            ...data,
-            profileImage: pfp,
-            name: `${sender.first_name ?? "Unknown"} ${
-              sender.last_name ?? ""
-            }`.trim(),
-            country: sender.country ?? "Unknown",
-            messageSummary: await messageSummaryPromise,
-            lastMessageDate: data.created_at,
-          };
-        }),
-      );
+            let sender = {};
 
-      setDocuments((prev) => (nextPage ? [...prev, ...newDocs] : newDocs));
-      setLastDoc(snap.docs[snap.docs.length - 1]);
-      setHasMore(snap.docs.length === PAGE_SIZE);
-    } catch (err) {
-      console.warn("Failed to fetch admin messages", err);
-      setError("Failed to load messages. Please try again.");
-    } finally {
-      setIsConversationsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [selectedStatus, startDate, endDate]);
+            try {
+              if (data.sent_by?.id) {
+                const senderRef = doc(db, "users", data.sent_by.id);
+                const senderSnap = await getDoc(senderRef);
+
+                if (senderSnap.exists()) {
+                  sender = senderSnap.data();
+                }
+              }
+            } catch {
+              sender = {};
+            }
+
+            return {
+              id: d.id,
+              conversationId,
+              ...data,
+              profileImage: pfp,
+              name: `${sender.first_name ?? "Unknown"} ${
+                sender.last_name ?? ""
+              }`.trim(),
+              country: sender.country ?? "Unknown",
+              messageSummary: await messageSummaryPromise,
+              lastMessageDate: data.created_at,
+            };
+          }),
+        );
+
+        setDocuments((prev) => (nextPage ? [...prev, ...newDocs] : newDocs));
+        setLastDoc(snap.docs[snap.docs.length - 1]);
+        setHasMore(snap.docs.length === PAGE_SIZE);
+      } catch (err) {
+        console.warn("Failed to fetch admin messages", err);
+        setError("Failed to load messages. Please try again.");
+      } finally {
+        setIsConversationsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [selectedStatus, startDate, endDate],
+  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -213,7 +221,15 @@ export default function Admin() {
     };
 
     loadConversations();
-  }, [selectedStatus, startDate, endDate, activeView, userId, isAuthLoading, fetchConversations]);
+  }, [
+    selectedStatus,
+    startDate,
+    endDate,
+    activeView,
+    userId,
+    isAuthLoading,
+    fetchConversations,
+  ]);
 
   const filter = (status, start, end) => {
     setSelectedStatus(status);
@@ -290,6 +306,15 @@ export default function Admin() {
         moderator_id: userId,
         moderated_at: serverTimestamp(),
       });
+
+      try {
+        await sendNotification(conversationId, id);
+      } catch (notificationError) {
+        console.error(
+          "Message approved, but notification failed:",
+          notificationError,
+        );
+      }
 
       updateLocalMessage(id, {
         status: "approved",

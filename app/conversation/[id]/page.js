@@ -19,7 +19,6 @@ import {
   fetchRecipients,
   fetchDraft,
   getMessageSummary,
-  sendNotification,
 } from "../../utils/conversationsFunctions";
 import { getUserPfp } from "../../utils/avatarUtils";
 
@@ -908,11 +907,6 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageDataWithAttachments);
       }
       
-      const notificationResult = await sendNotification({ id }, "");
-      if (notificationResult?.error) {
-        console.error("Failed to send notification:", notificationResult.error);
-      }
-
       // Clear states
       setMessageContent("");
       setDraft(null);
