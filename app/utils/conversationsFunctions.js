@@ -350,8 +350,7 @@ export const fetchRecipients = async (id) => {
       pfpUrl = await getUserPfp(user.id);
     } catch (error) {
       logError(error, {
-        description: "Error fetching profile image for recipient",
-        userId: user.id,
+        description: `Error fetching profile image for recipient: ${user.id}`,
       });
       pfpUrl = null;
     }

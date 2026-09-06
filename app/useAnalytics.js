@@ -755,7 +755,7 @@ class GlobalTracker {
     // Handle unhandled promise rejections
     window.onunhandledrejection = (event) => {
       logError(event.reason, {
-        type: "unhandled_promise_rejection",
+        description: "unhandled_promise_rejection",
       });
     };
   }
