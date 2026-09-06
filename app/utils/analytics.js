@@ -16,6 +16,14 @@ const setAnalyticsUserType = (userType) => {
   }
 };
 
+const logDormantMessageSent = (reason) => {
+  if (analytics) {
+    logEvent(analytics, "dormant_message_sent", {
+      reminder_reason: reason || "unknown",
+    });
+  }
+};
+
 // Function to track page views
 /**
  * Logs page views to Firebase Analytics.
@@ -149,6 +157,7 @@ const logLoadingTime = (pagePath, loadingTime) => {
 
 export {
   setAnalyticsUserType,
+  logDormantMessageSent,
   logPageView,
   logButtonEvent,
   logInEvent,

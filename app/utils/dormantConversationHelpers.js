@@ -82,6 +82,7 @@ export const sendEmail = async (conversationId, members, toEmails, reason) => {
 
     return {
       success: true,
+      reason,
       msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
     };
   } catch (error) {

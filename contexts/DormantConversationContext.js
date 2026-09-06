@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useState, useContext, useEffect, useCallback } from "react";
-import { logError } from "../app/utils/analytics";
+import { logDormantMessageSent, logError } from "../app/utils/analytics";
 import { auth } from "../app/firebaseConfig";
 
 const DormantConversationContext = createContext(undefined);
@@ -26,6 +26,12 @@ export const DormantConversationProvider = ({ children }) => {
       setWorker(newWorker);
       newWorker.onmessage = (e) => {
         if (e.data.success) {
+          const successfulReminders = e.data.data?.successEmails;
+          if (Array.isArray(successfulReminders)) {
+            successfulReminders.forEach((reminder) => {
+              logDormantMessageSent(reminder.reason);
+            });
+          }
           localStorage.setItem("dormantConversationTimestamp", new Date().toISOString());
           console.log("OnMessage Email Request Success: ", e.data.data);
         } else {
