@@ -141,9 +141,7 @@ logDonationSubmitted(50, "credit_card");
 ### 4. Adding a User-Scoped Custom Dimension
 
 Use a user-scoped custom dimension when a value should describe the user across
-their Analytics events, such as `user_type`, `country_group`, or
-`onboarding_status`. Do not use this for a value that changes from event to
-event; use an event parameter and an event-scoped dimension for that instead.
+their Analytics events, such as `user_type`.
 
 #### Add the user property in `analytics.js`
 
@@ -172,11 +170,6 @@ value is known. In this application that happens in `contexts/UserContext.js`:
 setAnalyticsUserType(fetchedUserType);
 ```
 
-For another property, add a corresponding wrapper and call it from the same
-authenticated profile-loading path. Only send non-sensitive categories or
-flags. Never send names, email addresses, child-identifying information, or
-other personally identifiable information as Analytics user properties.
-
 #### Register the property in GA4
 
 1. Open **Google Analytics → Admin → Data display → Custom definitions**.
@@ -194,10 +187,7 @@ Use **DebugView** or **Realtime** to verify the property first.
 
 #### Use the dimension in a report
 
-In **Explore**, add the user-scoped dimension (for example, `User Type`) and
-break down an event such as `inbox_loaded` by it. To measure inbox loads, filter
-the exploration to **Event name = `inbox_loaded`** and compare the event count
-for each user type.
+In **Explore**, add the user-scoped dimension (for example, `User Type`).
 
 ### ✨ Register Event Parameters as Custom Dimensions/Metrics in GA4
 
