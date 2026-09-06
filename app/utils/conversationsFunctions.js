@@ -485,7 +485,7 @@ export const createConnection = async (userDocRef, kidDocRef) => {
             return querySnapshot.ref;
           }
     } catch (error) {
-      logError("There has been a error creating the connection: " + error.message, { error });
+      logError(error, { description: "There has been a error creating the connection." });
       throw error; // rethrow so callers can handle it
     }
   };

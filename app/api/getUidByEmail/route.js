@@ -16,7 +16,7 @@ export async function POST(request) {
     const userRecord = await auth.getUserByEmail(email);
     return NextResponse.json({ uid: userRecord.uid });
   } catch (error) {
-    logError("Error fetching UID: " + error.message, { error });
+    logError(error, { description: "Error fetching UID" });
     if (error?.status && error.message) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
