@@ -1,12 +1,20 @@
 /**
  * Usage is commented in useAnalytics.js and donate/page.js
  */
-import { getAnalytics, logEvent } from "firebase/analytics";
+import { getAnalytics, logEvent, setUserProperties } from "firebase/analytics";
 import { app } from "../firebaseConfig.js";
 import * as Sentry from "@sentry/nextjs";
 
 // Initialize Firebase Analytics
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
+
+const setAnalyticsUserType = (userType) => {
+  if (analytics && userType) {
+    setUserProperties(analytics, {
+      user_type: userType,
+    });
+  }
+};
 
 // Function to track page views
 /**
@@ -140,6 +148,7 @@ const logLoadingTime = (pagePath, loadingTime) => {
 };
 
 export {
+  setAnalyticsUserType,
   logPageView,
   logButtonEvent,
   logInEvent,
