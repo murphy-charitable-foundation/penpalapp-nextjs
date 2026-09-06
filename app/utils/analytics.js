@@ -16,10 +16,11 @@ const setAnalyticsUserType = (userType) => {
   }
 };
 
-const logDormantMessageSent = (reason) => {
+const logDormantMessageSent = (reason, userUid) => {
   if (analytics) {
     logEvent(analytics, "dormant_message_sent", {
-      reminder_reason: reason || "unknown",
+      dormant_conversation_reason: reason || "unknown",
+      dormant_conversation_user_uid: userUid || "unknown",
     });
   }
 };
