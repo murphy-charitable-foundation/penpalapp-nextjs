@@ -301,7 +301,7 @@ Logs an error to Firebase and Sentry.
 try {
   throw new Error("Something went wrong");
 } catch (err) {
-  logError(err, { context: "donate_page" });
+  logError(err, { description: "donate_page" });
 }
 ```
 
