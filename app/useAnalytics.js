@@ -744,12 +744,12 @@ class GlobalTracker {
   addErrorListeners() {
     // Handle regular uncaught errors
     window.onerror = (message, source, lineno, colno, error) => {
-      logError(error || new Error(message), {
-        type: "uncaught_error",
-        source: source,
-        line: lineno,
-        column: colno
-      });
+      logError(error, { description: message });
+      // logError(error || {
+      //   source: source,
+      //   line: lineno,
+      //   column: colno
+      // });
     };
 
     // Handle unhandled promise rejections

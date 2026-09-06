@@ -1280,8 +1280,7 @@ export default function Page({ params }) {
 
           if (!conversationDoc.exists()) {
             logError(new Error("Conversation does not exist"), {
-              description: "Conversation does not exist",
-              conversationId: id,
+              description: `Conversation does not exist: ${id}`,
             });
             return;
           }
