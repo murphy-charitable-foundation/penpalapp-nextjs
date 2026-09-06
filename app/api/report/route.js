@@ -227,11 +227,11 @@ Reported Excerpt:
 
     logError(new Error("Message reported by user"), {
       description: "User submitted content report",
-      reporter_uid: reporterUid,
-      reporter_first_name: userData.first_name || "",
-      reporter_last_name: userData.last_name || "",
-      conversation_url: String(currentUrl),
-      excerpt: String(excerpt),
+      report_api_reporter_uid: reporterUid,
+      report_api_reporter_first_name: userData.first_name || "",
+      report_api_reporter_last_name: userData.last_name || "",
+      report_api_conversation_url: String(currentUrl),
+      report_api_reported_message: String(excerpt),
     });
 
     return NextResponse.json(
