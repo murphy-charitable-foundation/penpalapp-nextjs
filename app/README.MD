@@ -314,13 +314,13 @@ Logs a "dead click" on non-interactive elements.
 logDeadClick(200, 350, "DIV", "/donate");
 ```
 
-### `logInternetDisconnection(duration, reconnected)`
-Logs internet disconnection or reconnection.
+### `logInternetOffline(duration)`
+Logs the duration of a completed offline period.
 
 **Example:**
 ```jsx
 // User disconnected for 15 seconds
-logInternetDisconnection(15, true);
+logInternetOffline(15);
 ```
 
 ### `logLoadingTime(pagePath, loadingTime)`
@@ -340,7 +340,7 @@ On /donate page:
 
 3. If the page throws an error, `GlobalTracker` logs it to Firebase + Sentry.
 
-4. If the user goes offline, `logInternetDisconnection` records duration.
+4. If the user goes offline, `logInternetOffline` records the duration after connectivity returns.
 
 ## 📌 Notes
 - All events are logged to Firebase Analytics.

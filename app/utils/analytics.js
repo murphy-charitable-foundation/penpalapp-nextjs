@@ -119,23 +119,20 @@ const logDeadClick = (
   if (analytics) {
     //console.log("Logging dead click event");
     logEvent(analytics, "dead_click", {
-      clicked_element: elementClicked || "unknown",
       page_path: pagePath,
-      timestamp: new Date().toISOString(),
-      screenshot_url: screenshotUrl || null,
-      element_id: elementId || "unknown",
-      aria_label: ariaLabel || "unknown",
+      dead_clicked_element: elementClicked || "unknown",
+      dead_click_screenshot_url: screenshotUrl || null,
+      dead_click_element_id: elementId || "unknown",
+      dead_click_aria_label: ariaLabel || "unknown",
       ...meta,
     });
   }
 };
 
-const logInternetDisconnection = (duration, reconnected = false) => {
+const logInternetOffline = (duration) => {
   if (analytics) {
-    logEvent(analytics, "internet_connectivity", {
-      type: reconnected ? "reconnection" : "disconnection",
+    logEvent(analytics, "internet_offline", {
       duration_seconds: duration,
-      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -164,6 +161,6 @@ export {
   logInEvent,
   logError,
   logDeadClick,
-  logInternetDisconnection,
+  logInternetOffline,
   logLoadingTime,
 };
