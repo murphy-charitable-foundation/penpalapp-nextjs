@@ -10,7 +10,7 @@ import { PUBLIC_PATHS } from "../app/utils/publicPaths";
 import {
   getUserData,
   clearCachedUser,
-} from "@/app/utils/sessionUserCache";
+} from "../app/utils/sessionUserCache";
 
 const UserContext = createContext();
 

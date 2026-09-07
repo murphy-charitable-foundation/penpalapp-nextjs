@@ -14,7 +14,7 @@ import { auth, db } from "../firebaseConfig";
 import Link from "next/link";
 import Image from "next/image";
 import { updatePassword, signOut } from "firebase/auth";
-import { clearCachedUser } from "@/app/utils/sessionUserCache";
+import { clearCachedUser } from "../utils/sessionUserCache";
 import PasswordChecklist from "react-password-checklist";
 import Input from "../../components/general/Input";
 import Button from "../../components/general/Button";

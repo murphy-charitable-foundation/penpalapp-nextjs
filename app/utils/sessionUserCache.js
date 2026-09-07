@@ -111,11 +111,11 @@ export const clearCachedUser = (uid) => {
 export const getUserData = async (uid, userDocRef) => {
   const cachedUser = getCachedUser(uid);
   if (cachedUser) {
-    console.log('✅ Cache hit for user:', uid);
+    //console.log('✅ Cache hit for user:', uid);
     return cachedUser;
   }
 
-  console.log('⬇️ Fetching user from Firestore for user:', uid);
+  //console.log('⬇️ Fetching user from Firestore for user:', uid);
   const userDoc = await getDoc(userDocRef);
   if (userDoc.exists()) {
     const fetchedUserData = userDoc.data();
