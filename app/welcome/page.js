@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
+import { clearCachedUser } from "../utils/sessionUserCache";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 
 const COUNTRIES = [
@@ -327,6 +328,7 @@ export default function Page() {
     try {
       if (user?.uid) {
         await updateDoc(doc(db, "users", user.uid), { country });
+        clearCachedUser(user.uid);
       }
 
       setCountryLoading(false);
