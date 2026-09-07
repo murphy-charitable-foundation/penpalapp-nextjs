@@ -38,7 +38,7 @@ const logPageView = (pagePath, viewTime) => {
     logEvent(analytics, "page_view", {
       page_path: pagePath,
       page_title: pagePath,
-      screen_time: viewTime, // seconds
+      page_screen_time: viewTime, // seconds
     });
   }
 };
@@ -132,7 +132,7 @@ const logDeadClick = (
 const logInternetOffline = (duration) => {
   if (analytics) {
     logEvent(analytics, "internet_offline", {
-      duration_seconds: duration,
+      offline_duration_seconds: duration,
     });
   }
 };
@@ -148,7 +148,7 @@ const logLoadingTime = (pagePath, loadingTime) => {
   if (analytics) {
     logEvent(analytics, "page_loading_time", {
       page_path: pagePath,
-      loading_time: loadingTime,
+      page_loading_time: loadingTime,
     });
   }
 };
