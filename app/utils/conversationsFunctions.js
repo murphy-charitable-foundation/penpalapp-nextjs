@@ -350,8 +350,7 @@ export const fetchRecipients = async (id) => {
       pfpUrl = await getUserPfp(user.id);
     } catch (error) {
       logError(error, {
-        description: "Error fetching profile image for recipient",
-        userId: user.id,
+        description: `Error fetching profile image for recipient: ${user.id}`,
       });
       pfpUrl = null;
     }
@@ -485,7 +484,7 @@ export const createConnection = async (userDocRef, kidDocRef) => {
             return querySnapshot.ref;
           }
     } catch (error) {
-      logError("There has been a error creating the connection: " + error.message, { error });
+      logError(error, { description: "There has been a error creating the connection." });
       throw error; // rethrow so callers can handle it
     }
   };

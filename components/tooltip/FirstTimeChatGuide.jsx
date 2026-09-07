@@ -94,7 +94,7 @@ export default function FirstTimeChatGuide({
   }, [page, params]);
 
   useEffect(() => {
-    console.log(`show guide: ${showGuide}, current step: ${currentStep}`);
+    //console.log(`show guide: ${showGuide}, current step: ${currentStep}`);
     if (currentStep === steps.length - 1) {
       setButtonHighlight(true);
     }
@@ -109,7 +109,7 @@ export default function FirstTimeChatGuide({
     const targetElement = document.querySelector(currentStepData.target);
 
     if (!targetElement) {
-      console.warn(`Target element not found: ${currentStepData.target}`);
+      //console.warn(`Target element not found: ${currentStepData.target}`);
       return;
     }
 
@@ -119,7 +119,7 @@ export default function FirstTimeChatGuide({
     let cleanupFn = () => {};
 
     if (currentStepData.advanceOn) {
-      console.log("test");
+      //console.log("test");
       const handleTargetAction = () => {
         if (currentStepData.advanceOn === "click") {
           // When the textarea is focused, automatically use the template

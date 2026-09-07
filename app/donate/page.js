@@ -12,6 +12,7 @@ import NavBar from "../../components/bottom-nav-bar";
 import { auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { usePageAnalytics } from "../useAnalytics";
+import { logButtonEvent } from "../utils/analytics";
 
 export default function Donate() {
   /* ================= AUTH ================= */
@@ -75,7 +76,7 @@ export default function Donate() {
                 href="https://www.every.org/murphy-charitable-foundation-uganda?utm_campaign=donate-link#/donate/card"
                 target="_blank"
               >
-                <Button btnText="Sponsor Now" />
+                <Button btnText="Sponsor Now" onClick={() => {logButtonEvent('Sponsor Now', '/donate')}} />
               </Link>
             </div>
 

@@ -1,12 +1,29 @@
 /**
  * Usage is commented in useAnalytics.js and donate/page.js
  */
-import { getAnalytics, logEvent } from "firebase/analytics";
+import { getAnalytics, logEvent, setUserProperties } from "firebase/analytics";
 import { app } from "../firebaseConfig.js";
 import * as Sentry from "@sentry/nextjs";
 
 // Initialize Firebase Analytics
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
+
+const setAnalyticsUserType = (userType) => {
+  if (analytics && userType) {
+    setUserProperties(analytics, {
+      user_type: userType,
+    });
+  }
+};
+
+const logDormantMessageSent = (reason, userUid) => {
+  if (analytics) {
+    logEvent(analytics, "dormant_message_sent", {
+      dormant_conversation_reason: reason || "unknown",
+      dormant_conversation_user_uid: userUid || "unknown",
+    });
+  }
+};
 
 // Function to track page views
 /**
@@ -21,7 +38,7 @@ const logPageView = (pagePath, viewTime) => {
     logEvent(analytics, "page_view", {
       page_path: pagePath,
       page_title: pagePath,
-      screen_time: viewTime, // seconds
+      page_screen_time: viewTime, // seconds
     });
   }
 };
@@ -102,23 +119,20 @@ const logDeadClick = (
   if (analytics) {
     //console.log("Logging dead click event");
     logEvent(analytics, "dead_click", {
-      clicked_element: elementClicked || "unknown",
       page_path: pagePath,
-      timestamp: new Date().toISOString(),
-      screenshot_url: screenshotUrl || null,
-      element_id: elementId || "unknown",
-      aria_label: ariaLabel || "unknown",
+      dead_clicked_element: elementClicked || "unknown",
+      dead_click_screenshot_url: screenshotUrl || null,
+      dead_click_element_id: elementId || "unknown",
+      dead_click_aria_label: ariaLabel || "unknown",
       ...meta,
     });
   }
 };
 
-const logInternetDisconnection = (duration, reconnected = false) => {
+const logInternetOffline = (duration) => {
   if (analytics) {
-    logEvent(analytics, "internet_connectivity", {
-      type: reconnected ? "reconnection" : "disconnection",
-      duration_seconds: duration,
-      timestamp: new Date().toISOString(),
+    logEvent(analytics, "internet_offline", {
+      offline_duration_seconds: duration,
     });
   }
 };
@@ -134,17 +148,19 @@ const logLoadingTime = (pagePath, loadingTime) => {
   if (analytics) {
     logEvent(analytics, "page_loading_time", {
       page_path: pagePath,
-      loading_time: loadingTime,
+      page_loading_time: loadingTime,
     });
   }
 };
 
 export {
+  setAnalyticsUserType,
+  logDormantMessageSent,
   logPageView,
   logButtonEvent,
   logInEvent,
   logError,
   logDeadClick,
-  logInternetDisconnection,
+  logInternetOffline,
   logLoadingTime,
 };

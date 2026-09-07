@@ -20,7 +20,7 @@ import ProfileHeader from "../../components/general/message/ProfileHeader";
 import EmptyState from "../../components/general/inbox/EmptyState";
 import { PageContainer } from "../../components/general/PageContainer";
 import { PageBackground } from "../../components/general/PageBackground";
-import { logError } from "../utils/analytics";
+import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 
 const toDateValue = (date) => date?.toDate?.() || date || new Date(0);
@@ -79,6 +79,7 @@ export default function Home() {
             conversationId: id || "",
             isRecipient: message?.sent_by?.id !== uid,
             unread: message?.unread || false,
+            sent_by: recipient,
           };
         })
       );
@@ -114,7 +115,9 @@ export default function Home() {
           const downloaded = await getUserPfp(uid);
           setProfileImage(downloaded || "");
         } catch (error) {
-          console.error("Failed to load profile image", error);
+          logError(error, {
+            description: "Failed to load profile image",
+          });
           setProfileImage("");
         }
 
@@ -146,7 +149,10 @@ export default function Home() {
           center={false}
           className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
         >
-          <div className="shrink-0 border-b">
+          <div
+            className="shrink-0 border-b"
+            onClick={() => logButtonEvent("Open profile", "/inbox")}
+          >
             <ProfileHeader
               userName={userName}
               profileImage={profileImage}

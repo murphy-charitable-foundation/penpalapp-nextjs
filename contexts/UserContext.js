@@ -5,6 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth, db } from '../app/firebaseConfig';
 import { getUserPfp } from '../app/utils/avatarUtils';
+import { setAnalyticsUserType } from '../app/utils/analytics';
 import LoadingSpinner from '../components/loading/LoadingSpinner';
 import { PUBLIC_PATHS } from "../app/utils/publicPaths";
 
@@ -36,7 +37,9 @@ export function UserProvider({ children }) {
           if (userDoc.exists()) {
             const fetchedUserData = userDoc.data();
             setUserData(fetchedUserData);
-            setUserType(fetchedUserData.user_type || 'Unknown Type');
+            const fetchedUserType = fetchedUserData.user_type || 'Unknown Type';
+            setUserType(fetchedUserType);
+            setAnalyticsUserType(fetchedUserType);
             setDisplayName(fetchedUserData.first_name || '');
 
             try {
