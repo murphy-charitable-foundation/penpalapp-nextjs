@@ -69,13 +69,48 @@ const logInEvent = (status) => {
 };
 
 /**
+ * Extracts top stack frame details (file name, line number, column, function)
+ * from an Error stack trace string.
+ *
+ * @param {string} stack The error stack trace.
+ * @returns {Object} Structured stack frame metadata.
+ */
+const parseStackFrame = (stack) => {
+  if (!stack || typeof stack !== "string") return {};
+
+  const lines = stack.split("\n");
+  const targetLine =
+    lines.find(
+      (line) => line.includes(":") && !line.includes("analytics.js")
+    ) || lines[1];
+
+  if (!targetLine) return {};
+
+  const match = targetLine.match(
+    /(?:at\s+(?:(?<fn>[\w$.<>]+)\s+\()?)?(?<url>https?:\/\/[^\s)]+|[^\s()]+):(?<line>\d+):(?<col>\d+)\)?/
+  );
+
+  if (!match || !match.groups) return {};
+
+  const { fn, url, line, col } = match.groups;
+  const fileName = url ? url.split("/").pop().split("?")[0] : "unknown";
+
+  return {
+    error_file: fileName.substring(0, 100),
+    error_line: line ? parseInt(line, 10) : 0,
+    error_column: col ? parseInt(col, 10) : 0,
+    error_function: (fn || "anonymous").substring(0, 100),
+  };
+};
+
+/**
  * Logs an uncaught error to Firebase Analytics.
  *
  * @param {Error} error The error object to log.
  * @param {Object} errorInfo Additional information to include in the error event.
  * @returns {void}
  */
-const logError = (error, errorInfo) => {
+const logError = (error, errorInfo = {}) => {
   const errorObject =
     error instanceof Error
       ? error
@@ -86,10 +121,16 @@ const logError = (error, errorInfo) => {
   }
 
   if (analytics) {
+    const frame = parseStackFrame(errorObject.stack);
+
     logEvent(analytics, "uncaught_error", {
-      error_name: errorObject.name || "Unknown",
-      error_message: errorObject.message || "No message",
-      error_stack: errorObject.stack || "No stack trace",
+      error_name: (errorObject.name || "Unknown").substring(0, 100),
+      error_message: (errorObject.message || "No message").substring(0, 100),
+      error_file: frame.error_file || "unknown",
+      error_line: frame.error_line || 0,
+      error_column: frame.error_column || 0,
+      error_function: frame.error_function || "unknown",
+      error_stack: (errorObject.stack || "No stack trace").substring(0, 100),
       ...errorInfo,
     });
   }
