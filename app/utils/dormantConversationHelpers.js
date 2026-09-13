@@ -82,6 +82,8 @@ export const sendEmail = async (conversationId, members, toEmails, reason) => {
 
     return {
       success: true,
+      reason,
+      reminderUserUids: members.map((member) => member.id).filter(Boolean),
       msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
     };
   } catch (error) {

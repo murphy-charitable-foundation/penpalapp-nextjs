@@ -14,7 +14,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import LoadingSpinner from "../../components/loading/LoadingSpinner";
 import { usePageAnalytics } from "../useAnalytics";
 import { useEffect, useRef } from "react";
-import { logInEvent, logButtonEvent, logLoadingTime } from "../utils/analytics";
+import { logInEvent, logError } from "../utils/analytics";
 import { initializeNotifications } from "../utils/notification";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { PageBackground } from "../../components/general/PageBackground";
@@ -91,9 +91,11 @@ export default function Login() {
 
         await refreshCachedUserPhoto(uid, updateCachedUserLogin);
 
-        initializeNotifications().catch((err) => {
-          console.error("Notification setup failed:", err);
+        await initializeNotifications().catch((err) => {
+          logError(err, {description: "Notification setup failed during login."});
         });
+
+        logInEvent("success", data.user_type);
 
         if (data.user_type === "admin") {
           router.push("/admin");
@@ -101,13 +103,17 @@ export default function Login() {
           router.push("/inbox");
         }
       } else {
+
+        logInEvent("success", "new_user");
+
         router.replace("/create-acc");
       }
     } catch (err) {
+
       setLoading(false);
       setIsNavigating(false);
 
-      console.error("Authentication error:", err.message);
+      logError(err, {description: "Error logging in: "});
 
       switch (err.code) {
         case "auth/user-not-found":

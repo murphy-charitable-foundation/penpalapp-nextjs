@@ -18,6 +18,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../app/firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
 import { useNavigation } from "../../contexts/NavigationContext";
+import { logButtonEvent } from "../../app/utils/analytics";
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -116,7 +117,10 @@ export default function NavBar() {
       className="w-full bg-blue-100 px-4 py-3 flex justify-around items-center text-zinc-900 border-t rounded-b-2xl shadow-md"
     >
       <button
-        onClick={() => handleNavigation("/inbox")}
+        onClick={() => {
+          logButtonEvent("inbox", "bottom-nav-bar");
+          handleNavigation("/inbox");
+        }}
         className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
       >
         <FaInbox className="h-4 w-4" />
@@ -125,7 +129,10 @@ export default function NavBar() {
 
       {userType !== "child" && (
         <button
-          onClick={() => handleNavigation("/donate")}
+          onClick={() => {
+            logButtonEvent("donate", "bottom-nav-bar");
+            handleNavigation("/donate");
+          }}
           className="flex flex-col items-center hover:bg-blue-400/40 rounded-xl p-2 transition"
         >
           <FaHandHoldingHeart className="h-4 w-4" />
@@ -157,7 +164,10 @@ export default function NavBar() {
                 onClick={
                   link.onClick
                     ? link.onClick
-                    : () => handleNavigation(link.href)
+                    : () => {
+                      logButtonEvent(link.label || link.href, "bottom-nav-bar");
+                      handleNavigation(link.href)
+                    }
                 }
                 className="flex items-center gap-2 p-2 hover:bg-blue-400/50 rounded-lg w-full"
               >

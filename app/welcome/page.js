@@ -14,6 +14,8 @@ import { useUser } from "@/contexts/UserContext";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
 import { ChevronDown, ChevronLeft } from "lucide-react";
+import { usePageAnalytics } from "../useAnalytics";
+import { logError, logButtonEvent } from "../utils/analytics";
 
 const COUNTRIES = [
   "Afghanistan",
@@ -191,6 +193,8 @@ const COUNTRIES = [
 ];
 
 export default function Page() {
+  usePageAnalytics("/welcome");
+
   const { user, displayName } = useUser();
   const { updateCachedUserLogin } = useCachedUserLogins();
   const router = useRouter();
@@ -240,15 +244,18 @@ export default function Page() {
   }, []);
 
   const handleWelcomeContinue = () => {
+    logButtonEvent("welcome continue button clicked", "/welcome");
     setShowAvatarModal(true);
   };
 
   const handleAvatarSkip = () => {
+    logButtonEvent("welcome avatar skip button clicked", "/welcome");
     setShowAvatarModal(false);
     setShowCountryModal(true);
   };
 
   const handleAvatarBack = () => {
+    logButtonEvent("welcome avatar back button clicked", "/welcome");
     setShowAvatarModal(false);
     setShowCountryModal(false);
     setErrorMsg("");
@@ -271,7 +278,7 @@ export default function Page() {
     avatarUploadPromiseRef.current = new Promise(async (resolve) => {
       try {
         const url = await uploadProfilePicture(user.uid, blob, () => {}, (error) => {
-          console.error("Profile image upload error", error);
+          logError(error, {description: "Profile image upload failed"});
           setErrorMsg(
             "Your profile photo could not be saved. You can still continue."
           );
@@ -281,11 +288,11 @@ export default function Page() {
           try {
             await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
           } catch (e) {
-            console.warn("refreshCachedUserPhoto failed", e);
+            logError(e, {description: "refreshCachedUserPhoto failed"});
           }
         }
       } catch (error) {
-        console.error("Profile image upload failed to start", error);
+        logError(error, {description: "Profile image upload failed to start"});
         setErrorMsg(
           "Your profile photo could not be saved. You can still continue."
         );
@@ -316,6 +323,8 @@ export default function Page() {
   };
 
   const handleCountryContinue = async () => {
+    logButtonEvent("welcome country continue button clicked", "/welcome");
+
     if (!country) {
       setErrorMsg("Please select a country.");
       return;
@@ -332,17 +341,19 @@ export default function Page() {
       setCountryLoading(false);
       await finishOnboarding();
     } catch (error) {
-      console.error("Failed to update user country", error);
+      logError(error, {description: "Failed to update user country"});
       setErrorMsg("Could not save your country. Please try again.");
       setCountryLoading(false);
     }
   };
 
   const handleCountrySkip = async () => {
+    logButtonEvent("welcome country skip button clicked", "/welcome");
     await finishOnboarding();
   };
 
   const handleCountryBack = () => {
+    logButtonEvent("welcome country back button clicked", "/welcome");
     setShowCountryModal(false);
     setShowAvatarModal(true);
     setErrorMsg("");

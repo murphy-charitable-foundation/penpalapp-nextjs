@@ -19,7 +19,7 @@ export function BackButton({
       if (backHref.startsWith("/")) {
         router.replace(backHref);
       } else {
-        logError(new Error("backHref must start with '/'"), { backHref });
+        logError(new Error("backHref must start with '/'"), { description: `Invalid backHref received: ${backHref}` });
         router.back();
       }
     } else if (window.history.length > 1) {
