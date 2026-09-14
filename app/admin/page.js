@@ -355,6 +355,18 @@ export default function Admin() {
         moderated_at: serverTimestamp(),
       });
 
+      try {
+        await sendNotification(
+          selectedMessage.conversationId,
+          selectedMessage.id,
+        );
+      } catch (notificationError) {
+        console.error(
+          "Message rejected, but notification failed:",
+          notificationError,
+        );
+      }
+
       updateLocalMessage(selectedMessage.id, {
         status: "rejected",
         moderator_id: userId,

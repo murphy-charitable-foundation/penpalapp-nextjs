@@ -22,7 +22,9 @@ async function removeStaleToken(userRef, token) {
     const userSnap = await transaction.get(userRef);
 
     if (userSnap.data()?.fcmToken === token) {
-      transaction.update(userRef, { fcmToken: FieldValue.delete() });
+      transaction.update(userRef, {
+        fcmToken: FieldValue.delete(),
+      });
     }
   });
 }
@@ -32,7 +34,6 @@ async function removeStaleToken(userRef, token) {
  */
 async function isInConversation(senderUid, conversationId) {
   const conversationRef = db.collection("conversations").doc(conversationId);
-
   const conversationSnap = await conversationRef.get();
 
   if (!conversationSnap.exists) {
@@ -49,7 +50,6 @@ async function isInConversation(senderUid, conversationId) {
  */
 async function getConversationTokens(conversationId, senderUid) {
   const conversationRef = db.collection("conversations").doc(conversationId);
-
   const conversationSnap = await conversationRef.get();
 
   if (!conversationSnap.exists) {
@@ -57,7 +57,6 @@ async function getConversationTokens(conversationId, senderUid) {
   }
 
   const members = conversationSnap.data()?.members || [];
-
   const recipients = members.filter((member) => member.id !== senderUid);
 
   const tokens = [];
@@ -84,6 +83,32 @@ async function getConversationTokens(conversationId, senderUid) {
   }
 
   return tokens;
+}
+
+/**
+ * Fetch the original sender's notification token.
+ */
+async function getUserNotificationToken(userId) {
+  const userRef = db.collection("users").doc(userId);
+  const userSnap = await userRef.get();
+
+  if (!userSnap.exists) {
+    return [];
+  }
+
+  const user = userSnap.data();
+
+  if (!user.fcmToken) {
+    return [];
+  }
+
+  return [
+    {
+      token: user.fcmToken,
+      name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+      userRef,
+    },
+  ];
 }
 
 export async function POST(req) {
@@ -114,6 +139,7 @@ export async function POST(req) {
         { status: 400 },
       );
     }
+
     // --- FETCH MESSAGE ---
     const messageRef = db
       .collection("conversations")
@@ -134,18 +160,18 @@ export async function POST(req) {
 
     const messageData = messageSnap.data();
 
-    // Notification should only be sent after moderation approval.
-    if (messageData.status !== "approved") {
+    // Notifications should only be sent after moderation.
+    if (!["approved", "rejected"].includes(messageData.status)) {
       return new Response(
         JSON.stringify({
-          error: "Notification can only be sent for an approved message.",
+          error:
+            "Notification can only be sent for an approved or rejected message.",
         }),
         { status: 409 },
       );
     }
 
-    // Identify the original sender from the approved message,
-    // rather than from the currently logged-in admin.
+    // Identify the original sender from the moderated message.
     const senderUid = messageData.sent_by?.id;
 
     if (!senderUid) {
@@ -158,7 +184,10 @@ export async function POST(req) {
     }
 
     // --- VERIFY ORIGINAL SENDER ---
-    const senderIsMember = await isInConversation(senderUid, conversationId);
+    const senderIsMember = await isInConversation(
+      senderUid,
+      conversationId,
+    );
 
     if (!senderIsMember) {
       return new Response(
@@ -169,8 +198,13 @@ export async function POST(req) {
       );
     }
 
-    // --- FETCH RECIPIENT TOKENS ---
-    const tokens = await getConversationTokens(conversationId, senderUid);
+    const isRejected = messageData.status === "rejected";
+
+    // Approved: notify other conversation members.
+    // Rejected: notify only the original sender.
+    const tokens = isRejected
+      ? await getUserNotificationToken(senderUid)
+      : await getConversationTokens(conversationId, senderUid);
 
     if (tokens.length === 0) {
       return new Response(
@@ -183,15 +217,20 @@ export async function POST(req) {
     }
 
     // --- SEND NOTIFICATIONS ---
-    const notificationTitle = "New Conversation Message";
+    const notificationTitle = isRejected
+      ? "Message Rejected"
+      : "New Conversation Message";
+
     const clickAction = `/conversation/${conversationId}`;
     const requestOrigin = new URL(req.url).origin;
     const absoluteLink = `${requestOrigin}${clickAction}`;
 
     const sendPromises = tokens.map(({ token, name, userRef }) => {
-      const notificationBody = name
-        ? `You have a new message, ${name}.`
-        : "You have a new message.";
+      const notificationBody = isRejected
+        ? "Your message was rejected."
+        : name
+          ? `You have a new message, ${name}.`
+          : "You have a new message.";
 
       return messaging
         .send({
@@ -211,12 +250,19 @@ export async function POST(req) {
             },
           },
         })
-        .then((response) => ({ success: true, name, response }))
+        .then((response) => ({
+          success: true,
+          name,
+          response,
+        }))
         .catch(async (sendError) => {
           if (TERMINAL_TOKEN_ERROR_CODES.has(sendError?.code)) {
             try {
               await removeStaleToken(userRef, token);
-              console.info(`Removed stale notification token for ${name}.`);
+
+              console.info(
+                `Removed stale notification token for ${name}.`,
+              );
             } catch (cleanupError) {
               console.error(
                 `Failed to remove stale notification token for ${name}:`,
@@ -232,7 +278,10 @@ export async function POST(req) {
             };
           }
 
-          console.error(`Failed to send notification to ${name}:`, sendError);
+          console.error(
+            `Failed to send notification to ${name}:`,
+            sendError,
+          );
 
           return {
             success: false,
@@ -241,10 +290,21 @@ export async function POST(req) {
           };
         });
     });
+
     const results = await Promise.all(sendPromises);
-    const successCount = results.filter((result) => result.success).length;
+
+    const successCount = results.filter(
+      (result) => result.success,
+    ).length;
+
     const failureCount = results.length - successCount;
-    const status = failureCount === 0 ? 200 : successCount === 0 ? 502 : 207;
+
+    const status =
+      failureCount === 0
+        ? 200
+        : successCount === 0
+          ? 502
+          : 207;
 
     return new Response(
       JSON.stringify({
@@ -256,10 +316,14 @@ export async function POST(req) {
       { status },
     );
   } catch (error) {
-    console.error("Error processing notification request:", error);
+    console.error(
+      "Error processing notification request:",
+      error,
+    );
 
     const status =
-      error.status || (error.code?.startsWith("auth/") ? 401 : 500);
+      error.status ||
+      (error.code?.startsWith("auth/") ? 401 : 500);
 
     return new Response(
       JSON.stringify({
