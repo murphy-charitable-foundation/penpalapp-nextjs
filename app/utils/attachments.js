@@ -206,8 +206,13 @@ export const getMediaKind = (contentType = "", fileName = "") => {
   if (contentType.startsWith("image/")) return "image";
   if (contentType.startsWith("video/")) return "video";
   if (contentType.startsWith("audio/")) return "audio";
+  if (contentType === "application/pdf") return "pdf";
 
   const extension = fileName.split(".").pop()?.toLowerCase();
+
+  if (extension === "pdf") {
+    return "pdf";
+  }
 
   if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"].includes(extension)) {
     return "image";
@@ -453,50 +458,59 @@ export const uploadAttachmentFile = async ({
 
   let fileToUpload = attachment.file;
 
-  try {
-    onUpdate?.(attachment.clientKey, { status: "compressing", progress: 0 });
+  // Detect PDF by MIME type or file extension
+  const isPdf =
+    attachment.file.type === "application/pdf" ||
+    attachment.file.name?.toLowerCase().endsWith(".pdf");
 
-    const compressedMedia = await compressMedia(
-      attachment.file,
-      (compressionProgress) => {
-        const progress = Math.round(
-          Math.max(0, Math.min(1, compressionProgress)) * 40,
+  // Skip compression for PDFs to upload the original document directly
+  if (!isPdf) {
+    try {
+      onUpdate?.(attachment.clientKey, { status: "compressing", progress: 0 });
+
+      // Compress media and track progress
+      const compressedMedia = await compressMedia(
+        attachment.file,
+        (compressionProgress) => {
+          const progress = Math.round(
+            Math.max(0, Math.min(1, compressionProgress)) * 40,
+          );
+
+          onUpdate?.(attachment.clientKey, {
+            status: "compressing",
+            progress,
+          });
+        },
+      );
+
+      if (compressedMedia instanceof File) {
+        fileToUpload = new File(
+          [compressedMedia],
+          sanitizeFileName(compressedMedia.name),
+          { type: compressedMedia.type || attachment.file.type },
         );
+      } else {
+        fileToUpload = new File(
+          [compressedMedia],
+          getFileNameWithType(
+            attachment.fileName,
+            compressedMedia.type || attachment.file.type,
+          ),
+          { type: compressedMedia.type || attachment.file.type },
+        );
+      }
 
-        onUpdate?.(attachment.clientKey, {
-          status: "compressing",
-          progress,
-        });
-      },
-    );
-
-    if (compressedMedia instanceof File) {
-      fileToUpload = new File(
-        [compressedMedia],
-        sanitizeFileName(compressedMedia.name),
-        { type: compressedMedia.type || attachment.file.type },
-      );
-    } else {
-      fileToUpload = new File(
-        [compressedMedia],
-        getFileNameWithType(
-          attachment.fileName,
-          compressedMedia.type || attachment.file.type,
-        ),
-        { type: compressedMedia.type || attachment.file.type },
-      );
+      onUpdate?.(attachment.clientKey, {
+        file: fileToUpload,
+        fileName: fileToUpload.name,
+        byteSize: fileToUpload.size,
+        mediaKind: getMediaKind(fileToUpload.type, fileToUpload.name),
+      });
+    } catch (error) {
+      console.error("Attachment compression failed:", error);
+      onUpdate?.(attachment.clientKey, { status: "error" });
+      return;
     }
-
-    onUpdate?.(attachment.clientKey, {
-      file: fileToUpload,
-      fileName: fileToUpload.name,
-      byteSize: fileToUpload.size,
-      mediaKind: getMediaKind(fileToUpload.type, fileToUpload.name),
-    });
-  } catch (error) {
-    console.error("Attachment compression failed:", error);
-    onUpdate?.(attachment.clientKey, { status: "error" });
-    return;
   }
 
   const fileName = sanitizeFileName(fileToUpload.name);
