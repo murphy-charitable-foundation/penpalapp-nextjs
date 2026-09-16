@@ -30,6 +30,7 @@ import {
   getCachedAttachmentQueue,
   getCompletedAttachmentFileNamesForSave,
   getMessageAttachmentFileNames,
+  isValidPdfFile,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
   sanitizeFileName,
@@ -473,17 +474,13 @@ export default function Page({ params }) {
     handleAddAttachment({ file, mediaKind: "video" });
   };
 
-  const handlePdfFileChange = (event) => {
+  const handlePdfFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     event.target.value = "";
 
-    const isPdf =
-      file.type === "application/pdf" ||
-      file.name?.toLowerCase().endsWith(".pdf");
-
-    if (!isPdf) {
+    if (!(await isValidPdfFile(file))) {
       alert("Please select a valid PDF file.");
       return;
     }

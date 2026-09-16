@@ -103,6 +103,7 @@ export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
             <iframe
               src={attachment.downloadUrl}
               title={attachment.fileName}
+              sandbox=""
               className="h-[70vh] w-full rounded-lg border-0 bg-white"
             />
           ) : (

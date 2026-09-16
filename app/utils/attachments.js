@@ -173,6 +173,19 @@ export const isAllowedMediaUrl = (downloadUrl) => {
   }
 };
 
+export const isValidPdfFile = async (file) => {
+  if (!file || file.type !== "application/pdf") return false;
+
+  try {
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const pdfSignature = [0x25, 0x50, 0x44, 0x46, 0x2d];
+
+    return pdfSignature.every((byte, index) => header[index] === byte);
+  } catch (error) {
+    return false;
+  }
+};
+
 export const sanitizeFileName = (fileName = "") =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
@@ -209,10 +222,6 @@ export const getMediaKind = (contentType = "", fileName = "") => {
   if (contentType === "application/pdf") return "pdf";
 
   const extension = fileName.split(".").pop()?.toLowerCase();
-
-  if (extension === "pdf") {
-    return "pdf";
-  }
 
   if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"].includes(extension)) {
     return "image";
@@ -334,6 +343,17 @@ export const resolveMessageAttachmentPreview = async ({
     loadAttachmentMetadata(cacheEntry, objectRef),
     loadAttachmentDownloadUrl(cacheEntry, objectRef),
   ]);
+
+  const contentType = metadata?.contentType || "";
+
+  if (contentType === "application/pdf") {
+    return createResolvedAttachment({
+      fileName,
+      metadata,
+      downloadUrl,
+    });
+  }
+
   const blob = await loadAttachmentBlob(cacheEntry, downloadUrl);
   const blobUrl = getAttachmentBlobUrl(cacheEntry, blob);
 
@@ -458,10 +478,13 @@ export const uploadAttachmentFile = async ({
 
   let fileToUpload = attachment.file;
 
-  // Detect PDF by MIME type or file extension
-  const isPdf =
-    attachment.file.type === "application/pdf" ||
-    attachment.file.name?.toLowerCase().endsWith(".pdf");
+  const hasPdfMimeType = attachment.file.type === "application/pdf";
+  const isPdf = await isValidPdfFile(attachment.file);
+
+  if (hasPdfMimeType && !isPdf) {
+    onUpdate?.(attachment.clientKey, { status: "error" });
+    return;
+  }
 
   // Skip compression for PDFs to upload the original document directly
   if (!isPdf) {
