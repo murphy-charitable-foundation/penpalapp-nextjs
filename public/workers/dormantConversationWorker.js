@@ -5,8 +5,9 @@ self.onmessage = async function (e) {
     return;
   }
   try {
-    const result = await sendDormantConversation(idToken);
-    const data = await result.json();
+    // sendDormantConversation() below currently returns a plain object, not a
+    // fetch Response, so it must not be passed through .json() again.
+    const data = await sendDormantConversation(idToken);
     self.postMessage({ success: true, data });
   } catch (error) {
     self.postMessage({ success: false, error: error.message });
