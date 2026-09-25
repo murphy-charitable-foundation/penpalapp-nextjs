@@ -2,7 +2,7 @@
 import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, FieldPath } from "firebase/firestore";
+import { initializeFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
 import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
@@ -45,7 +45,13 @@ const firebaseConfig =
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Auto-detect long-polling: many Windows setups (corporate proxies, AV/SSL
+// inspection like Kaspersky/ESET) block Firestore's default WebChannel
+// streaming, causing writes/listeners (e.g. draft autosave) to silently
+// hang or fail without a surfaced error.
+const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+});
 const auth = getAuth(app);
 const storage = getStorage(app);
 const VAPID_KEY =
