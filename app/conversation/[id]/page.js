@@ -29,6 +29,8 @@ import {
   getCachedAttachmentQueue,
   getCompletedAttachmentFileNamesForSave,
   getMessageAttachmentFileNames,
+  isPdfWithinSizeLimit,
+  isValidPdfFile,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
   sanitizeFileName,
@@ -50,6 +52,7 @@ import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
 import {
   AlertTriangle,
+  FileText,
   Film,
   Image as ImageIcon,
   Mic,
@@ -75,6 +78,7 @@ export default function Page({ params }) {
   const textAreaRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
   const messageContentRef = useRef("");
   const pendingAttachmentsRef = useRef([]);
   const draftRef = useRef(null);
@@ -215,6 +219,7 @@ export default function Page({ params }) {
     if (mediaKind === "image") return <ImageIcon size={18} className="text-emerald-700" />;
     if (mediaKind === "video") return <Film size={18} className="text-emerald-700" />;
     if (mediaKind === "audio") return <Play size={18} className="text-emerald-700" />;
+    if (mediaKind === "pdf") return <FileText size={18} className="text-emerald-700" />;
     return <Paperclip size={18} className="text-emerald-700" />;
   };
 
@@ -439,6 +444,14 @@ export default function Page({ params }) {
     videoInputRef.current?.click();
   };
 
+  const handlePickPdf = () => {
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    pdfInputRef.current?.click();
+  };
+
   const handleImageFileChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -459,6 +472,25 @@ export default function Page({ params }) {
       return;
     }
     handleAddAttachment({ file, mediaKind: "video" });
+  };
+
+  const handlePdfFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    event.target.value = "";
+
+    if (!isPdfWithinSizeLimit(file)) {
+      alert("PDF files must be 25 MB or smaller.");
+      return;
+    }
+
+    if (!(await isValidPdfFile(file))) {
+      alert("Please select a valid PDF file.");
+      return;
+    }
+
+    handleAddAttachment({ file, mediaKind: "pdf" });
   };
 
   const handleRequestDeleteAttachment = (attachment) => {
@@ -1783,6 +1815,14 @@ export default function Page({ params }) {
               </button>
               <button
                 type="button"
+                onClick={handlePickPdf}
+                className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                title="Send PDF"
+              >
+                <FileText size={18} className="text-slate-600" />
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowAudioRecorder((prev) => !prev)}
                 className={`p-2 rounded-full transition-colors ${
                   showAudioRecorder
@@ -1871,6 +1911,13 @@ export default function Page({ params }) {
             accept="video/*"
             className="hidden"
             onChange={handleVideoFileChange}
+          />
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={handlePdfFileChange}
           />
 
           {!isEditing ? (

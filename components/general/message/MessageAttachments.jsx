@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  FileText,
   Film,
   Image as ImageIcon,
   LoaderCircle,
@@ -30,6 +31,10 @@ const AttachmentIcon = ({ mediaKind }) => {
 
   if (mediaKind === "audio") {
     return <Play size={18} className="text-emerald-700" />;
+  }
+
+  if (mediaKind === "pdf") {
+    return <FileText size={18} className="text-emerald-700" />;
   }
 
   return <Paperclip size={18} className="text-emerald-700" />;
@@ -94,6 +99,21 @@ export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
               controls
               className="h-[70vh] w-full rounded-lg bg-black"
             />
+          ) : attachment.mediaKind === "pdf" ? (
+            <div className="flex h-[50vh] flex-col items-center justify-center rounded-lg bg-slate-100 p-6 text-center">
+              <FileText size={48} className="mb-4 text-slate-500" />
+              <p className="mb-4 text-sm text-slate-600">
+                PDF preview opens in a new tab.
+              </p>
+              <a
+                href={attachment.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white"
+              >
+                Open PDF
+              </a>
+            </div>
           ) : (
             <div className="rounded-lg bg-slate-100 p-6">
               <audio
