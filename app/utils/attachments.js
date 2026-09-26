@@ -173,6 +173,11 @@ export const isAllowedMediaUrl = (downloadUrl) => {
   }
 };
 
+export const MAX_PDF_SIZE_BYTES = 25 * 1024 * 1024;
+
+export const isPdfWithinSizeLimit = (file) =>
+  Boolean(file && file.size <= MAX_PDF_SIZE_BYTES);
+
 export const isValidPdfFile = async (file) => {
   if (!file || file.type !== "application/pdf") return false;
 
@@ -481,7 +486,10 @@ export const uploadAttachmentFile = async ({
   const hasPdfMimeType = attachment.file.type === "application/pdf";
   const isPdf = await isValidPdfFile(attachment.file);
 
-  if (hasPdfMimeType && !isPdf) {
+  if (
+    hasPdfMimeType &&
+    (!isPdf || !isPdfWithinSizeLimit(attachment.file))
+  ) {
     onUpdate?.(attachment.clientKey, { status: "error" });
     return;
   }

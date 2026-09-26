@@ -100,12 +100,20 @@ export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
               className="h-[70vh] w-full rounded-lg bg-black"
             />
           ) : attachment.mediaKind === "pdf" ? (
-            <iframe
-              src={attachment.downloadUrl}
-              title={attachment.fileName}
-              sandbox=""
-              className="h-[70vh] w-full rounded-lg border-0 bg-white"
-            />
+            <div className="flex h-[50vh] flex-col items-center justify-center rounded-lg bg-slate-100 p-6 text-center">
+              <FileText size={48} className="mb-4 text-slate-500" />
+              <p className="mb-4 text-sm text-slate-600">
+                PDF preview opens in a new tab.
+              </p>
+              <a
+                href={attachment.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white"
+              >
+                Open PDF
+              </a>
+            </div>
           ) : (
             <div className="rounded-lg bg-slate-100 p-6">
               <audio

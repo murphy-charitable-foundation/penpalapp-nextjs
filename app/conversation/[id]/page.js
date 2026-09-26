@@ -30,6 +30,7 @@ import {
   getCachedAttachmentQueue,
   getCompletedAttachmentFileNamesForSave,
   getMessageAttachmentFileNames,
+  isPdfWithinSizeLimit,
   isValidPdfFile,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
@@ -479,6 +480,11 @@ export default function Page({ params }) {
     if (!file) return;
 
     event.target.value = "";
+
+    if (!isPdfWithinSizeLimit(file)) {
+      alert("PDF files must be 25 MB or smaller.");
+      return;
+    }
 
     if (!(await isValidPdfFile(file))) {
       alert("Please select a valid PDF file.");
