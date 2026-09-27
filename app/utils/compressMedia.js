@@ -358,7 +358,12 @@ const recordMedia = ({
 /**
  * Compress media with lightweight browser-native paths.
  */
-export async function compressMedia(file, onProgress = null, customOptions = {}) {
+export async function compressMedia(
+  file,
+  onProgress = null,
+  customOptions = {},
+  onStage = null,
+) {
   const options = getAdaptiveOptions(customOptions);
   reportProgress(onProgress, 0);
 
@@ -367,7 +372,13 @@ export async function compressMedia(file, onProgress = null, customOptions = {})
   }
 
   if (file.type.startsWith("video")) {
-    return chooseSmallerMedia(file, await compressVideo(file, onProgress, options));
+    const compressionOutput = await compressVideo(file, onProgress, options);
+    onStage?.({
+      stage: "compression-output",
+      blob: compressionOutput,
+      outcome: compressionOutput === file ? "skipped" : "recorded",
+    });
+    return chooseSmallerMedia(file, compressionOutput);
   }
 
   if (file.type.startsWith("audio")) {
