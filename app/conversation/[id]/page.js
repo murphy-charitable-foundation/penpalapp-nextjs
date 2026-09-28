@@ -1457,7 +1457,11 @@ export default function Page({ params }) {
       return userLocation || "";
     }
 
-    return message.senderLocation || recipients[0]?.location || "";
+    const sender = recipients.find(
+      (recipient) => recipient.id === message.sent_by?.id,
+    );
+
+    return message.senderLocation || sender?.location || "";
   };
 
   const canSendMessage = () => {
@@ -1589,6 +1593,9 @@ export default function Page({ params }) {
             const messageId = message.id;
             const isSelected = selectedMessageId === messageId;
             const isSenderUser = message.sent_by?.id === user?.uid;
+            const sender = recipients.find(
+              (recipient) => recipient.id === message.sent_by?.id,
+            );
             const location = getSenderLocation(message);
 
             return (
@@ -1608,9 +1615,9 @@ export default function Page({ params }) {
                           photo_uri={
                             isSenderUser
                               ? profileImage
-                              : recipients[0]?.pfp
+                              : sender?.pfp
                           }
-                          name={isSenderUser ? "Me" : recipients[0]?.first_name}
+                          name={isSenderUser ? "Me" : sender?.first_name}
                           size={12}
                         />
                       </div>
@@ -1620,7 +1627,7 @@ export default function Page({ params }) {
                           <span className="font-bold text-black">
                             {isSenderUser
                               ? "Me"
-                              : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                              : `${sender?.first_name ?? "Unknown"} ${sender?.last_name ?? ""}`.trim()}
                           </span>
                           {location && (
                             <span className="text-black ml-2 text-sm">
