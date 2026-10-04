@@ -67,6 +67,17 @@ const getSupportedMimeType = (mimeTypes) => {
   return mimeTypes.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
 };
 
+// iOS Safari rejects unmuted play() outside a user gesture and ignores volume.
+const playWithMutedFallback = async (mediaElement) => {
+  try {
+    await mediaElement.play();
+  } catch (error) {
+    if (error?.name !== "NotAllowedError") throw error;
+    mediaElement.muted = true;
+    await mediaElement.play();
+  }
+};
+
 const getCaptureStream = (mediaElement) => {
   if (mediaElement.captureStream) return mediaElement.captureStream();
   if (mediaElement.mozCaptureStream) return mediaElement.mozCaptureStream();
@@ -259,13 +270,18 @@ const compressVideo = async (file, onProgress, options) => {
     const sourceStream = getCaptureStream(video);
     let audioTrack = null;
     try {
-      await video.play();
+      await playWithMutedFallback(video);
       audioTrack = await waitForAudioTrack(sourceStream);
     } catch (error) {
-      // Autoplay may be blocked; fall through with no audio track detected.
+      // Fall through with no audio track detected.
     } finally {
       video.pause();
       video.currentTime = 0;
+    }
+
+    // Without a captured audio track (e.g. Safari lacks captureStream) re-encoding would strip audio.
+    if (!audioTrack) {
+      return finishWithOriginal(file, onProgress);
     }
 
     const canvasStream = canvas.captureStream(options.videoFps);
@@ -344,8 +360,7 @@ const recordMedia = ({
 
     mediaRecorder.start();
     onStart?.();
-    mediaElement
-      .play()
+    playWithMutedFallback(mediaElement)
       .then(() => {
         drawFrame();
       })
@@ -372,7 +387,13 @@ export async function compressMedia(
   }
 
   if (file.type.startsWith("video")) {
-    const compressionOutput = await compressVideo(file, onProgress, options);
+    let compressionOutput = file;
+    try {
+      compressionOutput = await compressVideo(file, onProgress, options);
+    } catch (error) {
+      console.warn("Video compression failed, using original:", error);
+      reportProgress(onProgress, 1);
+    }
     onStage?.({
       stage: "compression-output",
       blob: compressionOutput,
