@@ -99,6 +99,21 @@ export const clearCachedUser = (uid) => {
   }
 };
 
+/** Remove all cached user entries without touching unrelated storage. */
+export const clearAllCachedUsers = () => {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+
+      if (key?.startsWith('cached-user-')) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Fail silently.
+  }
+};
+
 /**
  * Fetch user data using a cache-first strategy:
  * 1. Return cached user data if fresh in localStorage.

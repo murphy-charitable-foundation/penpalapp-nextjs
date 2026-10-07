@@ -10,6 +10,7 @@ import { PUBLIC_PATHS } from "../app/utils/publicPaths";
 import {
   getUserData,
   clearCachedUser,
+  clearAllCachedUsers,
 } from "../app/utils/sessionUserCache";
 
 const UserContext = createContext();
@@ -82,6 +83,8 @@ export function UserProvider({ children }) {
       } else {
         if (lastUid) {
           clearCachedUser(lastUid);
+        } else {
+          clearAllCachedUsers();
         }
         lastUid = null;
         setUser(null);
