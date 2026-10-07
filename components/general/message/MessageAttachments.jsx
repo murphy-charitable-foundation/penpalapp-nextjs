@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FileText,
@@ -19,6 +20,15 @@ import {
   resolveMessageAttachmentPreview,
   resolveMessageAttachments,
 } from "../../../app/utils/attachments";
+
+const PdfViewer = dynamic(() => import("./PdfViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[70vh] w-full items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-600">
+      Loading PDF viewer...
+    </div>
+  ),
+});
 
 const AttachmentIcon = ({ mediaKind }) => {
   if (mediaKind === "image") {
@@ -100,20 +110,7 @@ export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
               className="h-[70vh] w-full rounded-lg bg-black"
             />
           ) : attachment.mediaKind === "pdf" ? (
-            <div className="flex h-[50vh] flex-col items-center justify-center rounded-lg bg-slate-100 p-6 text-center">
-              <FileText size={48} className="mb-4 text-slate-500" />
-              <p className="mb-4 text-sm text-slate-600">
-                PDF preview opens in a new tab.
-              </p>
-              <a
-                href={attachment.downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white"
-              >
-                Open PDF
-              </a>
-            </div>
+            <PdfViewer url={attachment.downloadUrl} />
           ) : (
             <div className="rounded-lg bg-slate-100 p-6">
               <audio
