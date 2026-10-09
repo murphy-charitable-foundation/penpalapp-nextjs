@@ -164,11 +164,23 @@ export const handleNotificationSetup = async () => {
       body: JSON.stringify({ idToken, fcmToken: token }),
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    let data = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Non-JSON response from setupNotifications:", text);
+      }
+    }
+
     if (res.ok) {
       console.log("Notification setup complete.");
     } else {
-      console.error("Server error setting up notifications:", data.error);
+      console.error(
+        "Server error setting up notifications:",
+        data.error || res.statusText
+      );
     }
   } catch (err) {
     console.error("Error during notification setup:", err);

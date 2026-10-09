@@ -5,7 +5,6 @@ export const metadata = {
 };
 
 import Image from "next/image";
-import logo from "/public/murphylogo.png";
 import {
   FaInstagram,
   FaLinkedinIn,
