@@ -73,35 +73,6 @@ const getCaptureStream = (mediaElement) => {
   return null;
 };
 
-// Some browsers populate captureStream()'s audio track asynchronously (via
-// "addtrack") once decoding starts, rather than synchronously on creation.
-// Querying it immediately can race and silently miss the audio track.
-const waitForAudioTrack = (stream, timeoutMs = 500) =>
-  new Promise((resolve) => {
-    if (!stream) return resolve(null);
-
-    const existingTrack = stream.getAudioTracks()[0];
-    if (existingTrack) return resolve(existingTrack);
-
-    const cleanup = () => {
-      clearTimeout(timer);
-      stream.removeEventListener("addtrack", onAddTrack);
-    };
-
-    const onAddTrack = (event) => {
-      if (event.track.kind !== "audio") return;
-      cleanup();
-      resolve(event.track);
-    };
-
-    const timer = setTimeout(() => {
-      cleanup();
-      resolve(stream.getAudioTracks()[0] ?? null);
-    }, timeoutMs);
-
-    stream.addEventListener("addtrack", onAddTrack);
-  });
-
 const chooseSmallerMedia = (originalFile, compressedBlob) => {
   if (!compressedBlob?.size || compressedBlob.size >= originalFile.size) {
     return originalFile;
@@ -230,10 +201,7 @@ const compressVideo = async (file, onProgress, options) => {
 
   try {
     video.src = objectUrl;
-    // Keep audio decoding "live" for captureStream(); muting can suppress the
-    // captured audio track on some browsers, so silence via volume instead.
-    video.muted = false;
-    video.volume = 0;
+    video.muted = true;
     video.playsInline = true;
     video.preload = "metadata";
     await waitForMetadata(video);
@@ -253,22 +221,9 @@ const compressVideo = async (file, onProgress, options) => {
       return finishWithOriginal(file, onProgress);
     }
 
-    // Briefly play the source once so browsers that populate captureStream's
-    // audio track asynchronously have a chance to attach it before we commit
-    // to a recording pass; otherwise the audio track can be silently missed.
-    const sourceStream = getCaptureStream(video);
-    let audioTrack = null;
-    try {
-      await video.play();
-      audioTrack = await waitForAudioTrack(sourceStream);
-    } catch (error) {
-      // Autoplay may be blocked; fall through with no audio track detected.
-    } finally {
-      video.pause();
-      video.currentTime = 0;
-    }
-
     const canvasStream = canvas.captureStream(options.videoFps);
+    const sourceStream = getCaptureStream(video);
+    const audioTrack = sourceStream?.getAudioTracks?.()[0];
     if (audioTrack) canvasStream.addTrack(audioTrack);
 
     const mimeType = getSupportedMimeType(VIDEO_MIME_TYPES);
