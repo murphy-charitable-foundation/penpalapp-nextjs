@@ -498,7 +498,10 @@ export const uploadAttachmentFile = async ({
   }
 
   let fileToUpload = attachment.file;
+  // Diagnostic snapshots transfer the original plus extra output copies. Keep
+  // normal uploads to one file; enable snapshots only for an explicit debug run.
   const videoDiagnostics =
+    process.env.NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS === "true" &&
     attachment.file.type.startsWith("video/")
       ? {
           compressionOutput: null,
