@@ -73,9 +73,7 @@ for (const [name, hdr] of [["hevc-sdr.mov", false], ["hevc-hdr.mov", true]]) {
   ffmpeg(["-i", inputPath("bframes.mp4"), "-c:v", "libx265", "-preset", "ultrafast", "-crf", "8",
     "-x265-params", `pools=2:frame-threads=2:log-level=error:colorprim=${hdr ? 9 : 1}:transfer=${hdr ? 18 : 1}:colormatrix=${hdr ? 9 : 1}`,
     "-tag:v", "hvc1", "-movflags", "+write_colr",
-    "-pix_fmt", hdr ? "yuv420p10le" : "yuv420p",
-    "-color_primaries", hdr ? "bt2020" : "bt709", "-color_trc", hdr ? "arib-std-b67" : "bt709",
-    "-colorspace", hdr ? "bt2020nc" : "bt709", "-c:a", "copy", inputPath(name)]);
+   "-pix_fmt", hdr ? "yuv420p10le" : "yuv420p", "-c:a", "copy", inputPath(name)]);
   const video = probe(inputPath(name)).streams.find((stream) => stream.codec_type === "video");
   assert.equal(video.codec_name, "hevc", `${name}: fixture must contain HEVC`);
   assert.equal(video.pix_fmt, hdr ? "yuv420p10le" : "yuv420p", `${name}: unexpected bit depth`);
