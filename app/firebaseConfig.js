@@ -2,7 +2,7 @@
 import { getStorage } from "@firebase/storage";
 import { initializeApp } from "@firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, FieldPath } from "firebase/firestore";
+import { initializeFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
 import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
@@ -45,7 +45,13 @@ const firebaseConfig =
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Auto-detect long-polling: many Windows setups (corporate proxies, AV/SSL
+// inspection like Kaspersky/ESET) block Firestore's default WebChannel
+// streaming, causing writes/listeners (e.g. draft autosave) to silently
+// hang or fail without a surfaced error.
+const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+});
 const auth = getAuth(app);
 const storage = getStorage(app);
 const VAPID_KEY =
@@ -158,11 +164,23 @@ export const handleNotificationSetup = async () => {
       body: JSON.stringify({ idToken, fcmToken: token }),
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    let data = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Non-JSON response from setupNotifications:", text);
+      }
+    }
+
     if (res.ok) {
       console.log("Notification setup complete.");
     } else {
-      console.error("Server error setting up notifications:", data.error);
+      console.error(
+        "Server error setting up notifications:",
+        data.error || res.statusText
+      );
     }
   } catch (err) {
     console.error("Error during notification setup:", err);

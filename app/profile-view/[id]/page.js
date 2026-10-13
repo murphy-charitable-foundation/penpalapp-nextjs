@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
@@ -20,7 +20,8 @@ import { PageBackground } from "../../../components/general/PageBackground";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the edit profile page, pages/createChild API, and create-child-profile page */
 
-export default function Page({ params }) {
+export default function Page(props) {
+  const params = use(props.params);
   const { id } = params;
 
   const [firstName, setFirstName] = useState("");
@@ -90,117 +91,115 @@ export default function Page({ params }) {
     return () => unsubscribe();
   }, [router]);
 
-return (
-    <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
-    <div className="flex-1 min-h-0 flex justify-center">
+  return (
+      <PageBackground className="bg-gray-100 h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex justify-center">
 
-      <PageContainer
-        width="compactXS"
-        padding="none"
-        center={false}
-        className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
-      >
-        {/* ===== HEADER ===== */}
-        <PageHeader title="View Profile" image={false} backHref="/inbox" />
+        <PageContainer
+          width="compactXS"
+          padding="none"
+          center={false}
+          className="min-h-[100dvh] flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden"
+        >
+          {/* ===== HEADER ===== */}
+          <PageHeader title="View Profile" image={false} backHref="/inbox" />
 
-        {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">
-          
-          {/* PROFILE IMAGE */}
-          <div className="my-6">
-            <div className="relative w-40 h-40 mx-auto">
-              <Image
-                src={photoUri || "/murphylogo.png"}
-                fill
-                alt="Profile photo"
-                className="rounded-full object-cover"
-              />
-            </div>
-            {user?.uid === id && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    logButtonEvent(
-                      "Edit profile button clicked!",
-                      "/profile-view/[id]"
-                    );
-                    router.push("/profile");
-                  }}
-                  className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
-                >
-                  Edit Profile
-                </button>
+          {/* ===== SCROLLABLE CONTENT (ONLY SCROLLER) ===== */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-5">
+            
+            {/* PROFILE IMAGE */}
+            <div className="my-6">
+              <div className="relative w-40 h-40 mx-auto">
+                <Image
+                  src={photoUri || "/murphylogo.png"}
+                  fill
+                  alt="Profile photo"
+                  className="rounded-full object-cover"
+                />
               </div>
-            )}
-          </div>
-
-          {/* NAME / COUNTRY / BIO */}
-          <div className="text-center space-y-2 mb-8">
-            <h2 className="text-2xl font-bold">
-              {firstName} {lastName}
-            </h2>
-            <p className="font-semibold">{country}</p>
-            {bio && (
-              <p className="text-gray-500 italic">“{bio}”</p>
-            )}
-          </div>
-
-          {/* ===== SECTIONS ===== */}
-          <div className="space-y-8 pl-4">
-
-            <ProfileSection title="Personal Information">
-              {(userType == "child") && (
-                <InfoDisplay title="Village" info={village} />
+              {user?.uid === id && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logButtonEvent(
+                        "Edit profile button clicked!",
+                        "/profile-view/[id]"
+                      );
+                      router.push("/profile");
+                    }}
+                    className="px-4 py-2 border border-gray-400 text-green-700 font-normal rounded-full hover:bg-gray-100 transition"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
               )}
-              <InfoDisplay title="Pronouns" info={pronouns} />
-              <InfoDisplay title="Birthday" info={birthday} />
-            </ProfileSection>
-            {userType !== 'admin' && (
-              <>
-                <ProfileSection title="Education & Family">
-                  {(userType == "child") && (
-                    <>
-                      <InfoDisplay title="Education Level" info={educationLevel} />
-                      <InfoDisplay title="Guardian" info={guardian} />
-                      <InfoDisplay title="Is Orphan" info={isOrphan} />
-                    </>
-                  )}
-                </ProfileSection>
+            </div>
 
-                <ProfileSection title="Interests">
+            {/* NAME / COUNTRY / BIO */}
+            <div className="text-center space-y-2 mb-8">
+              <h2 className="text-2xl font-bold">
+                {firstName} {lastName}
+              </h2>
+              <p className="font-semibold">{country}</p>
+              {bio && (
+                <p className="text-gray-500 italic">“{bio}”</p>
+              )}
+            </div>
 
-                  <ArrayDisplay title="Hobbies" info={hobbies} />
-                  <InfoDisplay title="Favorite Animal" info={favoriteAnimal} />
-                  {userType == "international_buddy" && (
-                    <>
-                      <InfoDisplay title="Profession" info={profession} />
-                      <InfoDisplay title="Last Online" info={lastOnline} />
-                    </>
-                  )}
-                  {(userType == "child") && (
-                    <>
-                      <InfoDisplay title="Dream Job" info={dreamJob} />
-                      <InfoDisplay title="Favorite Color" info={favoriteColor} />                
-                    </>
-                  )}
+            {/* ===== SECTIONS ===== */}
+            <div className="space-y-8 pl-4">
 
-                </ProfileSection>
-              </>
-            )}
+              <ProfileSection title="Personal Information">
+                {(userType == "child") && (
+                  <InfoDisplay title="Village" info={village} />
+                )}
+                <InfoDisplay title="Pronouns" info={pronouns} />
+                <InfoDisplay title="Birthday" info={birthday} />
+              </ProfileSection>
+              {userType !== 'admin' && (
+                <>
+                  <ProfileSection title="Education & Family">
+                    {(userType == "child") && (
+                      <>
+                        <InfoDisplay title="Education Level" info={educationLevel} />
+                        <InfoDisplay title="Guardian" info={guardian} />
+                        <InfoDisplay title="Is Orphan" info={isOrphan} />
+                      </>
+                    )}
+                  </ProfileSection>
+
+                  <ProfileSection title="Interests">
+
+                    <ArrayDisplay title="Hobbies" info={hobbies} />
+                    <InfoDisplay title="Favorite Animal" info={favoriteAnimal} />
+                    {userType == "international_buddy" && (
+                      <>
+                        <InfoDisplay title="Profession" info={profession} />
+                        <InfoDisplay title="Last Online" info={lastOnline} />
+                      </>
+                    )}
+                    {(userType == "child") && (
+                      <>
+                        <InfoDisplay title="Dream Job" info={dreamJob} />
+                        <InfoDisplay title="Favorite Color" info={favoriteColor} />                
+                      </>
+                    )}
+
+                  </ProfileSection>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* ===== NAVBAR ===== */}
-        <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
-          <NavBar />
-        </div>
+          {/* ===== NAVBAR ===== */}
+          <div className="shrink-0 border-t bg-blue-100 rounded-b-2xl">
+            <NavBar />
+          </div>
 
-      </PageContainer>
-    </div>
-  </PageBackground>
-);
-
-
+        </PageContainer>
+      </div>
+    </PageBackground>
+  );
 }
 

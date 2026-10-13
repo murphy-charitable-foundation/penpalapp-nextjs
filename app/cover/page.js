@@ -1,8 +1,6 @@
 // pages/cover.js
 "use client"
 import Image from "next/image";
-import logo from "/public/murphylogo.png";
-import bgImage from "/public/cover.png";
 import { usePageAnalytics } from "../useAnalytics";
 
 export default function Cover() {
@@ -11,7 +9,7 @@ export default function Cover() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Image
-        src={bgImage}
+        src="/cover.png"
         alt="Murphy Charitable Foundation Uganda"
         layout="fill"
         objectFit="cover"
@@ -20,7 +18,7 @@ export default function Cover() {
       <div className="mb-6 mt-9 items-center flex justify-center">
         <div className="relative w-40 h-40 md:w-48 md:h-48">
           <Image
-            src={logo}
+            src="/murphylogo.png"
             alt="Murphy Charitable Foundation Uganda"
             layout="fill"
             objectFit="contain"
