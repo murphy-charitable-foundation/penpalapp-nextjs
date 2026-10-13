@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test:video": "node --test tests/videoTranscoder.test.js tests/videoContainer.test.js",
     "test:video:browser": "node tests/video-compression.browser.js",
     "test:media": "node --test tests/*.test.js"

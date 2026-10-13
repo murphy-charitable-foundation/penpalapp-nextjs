@@ -8,28 +8,16 @@ globalThis[fixtureKey] = fixtures;
 let nextFixture = 0;
 const dataModule = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
 
-async function harness(t, diagnostics = false) {
-  const previous = process.env.NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS;
-  if (diagnostics) process.env.NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS = "true";
-  else delete process.env.NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS;
-  t.after(() => {
-    if (previous === undefined) delete process.env.NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS;
-    else process.env.NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS = previous;
-  });
-
+async function harness(t, { preserveOriginal = false } = {}) {
   const original = new File([new Uint8Array(100)], "portrait.mov", { type: "video/quicktime" });
   const compressed = new Blob([new Uint8Array(20)], { type: "video/mp4" });
-  const observed = { snapshots: [], uploads: [], updates: [], completed: [], sequence: [] };
+  const observed = { uploads: [], updates: [], completed: [], sequence: [] };
   const id = nextFixture++;
   const state = {
     ref: (_storage, fullPath) => ({ fullPath }),
-    uploadBytes: async (ref, blob, metadata) => {
-      observed.snapshots.push({ ref, blob, metadata });
-      observed.sequence.push(metadata.customMetadata.stage);
-    },
     uploadBytesResumable: (ref, file, metadata) => {
       observed.uploads.push({ ref, file, metadata });
-      observed.sequence.push("canonical");
+      observed.sequence.push("upload");
       return {
         on: (event, progress, error, complete) => {
           assert.equal(event, "state_changed");
@@ -38,15 +26,13 @@ async function harness(t, diagnostics = false) {
         },
       };
     },
-    compressMedia: async (file, progress, options, stage) => {
+    compressMedia: async (file, progress) => {
       assert.equal(file, original);
-      assert.deepEqual(options, {});
       observed.sequence.push("compress");
       progress(0);
       progress(0.5);
       progress(1);
-      stage?.({ stage: "compression-output", blob: compressed, outcome: "recorded" });
-      return compressed;
+      return preserveOriginal ? original : compressed;
     },
   };
   fixtures.set(id, state);
@@ -55,7 +41,6 @@ async function harness(t, diagnostics = false) {
   const dependencies = {
     "@firebase/storage": dataModule(`${fixture}
       export const ref = fixture.ref;
-      export const uploadBytes = fixture.uploadBytes;
       export const uploadBytesResumable = fixture.uploadBytesResumable;
       const unexpected = () => { throw new Error("Unexpected Firebase operation"); };
       export { unexpected as deleteObject, unexpected as getDownloadURL, unexpected as getMetadata };
@@ -84,11 +69,10 @@ async function harness(t, diagnostics = false) {
   return { original, compressed, observed };
 }
 
-test("video uploads send only the canonical MP4 by default and complete normally", async (t) => {
+test("compressed video uploads send one MP4 and complete normally", async (t) => {
   const { compressed, observed } = await harness(t);
   assert.equal(observed.uploads.length, 1);
-  assert.deepEqual(observed.snapshots, []);
-  assert.deepEqual(observed.sequence, ["compress", "canonical"]);
+  assert.deepEqual(observed.sequence, ["compress", "upload"]);
   const [{ ref, file, metadata }] = observed.uploads;
   assert.equal(ref.fullPath, "conversations/conversation-test/messages/message-test/portrait.mp4");
   assert.equal(file.name, "portrait.mp4");
@@ -102,24 +86,24 @@ test("video uploads send only the canonical MP4 by default and complete normally
   assert.deepEqual(observed.completed, ["portrait.mp4"]);
   assert.equal(observed.updates.at(-1).status, "done");
   assert.equal(observed.updates.at(-1).progress, 100);
-  assert.deepEqual(observed.snapshots, []);
+  assert.equal(observed.uploads.length, 1);
 });
 
-test("explicit video diagnostics retain raw, compressed, and uploaded snapshots", async (t) => {
-  const { original, compressed, observed } = await harness(t, true);
+test("skipped video compression uploads the original MOV and completes normally", async (t) => {
+  const { original, observed } = await harness(t, { preserveOriginal: true });
   assert.equal(observed.uploads.length, 1);
-  assert.deepEqual(observed.sequence, ["raw", "compress", "compressed", "canonical"]);
+  assert.deepEqual(observed.sequence, ["compress", "upload"]);
+  const [{ ref, file, metadata }] = observed.uploads;
+  assert.equal(ref.fullPath, "conversations/conversation-test/messages/message-test/portrait.mov");
+  assert.deepEqual(await file.arrayBuffer(), await original.arrayBuffer());
+  assert.equal(file.name, "portrait.mov");
+  assert.equal(file.type, "video/quicktime");
+  assert.deepEqual(metadata, { contentType: "video/quicktime" });
+  observed.progress({ bytesTransferred: 50, totalBytes: 100 });
+  assert.deepEqual(observed.updates.at(-1), { progress: 70, status: "uploading" });
   await observed.complete();
-  assert.deepEqual(observed.sequence, ["raw", "compress", "compressed", "canonical", "uploaded"]);
-  assert.deepEqual(observed.snapshots.map(({ ref }) => ref.fullPath.split("/").at(-1)),
-    ["portrait_raw.mov", "portrait_compressed.mp4", "portrait_uploaded.mp4"]);
-  assert.equal(observed.snapshots[0].blob, original);
-  assert.equal(observed.snapshots[1].blob, compressed);
-  assert.equal(observed.snapshots[2].blob, observed.uploads[0].file);
-  assert.deepEqual(observed.snapshots.map(({ metadata }) => metadata.customMetadata), [
-    { videoUploadDiagnostic: "true", stage: "raw", outcome: "before-compression" },
-    { videoUploadDiagnostic: "true", stage: "compressed", outcome: "recorded" },
-    { videoUploadDiagnostic: "true", stage: "uploaded", outcome: "canonical-upload-completed" },
-  ]);
-  assert.deepEqual(observed.completed, ["portrait.mp4"]);
+  assert.deepEqual(observed.completed, ["portrait.mov"]);
+  assert.equal(observed.updates.at(-1).status, "done");
+  assert.equal(observed.updates.at(-1).progress, 100);
+  assert.equal(observed.uploads.length, 1);
 });

@@ -1,13 +1,12 @@
 import { handleNotificationSetup } from '../firebaseConfig';
+import { isServiceWorkerSupported } from './serviceWorker';
 
 export const initializeNotifications = async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      await handleNotificationSetup();
-    } catch (err) {
-      console.error('Service Worker registration failed: ', err);
-    }
-  } else {
-    console.error('Service Workers are not supported by this browser.');
+  if (!isServiceWorkerSupported()) return;
+
+  try {
+    await handleNotificationSetup();
+  } catch (err) {
+    console.error('Notification setup failed:', err);
   }
 };

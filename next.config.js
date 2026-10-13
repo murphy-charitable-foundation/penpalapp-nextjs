@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ["192.168.*.*"],
   async redirects() {
     return [
       { source: "/profile-gallery", destination: "/choose-profile", permanent: true },

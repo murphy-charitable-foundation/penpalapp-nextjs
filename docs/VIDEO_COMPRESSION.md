@@ -22,7 +22,7 @@ The three existing profiles and size thresholds are unchanged. The 25% minimum *
 
 MP4Box is pinned to 2.4.1 because this implementation uses its sample-table and fragment APIs. Re-run the container and browser suites before upgrading it. See the [WebCodecs specification](https://www.w3.org/TR/webcodecs/), [AVC configuration/framing requirements](https://www.w3.org/TR/webcodecs-avc-codec-registration/), [HEVC configuration/framing requirements](https://www.w3.org/TR/webcodecs-hevc-codec-registration/), and [MP4Box project](https://github.com/gpac/mp4box.js) for the underlying API contracts. A browser version is never used as a substitute for runtime codec capability checks.
 
-Normal attachment uploads transfer only the chosen result to Firebase. Extra raw/compressed/uploaded diagnostic snapshots are disabled by default. To investigate stored bytes, explicitly set `NEXT_PUBLIC_VIDEO_UPLOAD_DIAGNOSTICS=true` before starting the dev server or building the app. This adds the original plus two extra output transfers and increases storage use. Console diagnostics remain available without enabling snapshots. The flag is documented in `.env.local.example`.
+Attachment uploads transfer only the chosen result to Firebase: the compressed file, or the original when compression is skipped. Compression diagnostics are available through the console and optional callback.
 
 ## Automated resource and container checks
 
@@ -30,7 +30,7 @@ Normal attachment uploads transfer only the chosen result to Firebase. Extra raw
 npm run test:media
 ```
 
-The 66 Node tests cover shared progress and fallback, console diagnostics, lazy imports, image options, audio cleanup/timeouts, frame ordering/reduction, timestamp rounding without drift, codec negotiation/failures, output budgets, HEVC configuration forwarding, HDR rejection, AAC preservation, edit lists, rotation, sparse metadata reads, and malformed sample counts. Upload integration tests mock Firebase calls and verify that normal uploads send one result while explicitly enabled diagnostics retain their snapshots.
+The Node tests cover shared progress and fallback, console diagnostics, lazy imports, image options, audio cleanup/timeouts, frame ordering/reduction, timestamp rounding without drift, codec negotiation/failures, output budgets, HEVC configuration forwarding, HDR rejection, AAC preservation, edit lists, rotation, sparse metadata reads, and malformed sample counts. Upload integration tests mock Firebase calls and verify that uploads send one result with the expected filename, content type, progress, and completion callback.
 
 The unit tests need application dependencies, but no browser or FFmpeg. Use Node 22.7 or newer: [Node detects ES module syntax](https://nodejs.org/api/packages.html#syntax-detection) in `.js` source and tests while the Next.js configuration remains CommonJS. Node may print a module-type detection warning. `npm run test:video` runs only the codec/container tests. `.github/workflows/media-tests.yml` runs the full unit suite on Node 22 for pushes and PRs, independently of the deployment workflow. Real codec interoperability is checked separately below.
 

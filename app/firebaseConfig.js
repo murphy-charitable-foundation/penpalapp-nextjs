@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 import { initializeFirestore, FieldPath } from "firebase/firestore";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
 import { doc, getDoc,setDoc, getDocs, updateDoc, query, collection, orderBy } from "firebase/firestore";
-import { getOrRegisterAppServiceWorker } from "./utils/serviceWorker";
+import { getOrRegisterAppServiceWorker, isServiceWorkerSupported } from "./utils/serviceWorker";
 // import { getAnalytics } from "firebase/analytics";
 // todo Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -62,10 +62,9 @@ let messaging = null;
 let messagingInitializationPromise = null;
 
 const hasBasicMessagingSupportSync = () =>
-  typeof window !== "undefined" &&
-  typeof navigator !== "undefined" &&
-  navigator.serviceWorker != null &&
+  isServiceWorkerSupported() &&
   typeof navigator.serviceWorker.addEventListener === "function" &&
+  "Notification" in window &&
   "PushManager" in window;
 
 const hasBasicMessagingSupport = async () => {
@@ -110,8 +109,7 @@ const initializeMessaging = async () => {
 // ---------- PERMISSION + API CALL ----------
 
 export const requestNotificationPermission = async () => {
-  if (!("Notification" in window)) {
-    console.error("Notifications are not supported by this browser.");
+  if (!hasBasicMessagingSupportSync()) {
     return null;
   }
   try {
@@ -127,7 +125,6 @@ export const handleNotificationSetup = async () => {
   const initializedMessaging = await initializeMessaging();
 
   if (!initializedMessaging) {
-    console.warn("Messaging not initialized (probably server environment or unsupported browser).");
     return;
   }
 
@@ -143,7 +140,6 @@ export const handleNotificationSetup = async () => {
 
   const serviceWorkerRegistration = await getOrRegisterAppServiceWorker();
   if (!serviceWorkerRegistration) {
-    console.warn('No service worker registration available for notification setup.');
     return;
   }
   try {

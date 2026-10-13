@@ -132,7 +132,7 @@ export async function compressMedia(
     report(1, true);
   }
 
-  // Preserve the existing attachments.js video diagnostic contract.
+  // Expose the final video result to optional compression observers.
   if (kind === "video") {
     Object.assign(diagnostics, {
       outcome: output === file ? "skipped" : "compressed",
