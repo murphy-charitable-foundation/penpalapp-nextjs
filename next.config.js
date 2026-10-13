@@ -8,17 +8,6 @@ const nextConfig = {
   images: {
     domains: ["firebasestorage.googleapis.com"],
   },
-  webpack(config, { dev }) {
-    if (dev) {
-      Object.defineProperty(config, "devtool", {
-        configurable: true,
-        get: () => "cheap-source-map",
-        set: () => {},
-      });
-    }
-
-    return config;
-  },
 };
 
 module.exports = nextConfig;
