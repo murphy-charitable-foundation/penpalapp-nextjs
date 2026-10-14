@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  FileText,
   Film,
   Image as ImageIcon,
   LoaderCircle,
@@ -19,6 +21,15 @@ import {
   resolveMessageAttachments,
 } from "../../../app/utils/attachments";
 
+const PdfViewer = dynamic(() => import("./PdfViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[70vh] w-full items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-600">
+      Loading PDF viewer...
+    </div>
+  ),
+});
+
 const AttachmentIcon = ({ mediaKind }) => {
   if (mediaKind === "image") {
     return <ImageIcon size={18} className="text-emerald-700" />;
@@ -30,6 +41,10 @@ const AttachmentIcon = ({ mediaKind }) => {
 
   if (mediaKind === "audio") {
     return <Play size={18} className="text-emerald-700" />;
+  }
+
+  if (mediaKind === "pdf") {
+    return <FileText size={18} className="text-emerald-700" />;
   }
 
   return <Paperclip size={18} className="text-emerald-700" />;
@@ -94,6 +109,8 @@ export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
               controls
               className="h-[70vh] w-full rounded-lg bg-black"
             />
+          ) : attachment.mediaKind === "pdf" ? (
+            <PdfViewer url={attachment.downloadUrl} />
           ) : (
             <div className="rounded-lg bg-slate-100 p-6">
               <audio
