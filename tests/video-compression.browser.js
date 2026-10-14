@@ -19,6 +19,7 @@ const width = Number(process.env.VIDEO_TEST_WIDTH || 960);
 const height = Number(process.env.VIDEO_TEST_HEIGHT || 540);
 const targetWidth = Number(process.env.VIDEO_TEST_TARGET_WIDTH || 480);
 const targetBitrate = Number(process.env.VIDEO_TEST_TARGET_BITRATE || 450000);
+const queueSize = Number(process.env.VIDEO_TEST_QUEUE_SIZE || 4);
 const browserPath = process.env.CHROME_PATH || [
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
@@ -103,7 +104,11 @@ const server = createServer(async (req, res) => {
     filename = path.resolve(prefix, filename);
     if (!filename.startsWith(`${prefix}${path.sep}`)) { res.statusCode = 403; return res.end(); }
     if (!path.extname(filename) && existsSync(`${filename}.js`)) filename += ".js";
-    const body = await readFile(filename);
+    let body = await readFile(filename);
+    if (filename === path.join(root, "app/utils/compressMedia/index.js")) {
+      // Match Next.js's build-time environment replacement when serving raw modules.
+      body = body.toString("utf8").replaceAll("process.env.NODE_ENV", JSON.stringify(process.env.NODE_ENV || "development"));
+    }
     res.setHeader("Content-Type", /\.(m?js)$/.test(filename) ? "text/javascript" : "application/octet-stream");
     res.end(body);
   } catch (error) { res.statusCode = 404; res.end(String(error)); }
@@ -194,7 +199,7 @@ try {
     // Keep the native baseline when running only the timestamp regression.
     const needsBaseline = selection && "timestamp-rounding".includes(selection) && item.name === "bframes.mp4" && !item.label;
     if (selection && !(item.label || item.name).includes(selection) && !needsBaseline) continue;
-    const result = await evaluate(async ({ name, label, options, disableCodecs, traceCodecs, targetWidth, targetBitrate, probeDecoder, roundTimestamps }) => {
+    const result = await evaluate(async ({ name, label, options, disableCodecs, traceCodecs, targetWidth, targetBitrate, queueSize, probeDecoder, roundTimestamps }) => {
       const { compressMedia } = await import("/app/utils/compressMedia/index.js");
       const fixture = await (await fetch(`/fixture/${name}`)).blob();
       const file = new File([fixture], name, { type: name.endsWith(".mov") ? "video/quicktime" : "video/mp4" });
@@ -243,7 +248,7 @@ try {
         };
         if (disableCodecs) { globalThis.VideoDecoder = undefined; globalThis.VideoEncoder = undefined; }
         output = await compressMedia(file, (value) => progress.push(value), {
-          profile: "balanced", videoSkipBelowBytes: 0, videoMaxWidth: targetWidth, videoFps: 15,
+          profile: "balanced", videoSkipBelowBytes: 0, videoMaxWidth: targetWidth, videoFps: 15, videoQueueSize: queueSize,
           videoBitsPerSecond: targetBitrate, ...options,
         }, (stage) => stages.push({ ...stage, blob: undefined }));
       } finally {
@@ -290,7 +295,7 @@ try {
         ...(roundTimestamps ? { roundedFrames, roundedChunks, videoTimeline } : {}),
         // Chromium JS heap is not decoder/encoder/GPU memory or peak process memory.
         jsHeapBytesAfter: performance.memory?.usedJSHeapSize ?? null };
-    }, { ...item, targetWidth, targetBitrate, traceCodecs: !!process.env.VIDEO_TEST_TRACE_CODECS });
+    }, { ...item, targetWidth, targetBitrate, queueSize, traceCodecs: !!process.env.VIDEO_TEST_TRACE_CODECS });
     console.log(JSON.stringify({ ...result, progress: `${result.progress.length} callbacks, last=${result.progress.at(-1)}` }));
     assert.equal(result.skipped, !(item.compressed && result.decoderSupported !== false),
       `${result.name}: unexpected compression/fallback result`);

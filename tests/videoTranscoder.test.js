@@ -60,15 +60,25 @@ function codecs(t, mode = "normal") {
 
   class Decoder extends Codec {
     static async isConfigSupported() { return { supported: true }; }
-    constructor(init) { super(init); this.decodeQueueSize = 0; observed.decoders.push(this); }
+    constructor(init) { super(init); this.decodeQueueSize = 0; this.pending = []; observed.decoders.push(this); }
     decode(chunk) {
       observed.inputs.push(chunk);
       if (mode === "queue-stall") {
         this.init.output(makeFrame(chunk.timestamp, chunk.duration));
         this.decodeQueueSize = 4;
       }
+      if (mode === "queue-drain") {
+        this.decodeQueueSize++;
+        observed.maxDecodeQueue = Math.max(observed.maxDecodeQueue || 0, this.decodeQueueSize);
+        this.pending.push(new Promise((resolve) => setTimeout(() => {
+          this.decodeQueueSize--;
+          this.dispatchEvent(new Event("dequeue"));
+          resolve();
+        }, 0)));
+      }
     }
     async flush() {
+      await Promise.all(this.pending);
       let inputs = [...observed.inputs].sort((a, b) => a.timestamp - b.timestamp);
       if (mode === "decoder-drop") inputs = inputs.slice(0, -1);
       for (const input of inputs) {
@@ -168,6 +178,22 @@ test("frame reduction keeps nonzero source CTS instead of independently resettin
     [200000, 200000], [400000, 200000],
   ]);
   observed.assertReleased();
+});
+
+test("smaller codec queues preserve the output timeline while reducing queued work", async (t) => {
+  const observed = codecs(t, "queue-drain");
+  let reference;
+  for (const queueSize of [4, 2]) {
+    observed.inputs.length = 0;
+    observed.encodes.length = 0;
+    observed.maxDecodeQueue = 0;
+    const encoded = await encodeVideo(sourceFixture(), planFixture(), config, null,
+      { videoQueueSize: queueSize });
+    assert.equal(observed.maxDecodeQueue, queueSize);
+    if (reference) assert.deepEqual(encoded.samples, reference);
+    reference = encoded.samples;
+    observed.assertReleased();
+  }
 });
 
 for (const mode of ["decoder-rounding", "clone-rounding", "encoder-rounding", "all-rounding"]) {

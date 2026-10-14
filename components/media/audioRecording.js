@@ -30,16 +30,17 @@ export function getAudioRecordingError(error) {
 }
 
 export async function createAudioRecorder(browser = globalThis) {
-  if (browser.isSecureContext === false) {
-    throw new DOMException("Microphone recording requires HTTPS", "InsecureContextError");
+  if (typeof browser.navigator?.mediaDevices?.getUserMedia !== "function") {
+    if (browser.isSecureContext === false) {
+      throw new DOMException("Microphone recording requires HTTPS", "InsecureContextError");
+    }
+    throw new DOMException("Audio recording is unavailable", "UnsupportedRecordingError");
   }
-  if (
-    typeof browser.navigator?.mediaDevices?.getUserMedia !== "function" ||
-    typeof browser.MediaRecorder !== "function"
-  ) {
+  if (typeof browser.MediaRecorder !== "function") {
     throw new DOMException("Audio recording is unavailable", "UnsupportedRecordingError");
   }
 
+  // Let the browser enforce access and request permission when capture is available.
   const stream = await browser.navigator.mediaDevices.getUserMedia({ audio: true });
   try {
     const mimeType = recordingTypes.find((type) => browser.MediaRecorder.isTypeSupported?.(type));

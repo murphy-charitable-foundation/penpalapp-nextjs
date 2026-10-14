@@ -53,6 +53,75 @@ function assertCompleteProgress(progress) {
     value <= 1 && (!index || value >= progress[index - 1])), "Progress stays bounded and monotonic");
 }
 
+test("devices share balanced quality and skip thresholds while adapting video resources", async (t) => {
+  const previousNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  t.after(() => {
+    if (previousNavigator) Object.defineProperty(globalThis, "navigator", previousNavigator);
+    else delete globalThis.navigator;
+  });
+  const MiB = 1024 * 1024;
+  const file = { type: "video/mp4", size: 9 * MiB };
+  for (const [device, constrained] of [
+    [{ userAgent: "Desktop Chrome", hardwareConcurrency: 12, deviceMemory: 8 }, false],
+    [{ userAgent: "iPhone", hardwareConcurrency: 6, maxTouchPoints: 5 }, false],
+    [{ hardwareConcurrency: 2, deviceMemory: 2 }, true],
+    [{ hardwareConcurrency: 8, deviceMemory: 2 }, true],
+    [undefined, false],
+  ]) {
+    Object.defineProperty(globalThis, "navigator", { configurable: true, value: device });
+    let videoOptions;
+    let imageOptions;
+    let audioOptions;
+    let videoCalls = 0;
+    const api = await harness(t, {
+      video: async (_file, _progress, options) => {
+        videoCalls++;
+        videoOptions = options;
+        return mediaFile("video/mp4", 50);
+      },
+      image: async (_file, options) => { imageOptions = options; return mediaFile("image/jpeg", 50); },
+      audio: async (_file, _progress, options) => { audioOptions = options; return mediaFile("audio/webm", 50); },
+    });
+    await api.compressMedia(file);
+    assert.equal(videoOptions.profile, "balanced");
+    assert.equal(videoOptions.videoMaxWidth, 640);
+    assert.equal(videoOptions.videoFps, 15);
+    assert.equal(videoOptions.videoBitsPerSecond, 650000);
+    assert.equal(videoOptions.videoSkipBelowBytes, 8 * MiB);
+    assert.equal(videoOptions.videoQueueSize, constrained ? 2 : 4);
+    assert.equal(videoOptions.videoMaxOutputBytes, (constrained ? 32 : 64) * MiB);
+    assert.equal(videoOptions.videoCodecTimeoutMs, constrained ? 30000 : 15000);
+    const smallVideo = { type: "video/mp4", size: 7 * MiB };
+    assert.equal(await api.compressMedia(smallVideo), smallVideo);
+    assert.equal(videoCalls, 1, "All devices skip videos below the shared threshold");
+    await api.compressMedia(mediaFile("image/jpeg"));
+    assert.equal(imageOptions.maxWidthOrHeight, 1280);
+    assert.equal(imageOptions.maxSizeMB, 1);
+    assert.equal(imageOptions.initialQuality, 0.72);
+    await api.compressMedia({ type: "audio/webm", size: MiB });
+    assert.equal(audioOptions.audioBitsPerSecond, 56000);
+    assert.equal(audioOptions.audioSkipBelowBytes, 500 * 1024);
+  }
+});
+
+test("explicit quality and processing options remain caller-controlled", async (t) => {
+  let received;
+  const api = await harness(t, { video: async (_file, _progress, options) => {
+    received = options;
+    return mediaFile("video/mp4", 50);
+  } });
+  await api.compressMedia(mediaFile("video/mp4"), null, {
+    profile: "capable", videoSkipBelowBytes: 0, videoFps: 24,
+    videoQueueSize: 2, videoMaxOutputBytes: 1234567, videoCodecTimeoutMs: 1234,
+  });
+  assert.equal(received.videoMaxWidth, 854);
+  assert.equal(received.videoBitsPerSecond, 900000);
+  assert.equal(received.videoFps, 24);
+  assert.equal(received.videoQueueSize, 2);
+  assert.equal(received.videoMaxOutputBytes, 1234567);
+  assert.equal(received.videoCodecTimeoutMs, 1234);
+});
+
 test("images load only the image library and honor profile and image options", async (t) => {
   const file = mediaFile("image/jpeg");
   const output = mediaFile("image/jpeg", 50);
@@ -231,4 +300,53 @@ test("video diagnostics distinguish small files and processing errors", async (t
   assert.equal(stages[0].diagnostics.reason, "below-size-threshold");
   assert.equal(stages[1].diagnostics.reason, "compression-error");
   assert.equal(stages[1].diagnostics.message, "HDR video requires the original file");
+});
+
+test("production compression stays quiet while preserving progress, diagnostics, and original-file fallback", async (t) => {
+  const previousEnvironment = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  t.after(() => {
+    if (previousEnvironment === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousEnvironment;
+  });
+
+  let now = 0;
+  t.mock.method(performance, "now", () => now);
+  const file = mediaFile("video/quicktime");
+  const compressed = mediaFile("video/mp4", 50);
+  const failure = new Error("Encoder unavailable");
+  let result;
+  const api = await harness(t, {
+    video: async (_file, report, _options, diagnostic) => {
+      diagnostic({ phase: "encode", sourceCodec: "avc1.64001f" });
+      now += 150;
+      report(0.5);
+      if (result instanceof Error) throw result;
+      return result;
+    },
+  });
+  const info = t.mock.method(console, "info", () => {});
+  const warnings = t.mock.method(console, "warn", () => {});
+
+  for (result of [compressed, failure]) {
+    const progress = [];
+    const stages = [];
+    const expected = result === failure ? file : compressed;
+    assert.equal(await api.compressMedia(file, (value) => progress.push(value), options,
+      (stage) => stages.push(stage)), expected);
+    assertCompleteProgress(progress);
+    assert.ok(progress.includes(0.5));
+    assert.equal(stages.length, 1);
+    const [stage] = stages;
+    assert.equal(stage.stage, "compression-output");
+    assert.equal(stage.blob, expected);
+    assert.equal(stage.outcome, result === failure ? "skipped" : "recorded");
+    assert.equal(stage.diagnostics.phase, "encode");
+    assert.equal(stage.diagnostics.sourceCodec, "avc1.64001f");
+    assert.equal(stage.diagnostics.reason, result === failure ? "compression-error" : null);
+    assert.equal(stage.diagnostics.outputBytes, expected.size);
+    if (result === failure) assert.equal(stage.diagnostics.message, failure.message);
+    assert.equal(info.mock.callCount(), 0);
+    assert.equal(warnings.mock.callCount(), 0);
+  }
 });

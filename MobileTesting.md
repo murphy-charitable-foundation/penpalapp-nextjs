@@ -21,8 +21,9 @@ phone visiting your computer’s LAN address.
    ngrok http http://localhost:3000
    ```
 
-4. Add your tunnel’s exact hostname to `allowedDevOrigins` in `next.config.js`,
-   alongside the existing LAN pattern, then restart Next.js. For example:
+4. Add your tunnel’s exact hostname to the development-only `allowedDevOrigins`
+   list in `next.config.js`, alongside the existing LAN pattern, then restart
+   Next.js. Keep the `NODE_ENV === "development"` condition. For example:
 
    ```js
    allowedDevOrigins: ["192.168.*.*", "your-hostname.ngrok-free.app"],
@@ -52,6 +53,10 @@ If recording fails, the app now distinguishes an insecure connection, blocked
 permissions, missing or unavailable microphones, and recorder failures. In the
 browser console, `window.isSecureContext` should be `true` and
 `typeof navigator.mediaDevices?.getUserMedia` should be `"function"`.
+Tapping Record requests microphone permission through the browser when capture
+is available. There is no permission prompt that can enable capture on an HTTP
+LAN address. On the development computer itself, `http://localhost:3000` is a
+trusted exception and can be used for recording tests.
 
 ## Development error indicators
 
@@ -59,6 +64,11 @@ The Next.js error indicator is part of development mode and is not included in
 the production app. A production build does not automatically fix browser API
 restrictions or suppress application console errors. Unsupported service workers
 and push notifications are skipped quietly; actual setup failures remain visible.
+
+If the old "Service Workers are not supported by this browser" error still
+appears after updating the code, restart `npm run dev` and reload the phone's
+page. If it persists, stop the dev server, remove the generated `.next/dev`
+directory, and restart it to rebuild stale development bundles.
 
 To check production behavior locally, stop the dev server, run `npm run build`,
 then `npm start`, and open it through the same HTTPS tunnel.

@@ -343,7 +343,7 @@ const handleSubmit = async (e) => {
                   unoptimized
                 />
               ) : (
-               <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} />
+               <Image src="/murphylogo.png" alt="Foundation Logo" width={200} height={200} loading="eager" />
               )}
             </div>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{display: 'none'}} />

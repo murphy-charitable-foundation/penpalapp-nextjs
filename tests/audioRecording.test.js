@@ -34,15 +34,33 @@ function browser({ supported = ["audio/mp4"], defaultType = "audio/mp4", failure
   };
 }
 
-test("insecure origins explain HTTPS without asking for microphone permission", async () => {
+test("insecure origins without capture explain HTTPS without asking for microphone permission", async () => {
   const env = browser();
   env.isSecureContext = false;
+  env.navigator.mediaDevices = undefined;
   await assert.rejects(createAudioRecorder(env), (error) => {
     assert.match(getAudioRecordingError(error), /HTTPS/);
     assert.doesNotMatch(getAudioRecordingError(error), /Allow microphone/);
     return error.name === "InsecureContextError";
   });
   assert.equal(env.observed.requests, 0);
+});
+
+test("available capture APIs delegate permission to the browser even outside a secure context", async () => {
+  const env = browser();
+  env.isSecureContext = false;
+  const recorder = await createAudioRecorder(env);
+  assert.equal(env.observed.requests, 1);
+  assert.equal(recorder.mimeType, "audio/mp4");
+  disposeAudioRecorder(recorder);
+});
+
+test("browser permission rejection is preserved when capture is available", async () => {
+  const env = browser();
+  const denied = new DOMException("Permission denied", "NotAllowedError");
+  env.navigator.mediaDevices.getUserMedia = async () => { throw denied; };
+  await assert.rejects(createAudioRecorder(env), (error) => error === denied);
+  assert.match(getAudioRecordingError(denied), /Allow microphone access/);
 });
 
 test("missing capture or recorder APIs are reported before requesting microphone access", async () => {

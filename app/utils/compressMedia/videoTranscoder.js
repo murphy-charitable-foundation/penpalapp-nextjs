@@ -102,6 +102,8 @@ export async function encodeVideo(source, plan, config, onProgress, options = {}
   const presentationTimes = source.videoSamples.map((sample) =>
     microseconds(sample.cts, source.video.timescale)).sort((a, b) => a - b);
   const timeout = options.videoCodecTimeoutMs ?? 15000;
+  const queueSize = Number.isInteger(options.videoQueueSize)
+    ? Math.max(1, Math.min(4, options.videoQueueSize)) : 4;
   let decoder;
   let encoder;
   let heldFrame = null;
@@ -227,12 +229,12 @@ export async function encodeVideo(source, plan, config, onProgress, options = {}
     decoder.configure(config.decoder);
     for (let i = 0; i < source.videoSamples.length; i++) {
       check();
-      if (decoder.decodeQueueSize >= 4 || encoder.encodeQueueSize >= 4) {
+      if (decoder.decodeQueueSize >= queueSize || encoder.encodeQueueSize >= queueSize) {
         let ready;
         try {
           await guarded(new Promise((resolve) => {
             ready = () => {
-              if (failure || (decoder.decodeQueueSize < 4 && encoder.encodeQueueSize < 4)) resolve();
+              if (failure || (decoder.decodeQueueSize < queueSize && encoder.encodeQueueSize < queueSize)) resolve();
             };
             decoder.addEventListener("dequeue", ready);
             encoder.addEventListener("dequeue", ready);
@@ -294,7 +296,8 @@ export async function compressVideo(file, onProgress, options, onDiagnostic = nu
       onDiagnostic?.({ reason: "outside-compression-budget" });
       return file;
     }
-    onDiagnostic?.({ phase: "codec-check", targetWidth: plan.width, targetHeight: plan.height });
+    onDiagnostic?.({ phase: "codec-check", targetWidth: plan.width, targetHeight: plan.height,
+      targetFps: plan.fps, targetBitrate: plan.bitrate });
     const config = await deadline(getVideoConfigurations(source, plan, onDiagnostic),
       options.videoCodecTimeoutMs ?? 15000, "Codec support check");
     if (!config) return file;

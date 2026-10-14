@@ -1,13 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ["192.168.*.*"],
+  ...(process.env.NODE_ENV === "development"
+    ? { allowedDevOrigins: ["192.168.*.*"] }
+    : {}),
   async redirects() {
     return [
       { source: "/profile-gallery", destination: "/choose-profile", permanent: true },
     ];
   },
   images: {
-    domains: ["firebasestorage.googleapis.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
   },
 };
 

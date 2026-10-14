@@ -114,6 +114,7 @@ export default function Page(props) {
                   src={photoUri || "/murphylogo.png"}
                   fill
                   alt="Profile photo"
+                  loading="eager"
                   className="rounded-full object-cover"
                 />
               </div>

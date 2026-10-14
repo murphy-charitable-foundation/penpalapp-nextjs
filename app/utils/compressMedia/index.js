@@ -39,25 +39,29 @@ const COMPRESSION_PROFILES = {
   },
 };
 
-export const getDetectedCompressionProfile = () => {
-  if (typeof navigator === "undefined") return "balanced";
+const getProcessingOptions = () => {
+  const cores = globalThis.navigator?.hardwareConcurrency || 4;
+  const memory = globalThis.navigator?.deviceMemory || 4;
+  const constrained = cores <= 2 || memory <= 2;
 
-  const cores = navigator.hardwareConcurrency || 4;
-  const memory = navigator.deviceMemory || 4;
-  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-    navigator.maxTouchPoints > 1;
-
-  if (cores <= 2 || memory <= 2) return "lowEnd";
-  if (cores <= 4 || memory <= 4 || mobile) return "balanced";
-  return "capable";
+  // Device hints change resource limits, never the requested output quality.
+  return {
+    videoQueueSize: constrained ? 2 : 4,
+    videoMaxOutputBytes: (constrained ? 32 : 64) * MB,
+    videoCodecTimeoutMs: constrained ? 30000 : 15000,
+  };
 };
 
-const getOptions = (custom) => ({
-  ...(COMPRESSION_PROFILES[custom.profile || getDetectedCompressionProfile()] ||
-    COMPRESSION_PROFILES.balanced),
-  videoMinSavingsRatio: 0.25,
-  ...custom,
-});
+const getOptions = (custom) => {
+  const profile = Object.hasOwn(COMPRESSION_PROFILES, custom.profile) ? custom.profile : "balanced";
+  return {
+    ...COMPRESSION_PROFILES[profile],
+    ...getProcessingOptions(),
+    videoMinSavingsRatio: 0.25,
+    ...custom,
+    profile,
+  };
+};
 
 // One bounded, monotonic progress stream for every media type. Reserve 1 for
 // the wrapper's final result, and avoid re-rendering the upload UI per frame.
@@ -101,9 +105,15 @@ export async function compressMedia(
     videoDecoderAvailable: typeof VideoDecoder !== "undefined",
     videoEncoderAvailable: typeof VideoEncoder !== "undefined",
     secureContext: globalThis.isSecureContext ?? null,
+    profile: options.profile,
     skipBelowBytes: options.videoSkipBelowBytes,
+    queueSize: options.videoQueueSize,
+    maxOutputBytes: options.videoMaxOutputBytes,
+    codecTimeoutMs: options.videoCodecTimeoutMs,
   } : null;
-  if (diagnostics) console.info("[media-compression] start", JSON.stringify(diagnostics));
+  if (process.env.NODE_ENV !== "production" && diagnostics) {
+    console.info("[media-compression] start", JSON.stringify(diagnostics));
+  }
   if (diagnostics) diagnostics.reason = "below-size-threshold";
   let output = file;
   try {
@@ -127,7 +137,9 @@ export async function compressMedia(
       diagnostics.reason = "compression-error";
       diagnostics.message = error instanceof Error ? error.message : String(error);
     }
-    console.warn(`${kind} compression skipped; original preserved:`, error);
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`${kind} compression skipped; original preserved:`, error);
+    }
   } finally {
     report(1, true);
   }
@@ -140,7 +152,9 @@ export async function compressMedia(
       outputBytes: output.size,
       elapsedMs: Math.round(performance.now() - startedAt),
     });
-    console.info("[media-compression] result", JSON.stringify(diagnostics));
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[media-compression] result", JSON.stringify(diagnostics));
+    }
     onStage?.({
       stage: "compression-output",
       blob: output,
