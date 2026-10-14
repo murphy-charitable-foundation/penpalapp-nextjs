@@ -5,12 +5,16 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
+).toString();
 
 export default function PdfViewer({ url }) {
   const viewerRef = useRef(null);
   const [pageWidth, setPageWidth] = useState(0);
   const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -31,7 +35,10 @@ export default function PdfViewer({ url }) {
     >
       <Document
         file={url}
-        onLoadSuccess={({ numPages }) => setPageCount(numPages)}
+        onLoadSuccess={({ numPages }) => {
+          setPageCount(numPages);
+          setCurrentPage(1);
+        }}
         onLoadError={(error) => console.error("Failed to load PDF:", error)}
         loading={
           <p className="p-4 text-center text-sm text-slate-600">
@@ -44,16 +51,42 @@ export default function PdfViewer({ url }) {
           </p>
         }
       >
-        {pageWidth > 0 &&
-          Array.from({ length: pageCount }, (_, index) => (
-            <Page
-              key={index + 1}
-              pageNumber={index + 1}
-              width={pageWidth}
-              className="mx-auto mb-3 w-fit bg-white shadow-sm"
-            />
-          ))}
+        {pageWidth > 0 && pageCount > 0 && (
+          <Page
+            pageNumber={currentPage}
+            width={pageWidth}
+            className="mx-auto mb-3 w-fit bg-white shadow-sm"
+          />
+        )}
       </Document>
+
+      {pageCount > 1 && (
+        <div className="flex items-center justify-center gap-4 py-3">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+            className="rounded bg-slate-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="text-sm text-slate-700">
+            Page {currentPage} of {pageCount}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentPage((page) => Math.min(pageCount, page + 1))
+            }
+            disabled={currentPage === pageCount}
+            className="rounded bg-slate-200 px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
