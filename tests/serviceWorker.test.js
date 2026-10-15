@@ -51,9 +51,10 @@ for (const scenario of [
 ]) {
   test(`${scenario.name} skip service workers and notifications quietly`, async (t) => {
     browser(t, scenario.window, scenario.navigator);
-    const errors = t.mock.method(console, "error", () => {});
     const setup = t.mock.fn(() => assert.fail("Unexpected notification setup"));
     const { initializeNotifications } = await notifications(t, setup);
+    // Observe app calls after imports so Node's deferred module warnings stay visible.
+    const errors = t.mock.method(console, "error", () => {});
 
     assert.equal(isServiceWorkerSupported(), false);
     assert.equal(await getAppServiceWorkerRegistration(), null);
@@ -119,8 +120,8 @@ test("supported service worker registration preserves genuine failures", async (
 test("supported browsers initialize notifications", async (t) => {
   browser(t, { isSecureContext: true }, { serviceWorker: { register() {} } });
   const setup = t.mock.fn(async () => {});
-  const errors = t.mock.method(console, "error", () => {});
   const { initializeNotifications } = await notifications(t, setup);
+  const errors = t.mock.method(console, "error", () => {});
 
   await initializeNotifications();
   assert.equal(setup.mock.callCount(), 1);
@@ -130,8 +131,8 @@ test("supported browsers initialize notifications", async (t) => {
 test("supported notification setup reports genuine failures", async (t) => {
   browser(t, { isSecureContext: true }, { serviceWorker: { register() {} } });
   const failure = new Error("Notification token registration failed");
-  const errors = t.mock.method(console, "error", () => {});
   const { initializeNotifications } = await notifications(t, async () => { throw failure; });
+  const errors = t.mock.method(console, "error", () => {});
 
   await initializeNotifications();
   assert.equal(errors.mock.callCount(), 1);
