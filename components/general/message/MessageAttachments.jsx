@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Film,
   Image as ImageIcon,
@@ -35,39 +35,56 @@ const AttachmentIcon = ({ mediaKind }) => {
   return <Paperclip size={18} className="text-emerald-700" />;
 };
 
-export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
+export const AttachmentViewer = ({
+  attachment,
+  isOpen = true,
+  onClose,
+  returnFocusRef,
+}) => {
+  const dialogRef = useRef(null);
   const mediaRef = useRef(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    const media = mediaRef.current;
+    if (!isOpen) {
+      media?.pause?.();
+      return;
+    }
 
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        onClose();
+    // A modal dialog manages focus and makes the background inert. Keep the
+    // media mounted when closed so reopening a preview preserves its position.
+    const returnFocusTarget = returnFocusRef?.current;
+    dialog.showModal();
+
+    return () => {
+      media?.pause?.();
+      dialog.close();
+      if (returnFocusTarget?.isConnected) {
+        returnFocusTarget.focus({ preventScroll: true });
       }
     };
+  }, [isOpen, returnFocusRef]);
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      mediaRef.current?.pause?.();
-    }
-  }, [isOpen]);
+  const handleClose = () => {
+    dialogRef.current.close();
+    onClose();
+  };
 
   return (
-    <div
-      aria-hidden={!isOpen}
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm px-4 py-6 ${
-        isOpen ? "visible" : "invisible pointer-events-none"
-      }`}
+    <dialog
+      ref={dialogRef}
+      aria-label={`Attachment preview: ${attachment.fileName}`}
+      onCancel={(event) => {
+        event.preventDefault();
+        handleClose();
+      }}
+      className="fixed inset-0 z-50 m-0 h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black bg-opacity-80 px-4 py-6 backdrop-blur-sm open:flex backdrop:bg-transparent"
     >
       <div className="relative w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-2xl">
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-100"
           aria-label="Close attachment"
           title="Close attachment"
@@ -110,7 +127,7 @@ export const AttachmentViewer = ({ attachment, isOpen = true, onClose }) => {
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };
 
@@ -130,6 +147,7 @@ export default function MessageAttachments({
   const [openingFileName, setOpeningFileName] = useState(null);
   const previewRequestRef = useRef(0);
   const previewCacheRef = useRef(new Map());
+  const previewTriggerRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -234,6 +252,7 @@ export default function MessageAttachments({
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
+                previewTriggerRef.current = event.currentTarget;
                 handleOpen(attachment);
               }}
               disabled={!canOpen || isOpening}
@@ -270,6 +289,7 @@ export default function MessageAttachments({
           attachment={selectedAttachment}
           isOpen={isViewerOpen}
           onClose={() => setIsViewerOpen(false)}
+          returnFocusRef={previewTriggerRef}
         />
       )}
     </>

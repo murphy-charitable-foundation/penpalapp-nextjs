@@ -1511,8 +1511,9 @@ export default function Page(props) {
                 <Image
                   src="/send-message-icon.png"
                   alt={editingMessageId ? "Update message" : "Send message"}
-                  width={30}
-                  height={30}
+                  width={32}
+                  height={33}
+                  style={{ width: 30, height: "auto" }}
                   className="object-contain"
                   id="send-message"
                 />

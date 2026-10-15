@@ -54,6 +54,7 @@ export default function Home() {
             alt="Murphy Charitable Foundation Uganda"
             width={150}
             height={150}
+            loading="eager"
             className="h-auto w-36 sm:w-40 md:w-44"
           />
         </div>
