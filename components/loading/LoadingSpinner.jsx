@@ -12,6 +12,7 @@ export default function LoadingSpinner() {
                     alt="Murphy Charitable Foundation Uganda"
                     width={150}
                     height={150}
+                    loading="eager"
                     className="z-10"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">

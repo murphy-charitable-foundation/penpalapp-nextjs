@@ -323,6 +323,7 @@ export default function EditProfile() {
                 src={photoUri || "/murphylogo.png"}
                 fill
                 alt="Profile"
+                loading="eager"
                 className="rounded-full object-cover"
               />
             </div>

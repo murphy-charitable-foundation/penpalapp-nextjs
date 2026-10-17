@@ -3,7 +3,6 @@ import {
   getDownloadURL,
   getMetadata,
   ref as storageRef,
-  uploadBytes,
   uploadBytesResumable,
 } from "@firebase/storage";
 import { storage } from "../firebaseConfig";
@@ -261,51 +260,6 @@ const getFileNameWithType = (fileName, mimeType) => {
   return `${sanitizeFileName(baseName)}.${extension}`;
 };
 
-const getDiagnosticFileName = (fileName, stage) => {
-  const extension = fileName.match(/\.[^.]+$/)?.[0] || "";
-  const baseName = extension ? fileName.slice(0, -extension.length) : fileName;
-  return sanitizeFileName(`${baseName}_${stage}${extension}`);
-};
-
-const uploadVideoDiagnosticSnapshot = async ({
-  blob,
-  conversationId,
-  messageId,
-  fileName,
-  stage,
-  outcome,
-}) => {
-  if (!blob?.size) return;
-
-  const snapshotFileName =
-    stage === "compressed" && blob.type
-      ? getFileNameWithType(fileName, blob.type)
-      : fileName;
-  const diagnosticFileName = getDiagnosticFileName(
-    snapshotFileName,
-    stage,
-  );
-  const objectPath = getMessageAttachmentObjectPath({
-    conversationId,
-    messageId,
-    fileName: diagnosticFileName,
-  });
-  if (!objectPath) return;
-
-  try {
-    await uploadBytes(storageRef(storage, objectPath), blob, {
-      contentType: blob.type || "application/octet-stream",
-      customMetadata: {
-        videoUploadDiagnostic: "true",
-        stage,
-        ...(outcome ? { outcome } : {}),
-      },
-    });
-  } catch (error) {
-    console.warn(`Video upload diagnostic snapshot failed (${stage}):`, error);
-  }
-};
-
 const createResolvedAttachment = ({
   fileName,
   metadata,
@@ -529,10 +483,6 @@ export const uploadAttachmentFile = async ({
 
   let fileToUpload = attachment.file;
 
-  const videoDiagnostics = attachment.file.type.startsWith("video/")
-    ? { compressionOutput: null }
-    : null;
-
   const hasPdfMimeType = attachment.file.type === "application/pdf";
   const isPdf = await isValidPdfFile(attachment.file);
 
@@ -552,17 +502,6 @@ export const uploadAttachmentFile = async ({
         progress: 0,
       });
 
-      if (videoDiagnostics) {
-        await uploadVideoDiagnosticSnapshot({
-          blob: attachment.file,
-          conversationId,
-          messageId,
-          fileName: attachment.fileName,
-          stage: "raw",
-          outcome: "before-compression",
-        });
-      }
-
       const compressedMedia = await compressMedia(
         attachment.file,
         (compressionProgress) => {
@@ -576,26 +515,7 @@ export const uploadAttachmentFile = async ({
           });
         },
         {},
-        (stage) => {
-          if (
-            videoDiagnostics &&
-            stage.stage === "compression-output"
-          ) {
-            videoDiagnostics.compressionOutput = stage;
-          }
-        },
       );
-
-      if (videoDiagnostics?.compressionOutput) {
-        await uploadVideoDiagnosticSnapshot({
-          blob: videoDiagnostics.compressionOutput.blob,
-          conversationId,
-          messageId,
-          fileName: attachment.fileName,
-          stage: "compressed",
-          outcome: videoDiagnostics.compressionOutput.outcome,
-        });
-      }
 
       if (compressedMedia instanceof File) {
         fileToUpload = new File(
@@ -691,17 +611,6 @@ export const uploadAttachmentFile = async ({
         byteSize: fileToUpload.size,
         mediaKind: getMediaKind(fileToUpload.type, fileName),
       });
-
-      if (videoDiagnostics) {
-        await uploadVideoDiagnosticSnapshot({
-          blob: fileToUpload,
-          conversationId,
-          messageId,
-          fileName,
-          stage: "uploaded",
-          outcome: "canonical-upload-completed",
-        });
-      }
 
       try {
         await onComplete?.(fileName);

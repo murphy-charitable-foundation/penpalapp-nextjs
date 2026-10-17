@@ -1,67 +1,74 @@
-# How to Test Your Web Application on a Mobile Device Using Ngrok
+# Testing on a phone
 
-This tutorial will guide you through testing your web applications on a mobile device while running them from your development platform using Ngrok.
+Use an HTTPS URL to test microphone recording and service workers on an iPhone.
+An HTTP LAN URL such as `http://192.168.1.10:3000` can load the app, but it is not
+a secure context. Allowing microphone access in browser settings does not remove
+that restriction. The localhost exception on your computer does not extend to a
+phone visiting your computer’s LAN address.
 
----
-## Prerequisites
-Before you begin, ensure that you have Ngrok installed on your computer. If you haven't installed it yet:
-1. Visit [Ngrok's official website](https://dashboard.ngrok.com/) or search for "Ngrok install" on your web browser.
-2. Follow the installation steps provided on the website.
-3. You will need to create a free Ngrok account for development and testing purposes.
+## Run the app through an HTTPS tunnel
 
----
-## Step 1: Run Your Next.js Application
-1. Open a terminal window.
-2. Navigate to your project directory.
-3. Start your Next.js application using the following command:
+1. Install and configure [ngrok](https://ngrok.com/docs/getting-started/).
+2. Start the app:
+
    ```sh
    npm run dev
    ```
-4. You should see an output similar to the following:
-   ```
-   > myapp@0.1.0 dev
-   > next dev
-   ▲ Next.js 14.2.23
-   - Local:        http://localhost:3000
-   - Environments: .env.local
-   ```
-5. **Note the port number** after `localhost:` in the output (in this case, `3000`).
 
----
-## Step 2: Expose Your Local Server Using Ngrok
-1. Open a **new terminal window**.
-2. Run the following command, replacing `<YOUR_PORT>` with the port number from Step 1:
-   ```sh
-   ngrok http http://localhost:<YOUR_PORT>
-   ```
-   For example, if your port number is `3000`, run:
+3. In another terminal, forward the port printed by Next.js:
+
    ```sh
    ngrok http http://localhost:3000
    ```
-3. After running the command, you should see an output similar to this:
+
+4. Add your tunnel’s exact hostname to the development-only `allowedDevOrigins`
+   list in `next.config.js`, alongside the existing LAN pattern, then restart
+   Next.js. Keep the `NODE_ENV === "development"` condition. For example:
+
+   ```js
+   allowedDevOrigins: ["192.168.*.*", "your-hostname.ngrok-free.app"],
    ```
-   Route traffic by anything: https://ngrok.com/r/iep
-   Session Status                online
-   Account                       example@gmail.com (Plan: Free)
-   Version                       3.19.0
-   Region                        United States (us)
-   Latency                       63ms
-   Web Interface                 http://127.0.0.1:4040
-   Forwarding                    https://fe35-2001-569-f0e1-8200-79dd-a4e0-845a-2fc8.ngrok-free.app -> http://localhost:3000
-   ```
-4. **Copy the public URL** after `Forwarding:` (e.g., `https://fe35-2001-569-f0e1-8200-79dd-a4e0-845a-2fc8.ngrok-free.app`).
 
----
-## Step 3: Access Your Application on a Mobile Device
-1. Connect your mobile device to the same network as your development machine.
-2. Open a web browser on your mobile device.
-3. Paste the **Ngrok public URL** into the browser’s address bar and hit **Enter**.
-4. Your development project should now be accessible on your mobile device!
+5. Open the **HTTPS** forwarding URL on the phone. With a tunnel, the phone does
+   not need to be on the same network as the computer. If Firebase Auth rejects
+   the new domain during sign-in, add that hostname to the development Firebase
+   project’s authorized domains.
 
----
-## Additional Tips
-- If your Ngrok session expires, simply rerun `ngrok http http://localhost:<YOUR_PORT>` to generate a new public URL.
-- You can monitor requests and responses using Ngrok’s web interface at `http://127.0.0.1:4040`.
-- Ensure your firewall or security settings do not block Ngrok from tunneling traffic.
+Stop the tunnel when finished. A local HTTPS server with a certificate trusted
+by the iPhone is another option; an untrusted self-signed certificate is not a
+reliable substitute.
 
-Now you can seamlessly test your web applications on mobile devices while developing locally!
+[`allowedDevOrigins`](https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins)
+permits access to Next.js development assets. It does not enable HTTPS or grant
+microphone permissions. Use hostnames without a scheme or port in this setting.
+
+## Check recording
+
+On both Safari and Chrome, sign in, record a short message, stop it, play the
+preview, and send it. Also try sending directly while recording and cancelling
+a recording. The microphone indicator should turn off after stopping, cancelling,
+or closing the recorder.
+
+If recording fails, the app now distinguishes an insecure connection, blocked
+permissions, missing or unavailable microphones, and recorder failures. In the
+browser console, `window.isSecureContext` should be `true` and
+`typeof navigator.mediaDevices?.getUserMedia` should be `"function"`.
+Tapping Record requests microphone permission through the browser when capture
+is available. There is no permission prompt that can enable capture on an HTTP
+LAN address. On the development computer itself, `http://localhost:3000` is a
+trusted exception and can be used for recording tests.
+
+## Development error indicators
+
+The Next.js error indicator is part of development mode and is not included in
+the production app. A production build does not automatically fix browser API
+restrictions or suppress application console errors. Unsupported service workers
+and push notifications are skipped quietly; actual setup failures remain visible.
+
+If the old "Service Workers are not supported by this browser" error still
+appears after updating the code, restart `npm run dev` and reload the phone's
+page. If it persists, stop the dev server, remove the generated `.next/dev`
+directory, and restart it to rebuild stale development bundles.
+
+To check production behavior locally, stop the dev server, run `npm run build`,
+then `npm start`, and open it through the same HTTPS tunnel.

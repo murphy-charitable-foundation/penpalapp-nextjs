@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Mic,
   Square,
   Loader2,
   Lock,
@@ -14,6 +13,13 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
+import {
+  createAudioRecorder,
+  createRecordingBlob,
+  disposeAudioRecorder,
+  getAudioRecordingError,
+  getVoiceFileName,
+} from "./audioRecording";
 
 /**
  * Audio Recording and Upload Component
@@ -23,7 +29,7 @@ import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
  */
 const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete }) => {
   // --- State Management ---
-  const [status, setStatus] = useState("idle"); // 'idle' | 'recording' | 'review' | 'uploading'
+  const [status, setStatus] = useState("idle"); // 'idle' | 'requesting' | 'recording' | 'review' | 'uploading'
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState(null);
@@ -36,13 +42,15 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
 
   // Refs
   const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const mountedRef = useRef(false);
+  const startingRef = useRef(false);
   const timerRef = useRef(null);
   const audioPlayerRef = useRef(null);
+  const audioUrlRef = useRef(null);
   const sendAfterStopRef = useRef(false);
   const cancelNextRecordingRef = useRef(false);
 
-  // Fix 1: Use ref to track current time to avoid stale closure in onstop
+  // Keep the elapsed time available to the recorder's onstop callback.
   const timeRef = useRef(0);
 
   // --- 1. Listen for Login Status ---
@@ -72,48 +80,59 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
 
   // --- 3. Recording Logic ---
   const startRecording = async () => {
-    if (authLoading) return;
+    if (authLoading || startingRef.current || mediaRecorderRef.current) return;
     if (!user) {
       if (onRequireLogin) onRequireLogin();
       else alert("Please log in to use voice features");
       return;
     }
 
+    startingRef.current = true;
+    setStatus("requesting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
-        ? "audio/webm"
-        : "";
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const mediaRecorder = await createAudioRecorder();
+      if (!mountedRef.current) {
+        disposeAudioRecorder(mediaRecorder);
+        return;
+      }
 
       mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+      const chunks = [];
       sendAfterStopRef.current = false;
-      cancelNextRecordingRef.current = false; // Fix 2: Reset cancel flag on new recording
+      cancelNextRecordingRef.current = false;
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) chunks.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
+        mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+        mediaRecorderRef.current = null;
+        if (timerRef.current) clearInterval(timerRef.current);
+        if (!mountedRef.current) return;
         if (cancelNextRecordingRef.current) {
           cancelNextRecordingRef.current = false;
-          stream.getTracks().forEach((track) => track.stop());
-          audioChunksRef.current = [];
-          setStatus("idle"); // Fix 3: Explicitly reset status after cancel
+          setStatus("idle");
           return;
         }
 
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        let blob;
+        try {
+          blob = createRecordingBlob(chunks, mediaRecorder.mimeType);
+        } catch (error) {
+          setStatus("idle");
+          alert(getAudioRecordingError(error));
+          return;
+        }
         const url = URL.createObjectURL(blob);
-
-        stream.getTracks().forEach((track) => track.stop());
+        if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = url;
 
         setAudioBlob(blob);
         setAudioUrl(url);
         setDuration(timeRef.current);
 
-        const fileName = `voice_${Date.now()}.webm`;
+        const fileName = getVoiceFileName(blob);
         if (sendAfterStopRef.current) {
           if (onRecordingComplete) {
             onRecordingComplete({ blob, fileName });
@@ -125,6 +144,16 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
           setStatus("review");
           setTime(0);
         }
+      };
+
+      mediaRecorder.onerror = (event) => {
+        disposeAudioRecorder(mediaRecorder);
+        mediaRecorderRef.current = null;
+        if (timerRef.current) clearInterval(timerRef.current);
+        if (!mountedRef.current) return;
+        setStatus("idle");
+        console.warn("Audio recording failed:", event.error);
+        alert(getAudioRecordingError(event.error));
       };
 
       mediaRecorder.start();
@@ -145,8 +174,14 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
         });
       }, 1000);
     } catch (error) {
-      console.error("Microphone access failed:", error);
-      alert("Please grant microphone permission");
+      disposeAudioRecorder(mediaRecorderRef.current);
+      mediaRecorderRef.current = null;
+      if (!mountedRef.current) return;
+      setStatus("idle");
+      console.warn("Audio recording could not start:", error);
+      alert(getAudioRecordingError(error));
+    } finally {
+      startingRef.current = false;
     }
   };
 
@@ -171,7 +206,8 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
       audioPlayerRef.current.src = "";
     }
 
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+    audioUrlRef.current = null;
 
     setStatus("idle");
     setAudioBlob(null);
@@ -189,7 +225,7 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
 
   const handleSendInReview = () => {
     if (audioBlob && user) {
-      const fileName = `voice_${Date.now()}.webm`;
+      const fileName = getVoiceFileName(audioBlob);
       if (onRecordingComplete) {
         onRecordingComplete({ blob: audioBlob, fileName });
         handleDelete();
@@ -229,12 +265,9 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
   // --- 5. Upload Logic ---
   const handleUploadToFirebase = async (blob, uid) => {
     setStatus("uploading");
-        console.log("uid:", uid);
-    console.log("blob:", blob);
-    console.log("storage object:", storage);
-    
+
     try {
-      const fileName = `voice_${Date.now()}.webm`;
+      const fileName = getVoiceFileName(blob);
       const storagePath = `users/${uid}/voice_messages/${fileName}`;
       const storageRef = ref(storage, storagePath);
       const uploadTask = uploadBytesResumable(storageRef, blob);
@@ -250,7 +283,6 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
         async () => {
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            console.log("Upload successful:", downloadURL);
             if (onUploadSuccess) onUploadSuccess(downloadURL);
             handleDelete();
           } catch (error) {
@@ -266,21 +298,20 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
     }
   };
 
-  // Cleanup on unmount
-  // prematurely revoke URLs. Use a ref to track the latest URL for cleanup.
-  const audioUrlRef = useRef(null);
   useEffect(() => {
-    audioUrlRef.current = audioUrl;
+    const player = audioPlayerRef.current;
+    return () => player?.pause();
   }, [audioUrl]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      disposeAudioRecorder(mediaRecorderRef.current);
+      mediaRecorderRef.current = null;
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current.src = "";
-      }
+      audioUrlRef.current = null;
     };
   }, []);
 
@@ -297,23 +328,27 @@ const AudioRecorder = ({ onUploadSuccess, onRequireLogin, onRecordingComplete })
     );
   }
 
-  if (status === "idle") {
+  if (status === "idle" || status === "requesting") {
     const isLoggedOut = !user && !authLoading;
     return (
       <div className="flex flex-col items-center gap-4">
         <div className="relative bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs text-center max-w-[200px] shadow-sm">
-          Tap to record a voice message. The maximum length is 15 minutes.
+          {status === "requesting"
+            ? "Starting microphone…"
+            : "Tap to record a voice message. The maximum length is 15 minutes."}
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-green-100"></div>
         </div>
 
         <button
           onClick={startRecording}
-          disabled={authLoading}
+          disabled={authLoading || status === "requesting"}
           className={`w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center border border-gray-100 transition-transform hover:scale-105 active:scale-95 ${
             isLoggedOut ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {isLoggedOut ? (
+          {status === "requesting" ? (
+            <Loader2 className="animate-spin text-green-700" size={24} />
+          ) : isLoggedOut ? (
             <Lock className="text-gray-400" size={24} />
           ) : (
             <div className="w-8 h-8 bg-red-500 rounded-full shadow-sm" />

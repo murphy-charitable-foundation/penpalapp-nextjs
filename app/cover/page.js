@@ -20,6 +20,7 @@ export default function Cover() {
           <Image
             src="/murphylogo.png"
             alt="Murphy Charitable Foundation Uganda"
+            loading="eager"
             layout="fill"
             objectFit="contain"
           />
