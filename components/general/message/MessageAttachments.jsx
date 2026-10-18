@@ -127,7 +127,18 @@ export const AttachmentViewer = ({
               className="h-[70vh] w-full rounded-lg bg-black"
             />
           ) : attachment.mediaKind === "pdf" ? (
-            <PdfViewer url={attachment.downloadUrl} />
+            <div>
+              <a
+                href={attachment.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-3 block text-sm text-blue-700 underline"
+              >
+                Open PDF directly (test)
+              </a>
+
+              <PdfViewer url={attachment.downloadUrl} />
+            </div>
           ) : (
             <div className="rounded-lg bg-slate-100 p-6">
               <audio

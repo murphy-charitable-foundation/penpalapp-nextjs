@@ -132,6 +132,7 @@ export default function Page(props) {
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [pdfUploadError, setPdfUploadError] = useState("");
   const [queuedAttachmentDeletes, setQueuedAttachmentDeletes] = useState([]);
   const [attachmentToDelete, setAttachmentToDelete] = useState(null);
   const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
@@ -480,14 +481,15 @@ export default function Page(props) {
     if (!file) return;
 
     event.target.value = "";
+    setPdfUploadError("");
 
     if (!isPdfWithinSizeLimit(file)) {
-      alert("PDF files must be 25 MB or smaller.");
+      setPdfUploadError("PDF files must be 25 MB or smaller.");
       return;
     }
 
     if (!(await isValidPdfFile(file))) {
-      alert("Please select a valid PDF file.");
+      setPdfUploadError("Please select a valid PDF file.");
       return;
     }
 
@@ -1928,6 +1930,14 @@ export default function Page(props) {
             className="hidden"
             onChange={handlePdfFileChange}
           />
+          {pdfUploadError && (
+            <div
+              role="alert"
+              className="mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
+              {pdfUploadError}
+            </div>
+          )}
 
           {!isEditing ? (
             <div className="p-4">

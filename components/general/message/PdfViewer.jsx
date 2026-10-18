@@ -12,6 +12,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function PdfViewer({ url }) {
   const viewerRef = useRef(null);
+  const scrollRef = useRef(null);
   const [pageWidth, setPageWidth] = useState(0);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,37 +29,45 @@ export default function PdfViewer({ url }) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [currentPage]);
+
   return (
     <div
       ref={viewerRef}
-      className="h-[70vh] w-full overflow-auto rounded-lg bg-slate-100 p-2"
+      className="flex h-[70vh] w-full flex-col rounded-lg bg-slate-100 p-2"
     >
-      <Document
-        file={url}
-        onLoadSuccess={({ numPages }) => {
-          setPageCount(numPages);
-          setCurrentPage(1);
-        }}
-        onLoadError={(error) => console.error("Failed to load PDF:", error)}
-        loading={
-          <p className="p-4 text-center text-sm text-slate-600">
-            Loading PDF...
-          </p>
-        }
-        error={
-          <p className="p-4 text-center text-sm text-red-700">
-            Unable to load this PDF.
-          </p>
-        }
-      >
-        {pageWidth > 0 && pageCount > 0 && (
-          <Page
-            pageNumber={currentPage}
-            width={pageWidth}
-            className="mx-auto mb-3 w-fit bg-white shadow-sm"
-          />
-        )}
-      </Document>
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <Document
+          file={url}
+          onLoadSuccess={({ numPages }) => {
+            setPageCount(numPages);
+            setCurrentPage(1);
+          }}
+          onLoadError={(error) => console.error("Failed to load PDF:", error)}
+          loading={
+            <p className="p-4 text-center text-sm text-slate-600">
+              Loading PDF...
+            </p>
+          }
+          error={
+            <p className="p-4 text-center text-sm text-red-700">
+              Unable to load this PDF.
+            </p>
+          }
+        >
+          {pageWidth > 0 && pageCount > 0 && (
+            <Page
+              pageNumber={currentPage}
+              width={pageWidth}
+              className="mx-auto mb-3 w-fit bg-white shadow-sm"
+            />
+          )}
+        </Document>
+      </div>
 
       {pageCount > 1 && (
         <div className="flex items-center justify-center gap-4 py-3">
