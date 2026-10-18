@@ -744,18 +744,23 @@ class GlobalTracker {
   addErrorListeners() {
     // Handle regular uncaught errors
     window.onerror = (message, source, lineno, colno, error) => {
-      logError(error, { description: message });
-      // logError(error || {
-      //   source: source,
-      //   line: lineno,
-      //   column: colno
-      // });
+      // `error` is null for cross-origin/script-load failures; fall back to the raw details.
+      logError(
+        error || {
+          message: typeof message === "string" ? message : "Script error",
+          filename: source,
+          lineno,
+          colno,
+        },
+        { description: String(message), source: "window.onerror" }
+      );
     };
 
     // Handle unhandled promise rejections
     window.onunhandledrejection = (event) => {
       logError(event.reason, {
         description: "unhandled_promise_rejection",
+        source: "unhandled_rejection",
       });
     };
   }

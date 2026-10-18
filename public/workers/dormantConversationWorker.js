@@ -9,7 +9,13 @@ self.onmessage = async function (e) {
     const data = await result.json();
     self.postMessage({ success: true, data });
   } catch (error) {
-    self.postMessage({ success: false, error: error.message });
+    self.postMessage({
+      success: false,
+      error: error?.message || String(error),
+      errorName: error?.name,
+      errorStack: error?.stack,
+      stage: "sendDormantConversation/parse",
+    });
   }
 };
 
