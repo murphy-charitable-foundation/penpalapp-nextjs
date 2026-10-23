@@ -82,6 +82,8 @@ export default function Page(props) {
   const pdfInputRef = useRef(null);
   const messageContentRef = useRef("");
   const pendingAttachmentsRef = useRef([]);
+  const attachmentAbortControllersRef = useRef(new Map());
+  const activeAttachmentFileNamesRef = useRef(new Set());
   const draftRef = useRef(null);
   const draftSaveQueueRef = useRef(Promise.resolve());
   const draftAttachmentViewerRef = useRef(null);
@@ -317,6 +319,10 @@ export default function Page(props) {
   };
 
   const removeAttachment = (clientKey) => {
+    const controller = attachmentAbortControllersRef.current.get(clientKey);
+    controller?.abort();
+    attachmentAbortControllersRef.current.delete(clientKey);
+
     if (draftAttachmentViewerRef.current?.clientKey === clientKey) {
       closeDraftAttachmentViewer();
     }
@@ -331,6 +337,10 @@ export default function Page(props) {
   };
 
   const uploadAttachment = async (attachment) => {
+    const signal = attachmentAbortControllersRef.current.get(
+      attachment.clientKey,
+    )?.signal;
+
     if (!attachment || !user?.uid || !messagesRef) {
       updateAttachment(attachment?.clientKey, { status: "error" });
       return;
@@ -368,6 +378,7 @@ export default function Page(props) {
 
     const uploadPromise = uploadAttachmentFile({
       attachment,
+      signal,
       conversationId: id,
       messageId: targetMessageId,
       onUpdate: updateAttachment,
@@ -403,12 +414,20 @@ export default function Page(props) {
     try {
       await uploadPromise;
     } finally {
+      activeAttachmentFileNamesRef.current.delete(
+        sanitizeFileName(attachment.file.name),
+      );
       editSessionUploadPromisesRef.current.delete(uploadPromise);
     }
   };
 
   const handleAddAttachment = ({ file, mediaKind }) => {
     const fileName = sanitizeFileName(file.name);
+    if (activeAttachmentFileNamesRef.current.has(fileName)) {
+      alert(`Please wait for the previous upload of "${fileName}" to finish.`);
+      return;
+    }
+
     const hasDuplicateFileName = pendingAttachmentsRef.current.some(
       (attachment) =>
         attachment.status !== "error" && attachment.fileName === fileName,
@@ -420,6 +439,11 @@ export default function Page(props) {
     }
 
     const newAttachment = createAttachmentFromFile(file, mediaKind);
+    activeAttachmentFileNamesRef.current.add(fileName);
+    attachmentAbortControllersRef.current.set(
+      newAttachment.clientKey,
+      new AbortController(),
+    );
     pendingAttachmentsRef.current = [
       ...pendingAttachmentsRef.current,
       newAttachment,
@@ -689,7 +713,7 @@ export default function Page(props) {
       }
     },
     [
-      user?.uid,
+      user,
       messagesRef,
       isSending,
       userRef,

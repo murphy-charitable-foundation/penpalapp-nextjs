@@ -47,7 +47,10 @@ export default function PdfViewer({ url }) {
             setPageCount(numPages);
             setCurrentPage(1);
           }}
-          onLoadError={(error) => console.error("Failed to load PDF:", error)}
+          onLoadError={(error) => {
+            console.error("Failed to load PDF:", error);
+            alert(`PDF error: ${error.message}`);
+          }}
           loading={
             <p className="p-4 text-center text-sm text-slate-600">
               Loading PDF...

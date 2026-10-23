@@ -470,12 +470,15 @@ export const getCompletedAttachmentFileNamesForSave = (attachments = []) => {
 
 export const uploadAttachmentFile = async ({
   attachment,
+  signal,
   conversationId,
   messageId,
   onUpdate,
   onComplete,
   onDuplicate,
 }) => {
+  if (signal?.aborted) return;
+
   if (!attachment?.clientKey || !attachment.file || !conversationId || !messageId) {
     onUpdate?.(attachment?.clientKey, { status: "error" });
     return;
@@ -547,6 +550,8 @@ export const uploadAttachmentFile = async ({
     }
   }
 
+  if (signal?.aborted) return;
+
   const fileName = sanitizeFileName(fileToUpload.name);
   const objectPath = getMessageAttachmentObjectPath({
     conversationId,
@@ -565,8 +570,16 @@ export const uploadAttachmentFile = async ({
     ? { contentType: fileToUpload.type }
     : undefined;
   const task = uploadBytesResumable(objectRef, fileToUpload, uploadMetadata);
+  const cancelUpload = () => task.cancel();
 
-  task.on(
+  signal?.addEventListener("abort", cancelUpload, { once: true });
+
+  if (signal?.aborted) {
+    task.cancel();
+  }
+
+  await new Promise((resolve) => {
+    task.on(
     "state_changed",
     (snapshot) => {
       const uploadProgress = snapshot.totalBytes
@@ -576,10 +589,18 @@ export const uploadAttachmentFile = async ({
       onUpdate?.(attachment.clientKey, { progress, status: "uploading" });
     },
     async (error) => {
+      signal?.removeEventListener("abort", cancelUpload);
+
+      if (signal?.aborted || error?.code === "storage/canceled") {
+        resolve();
+        return;
+      }
+
       if (error?.code === "storage/unauthorized") {
         try {
           await getMetadata(objectRef);
           onDuplicate?.(fileName);
+          resolve();
           return;
         } catch (metadataError) {
           if (metadataError?.code !== "storage/object-not-found") {
@@ -593,8 +614,21 @@ export const uploadAttachmentFile = async ({
 
       console.error("Attachment upload failed:", error);
       onUpdate?.(attachment.clientKey, { status: "error" });
+      resolve();
     },
     async () => {
+      signal?.removeEventListener("abort", cancelUpload);
+
+      if (signal?.aborted) {
+        try {
+          await deleteObject(objectRef);
+        } catch (error) {
+          console.error("Failed to clean up canceled attachment:", error);
+        }
+        resolve();
+        return;
+      }
+
       const cacheEntry = getAttachmentCacheEntry(objectPath);
       revokeAttachmentBlobUrl(cacheEntry);
       cacheEntry.blob = fileToUpload;
@@ -617,6 +651,8 @@ export const uploadAttachmentFile = async ({
       } catch (error) {
         console.error("Attachment completion handler failed:", error);
       }
+      resolve();
     },
   );
+  });
 };
