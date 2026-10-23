@@ -8,7 +8,7 @@ globalThis[fixtureKey] = fixtures;
 let nextFixture = 0;
 const dataModule = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
 
-async function harness(t, { preserveOriginal = false } = {}) {
+async function harness(t, { preserveOriginal = false, signal } = {}) {
   const original = new File([new Uint8Array(100)], "portrait.mov", { type: "video/quicktime" });
   const compressed = new Blob([new Uint8Array(20)], { type: "video/mp4" });
   const observed = { uploads: [], updates: [], completed: [], sequence: [] };
@@ -19,9 +19,14 @@ async function harness(t, { preserveOriginal = false } = {}) {
       observed.uploads.push({ ref, file, metadata });
       observed.sequence.push("upload");
       return {
+        cancel: () => {
+          observed.canceled = true;
+          return true;
+        },
         on: (event, progress, error, complete) => {
           assert.equal(event, "state_changed");
           observed.progress = progress;
+          observed.error = error;
           observed.complete = complete;
         },
       };
@@ -56,7 +61,8 @@ async function harness(t, { preserveOriginal = false } = {}) {
   }
   // Run the actual upload integration, substituting only external dependencies.
   const { uploadAttachmentFile } = await import(dataModule(source));
-  await uploadAttachmentFile({
+  const uploadPromise = uploadAttachmentFile({
+    signal,
     attachment: { clientKey: "attachment-test", file: original, fileName: original.name },
     conversationId: "conversation-test",
     messageId: "message-test",
@@ -66,11 +72,12 @@ async function harness(t, { preserveOriginal = false } = {}) {
     },
     onComplete: (name) => observed.completed.push(name),
   });
-  return { original, compressed, observed };
+  await new Promise((resolve) => setImmediate(resolve));
+  return { original, compressed, observed, uploadPromise };
 }
 
 test("compressed video uploads send one MP4 and complete normally", async (t) => {
-  const { compressed, observed } = await harness(t);
+  const { compressed, observed, uploadPromise } = await harness(t);
   assert.equal(observed.uploads.length, 1);
   assert.deepEqual(observed.sequence, ["compress", "upload"]);
   const [{ ref, file, metadata }] = observed.uploads;
@@ -83,6 +90,7 @@ test("compressed video uploads send one MP4 and complete normally", async (t) =>
   observed.progress({ bytesTransferred: 10, totalBytes: 20 });
   assert.deepEqual(observed.updates.at(-1), { progress: 70, status: "uploading" });
   await observed.complete();
+  await uploadPromise;
   assert.deepEqual(observed.completed, ["portrait.mp4"]);
   assert.equal(observed.updates.at(-1).status, "done");
   assert.equal(observed.updates.at(-1).progress, 100);
@@ -90,7 +98,7 @@ test("compressed video uploads send one MP4 and complete normally", async (t) =>
 });
 
 test("skipped video compression uploads the original MOV and completes normally", async (t) => {
-  const { original, observed } = await harness(t, { preserveOriginal: true });
+  const { original, observed, uploadPromise } = await harness(t, { preserveOriginal: true });
   assert.equal(observed.uploads.length, 1);
   assert.deepEqual(observed.sequence, ["compress", "upload"]);
   const [{ ref, file, metadata }] = observed.uploads;
@@ -102,8 +110,28 @@ test("skipped video compression uploads the original MOV and completes normally"
   observed.progress({ bytesTransferred: 50, totalBytes: 100 });
   assert.deepEqual(observed.updates.at(-1), { progress: 70, status: "uploading" });
   await observed.complete();
+  await uploadPromise;
   assert.deepEqual(observed.completed, ["portrait.mov"]);
   assert.equal(observed.updates.at(-1).status, "done");
   assert.equal(observed.updates.at(-1).progress, 100);
   assert.equal(observed.uploads.length, 1);
+});
+
+test("canceling an upload calls Firebase cancel", async (t) => {
+  const controller = new AbortController();
+
+  const { observed, uploadPromise } = await harness(t, {
+    signal: controller.signal,
+  });
+
+  controller.abort();
+
+  assert.equal(observed.canceled, true);
+
+  // Simulate Firebase reporting that the upload was canceled.
+  observed.error({ code: "storage/canceled" });
+
+  await uploadPromise;
+
+  assert.deepEqual(observed.completed, []);
 });
