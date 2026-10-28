@@ -49,16 +49,15 @@ export default function PdfViewer({ url }) {
           }}
           onLoadError={(error) => {
             console.error("Failed to load PDF:", error);
-            alert(`PDF error: ${error.message}`);
           }}
           loading={
-            <p className="p-4 text-center text-sm text-slate-600">
+            <p role="status" className="p-4 text-center text-sm text-slate-600">
               Loading PDF...
             </p>
           }
           error={
-            <p className="p-4 text-center text-sm text-red-700">
-              Unable to load this PDF.
+            <p role="alert" className="p-4 text-center text-sm text-red-700">
+              This PDF could not be loaded. Check your connection and try again.
             </p>
           }
         >
@@ -67,12 +66,20 @@ export default function PdfViewer({ url }) {
               pageNumber={currentPage}
               width={pageWidth}
               className="mx-auto mb-3 w-fit bg-white shadow-sm"
+              onRenderError={(error) => {
+                console.error("Failed to render PDF page:", error);
+              }}
+              error={
+                <p role="alert" className="p-4 text-center text-sm text-red-700">
+                  This page could not be displayed.
+                </p>
+              }
             />
           )}
         </Document>
       </div>
 
-      {pageCount > 1 && (
+      {pageCount > 0 && (
         <div className="flex items-center justify-center gap-4 py-3">
           <button
             type="button"

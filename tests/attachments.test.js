@@ -8,8 +8,12 @@ globalThis[fixtureKey] = fixtures;
 let nextFixture = 0;
 const dataModule = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
 
-async function harness(t, { preserveOriginal = false, signal } = {}) {
-  const original = new File([new Uint8Array(100)], "portrait.mov", { type: "video/quicktime" });
+async function harness(t, { preserveOriginal = false, signal, file } = {}) {
+  const original =
+    file ??
+    new File([new Uint8Array(100)], "portrait.mov", {
+      type: "video/quicktime",
+    });
   const compressed = new Blob([new Uint8Array(20)], { type: "video/mp4" });
   const observed = { uploads: [], updates: [], completed: [], sequence: [] };
   const id = nextFixture++;
@@ -115,6 +119,37 @@ test("skipped video compression uploads the original MOV and completes normally"
   assert.equal(observed.updates.at(-1).status, "done");
   assert.equal(observed.updates.at(-1).progress, 100);
   assert.equal(observed.uploads.length, 1);
+});
+
+test("PDF uploads bypass compression and preserve PDF metadata", async (t) => {
+  const pdf = new File(
+    [new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37])],
+    "letter.pdf",
+    { type: "application/pdf" },
+  );
+  const { observed, uploadPromise } = await harness(t, { file: pdf });
+
+  assert.equal(observed.uploads.length, 1);
+  assert.deepEqual(observed.sequence, ["upload"]);
+  const [{ ref, file, metadata }] = observed.uploads;
+  assert.equal(
+    ref.fullPath,
+    "conversations/conversation-test/messages/message-test/letter.pdf",
+  );
+  assert.equal(file, pdf);
+  assert.deepEqual(metadata, { contentType: "application/pdf" });
+
+  observed.progress({ bytesTransferred: 4, totalBytes: 8 });
+  assert.deepEqual(observed.updates.at(-1), {
+    progress: 70,
+    status: "uploading",
+  });
+  await observed.complete();
+  await uploadPromise;
+
+  assert.deepEqual(observed.completed, ["letter.pdf"]);
+  assert.equal(observed.updates.at(-1).status, "done");
+  assert.equal(observed.updates.at(-1).mediaKind, "pdf");
 });
 
 test("canceling an upload calls Firebase cancel", async (t) => {
