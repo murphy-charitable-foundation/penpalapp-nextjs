@@ -29,6 +29,8 @@ import {
   getCachedAttachmentQueue,
   getCompletedAttachmentFileNamesForSave,
   getMessageAttachmentFileNames,
+  isPdfWithinSizeLimit,
+  isValidPdfFile,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
   sanitizeFileName,
@@ -50,6 +52,7 @@ import { PageContainer } from "../../../components/general/PageContainer";
 import { PageBackground } from "../../../components/general/PageBackground";
 import {
   AlertTriangle,
+  FileText,
   Film,
   Image as ImageIcon,
   Mic,
@@ -76,8 +79,11 @@ export default function Page(props) {
   const textAreaRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
   const messageContentRef = useRef("");
   const pendingAttachmentsRef = useRef([]);
+  const attachmentAbortControllersRef = useRef(new Map());
+  const activeAttachmentFileNamesRef = useRef(new Set());
   const draftRef = useRef(null);
   const draftSaveQueueRef = useRef(Promise.resolve());
   const draftAttachmentViewerRef = useRef(null);
@@ -128,6 +134,7 @@ export default function Page(props) {
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const [pendingAttachments, setPendingAttachments] = useState([]);
+  const [pdfUploadError, setPdfUploadError] = useState("");
   const [queuedAttachmentDeletes, setQueuedAttachmentDeletes] = useState([]);
   const [attachmentToDelete, setAttachmentToDelete] = useState(null);
   const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
@@ -216,6 +223,7 @@ export default function Page(props) {
     if (mediaKind === "image") return <ImageIcon size={18} className="text-emerald-700" />;
     if (mediaKind === "video") return <Film size={18} className="text-emerald-700" />;
     if (mediaKind === "audio") return <Play size={18} className="text-emerald-700" />;
+    if (mediaKind === "pdf") return <FileText size={18} className="text-emerald-700" />;
     return <Paperclip size={18} className="text-emerald-700" />;
   };
 
@@ -311,6 +319,10 @@ export default function Page(props) {
   };
 
   const removeAttachment = (clientKey) => {
+    const controller = attachmentAbortControllersRef.current.get(clientKey);
+    controller?.abort();
+    attachmentAbortControllersRef.current.delete(clientKey);
+
     if (draftAttachmentViewerRef.current?.clientKey === clientKey) {
       closeDraftAttachmentViewer();
     }
@@ -325,6 +337,10 @@ export default function Page(props) {
   };
 
   const uploadAttachment = async (attachment) => {
+    const signal = attachmentAbortControllersRef.current.get(
+      attachment.clientKey,
+    )?.signal;
+
     if (!attachment || !user?.uid || !messagesRef) {
       updateAttachment(attachment?.clientKey, { status: "error" });
       return;
@@ -362,6 +378,7 @@ export default function Page(props) {
 
     const uploadPromise = uploadAttachmentFile({
       attachment,
+      signal,
       conversationId: id,
       messageId: targetMessageId,
       onUpdate: updateAttachment,
@@ -397,12 +414,20 @@ export default function Page(props) {
     try {
       await uploadPromise;
     } finally {
+      activeAttachmentFileNamesRef.current.delete(
+        sanitizeFileName(attachment.file.name),
+      );
       editSessionUploadPromisesRef.current.delete(uploadPromise);
     }
   };
 
   const handleAddAttachment = ({ file, mediaKind }) => {
     const fileName = sanitizeFileName(file.name);
+    if (activeAttachmentFileNamesRef.current.has(fileName)) {
+      alert(`Please wait for the previous upload of "${fileName}" to finish.`);
+      return;
+    }
+
     const hasDuplicateFileName = pendingAttachmentsRef.current.some(
       (attachment) =>
         attachment.status !== "error" && attachment.fileName === fileName,
@@ -414,6 +439,11 @@ export default function Page(props) {
     }
 
     const newAttachment = createAttachmentFromFile(file, mediaKind);
+    activeAttachmentFileNamesRef.current.add(fileName);
+    attachmentAbortControllersRef.current.set(
+      newAttachment.clientKey,
+      new AbortController(),
+    );
     pendingAttachmentsRef.current = [
       ...pendingAttachmentsRef.current,
       newAttachment,
@@ -440,6 +470,14 @@ export default function Page(props) {
     videoInputRef.current?.click();
   };
 
+  const handlePickPdf = () => {
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    pdfInputRef.current?.click();
+  };
+
   const handleImageFileChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -460,6 +498,26 @@ export default function Page(props) {
       return;
     }
     handleAddAttachment({ file, mediaKind: "video" });
+  };
+
+  const handlePdfFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    event.target.value = "";
+    setPdfUploadError("");
+
+    if (!isPdfWithinSizeLimit(file)) {
+      setPdfUploadError("PDF files must be 25 MB or smaller.");
+      return;
+    }
+
+    if (!(await isValidPdfFile(file))) {
+      setPdfUploadError("Please select a valid PDF file.");
+      return;
+    }
+
+    handleAddAttachment({ file, mediaKind: "pdf" });
   };
 
   const handleRequestDeleteAttachment = (attachment) => {
@@ -655,7 +713,7 @@ export default function Page(props) {
       }
     },
     [
-      user?.uid,
+      user,
       messagesRef,
       isSending,
       userRef,
@@ -1792,6 +1850,14 @@ export default function Page(props) {
               </button>
               <button
                 type="button"
+                onClick={handlePickPdf}
+                className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                title="Send PDF"
+              >
+                <FileText size={18} className="text-slate-600" />
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowAudioRecorder((prev) => !prev)}
                 className={`p-2 rounded-full transition-colors ${
                   showAudioRecorder
@@ -1881,6 +1947,21 @@ export default function Page(props) {
             className="hidden"
             onChange={handleVideoFileChange}
           />
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={handlePdfFileChange}
+          />
+          {pdfUploadError && (
+            <div
+              role="alert"
+              className="mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
+              {pdfUploadError}
+            </div>
+          )}
 
           {!isEditing ? (
             <div className="p-4">

@@ -173,6 +173,24 @@ export const isAllowedMediaUrl = (downloadUrl) => {
   }
 };
 
+export const MAX_PDF_SIZE_BYTES = 25 * 1024 * 1024;
+
+export const isPdfWithinSizeLimit = (file) =>
+  Boolean(file && file.size <= MAX_PDF_SIZE_BYTES);
+
+export const isValidPdfFile = async (file) => {
+  if (!file || file.type !== "application/pdf") return false;
+
+  try {
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const pdfSignature = [0x25, 0x50, 0x44, 0x46, 0x2d];
+
+    return pdfSignature.every((byte, index) => header[index] === byte);
+  } catch (error) {
+    return false;
+  }
+};
+
 export const sanitizeFileName = (fileName = "") =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
@@ -206,6 +224,7 @@ export const getMediaKind = (contentType = "", fileName = "") => {
   if (contentType.startsWith("image/")) return "image";
   if (contentType.startsWith("video/")) return "video";
   if (contentType.startsWith("audio/")) return "audio";
+  if (contentType === "application/pdf") return "pdf";
 
   const extension = fileName.split(".").pop()?.toLowerCase();
 
@@ -329,6 +348,17 @@ export const resolveMessageAttachmentPreview = async ({
     loadAttachmentMetadata(cacheEntry, objectRef),
     loadAttachmentDownloadUrl(cacheEntry, objectRef),
   ]);
+
+  const contentType = metadata?.contentType || "";
+
+  if (contentType === "application/pdf") {
+    return createResolvedAttachment({
+      fileName,
+      metadata,
+      downloadUrl,
+    });
+  }
+
   const blob = await loadAttachmentBlob(cacheEntry, downloadUrl);
   const blobUrl = getAttachmentBlobUrl(cacheEntry, blob);
 
@@ -440,12 +470,15 @@ export const getCompletedAttachmentFileNamesForSave = (attachments = []) => {
 
 export const uploadAttachmentFile = async ({
   attachment,
+  signal,
   conversationId,
   messageId,
   onUpdate,
   onComplete,
   onDuplicate,
 }) => {
+  if (signal?.aborted) return;
+
   if (!attachment?.clientKey || !attachment.file || !conversationId || !messageId) {
     onUpdate?.(attachment?.clientKey, { status: "error" });
     return;
@@ -453,51 +486,71 @@ export const uploadAttachmentFile = async ({
 
   let fileToUpload = attachment.file;
 
-  try {
-    onUpdate?.(attachment.clientKey, { status: "compressing", progress: 0 });
+  const hasPdfMimeType = attachment.file.type === "application/pdf";
+  const isPdf = await isValidPdfFile(attachment.file);
 
-    const compressedMedia = await compressMedia(
-      attachment.file,
-      (compressionProgress) => {
-        const progress = Math.round(
-          Math.max(0, Math.min(1, compressionProgress)) * 40,
-        );
-
-        onUpdate?.(attachment.clientKey, {
-          status: "compressing",
-          progress,
-        });
-      },
-    );
-
-    if (compressedMedia instanceof File) {
-      fileToUpload = new File(
-        [compressedMedia],
-        sanitizeFileName(compressedMedia.name),
-        { type: compressedMedia.type || attachment.file.type },
-      );
-    } else {
-      fileToUpload = new File(
-        [compressedMedia],
-        getFileNameWithType(
-          attachment.fileName,
-          compressedMedia.type || attachment.file.type,
-        ),
-        { type: compressedMedia.type || attachment.file.type },
-      );
-    }
-
-    onUpdate?.(attachment.clientKey, {
-      file: fileToUpload,
-      fileName: fileToUpload.name,
-      byteSize: fileToUpload.size,
-      mediaKind: getMediaKind(fileToUpload.type, fileToUpload.name),
-    });
-  } catch (error) {
-    console.error("Attachment compression failed:", error);
+  if (
+    hasPdfMimeType &&
+    (!isPdf || !isPdfWithinSizeLimit(attachment.file))
+  ) {
     onUpdate?.(attachment.clientKey, { status: "error" });
     return;
   }
+
+  // PDFs bypass compression; images and videos are compressed.
+  if (!isPdf) {
+    try {
+      onUpdate?.(attachment.clientKey, {
+        status: "compressing",
+        progress: 0,
+      });
+
+      const compressedMedia = await compressMedia(
+        attachment.file,
+        (compressionProgress) => {
+          const progress = Math.round(
+            Math.max(0, Math.min(1, compressionProgress)) * 40,
+          );
+
+          onUpdate?.(attachment.clientKey, {
+            status: "compressing",
+            progress,
+          });
+        },
+        {},
+      );
+
+      if (compressedMedia instanceof File) {
+        fileToUpload = new File(
+          [compressedMedia],
+          sanitizeFileName(compressedMedia.name),
+          { type: compressedMedia.type || attachment.file.type },
+        );
+      } else {
+        fileToUpload = new File(
+          [compressedMedia],
+          getFileNameWithType(
+            attachment.fileName,
+            compressedMedia.type || attachment.file.type,
+          ),
+          { type: compressedMedia.type || attachment.file.type },
+        );
+      }
+
+      onUpdate?.(attachment.clientKey, {
+        file: fileToUpload,
+        fileName: fileToUpload.name,
+        byteSize: fileToUpload.size,
+        mediaKind: getMediaKind(fileToUpload.type, fileToUpload.name),
+      });
+    } catch (error) {
+      console.error("Attachment compression failed:", error);
+      onUpdate?.(attachment.clientKey, { status: "error" });
+      return;
+    }
+  }
+
+  if (signal?.aborted) return;
 
   const fileName = sanitizeFileName(fileToUpload.name);
   const objectPath = getMessageAttachmentObjectPath({
@@ -517,8 +570,16 @@ export const uploadAttachmentFile = async ({
     ? { contentType: fileToUpload.type }
     : undefined;
   const task = uploadBytesResumable(objectRef, fileToUpload, uploadMetadata);
+  const cancelUpload = () => task.cancel();
 
-  task.on(
+  signal?.addEventListener("abort", cancelUpload, { once: true });
+
+  if (signal?.aborted) {
+    task.cancel();
+  }
+
+  await new Promise((resolve) => {
+    task.on(
     "state_changed",
     (snapshot) => {
       const uploadProgress = snapshot.totalBytes
@@ -528,10 +589,18 @@ export const uploadAttachmentFile = async ({
       onUpdate?.(attachment.clientKey, { progress, status: "uploading" });
     },
     async (error) => {
+      signal?.removeEventListener("abort", cancelUpload);
+
+      if (signal?.aborted || error?.code === "storage/canceled") {
+        resolve();
+        return;
+      }
+
       if (error?.code === "storage/unauthorized") {
         try {
           await getMetadata(objectRef);
           onDuplicate?.(fileName);
+          resolve();
           return;
         } catch (metadataError) {
           if (metadataError?.code !== "storage/object-not-found") {
@@ -545,8 +614,21 @@ export const uploadAttachmentFile = async ({
 
       console.error("Attachment upload failed:", error);
       onUpdate?.(attachment.clientKey, { status: "error" });
+      resolve();
     },
     async () => {
+      signal?.removeEventListener("abort", cancelUpload);
+
+      if (signal?.aborted) {
+        try {
+          await deleteObject(objectRef);
+        } catch (error) {
+          console.error("Failed to clean up canceled attachment:", error);
+        }
+        resolve();
+        return;
+      }
+
       const cacheEntry = getAttachmentCacheEntry(objectPath);
       revokeAttachmentBlobUrl(cacheEntry);
       cacheEntry.blob = fileToUpload;
@@ -569,6 +651,8 @@ export const uploadAttachmentFile = async ({
       } catch (error) {
         console.error("Attachment completion handler failed:", error);
       }
+      resolve();
     },
   );
+  });
 };
