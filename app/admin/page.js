@@ -49,7 +49,7 @@ export default function Admin() {
   const [hasMore, setHasMore] = useState(true);
 
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isConversationsLoading, setIsConversationsLoading] = useState(false);
+  const [isConversationsLoading, setIsConversationsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -385,7 +385,7 @@ export default function Admin() {
     }
   };
 
-  if (isAuthLoading || isConversationsLoading) {
+  if (isAuthLoading) {
     return <InboxSkeleton />;
   }
 
@@ -432,16 +432,29 @@ export default function Admin() {
                 {activeView === "inbox" && (
                   <div className="h-full flex flex-col min-h-0 px-6 pt-3 pb-4">
                     <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain pt-2">
-                      <ConversationList
-                        conversations={documents}
-                        isAdmin
-                        onSelectConversation={(conversation) => {
-                          setSelectedMessage(conversation);
-                          setActiveView("review");
-                        }}
-                      />
+                      {isConversationsLoading ? (
+                        <div
+                          className="flex flex-col items-center justify-center py-16"
+                          role="status"
+                          aria-label="Loading messages"
+                        >
+                          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+                          <p className="mt-4 text-sm text-gray-500">
+                            Loading messages...
+                          </p>
+                        </div>
+                      ) : (
+                        <ConversationList
+                          conversations={documents}
+                          isAdmin
+                          onSelectConversation={(conversation) => {
+                            setSelectedMessage(conversation);
+                            setActiveView("review");
+                          }}
+                        />
+                      )}
 
-                      {hasMore && (
+                      {!isConversationsLoading && hasMore && (
                         <div className="flex justify-center pt-4 pb-6">
                           {isLoadingMore ? (
                             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
