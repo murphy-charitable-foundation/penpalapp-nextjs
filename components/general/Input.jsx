@@ -9,6 +9,7 @@ export default function Input({
   disabled = false,
   error,
   label,
+  suppressHydrationWarning = false,
 }) {
   return (
     <div className="relative px-6">
@@ -21,6 +22,7 @@ export default function Input({
         </label>
       )}
       <input
+        suppressHydrationWarning={suppressHydrationWarning}
         type={type}
         value={value}
         onChange={onChange}
@@ -48,4 +50,4 @@ export default function Input({
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
-} 
+}
