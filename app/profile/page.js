@@ -24,6 +24,7 @@ import { usePageAnalytics } from "../useAnalytics";
 import { logError } from "../utils/analytics";
 import { useCachedUserLogins } from "../contexts/CachedUserLoginContext";
 import { refreshCachedUserPhoto } from "../utils/refreshCachedUserPhoto";
+import { clearCachedUser } from "../utils/sessionUserCache";
 
 /* ❗ If you add new fields to the user profile, update this file as well as the view profile page, pages/createChild API, and create-child-profile page */
 
@@ -172,6 +173,8 @@ export default function EditProfile() {
         return;
       }
 
+      clearCachedUser(user.uid);
+
       try {
         await refreshCachedUserPhoto(user.uid, updateCachedUserLogin);
       } catch (e) {
@@ -220,6 +223,7 @@ export default function EditProfile() {
     try {
       setIsSaving(true);
       await setDoc(ref, payload, { merge: true });
+      clearCachedUser(user.uid);
       setHasUnsavedChanges(false);
       setIsSaved(true);
       setDialogTitle("Congratulations!");
