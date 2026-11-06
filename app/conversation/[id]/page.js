@@ -923,13 +923,11 @@ export default function Page({ params }) {
         await setDoc(messageRef, messageDataWithAttachments);
       }
       
-      if (globalConversationReference) {
-        sendNotification(globalConversationReference, "").catch((error) => {
-          logError(error, {
-            description: "Failed to send notification",
-          });
+      sendNotification(doc(db, "conversations", id), "").catch((error) => {
+        logError(error, {
+          description: "Failed to send notification",
         });
-      }
+      });
 
       // Clear states
       setMessageContent("");

@@ -364,14 +364,14 @@ export const fetchRecipients = async (id) => {
 export const sendNotification = async (conversationRef, message) => {
   // Verify that the user is authenticated.
   if (!auth.currentUser) {
-    console.error("User not authenticated.");
-    return;
+    throw new Error("Cannot send notification: user is not authenticated.");
   }
 
   // Validate conversationRef parameter.
   if (!conversationRef || !conversationRef.id) {
-    console.error("Invalid conversationRef: missing or has no id property.");
-    return;
+    throw new Error(
+      "Cannot send notification: conversationRef is missing or has no id.",
+    );
   }
 
   try {
@@ -398,15 +398,23 @@ export const sendNotification = async (conversationRef, message) => {
 
     const result = await response.json();
     if (!response.ok) {
-      console.error("Failed to send notifications:", result.error);
-      return result;
+      throw new Error(result.error || "Failed to send notifications.");
+    }
+
+    const hasFailedNotifications = result.results?.some(
+      (notification) => notification.success === false,
+    );
+
+    if (hasFailedNotifications) {
+      throw new Error("One or more notifications failed to send.");
     }
 
     console.log("Notifications sent successfully:", result);
+
     return result;
-  } catch (e) {
-    console.error("Error in sendNotification:", e);
-    return { error: e.message };
+  } catch (error) {
+    console.error("Error in sendNotification:", error);
+    throw error;
   }
 };
 
