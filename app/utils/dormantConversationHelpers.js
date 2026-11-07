@@ -1,6 +1,6 @@
 import { db } from "../firebaseAdmin";
 import { sendEmailMessage } from "./email";
-import { logError } from "./analytics";
+import { logError } from "./serverAnalytics.mjs";
 import generateDormantConversationEmailTemplate from "../api/dormantConversation/emailTemplate";
 
 
@@ -15,7 +15,7 @@ const formatListWithAnd = (arr) => {
   return `${allButLast}, & ${last}`;
 };
 
-export const sendEmail = async (conversationId, members, toEmails, reason) => {
+export const sendEmail = async (conversationId, members, toEmails, reason, userId) => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   let message;
   const membersNames = members.map(({ firstName = "", lastName = "" }) =>
@@ -87,8 +87,9 @@ export const sendEmail = async (conversationId, members, toEmails, reason) => {
       msg: { to: msg.to, from: msg.from, subject: msg.subject, text: msg.text },
     };
   } catch (error) {
-    logError(error, {
+    await logError(error, {
       description: "Failed to send email.",
+      userId,
     });
     throw {
       message: "Failed to send email.",

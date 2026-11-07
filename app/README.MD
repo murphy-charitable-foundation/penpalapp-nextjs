@@ -293,7 +293,13 @@ logInEvent("success", "User logged in via Google");
 ```
 
 ### `logError(error, errorInfo)`
-Logs an error to Firebase and Sentry.
+In browser code, logs an `uncaught_error` event to Firebase Analytics.
+Server code should import `logError` from `utils/serverAnalytics.mjs` and
+await it before returning a response. Server errors are always written to
+server logs with their details, a correlation ID, and the verified Firebase
+UID when provided as `userId`. The GA4 event uses the same parameter names,
+but omits error text and arbitrary context to avoid sending personal data;
+use `error_event_id` to find the full details in server logs.
 
 **Example:**
 
