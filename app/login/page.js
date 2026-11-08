@@ -158,8 +158,9 @@ export default function Login() {
       <PageContainer maxWidth="md" padding="p-8">
         <PageHeader title="Login" backHref="/" />
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} suppressHydrationWarning>
           <Input
+            suppressHydrationWarning
             type="email"
             value={email}
             onChange={(e) => {
@@ -174,6 +175,7 @@ export default function Login() {
           />
 
           <Input
+            suppressHydrationWarning
             type="password"
             value={password}
             onChange={(e) => {

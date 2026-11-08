@@ -239,6 +239,7 @@ export default function CreateAccount() {
                 alt="Your Logo"
                 width={150}
                 height={150}
+                loading="eager"
               />
             </div>
 

@@ -1,12 +1,11 @@
 const SW_SCRIPT = '/sw.js';
 const SW_SCOPE = '/';
 
-const isServiceWorkerSupported = () =>
-  typeof window !== 'undefined' && 'serviceWorker' in navigator;
-
-// export const isLocalhost = () =>
-//   typeof window !== 'undefined' &&
-//   ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+export const isServiceWorkerSupported = () =>
+  typeof window !== 'undefined' &&
+  window.isSecureContext !== false &&
+  typeof navigator !== 'undefined' &&
+  typeof navigator.serviceWorker?.register === 'function';
 
 const cleanupLegacyFirebaseMessagingWorkers = async () => {
   if (!isServiceWorkerSupported()) return;

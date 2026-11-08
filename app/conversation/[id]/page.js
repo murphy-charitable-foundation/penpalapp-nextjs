@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, use } from "react";
 import { db } from "../../firebaseConfig";
 import {
   collection,
@@ -19,7 +19,6 @@ import {
   fetchRecipients,
   fetchDraft,
   getMessageSummary,
-  sendNotification,
 } from "../../utils/conversationsFunctions";
 import { getUserPfp } from "../../utils/avatarUtils";
 
@@ -67,7 +66,8 @@ const attachmentFileNamesToSave = (attachments) =>
 
 const getMessageContentForSave = (content) => (content ?? "").trim();
 
-export default function Page({ params }) {
+export default function Page(props) {
+  const params = use(props.params);
   const { id } = params;
 
   const router = useRouter();
@@ -922,13 +922,6 @@ export default function Page({ params }) {
         messageRef = doc(messagesRef);
         await setDoc(messageRef, messageDataWithAttachments);
       }
-      
-      sendNotification(doc(db, "conversations", id), "").catch((error) => {
-        logError(error, {
-          description: "Failed to send notification",
-        });
-      });
-
       // Clear states
       setMessageContent("");
       setDraft(null);
@@ -1491,7 +1484,11 @@ export default function Page({ params }) {
       return userLocation || "";
     }
 
-    return message.senderLocation || recipients[0]?.location || "";
+    const sender = recipients.find(
+      (recipient) => recipient.id === message.sent_by?.id,
+    );
+
+    return message.senderLocation || sender?.location || "";
   };
 
   const canSendMessage = () => {
@@ -1540,8 +1537,9 @@ export default function Page({ params }) {
                 <Image
                   src="/send-message-icon.png"
                   alt={editingMessageId ? "Update message" : "Send message"}
-                  width={30}
-                  height={30}
+                  width={32}
+                  height={33}
+                  style={{ width: 30, height: "auto" }}
                   className="object-contain"
                   id="send-message"
                 />
@@ -1623,6 +1621,9 @@ export default function Page({ params }) {
             const messageId = message.id;
             const isSelected = selectedMessageId === messageId;
             const isSenderUser = message.sent_by?.id === user?.uid;
+            const sender = recipients.find(
+              (recipient) => recipient.id === message.sent_by?.id,
+            );
             const location = getSenderLocation(message);
 
             return (
@@ -1642,9 +1643,9 @@ export default function Page({ params }) {
                           photo_uri={
                             isSenderUser
                               ? profileImage
-                              : recipients[0]?.pfp
+                              : sender?.pfp
                           }
-                          name={isSenderUser ? "Me" : recipients[0]?.first_name}
+                          name={isSenderUser ? "Me" : sender?.first_name}
                           size={12}
                         />
                       </div>
@@ -1654,7 +1655,7 @@ export default function Page({ params }) {
                           <span className="font-bold text-black">
                             {isSenderUser
                               ? "Me"
-                              : `${recipients[0]?.first_name} ${recipients[0]?.last_name}`}
+                              : `${sender?.first_name ?? "Unknown"} ${sender?.last_name ?? ""}`.trim()}
                           </span>
                           {location && (
                             <span className="text-black ml-2 text-sm">
