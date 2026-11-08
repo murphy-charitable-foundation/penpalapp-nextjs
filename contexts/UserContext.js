@@ -72,6 +72,7 @@ export function UserProvider({ children }) {
         setUserData(null);
         setProfileImage('');
         setUserDocRef(null);
+        setAnalyticsUserType(null);
 
         if (!PUBLIC_PATHS.includes(pathname)) {
           router.push('/login');

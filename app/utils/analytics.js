@@ -9,9 +9,9 @@ import { buildErrorEvent, normalizeError } from "./errorEvent.mjs";
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
 
 const setAnalyticsUserType = (userType) => {
-  if (analytics && userType) {
+  if (analytics) {
     setUserProperties(analytics, {
-      user_type: userType,
+      user_type: userType || "unknown",
     });
   }
 };
@@ -60,10 +60,11 @@ const logButtonEvent = (buttonName, pagePath) => {
 };
 
 // status is either "success" or "failure"
-const logInEvent = (status) => {
+const logInEvent = (status, userType) => {
   if (analytics) {
     logEvent(analytics, "login", {
       status: status,
+      user_type: userType,
     });
   }
 };
