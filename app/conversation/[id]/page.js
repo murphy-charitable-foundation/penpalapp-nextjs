@@ -311,11 +311,11 @@ export default function Page(props) {
   );
 
   const updateAttachment = (clientKey, patch) => {
-    setPendingAttachments((current) =>
-      current.map((item) =>
-        item.clientKey === clientKey ? { ...item, ...patch } : item,
-      ),
+    const updatedAttachments = pendingAttachmentsRef.current.map((item) =>
+      item.clientKey === clientKey ? { ...item, ...patch } : item,
     );
+    pendingAttachmentsRef.current = updatedAttachments;
+    setPendingAttachments(updatedAttachments);
   };
 
   const removeAttachment = (clientKey) => {
@@ -327,97 +327,118 @@ export default function Page(props) {
       closeDraftAttachmentViewer();
     }
 
-    setPendingAttachments((current) => {
-      const remainingAttachments = current.filter(
-        (item) => item.clientKey !== clientKey,
-      );
-      pendingAttachmentsRef.current = remainingAttachments;
-      return remainingAttachments;
-    });
+    const remainingAttachments = pendingAttachmentsRef.current.filter(
+      (item) => item.clientKey !== clientKey,
+    );
+    pendingAttachmentsRef.current = remainingAttachments;
+    setPendingAttachments(remainingAttachments);
   };
 
   const uploadAttachment = async (attachment) => {
-    const signal = attachmentAbortControllersRef.current.get(
-      attachment.clientKey,
-    )?.signal;
-
-    if (!attachment || !user?.uid || !messagesRef) {
-      updateAttachment(attachment?.clientKey, { status: "error" });
-      return;
-    }
-
-    const isEditingExistingMessage = Boolean(editingMessageId);
-    let targetMessageId = editingMessageId;
-
-    if (!isEditingExistingMessage) {
-      let draftMessage;
-
-      try {
-        draftMessage = await saveDraft(messageContent);
-      } catch (error) {
-        updateAttachment(attachment.clientKey, { status: "error" });
-        return;
-      }
-
-      if (!draftMessage?.id) {
-        updateAttachment(attachment.clientKey, { status: "error" });
-        return;
-      }
-
-      targetMessageId = draftMessage.id;
-    }
-
-    if (!targetMessageId) {
-      updateAttachment(attachment.clientKey, { status: "error" });
-      return;
-    }
-
-    if (isEditingExistingMessage) {
-      editSessionUploadFileNamesRef.current.add(attachment.fileName);
-    }
-
-    const uploadPromise = uploadAttachmentFile({
-      attachment,
-      signal,
-      conversationId: id,
-      messageId: targetMessageId,
-      onUpdate: updateAttachment,
-      onDuplicate: (fileName) => {
-        editSessionUploadFileNamesRef.current.delete(fileName);
-        removeAttachment(attachment.clientKey);
-        alert(`A file named "${fileName}" has already been uploaded.`);
-      },
-      onComplete: () => {
-        setPendingAttachments((current) => {
-          pendingAttachmentsRef.current = current;
-          return current;
-        });
-
-        if (!isEditingExistingMessage) {
-          saveDraft(
-            messageContentRef.current,
-            pendingAttachmentsRef.current,
-            targetMessageId,
-          ).catch((error) => {
-            logError(error, {
-              description: "Failed to save draft after attachment upload:",
-            });
-          });
-        }
-      },
-    });
-
-    if (isEditingExistingMessage) {
-      editSessionUploadPromisesRef.current.add(uploadPromise);
-    }
+    let uploadPromise;
 
     try {
+      if (!attachment || !user?.uid || !messagesRef) {
+        updateAttachment(attachment?.clientKey, { status: "error" });
+        return;
+      }
+
+      const signal = attachmentAbortControllersRef.current.get(
+        attachment.clientKey,
+      )?.signal;
+
+      const isEditingExistingMessage = Boolean(editingMessageId);
+      let targetMessageId = editingMessageId;
+
+      if (!isEditingExistingMessage) {
+        let draftMessage;
+
+        try {
+          draftMessage = await saveDraft(messageContent);
+        } catch (error) {
+          updateAttachment(attachment.clientKey, { status: "error" });
+          return;
+        }
+
+        if (!draftMessage?.id) {
+          updateAttachment(attachment.clientKey, { status: "error" });
+          return;
+        }
+
+        targetMessageId = draftMessage.id;
+      }
+
+      if (!targetMessageId) {
+        updateAttachment(attachment.clientKey, { status: "error" });
+        return;
+      }
+
+      if (isEditingExistingMessage) {
+        editSessionUploadFileNamesRef.current.add(attachment.fileName);
+      }
+
+      uploadPromise = uploadAttachmentFile({
+        attachment,
+        signal,
+        conversationId: id,
+        messageId: targetMessageId,
+        onUpdate: updateAttachment,
+        onDuplicate: (fileName) => {
+          editSessionUploadFileNamesRef.current.delete(fileName);
+          removeAttachment(attachment.clientKey);
+          alert(`A file named "${fileName}" has already been uploaded.`);
+        },
+        onComplete: async (fileName) => {
+          const completedAttachments = pendingAttachmentsRef.current.map(
+            (item) =>
+              item.clientKey === attachment.clientKey
+                ? {
+                    ...item,
+                    fileName,
+                    file: null,
+                    status: "done",
+                    progress: 100,
+                  }
+                : item,
+          );
+          pendingAttachmentsRef.current = completedAttachments;
+          setPendingAttachments(completedAttachments);
+
+          if (!isEditingExistingMessage) {
+            try {
+              await saveDraft(
+                messageContentRef.current,
+                completedAttachments,
+                targetMessageId,
+              );
+            } catch (error) {
+              logError(error, {
+                description: "Failed to save draft after attachment upload:",
+              });
+            }
+          }
+        },
+      });
+
+      if (isEditingExistingMessage) {
+        editSessionUploadPromisesRef.current.add(uploadPromise);
+      }
+
       await uploadPromise;
     } finally {
-      activeAttachmentFileNamesRef.current.delete(
-        sanitizeFileName(attachment.file.name),
-      );
-      editSessionUploadPromisesRef.current.delete(uploadPromise);
+      if (attachment?.file?.name) {
+        activeAttachmentFileNamesRef.current.delete(
+          sanitizeFileName(attachment.file.name),
+        );
+      }
+
+      if (attachment?.clientKey) {
+        attachmentAbortControllersRef.current.delete(attachment.clientKey);
+      }
+
+      if (uploadPromise) {
+        editSessionUploadPromisesRef.current.delete(uploadPromise);
+      }
     }
   };
 
@@ -448,7 +469,7 @@ export default function Page(props) {
       ...pendingAttachmentsRef.current,
       newAttachment,
     ];
-    setPendingAttachments((current) => [...current, newAttachment]);
+    setPendingAttachments(pendingAttachmentsRef.current);
     setIsEditing(true);
     setHasDraftContent(true);
     uploadAttachment(newAttachment);
