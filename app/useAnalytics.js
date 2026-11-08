@@ -708,6 +708,62 @@ const usePageAnalytics = (pagePath) => {
   }, [pagePath]);
 };
 
+// Safe storage helpers for restricted browser environments
+class SafeStorage {
+  static #inMemoryStorage = new Map();
+  static #isStorageAvailable = null;
+
+  static #checkStorageAvailable() {
+    if (SafeStorage.#isStorageAvailable !== null) {
+      return SafeStorage.#isStorageAvailable;
+    }
+
+    try {
+      const testKey = "__storage_test__";
+      localStorage.setItem(testKey, "1");
+      localStorage.removeItem(testKey);
+      SafeStorage.#isStorageAvailable = true;
+    } catch (e) {
+      SafeStorage.#isStorageAvailable = false;
+    }
+    return SafeStorage.#isStorageAvailable;
+  }
+
+  static getItem(key) {
+    try {
+      if (SafeStorage.#checkStorageAvailable()) {
+        return localStorage.getItem(key);
+      }
+    } catch (e) {
+      // Silently fall back to in-memory storage
+    }
+    return SafeStorage.#inMemoryStorage.get(key) ?? null;
+  }
+
+  static setItem(key, value) {
+    try {
+      if (SafeStorage.#checkStorageAvailable()) {
+        localStorage.setItem(key, value);
+        return;
+      }
+    } catch (e) {
+      // Silently fall back to in-memory storage
+    }
+    SafeStorage.#inMemoryStorage.set(key, value);
+  }
+
+  static removeItem(key) {
+    try {
+      if (SafeStorage.#checkStorageAvailable()) {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {
+      // Silently fall back to in-memory storage
+    }
+    SafeStorage.#inMemoryStorage.delete(key);
+  }
+}
+
 // Track the uncaught errors
 /*
 This app automatically tracks and reports global (unhandled) errors and 
@@ -769,22 +825,31 @@ class GlobalTracker {
    * Adds listeners for online and offline events to track internet connectivity.
    * When the connection is lost, it stores the start time of the disconnection.
    * When connectivity returns, it logs the duration of the completed outage.
+   * Uses SafeStorage to gracefully fall back to in-memory tracking if storage is unavailable.
    */
   initializeConnectivityTracking() {
     const storageKey = "internetDisconnectionStartTime";
-    const storedStartTime = Number(localStorage.getItem(storageKey));
-
-    if (Number.isFinite(storedStartTime) && storedStartTime > 0) {
-      this.disconnectionStartTime = storedStartTime;
-    } else {
-      localStorage.removeItem(storageKey);
+    
+    try {
+      const storedStartTime = Number(SafeStorage.getItem(storageKey));
+      if (Number.isFinite(storedStartTime) && storedStartTime > 0) {
+        this.disconnectionStartTime = storedStartTime;
+      } else {
+        SafeStorage.removeItem(storageKey);
+      }
+    } catch (e) {
+      // If restoring state fails, continue with in-memory tracking only
     }
 
     const recordDisconnection = () => {
       if (this.disconnectionStartTime) return;
 
       this.disconnectionStartTime = Date.now();
-      localStorage.setItem(storageKey, String(this.disconnectionStartTime));
+      try {
+        SafeStorage.setItem(storageKey, String(this.disconnectionStartTime));
+      } catch (e) {
+        // Storage unavailable; continue with in-memory tracking
+      }
     };
 
     const logCompletedDisconnection = () => {
@@ -796,7 +861,11 @@ class GlobalTracker {
       );
       logInternetOffline(duration);
       this.disconnectionStartTime = null;
-      localStorage.removeItem(storageKey);
+      try {
+        SafeStorage.removeItem(storageKey);
+      } catch (e) {
+        // Storage unavailable; continue with in-memory tracking
+      }
     };
 
     if (navigator.onLine) {
@@ -826,4 +895,4 @@ class GlobalTracker {
 const globalTracker = new GlobalTracker();
 globalTracker.initialize();
 
-export { usePageAnalytics, globalTracker };
+export { usePageAnalytics, globalTracker, SafeStorage };
