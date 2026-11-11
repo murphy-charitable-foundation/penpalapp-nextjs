@@ -617,41 +617,57 @@ export const uploadAttachmentFile = async ({
       resolve();
     },
     async () => {
-      signal?.removeEventListener("abort", cancelUpload);
-
-      if (signal?.aborted) {
-        try {
-          await deleteObject(objectRef);
-        } catch (error) {
-          console.error("Failed to clean up canceled attachment:", error);
-        }
-        resolve();
-        return;
-      }
-
-      const cacheEntry = getAttachmentCacheEntry(objectPath);
-      revokeAttachmentBlobUrl(cacheEntry);
-      cacheEntry.blob = fileToUpload;
-      cacheEntry.metadata = {
-        size: fileToUpload.size,
-        contentType: fileToUpload.type || "",
-      };
-
-      onUpdate?.(attachment.clientKey, {
-        fileName,
-        file: null,
-        status: "done",
-        progress: 100,
-        byteSize: fileToUpload.size,
-        mediaKind: getMediaKind(fileToUpload.type, fileName),
-      });
-
       try {
-        await onComplete?.(fileName);
-      } catch (error) {
-        console.error("Attachment completion handler failed:", error);
+        const cleanupCanceledUpload = async () => {
+          try {
+            await deleteObject(objectRef);
+          } catch (error) {
+            if (error?.code !== "storage/object-not-found") {
+              console.error("Failed to clean up canceled attachment:", error);
+            }
+          }
+        };
+
+        if (signal?.aborted) {
+          await cleanupCanceledUpload();
+          return;
+        }
+
+        const cacheEntry = getAttachmentCacheEntry(objectPath);
+        revokeAttachmentBlobUrl(cacheEntry);
+        cacheEntry.blob = fileToUpload;
+        cacheEntry.metadata = {
+          size: fileToUpload.size,
+          contentType: fileToUpload.type || "",
+        };
+
+        if (signal?.aborted) {
+          await cleanupCanceledUpload();
+          return;
+        }
+
+        onUpdate?.(attachment.clientKey, {
+          fileName,
+          file: null,
+          status: "done",
+          progress: 100,
+          byteSize: fileToUpload.size,
+          mediaKind: getMediaKind(fileToUpload.type, fileName),
+        });
+
+        try {
+          await onComplete?.(fileName);
+        } catch (error) {
+          console.error("Attachment completion handler failed:", error);
+        }
+
+        if (signal?.aborted) {
+          await cleanupCanceledUpload();
+        }
+      } finally {
+        signal?.removeEventListener("abort", cancelUpload);
+        resolve();
       }
-      resolve();
     },
   );
   });

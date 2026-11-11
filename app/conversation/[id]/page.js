@@ -408,7 +408,7 @@ export default function Page(props) {
             try {
               await saveDraft(
                 messageContentRef.current,
-                completedAttachments,
+                () => pendingAttachmentsRef.current,
                 targetMessageId,
               );
             } catch (error) {
@@ -747,17 +747,26 @@ export default function Page(props) {
   const saveDraft = useCallback(
     (
       content,
-      draftAttachments = pendingAttachments,
+      draftAttachments = () => pendingAttachmentsRef.current,
       targetDraftId = null,
     ) => {
-      const runSave = () =>
-        performSaveDraft(content, draftAttachments, targetDraftId);
-      const queuedSave = draftSaveQueueRef.current.then(runSave, runSave);
+      const runSave = () => {
+        const attachments =
+          typeof draftAttachments === "function"
+            ? draftAttachments()
+            : draftAttachments;
+
+        return performSaveDraft(content, attachments, targetDraftId);
+      };
+      const queuedSave = draftSaveQueueRef.current.then(
+        runSave,
+        runSave,
+      );
 
       draftSaveQueueRef.current = queuedSave.catch(() => null);
       return queuedSave;
     },
-    [pendingAttachments, performSaveDraft],
+    [performSaveDraft],
   );
 
   const handleMessageChange = async (e) => {
