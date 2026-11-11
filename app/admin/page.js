@@ -433,16 +433,7 @@ export default function Admin() {
                   <div className="h-full flex flex-col min-h-0 px-6 pt-3 pb-4">
                     <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain pt-2">
                       {isConversationsLoading ? (
-                        <div
-                          className="flex flex-col items-center justify-center py-16"
-                          role="status"
-                          aria-label="Loading messages"
-                        >
-                          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
-                          <p className="mt-4 text-sm text-gray-500">
-                            Loading messages...
-                          </p>
-                        </div>
+                        <InboxSkeleton listOnly />
                       ) : (
                         <ConversationList
                           conversations={documents}
