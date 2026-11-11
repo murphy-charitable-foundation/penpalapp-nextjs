@@ -165,8 +165,9 @@ export default function Login() {
       <PageContainer maxWidth="md" padding="p-8" className="!overflow-y-auto">
         <PageHeader title="Login" backHref="/" />
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} suppressHydrationWarning>
           <Input
+            suppressHydrationWarning
             type="email"
             onFocus={handleInputFocus}
             value={email}
@@ -182,6 +183,7 @@ export default function Login() {
           />
 
           <Input
+            suppressHydrationWarning
             type="password"
             onFocus={handleInputFocus}
             value={password}
