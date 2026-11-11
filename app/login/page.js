@@ -36,6 +36,19 @@ export default function Login() {
   } = useCachedUserLogins();
   const hasRedirected = useRef(false);
 
+  const handleInputFocus = (event) => {
+    const input = event.currentTarget;
+
+    window.setTimeout(() => {
+      if (document.activeElement === input) {
+        input.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 300);
+  };
+
   usePageAnalytics(`/login`);
 
   // Only depend on [hydrated]. Do NOT add searchParams or cachedUserLogins - searchParams
@@ -149,13 +162,14 @@ export default function Login() {
 
   return (
     <PageBackground>
-      <PageContainer maxWidth="md" padding="p-8">
+      <PageContainer maxWidth="md" padding="p-8" className="!overflow-y-auto">
         <PageHeader title="Login" backHref="/" />
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit} suppressHydrationWarning>
           <Input
             suppressHydrationWarning
             type="email"
+            onFocus={handleInputFocus}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -171,6 +185,7 @@ export default function Login() {
           <Input
             suppressHydrationWarning
             type="password"
+            onFocus={handleInputFocus}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
