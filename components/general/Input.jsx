@@ -2,6 +2,7 @@ export default function Input({
   type = "text",
   value,
   onChange,
+  onFocus,
   placeholder,
   name,
   id,
@@ -24,6 +25,7 @@ export default function Input({
         type={type}
         value={value}
         onChange={onChange}
+        onFocus={onFocus}
         name={name}
         id={id}
         required={required}
