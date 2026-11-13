@@ -7,7 +7,7 @@ import { logError } from "./utils/analytics";
 
 export default function GlobalError({ error }) {
   useEffect(() => {
-    logError(error)
+    logError(error, { description: "Global error boundary", source: "react_boundary" })
   }, [error]);
 
   return (

@@ -20,6 +20,7 @@ import {
   resolveMessageAttachmentPreview,
   resolveMessageAttachments,
 } from "../../../app/utils/attachments";
+import { logError } from "../../../app/utils/analytics";
 
 const PdfViewer = dynamic(() => import("./PdfViewer"), {
   ssr: false,
@@ -234,7 +235,7 @@ export default function MessageAttachments({
         fileName: attachment.fileName,
       });
     } catch (error) {
-      console.error("Failed to open attachment preview:", error);
+      logError(error, {description: "Failed to open attachment preview"});
     } finally {
       if (previewRequestRef.current === requestId) {
         setOpeningFileName(null);

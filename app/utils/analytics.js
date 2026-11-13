@@ -1,12 +1,29 @@
 /**
  * Usage is commented in useAnalytics.js and donate/page.js
  */
-import { getAnalytics, logEvent } from "firebase/analytics";
+import { getAnalytics, logEvent, setUserProperties } from "firebase/analytics";
 import { app } from "../firebaseConfig.js";
-import * as Sentry from "@sentry/nextjs";
+import { buildErrorEvent, normalizeError } from "./errorEvent.mjs";
 
 // Initialize Firebase Analytics
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
+
+const setAnalyticsUserType = (userType) => {
+  if (analytics) {
+    setUserProperties(analytics, {
+      user_type: userType || "unknown",
+    });
+  }
+};
+
+const logDormantMessageSent = (reason, userUid) => {
+  if (analytics) {
+    logEvent(analytics, "dormant_message_sent", {
+      dormant_conversation_reason: reason || "unknown",
+      dormant_conversation_user_uid: userUid || "unknown",
+    });
+  }
+};
 
 // Function to track page views
 /**
@@ -21,7 +38,7 @@ const logPageView = (pagePath, viewTime) => {
     logEvent(analytics, "page_view", {
       page_path: pagePath,
       page_title: pagePath,
-      screen_time: viewTime, // seconds
+      page_screen_time: viewTime, // seconds
     });
   }
 };
@@ -43,38 +60,38 @@ const logButtonEvent = (buttonName, pagePath) => {
 };
 
 // status is either "success" or "failure"
-const logInEvent = (status) => {
+const logInEvent = (status, userType) => {
   if (analytics) {
     logEvent(analytics, "login", {
       status: status,
+      user_type: userType,
     });
   }
 };
 
 /**
- * Logs an uncaught error to Firebase Analytics.
+ * Logs an error to Firebase Analytics as an "uncaught_error" event.
  *
- * @param {Error} error The error object to log.
+ * errorInfo.description is sent as error_description (what the app was doing).
+ * errorInfo.source is sent as error_source (e.g. "window.onerror",
+ * "unhandled_rejection", "web_worker", "react_boundary"); handled errors default to "handled".
+ * Any other keys are passed through unchanged.
+ *
+ * @param {*} error The error (or anything thrown) to log.
  * @param {Object} errorInfo Additional information to include in the error event.
  * @returns {void}
  */
-const logError = (error, errorInfo) => {
-  const errorObject =
-    error instanceof Error
-      ? error
-      : new Error(typeof error === "string" ? error : "Unknown error");
+const logError = (error, errorInfo = {}) => {
+  const pagePath = typeof window !== "undefined" ? window.location.pathname : "unknown";
+  const event = buildErrorEvent(error, errorInfo, pagePath);
+  if (!event) return;
 
   if (process.env.NODE_ENV === "development") {
-    console.error(errorObject, errorInfo);
+    console.error(normalizeError(error).error, errorInfo);
   }
 
   if (analytics) {
-    logEvent(analytics, "uncaught_error", {
-      error_name: errorObject.name || "Unknown",
-      error_message: errorObject.message || "No message",
-      error_stack: errorObject.stack || "No stack trace",
-      ...errorInfo,
-    });
+    logEvent(analytics, "uncaught_error", event);
   }
 };
 
@@ -102,23 +119,20 @@ const logDeadClick = (
   if (analytics) {
     //console.log("Logging dead click event");
     logEvent(analytics, "dead_click", {
-      clicked_element: elementClicked || "unknown",
       page_path: pagePath,
-      timestamp: new Date().toISOString(),
-      screenshot_url: screenshotUrl || null,
-      element_id: elementId || "unknown",
-      aria_label: ariaLabel || "unknown",
+      dead_clicked_element: elementClicked || "unknown",
+      dead_click_screenshot_url: screenshotUrl || null,
+      dead_click_element_id: elementId || "unknown",
+      dead_click_aria_label: ariaLabel || "unknown",
       ...meta,
     });
   }
 };
 
-const logInternetDisconnection = (duration, reconnected = false) => {
+const logInternetOffline = (duration) => {
   if (analytics) {
-    logEvent(analytics, "internet_connectivity", {
-      type: reconnected ? "reconnection" : "disconnection",
-      duration_seconds: duration,
-      timestamp: new Date().toISOString(),
+    logEvent(analytics, "internet_offline", {
+      offline_duration_seconds: duration,
     });
   }
 };
@@ -134,17 +148,19 @@ const logLoadingTime = (pagePath, loadingTime) => {
   if (analytics) {
     logEvent(analytics, "page_loading_time", {
       page_path: pagePath,
-      loading_time: loadingTime,
+      page_loading_time: loadingTime,
     });
   }
 };
 
 export {
+  setAnalyticsUserType,
+  logDormantMessageSent,
   logPageView,
   logButtonEvent,
   logInEvent,
   logError,
   logDeadClick,
-  logInternetDisconnection,
+  logInternetOffline,
   logLoadingTime,
 };

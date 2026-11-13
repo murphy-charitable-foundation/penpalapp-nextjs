@@ -26,7 +26,7 @@ import {
   logPageView,
   logError,
   logDeadClick,
-  logInternetDisconnection,
+  logInternetOffline,
   logLoadingTime,
 } from "./utils/analytics";
 import { useReportWebVitals } from "next/web-vitals";
@@ -643,12 +643,12 @@ const usePageAnalytics = (pagePath) => {
           target.id,
           target.getAttribute("aria-label"),
           {
-            deadness_score: deadnessScore,
-            ruleset_id: DEAD_CLICK_RULESET_ID,
-            outcome_present: hasOutcome,
-            network_signal: signals.networkRequestStarted,
-            route_signal: signals.routeTransitionObserved,
-            mutation_signal: signals.stateMutationNearTarget,
+            dead_click_deadness_score: deadnessScore,
+            dead_click_ruleset_id: DEAD_CLICK_RULESET_ID,
+            dead_click_outcome_present: hasOutcome,
+            dead_click_network_signal: signals.networkRequestStarted,
+            dead_click_route_signal: signals.routeTransitionObserved,
+            dead_click_mutation_signal: signals.stateMutationNearTarget,
           }
         );
       };
@@ -708,6 +708,62 @@ const usePageAnalytics = (pagePath) => {
   }, [pagePath]);
 };
 
+// Safe storage helpers for restricted browser environments
+class SafeStorage {
+  static #inMemoryStorage = new Map();
+  static #isStorageAvailable = null;
+
+  static #checkStorageAvailable() {
+    if (SafeStorage.#isStorageAvailable !== null) {
+      return SafeStorage.#isStorageAvailable;
+    }
+
+    try {
+      const testKey = "__storage_test__";
+      localStorage.setItem(testKey, "1");
+      localStorage.removeItem(testKey);
+      SafeStorage.#isStorageAvailable = true;
+    } catch (e) {
+      SafeStorage.#isStorageAvailable = false;
+    }
+    return SafeStorage.#isStorageAvailable;
+  }
+
+  static getItem(key) {
+    try {
+      if (SafeStorage.#checkStorageAvailable()) {
+        return localStorage.getItem(key);
+      }
+    } catch (e) {
+      // Silently fall back to in-memory storage
+    }
+    return SafeStorage.#inMemoryStorage.get(key) ?? null;
+  }
+
+  static setItem(key, value) {
+    try {
+      if (SafeStorage.#checkStorageAvailable()) {
+        localStorage.setItem(key, value);
+        return;
+      }
+    } catch (e) {
+      // Silently fall back to in-memory storage
+    }
+    SafeStorage.#inMemoryStorage.set(key, value);
+  }
+
+  static removeItem(key) {
+    try {
+      if (SafeStorage.#checkStorageAvailable()) {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {
+      // Silently fall back to in-memory storage
+    }
+    SafeStorage.#inMemoryStorage.delete(key);
+  }
+}
+
 // Track the uncaught errors
 /*
 This app automatically tracks and reports global (unhandled) errors and 
@@ -744,43 +800,82 @@ class GlobalTracker {
   addErrorListeners() {
     // Handle regular uncaught errors
     window.onerror = (message, source, lineno, colno, error) => {
-      logError(error || new Error(message), {
-        type: "uncaught_error",
-        source: source,
-        line: lineno,
-        column: colno
-      });
+      // `error` is null for cross-origin/script-load failures; fall back to the raw details.
+      logError(
+        error || {
+          message: typeof message === "string" ? message : "Script error",
+          filename: source,
+          lineno,
+          colno,
+        },
+        { description: String(message), source: "window.onerror" }
+      );
     };
 
     // Handle unhandled promise rejections
     window.onunhandledrejection = (event) => {
       logError(event.reason, {
-        type: "unhandled_promise_rejection",
+        description: "unhandled_promise_rejection",
+        source: "unhandled_rejection",
       });
     };
   }
 
   /**
    * Adds listeners for online and offline events to track internet connectivity.
-   * When the connection is lost, it logs the start time of the disconnection.
-   * When the connection is restored, it logs the duration of the disconnection.
+   * When the connection is lost, it stores the start time of the disconnection.
+   * When connectivity returns, it logs the duration of the completed outage.
+   * Uses SafeStorage to gracefully fall back to in-memory tracking if storage is unavailable.
    */
   initializeConnectivityTracking() {
-    window.addEventListener("online", () => {
-      if (this.disconnectionStartTime) {
-        const duration = Math.round(
-          (Date.now() - this.disconnectionStartTime) / 1000
-        );
-        console.log("internet disconnection duration:", duration);
-        logInternetDisconnection(duration, true);
-        this.disconnectionStartTime = null;
+    const storageKey = "internetDisconnectionStartTime";
+    
+    try {
+      const storedStartTime = Number(SafeStorage.getItem(storageKey));
+      if (Number.isFinite(storedStartTime) && storedStartTime > 0) {
+        this.disconnectionStartTime = storedStartTime;
+      } else {
+        SafeStorage.removeItem(storageKey);
       }
-    });
+    } catch (e) {
+      // If restoring state fails, continue with in-memory tracking only
+    }
 
-    window.addEventListener("offline", () => {
+    const recordDisconnection = () => {
+      if (this.disconnectionStartTime) return;
+
       this.disconnectionStartTime = Date.now();
-      logInternetDisconnection(0, false);
-    });
+      try {
+        SafeStorage.setItem(storageKey, String(this.disconnectionStartTime));
+      } catch (e) {
+        // Storage unavailable; continue with in-memory tracking
+      }
+    };
+
+    const logCompletedDisconnection = () => {
+      if (!this.disconnectionStartTime) return;
+
+      const duration = Math.max(
+        0,
+        Math.round((Date.now() - this.disconnectionStartTime) / 1000)
+      );
+      logInternetOffline(duration);
+      this.disconnectionStartTime = null;
+      try {
+        SafeStorage.removeItem(storageKey);
+      } catch (e) {
+        // Storage unavailable; continue with in-memory tracking
+      }
+    };
+
+    if (navigator.onLine) {
+      logCompletedDisconnection();
+    } else {
+      recordDisconnection();
+    }
+
+    window.addEventListener("online", logCompletedDisconnection);
+    window.addEventListener("offline", recordDisconnection);
   }
 
   /**
@@ -800,4 +895,4 @@ class GlobalTracker {
 const globalTracker = new GlobalTracker();
 globalTracker.initialize();
 
-export { usePageAnalytics, globalTracker };
+export { usePageAnalytics, globalTracker, SafeStorage };

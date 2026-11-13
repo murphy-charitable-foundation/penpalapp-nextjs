@@ -104,8 +104,7 @@ export const getUserPfp = async (uid) => {
     return await getDownloadURL(profileImageRef);
   } catch (error) {
     logError(error, {
-      description: "Error fetching user profile",
-      userId: uid,
+      description: `Error fetching profile image for user: ${uid}`,
     });
 
     return null;

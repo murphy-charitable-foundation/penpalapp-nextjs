@@ -17,7 +17,7 @@
 import { NextResponse } from "next/server";
 import { sendEmailMessage } from "../../utils/email";
 import { auth, db } from "../../firebaseAdmin";
-import { logError } from "../../utils/analytics";
+import { logError } from "../../utils/serverAnalytics.mjs";
 
 export const runtime = "nodejs";
 
@@ -225,13 +225,9 @@ Reported Excerpt:
       return jsonError("Failed to send report email.", 500, emailError);
     }
 
-    logError(new Error("Message reported by user"), {
+    await logError(new Error("Message reported by user"), {
       description: "User submitted content report",
-      reporter_uid: reporterUid,
-      reporter_first_name: userData.first_name || "",
-      reporter_last_name: userData.last_name || "",
-      conversation_url: String(currentUrl),
-      excerpt: String(excerpt),
+      userId: reporterUid,
     });
 
     return NextResponse.json(
