@@ -5,8 +5,6 @@ self.onmessage = async function (e) {
     return;
   }
   try {
-    // sendDormantConversation() below currently returns a plain object, not a
-    // fetch Response, so it must not be passed through .json() again.
     const data = await sendDormantConversation(idToken);
     self.postMessage({ success: true, data });
   } catch (error) {
@@ -21,7 +19,7 @@ self.onmessage = async function (e) {
 };
 
 async function sendDormantConversation(idToken) {
-  /*const response = await fetch("/api/dormantConversation", {
+  const response = await fetch("/api/dormantConversation", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,11 +27,10 @@ async function sendDormantConversation(idToken) {
     },
   });
 
-  return response;*/
-  return {
-    success: true,
-    data: {
-      message: "Dormant conversation worker is working",
-    },
-  };
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data;
 }
