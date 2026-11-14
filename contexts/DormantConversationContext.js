@@ -29,14 +29,7 @@ export const DormantConversationProvider = ({ children }) => {
           const successfulReminders = e.data.data?.successEmails;
           if (Array.isArray(successfulReminders)) {
             successfulReminders.forEach((reminder) => {
-              const userUids = reminder.reminderUserUids;
-              if (Array.isArray(userUids) && userUids.length > 0) {
-                userUids.forEach((userUid) => {
-                  logDormantMessageSent(reminder.reason, userUid);
-                });
-              } else {
-                logDormantMessageSent(reminder.reason, null);
-              }
+                logDormantMessageSent(reminder.reason);
             });
           }
           localStorage.setItem("dormantConversationTimestamp", new Date().toISOString());
