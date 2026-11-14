@@ -1,5 +1,5 @@
-// SafeStorage unit tests
-import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, test, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
 
 // Mock SafeStorage class (copied from useAnalytics.js for testing)
 class SafeStorage {
@@ -62,56 +62,72 @@ class SafeStorage {
   }
 }
 
+const originalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+
 describe('SafeStorage', () => {
   beforeEach(() => {
     SafeStorage.reset();
-    localStorage.clear();
+    const values = new Map();
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (key) => values.get(key) ?? null,
+        setItem: (key, value) => values.set(key, String(value)),
+        removeItem: (key) => values.delete(key),
+        clear: () => values.clear(),
+      },
+    });
   });
 
   afterEach(() => {
     SafeStorage.reset();
+    if (originalLocalStorage) {
+      Object.defineProperty(globalThis, "localStorage", originalLocalStorage);
+    } else {
+      delete globalThis.localStorage;
+    }
   });
 
   test('should store and retrieve values from localStorage when available', () => {
     SafeStorage.setItem('testKey', 'testValue');
-    expect(SafeStorage.getItem('testKey')).toBe('testValue');
+    assert.equal(SafeStorage.getItem("testKey"), "testValue");
   });
 
   test('should return null for non-existent keys', () => {
-    expect(SafeStorage.getItem('nonExistentKey')).toBeNull();
+    assert.equal(SafeStorage.getItem("nonExistentKey"), null);
   });
 
   test('should remove items from localStorage', () => {
     SafeStorage.setItem('testKey', 'testValue');
     SafeStorage.removeItem('testKey');
-    expect(SafeStorage.getItem('testKey')).toBeNull();
+    assert.equal(SafeStorage.getItem("testKey"), null);
   });
 
   test('should fall back to in-memory storage when localStorage is blocked', () => {
     // Temporarily block localStorage
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = () => {
-      throw new SecurityError('localStorage is not allowed');
+      throw new Error("localStorage is not allowed");
     };
 
-    SafeStorage.#isStorageAvailable = null; // Reset availability check
+    SafeStorage.reset();
 
-    SafeStorage.setItem('testKey', 'testValue');
-    expect(SafeStorage.getItem('testKey')).toBe('testValue');
+    SafeStorage.setItem("testKey", "testValue");
+    assert.equal(SafeStorage.getItem("testKey"), "testValue");
 
     // Restore localStorage
     localStorage.setItem = originalSetItem;
   });
 
   test('should handle consecutive operations with in-memory fallback', () => {
-    SafeStorage.setItem('key1', 'value1');
-    SafeStorage.setItem('key2', 'value2');
+    SafeStorage.setItem("key1", "value1");
+    SafeStorage.setItem("key2", "value2");
     
-    expect(SafeStorage.getItem('key1')).toBe('value1');
-    expect(SafeStorage.getItem('key2')).toBe('value2');
+    assert.equal(SafeStorage.getItem("key1"), "value1");
+    assert.equal(SafeStorage.getItem("key2"), "value2");
     
-    SafeStorage.removeItem('key1');
-    expect(SafeStorage.getItem('key1')).toBeNull();
-    expect(SafeStorage.getItem('key2')).toBe('value2');
+    SafeStorage.removeItem("key1");
+    assert.equal(SafeStorage.getItem("key1"), null);
+    assert.equal(SafeStorage.getItem("key2"), "value2");
   });
 });
