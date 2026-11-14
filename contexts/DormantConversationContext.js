@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useState, useContext, useEffect, useCallback } from "react";
-import { logError } from "../app/utils/analytics";
+import { logDormantMessageSent, logError } from "../app/utils/analytics";
 import { auth } from "../app/firebaseConfig";
 
 const DormantConversationContext = createContext(undefined);
@@ -26,18 +26,32 @@ export const DormantConversationProvider = ({ children }) => {
       setWorker(newWorker);
       newWorker.onmessage = (e) => {
         if (e.data.success) {
+          const successfulReminders = e.data.data?.successEmails;
+          if (Array.isArray(successfulReminders)) {
+            successfulReminders.forEach((reminder) => {
+                logDormantMessageSent(reminder.reason);
+            });
+          }
           localStorage.setItem("dormantConversationTimestamp", new Date().toISOString());
           console.log("OnMessage Email Request Success: ", e.data.data);
         } else {
-          logError(`${e.data.error}`, {
+          // Rebuild the worker's Error so name/stack survive the postMessage boundary.
+          const workerError = new Error(String(e.data.error));
+          if (e.data.errorName) workerError.name = e.data.errorName;
+          if (e.data.errorStack) workerError.stack = e.data.errorStack;
+          logError(workerError, {
             description: "Web Worker OnMessage Email Request Error",
+            source: "web_worker",
+            error_stage: e.data.stage || "unknown",
           });
         }
         setIsDormantConversationLoading(false);
       };
       newWorker.onerror = (error) => {
+        // `error` is an ErrorEvent (not an Error); logError extracts message/file/line from it.
         logError(error, {
           description: "Web Worker OnError",
+          source: "web_worker",
         });
         setIsDormantConversationLoading(false);
       };

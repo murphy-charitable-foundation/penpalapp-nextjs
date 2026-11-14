@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth, db } from "../../firebaseAdmin";
-import { logError } from "../../utils/analytics";
+import { logError } from "../../utils/serverAnalytics.mjs";
 import { requireAdmin } from "../../utils/requireAdmin";
 
 export async function POST(request) {
+  let userId;
   try {
-    await requireAdmin(request);
+    userId = await requireAdmin(request);
 
     const { email, password, userData } = await request.json();
 
@@ -47,7 +48,7 @@ export async function POST(request) {
 
     return NextResponse.json({ uid });
   } catch (error) {
-    logError(error, { description: "Failed to create user via admin API" });
+    await logError(error, { description: "Failed to create user via admin API", userId });
     if (error?.status && error.message) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }

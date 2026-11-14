@@ -104,13 +104,13 @@ export default function CreateAccount() {
         throw new Error("Form validation error(s)");
       }
 
-      console.log(`user is :${user}`);
+      //console.log(`user is :${user}`);
       const uid = user.uid;
       try {
         await updatePassword(user, password);
       } catch (error) {
         if (error.code == "auth/requires-recent-login") {
-          console.error("Account creation timed out: ", error.message);
+          logError(error, {description: "Account creation timed out"});
           setIsDialogOpen(true);
           setDialogTitle("Oops!");
           setDialogMessage(
@@ -120,7 +120,7 @@ export default function CreateAccount() {
           router.push("/login");
           return;
         } else {
-          console.error("Failed to change password: ", error.message);
+          logError(error, {description: "Error changing password: "});
           throw error;
         }
       }

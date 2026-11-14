@@ -11,7 +11,7 @@ export default function PrivacyPolicy() {
         <PageHeader title="Privacy Policy" />
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6">
             <div className="space-y-8 text-gray-800 leading-relaxed text-sm">
-              <p><strong>Last Updated:</strong> June 20, 2026</p>
+              <p><strong>Last Updated:</strong> November 7, 2026</p>
 
               <p>Welcome to the <strong>Murphy Charity Foundation Pen Pal App</strong> (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;). This Privacy Policy explains how we collect, use, and handle your information when you use our chat and messaging application. As a nonprofit organization, we like to keep things simple, transparent, and focused on our mission.</p>
 
@@ -34,6 +34,12 @@ export default function PrivacyPolicy() {
                   <li>Fix bugs and improve the app&apos;s functionality.</li>
               </ul>
 
+              <h3>Analytics and Error Monitoring</h3>
+              <p>We use Google Analytics for Firebase to understand how our application is used, monitor performance, identify errors, and improve reliability and user experience.</p>
+              <p>Information collected may include page visits, button interactions, login events, device and browser information, connectivity issues, performance measurements, and technical error details.</p>
+              <p>Where users are signed in, we may associate these events with an internal account identifier and account type to investigate technical issues affecting specific users.</p>
+              <p>We do not intentionally transmit names, email addresses, private messages, or message attachments to Google Analytics. Analytics information is used for operational monitoring and application improvement, not targeted advertising.</p>
+
               <h2>3. Moderation and Your Messages</h2>
               <p>Because our app is used to connect volunteers, supporters, and vulnerable community members, maintaining a safe space is our top priority. To enforce the rules outlined in our <strong>Terms & Conditions</strong>, we rely on human moderators.</p>
 
@@ -45,6 +51,7 @@ export default function PrivacyPolicy() {
               <ul>
                   <li><strong>With Your Pen Pal:</strong> The people you are matched and chat with will see your messages and profile.</li>
                   <li><strong>With Service Providers:</strong> We use third-party services to host the app and store data (like cloud servers). They only process data to keep the app online and functioning.</li>
+                  <li><strong>Analytics Services:</strong> We use Google Analytics for Firebase, provided by Google, to process application usage and diagnostic information. This may include internal account identifiers that allow us to associate technical events with user accounts. Google&apos;s processing of this information is governed by its applicable data protection terms.</li>
                   <li><strong>For Legal and Safety Reasons:</strong> We will hand over information to law enforcement or government authorities if we are legally required to do so, or if we need to report severe safety threats, abuse, or illegal activity.</li>
               </ul>
 
