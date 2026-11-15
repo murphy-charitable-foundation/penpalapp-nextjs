@@ -191,6 +191,45 @@ export const isValidPdfFile = async (file) => {
   }
 };
 
+export const validatePickedAttachment = async (file) => {
+  if (file?.type.startsWith("image/")) return { mediaKind: "image" };
+  if (file?.type.startsWith("video/")) return { mediaKind: "video" };
+  if (file?.type === "application/pdf") {
+    if (!isPdfWithinSizeLimit(file)) {
+      return { error: "PDF files must be 25 MB or smaller." };
+    }
+    if (!(await isValidPdfFile(file))) {
+      return { error: "Please select a valid PDF file." };
+    }
+    return { mediaKind: "pdf" };
+  }
+  return { error: "Only image, video, and PDF files can be attached." };
+};
+
+export const isFileDrag = (dataTransfer) =>
+  Array.from(dataTransfer?.types || []).includes("Files");
+
+export const getDroppedAttachmentFiles = (dataTransfer) => {
+  const items = Array.from(dataTransfer?.items || []);
+  if (!items.length) {
+    return { files: Array.from(dataTransfer?.files || []), rejected: false };
+  }
+
+  const files = [];
+  let rejected = false;
+  for (const item of items) {
+    if (item.kind !== "file") continue;
+    if (item.webkitGetAsEntry?.()?.isDirectory) {
+      rejected = true;
+      continue;
+    }
+    const file = item.getAsFile();
+    if (file) files.push(file);
+    else rejected = true;
+  }
+  return { files, rejected };
+};
+
 export const sanitizeFileName = (fileName = "") =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 

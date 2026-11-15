@@ -28,13 +28,14 @@ import {
   formatFileSize,
   getCachedAttachmentQueue,
   getCompletedAttachmentFileNamesForSave,
+  getDroppedAttachmentFiles,
   getMessageAttachmentFileNames,
-  isPdfWithinSizeLimit,
-  isValidPdfFile,
+  isFileDrag,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
   sanitizeFileName,
   uploadAttachmentFile,
+  validatePickedAttachment,
 } from "../../utils/attachments";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
@@ -92,6 +93,11 @@ export default function Page(props) {
   const editingMessageIdRef = useRef(null);
   const editSessionUploadFileNamesRef = useRef(new Set());
   const editSessionUploadPromisesRef = useRef(new Set());
+  const attachmentValidationCountRef = useRef(0);
+  const attachmentValidationGenerationRef = useRef(0);
+  const attachmentValidationMountedRef = useRef(false);
+  const composerTransitionCountRef = useRef(0);
+  const dragDepthRef = useRef(0);
 
   const [userRef, setUserRef] = useState(null);
   const [userLocation, setUserLocation] = useState("");
@@ -135,6 +141,8 @@ export default function Page(props) {
 
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const [pdfUploadError, setPdfUploadError] = useState("");
+  const [isValidatingAttachments, setIsValidatingAttachments] = useState(false);
+  const [isDraggingAttachments, setIsDraggingAttachments] = useState(false);
   const [queuedAttachmentDeletes, setQueuedAttachmentDeletes] = useState([]);
   const [attachmentToDelete, setAttachmentToDelete] = useState(null);
   const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
@@ -143,6 +151,26 @@ export default function Page(props) {
     useState(false);
 
   const [draftTimer, setDraftTimer] = useState(null);
+
+  useEffect(() => {
+    attachmentValidationMountedRef.current = true;
+    const preventFileNavigation = (event) => {
+      if (!isFileDrag(event.dataTransfer)) return;
+      event.preventDefault();
+      if (event.type === "drop") {
+        dragDepthRef.current = 0;
+        setIsDraggingAttachments(false);
+      }
+    };
+    window.addEventListener("dragover", preventFileNavigation);
+    window.addEventListener("drop", preventFileNavigation);
+    return () => {
+      attachmentValidationMountedRef.current = false;
+      attachmentValidationGenerationRef.current += 1;
+      window.removeEventListener("dragover", preventFileNavigation);
+      window.removeEventListener("drop", preventFileNavigation);
+    };
+  }, [id, user?.uid]);
 
   useEffect(() => {
     if (!showAttachmentDeleteDialog) return;
@@ -521,24 +549,83 @@ export default function Page(props) {
     handleAddAttachment({ file, mediaKind: "video" });
   };
 
-  const handlePdfFileChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    event.target.value = "";
-    setPdfUploadError("");
-
-    if (!isPdfWithinSizeLimit(file)) {
-      setPdfUploadError("PDF files must be 25 MB or smaller.");
+  const handlePickedAttachments = async (files, rejected = false) => {
+    if (composerTransitionCountRef.current) {
+      setPdfUploadError("Please wait for the message to finish loading.");
       return;
     }
+    if (!user?.uid) {
+      handleRequireLogin();
+      return;
+    }
+    if (isSending) {
+      setPdfUploadError("Please wait until the message has finished sending.");
+      return;
+    }
+    const generation = attachmentValidationGenerationRef.current;
+    attachmentValidationCountRef.current += 1;
+    setIsValidatingAttachments(true);
+    setPdfUploadError("");
+    try {
+      const results = await Promise.all(files.map(validatePickedAttachment));
+      if (generation !== attachmentValidationGenerationRef.current) return;
+      const errors = rejected ? ["Folders and unreadable files cannot be attached."] : [];
+      results.forEach((result, index) => {
+        if (result.error) {
+          errors.push(`${files[index].name}: ${result.error}`);
+        } else {
+          handleAddAttachment({ file: files[index], mediaKind: result.mediaKind });
+        }
+      });
+      if (errors.length) {
+        setPdfUploadError((previous) => [previous, ...errors].filter(Boolean).join(" "));
+      }
+    } catch (error) {
+      console.error("Attachment validation failed:", error);
+      if (generation === attachmentValidationGenerationRef.current) {
+        setPdfUploadError("Could not validate attachments. Please try again.");
+      }
+    } finally {
+      attachmentValidationCountRef.current -= 1;
+      if (attachmentValidationMountedRef.current) {
+        setIsValidatingAttachments(attachmentValidationCountRef.current > 0);
+      }
+    }
+  };
 
-    if (!(await isValidPdfFile(file))) {
+  const handlePdfFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = "";
+    if (file.type !== "application/pdf") {
       setPdfUploadError("Please select a valid PDF file.");
       return;
     }
+    handlePickedAttachments([file]);
+  };
 
-    handleAddAttachment({ file, mediaKind: "pdf" });
+  const handleAttachmentDragEnter = (event) => {
+    if (!isFileDrag(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDraggingAttachments(true);
+  };
+
+  const handleAttachmentDragLeave = (event) => {
+    if (!isFileDrag(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDraggingAttachments(false);
+  };
+
+  const handleAttachmentDrop = (event) => {
+    if (!isFileDrag(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDraggingAttachments(false);
+    const { files, rejected } = getDroppedAttachmentFiles(event.dataTransfer);
+    if (files.length || rejected) handlePickedAttachments(files, rejected);
+    else setPdfUploadError("No readable files were dropped.");
   };
 
   const handleRequestDeleteAttachment = (attachment) => {
@@ -832,7 +919,7 @@ export default function Page(props) {
       return;
     }
 
-    if (isSending || !editingMessageId) {
+    if (isSending || attachmentValidationCountRef.current || !editingMessageId) {
       return;
     }
 
@@ -936,6 +1023,7 @@ export default function Page(props) {
   };
 
   const handleSendMessage = async () => {
+    if (attachmentValidationCountRef.current) return;
     if (editingMessageId) {
       return handleUpdateMessage();
     }
@@ -1055,7 +1143,7 @@ export default function Page(props) {
   };
 
   const handleCloseMessage = async () => {
-    if (isSendButtonDisabled || isUpdatingFirebase) {
+    if (isSendButtonDisabled || isUpdatingFirebase || attachmentValidationCountRef.current) {
       return;
     }
 
@@ -1131,6 +1219,7 @@ export default function Page(props) {
 
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
+    if (attachmentValidationCountRef.current) return;
     if (
       message.status !== "pending_review" ||
       message.sent_by?.id !== user?.uid
@@ -1138,63 +1227,69 @@ export default function Page(props) {
       return;
     }
 
-    if (messageContent.trim().length > 0 && !editingMessageId) {
-      try {
-        await saveDraft(messageContent);
-      } catch (error) {
-        console.error("❌ Failed to save draft before editing message:", error);
+    composerTransitionCountRef.current += 1;
+    try {
+      if (messageContent.trim().length > 0 && !editingMessageId) {
+        try {
+          await saveDraft(messageContent);
+        } catch (error) {
+          console.error("❌ Failed to save draft before editing message:", error);
 
-        const confirmSwitch = window.confirm(
-          "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
-        );
+          const confirmSwitch = window.confirm(
+            "Failed to save your draft. Do you want to continue editing this message? Your current draft may be lost.",
+          );
 
-        if (!confirmSwitch) {
-          return;
+          if (!confirmSwitch) {
+            return;
+          }
         }
       }
+
+      const attachmentFileNames = getMessageAttachmentFileNames(message);
+      const cachedAttachments = getCachedAttachmentQueue({
+        conversationId: id,
+        messageId: message.id,
+        fileNames: attachmentFileNames,
+      });
+
+      setEditingMessageId(message.id);
+      setEditingMessageOriginalContent(message.content);
+      setMessageContent(message.content);
+      setPendingAttachments(cachedAttachments);
+      setQueuedAttachmentDeletes([]);
+      setIsEditing(true);
+      setHasDraftContent(
+        Boolean(message.content?.trim()) || cachedAttachments.length > 0,
+      );
+      setSelectedMessageId(null);
+
+      setTimeout(() => {
+        textAreaRef.current?.focus();
+        if (textAreaRef.current) {
+          const length = textAreaRef.current.value.length;
+          textAreaRef.current.setSelectionRange(length, length);
+        }
+      }, 100);
+
+      const restoredAttachments = await restoreAttachmentQueue({
+        conversationId: id,
+        messageId: message.id,
+        fileNames: attachmentFileNames,
+      });
+
+      if (editingMessageIdRef.current !== message.id) return;
+
+      setPendingAttachments(restoredAttachments);
+      setHasDraftContent(
+        Boolean(message.content?.trim()) || restoredAttachments.length > 0,
+      );
+    } finally {
+      composerTransitionCountRef.current -= 1;
     }
-
-    const attachmentFileNames = getMessageAttachmentFileNames(message);
-    const cachedAttachments = getCachedAttachmentQueue({
-      conversationId: id,
-      messageId: message.id,
-      fileNames: attachmentFileNames,
-    });
-
-    setEditingMessageId(message.id);
-    setEditingMessageOriginalContent(message.content);
-    setMessageContent(message.content);
-    setPendingAttachments(cachedAttachments);
-    setQueuedAttachmentDeletes([]);
-    setIsEditing(true);
-    setHasDraftContent(
-      Boolean(message.content?.trim()) || cachedAttachments.length > 0,
-    );
-    setSelectedMessageId(null);
-
-    setTimeout(() => {
-      textAreaRef.current?.focus();
-      if (textAreaRef.current) {
-        const length = textAreaRef.current.value.length;
-        textAreaRef.current.setSelectionRange(length, length);
-      }
-    }, 100);
-
-    const restoredAttachments = await restoreAttachmentQueue({
-      conversationId: id,
-      messageId: message.id,
-      fileNames: attachmentFileNames,
-    });
-
-    if (editingMessageIdRef.current !== message.id) return;
-
-    setPendingAttachments(restoredAttachments);
-    setHasDraftContent(
-      Boolean(message.content?.trim()) || restoredAttachments.length > 0,
-    );
   };
 
   const handleReplyClick = async () => {
+    if (attachmentValidationCountRef.current) return;
     setIsEditing(true);
 
     // Preserve local unsent/in-flight attachment state instead of replacing
@@ -1216,55 +1311,60 @@ export default function Page(props) {
       return;
     }
 
-    if (!draft?.id) {
-      try {
-        const messageUserRef = userRef || doc(db, "users", user?.uid);
-        const existingDraft = await fetchDraft(id, messageUserRef, false);
+    composerTransitionCountRef.current += 1;
+    try {
+      if (!draft?.id) {
+        try {
+          const messageUserRef = userRef || doc(db, "users", user?.uid);
+          const existingDraft = await fetchDraft(id, messageUserRef, false);
 
-        if (existingDraft) {
-          const restoredAttachments = await restoreAttachmentQueue({
-            conversationId: id,
-            messageId: existingDraft.id,
-            fileNames: existingDraft.attachments,
-          });
+          if (existingDraft) {
+            const restoredAttachments = await restoreAttachmentQueue({
+              conversationId: id,
+              messageId: existingDraft.id,
+              fileNames: existingDraft.attachments,
+            });
 
-          setDraft(existingDraft);
-          setMessageContent(existingDraft.content || "");
-          setPendingAttachments(restoredAttachments);
-          setHasDraftContent(
-            Boolean(existingDraft.content?.trim()) || restoredAttachments.length > 0,
-          );
-        } else {
+            setDraft(existingDraft);
+            setMessageContent(existingDraft.content || "");
+            setPendingAttachments(restoredAttachments);
+            setHasDraftContent(
+              Boolean(existingDraft.content?.trim()) || restoredAttachments.length > 0,
+            );
+          } else {
+            setMessageContent("");
+            setPendingAttachments([]);
+            setHasDraftContent(false);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching draft:", error);
           setMessageContent("");
           setPendingAttachments([]);
           setHasDraftContent(false);
         }
-      } catch (error) {
-        console.error("❌ Error fetching draft:", error);
-        setMessageContent("");
-        setPendingAttachments([]);
-        setHasDraftContent(false);
+      } else {
+        setMessageContent(draft.content || "");
+        const restoredAttachments = await restoreAttachmentQueue({
+          conversationId: id,
+          messageId: draft.id,
+          fileNames: draft.attachments,
+        });
+        setPendingAttachments(restoredAttachments);
+        setHasDraftContent(
+          Boolean(draft.content?.trim()) || restoredAttachments.length > 0,
+        );
       }
-    } else {
-      setMessageContent(draft.content || "");
-      const restoredAttachments = await restoreAttachmentQueue({
-        conversationId: id,
-        messageId: draft.id,
-        fileNames: draft.attachments,
-      });
-      setPendingAttachments(restoredAttachments);
-      setHasDraftContent(
-        Boolean(draft.content?.trim()) || restoredAttachments.length > 0,
-      );
-    }
 
-    setTimeout(() => {
-      textAreaRef.current?.focus();
-      if (textAreaRef.current) {
-        const length = textAreaRef.current.value.length;
-        textAreaRef.current.setSelectionRange(length, length);
-      }
-    }, 100);
+      setTimeout(() => {
+        textAreaRef.current?.focus();
+        if (textAreaRef.current) {
+          const length = textAreaRef.current.value.length;
+          textAreaRef.current.setSelectionRange(length, length);
+        }
+      }, 100);
+    } finally {
+      composerTransitionCountRef.current -= 1;
+    }
   };
 
   usePageAnalytics(`/conversation/[id]`);
@@ -1557,6 +1657,7 @@ export default function Page(props) {
     return (
       (messageContent.trim().length > 0 || pendingAttachments.length > 0) &&
       !isSending &&
+      !isValidatingAttachments &&
       !hasUploadingAttachments
     );
   };
@@ -1859,7 +1960,22 @@ export default function Page(props) {
         </div>
 
         {/* ===== REPLY ===== */}
-        <div className="bg-white">
+        <div
+          className={`bg-white ${isDraggingAttachments ? "ring-2 ring-inset ring-cyan-500" : ""}`}
+          onDragEnter={handleAttachmentDragEnter}
+          onDragLeave={handleAttachmentDragLeave}
+          onDragOver={(event) => {
+            if (!isFileDrag(event.dataTransfer)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+          }}
+          onDrop={handleAttachmentDrop}
+        >
+          <div className="px-4 pt-2 text-center text-xs text-gray-500">
+            {isDraggingAttachments
+              ? "Drop images, videos, or PDFs here"
+              : "Drag images, videos, or PDFs here to attach"}
+          </div>
           <div className="flex items-center justify-center px-4 py-2">
             <div className="flex items-center gap-2">
               <button
