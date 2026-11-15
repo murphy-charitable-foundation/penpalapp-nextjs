@@ -32,6 +32,12 @@ Attachment objects live in Cloud Storage at
 content types, and byte sizes are resolved from Cloud Storage and are never stored
 on the Firestore message.
 
+The conversation composer accepts dropped images, videos, and PDFs using the same
+upload queue as the file pickers. PDFs require the PDF MIME type and signature
+and are limited to 25 MiB. Voice messages are recorded rather than dropped.
+Unsupported files and folders are rejected; file drops outside the composer do
+not navigate away from the conversation.
+
 ## Analytics & errors (gotcha)
 Use helpers in `app/utils/analytics.js` so events go to Firebase Analytics and errors to Sentry.
 
