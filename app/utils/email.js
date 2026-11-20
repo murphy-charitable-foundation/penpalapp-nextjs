@@ -10,14 +10,14 @@ function validateEmailConfig() {
 
   const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
   if (missingEnvVars.length > 0) {
-    throw new Error(`Missing email environment variables: ${missingEnvVars.join(", ")}`);
+    throw Object.assign(new Error(`Missing email environment variables: ${missingEnvVars.join(", ")}`), { code: "EMAIL_CONFIG" });
   }
 
   const smtpPort = Number(process.env.CPANEL_SMTP_PORT);
   if (Number.isNaN(smtpPort) || !Number.isInteger(smtpPort)) {
-    throw new Error("CPANEL_SMTP_PORT must be a number.");
+    throw Object.assign(new Error("CPANEL_SMTP_PORT must be a number."), { code: "EMAIL_CONFIG" });
   } else if (smtpPort <= 0 || smtpPort > 65535) {
-    throw new Error("CPANEL_SMTP_PORT must be a valid port number (1-65535).");
+    throw Object.assign(new Error("CPANEL_SMTP_PORT must be a valid port number (1-65535)."), { code: "EMAIL_CONFIG" });
   }
   return smtpPort;
 }

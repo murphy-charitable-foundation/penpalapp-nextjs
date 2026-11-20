@@ -3,10 +3,34 @@
  */
 import { getAnalytics, logEvent } from "firebase/analytics";
 import { app } from "../firebaseConfig.js";
-import * as Sentry from "@sentry/nextjs";
+import { buildErrorEvent, normalizeError } from "./errorEvent.mjs";
 
 // Initialize Firebase Analytics
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
+
+const logPrivateEvent = (name, params) => {
+  if (analytics) {
+    try {
+      logEvent(analytics, name, {
+        ...params,
+        // GA supplies page context automatically. Override it for these events
+        // so route IDs, query parameters, referrers, and titles cannot leak.
+        page_location: "https://redacted.invalid/",
+        page_referrer: "https://redacted.invalid/",
+        page_title: "Redacted page",
+      });
+    } catch {
+      // Analytics must not interrupt application work or error handling.
+    }
+  }
+};
+
+const logDormantMessageSent = (reason) => {
+  logPrivateEvent("dormant_message_sent", {
+    dormant_conversation_reason:
+      reason === "user" || reason === "admin" ? reason : "unknown",
+  });
+};
 
 // Function to track page views
 /**
@@ -52,30 +76,22 @@ const logInEvent = (status) => {
 };
 
 /**
- * Logs an uncaught error to Firebase Analytics.
+ * Logs fixed error categories to Firebase Analytics. Full messages and context
+ * are only printed locally in development; they are never included in GA4.
  *
  * @param {Error} error The error object to log.
  * @param {Object} errorInfo Additional information to include in the error event.
  * @returns {void}
  */
-const logError = (error, errorInfo) => {
-  const errorObject =
-    error instanceof Error
-      ? error
-      : new Error(typeof error === "string" ? error : "Unknown error");
+const logError = (error, errorInfo = {}) => {
+  const event = buildErrorEvent(error, errorInfo);
+  if (!event) return;
 
   if (process.env.NODE_ENV === "development") {
-    console.error(errorObject, errorInfo);
+    console.error(normalizeError(error).error, errorInfo);
   }
 
-  if (analytics) {
-    logEvent(analytics, "uncaught_error", {
-      error_name: errorObject.name || "Unknown",
-      error_message: errorObject.message || "No message",
-      error_stack: errorObject.stack || "No stack trace",
-      ...errorInfo,
-    });
-  }
+  logPrivateEvent("uncaught_error", event);
 };
 
 /**
@@ -140,6 +156,7 @@ const logLoadingTime = (pagePath, loadingTime) => {
 };
 
 export {
+  logDormantMessageSent,
   logPageView,
   logButtonEvent,
   logInEvent,

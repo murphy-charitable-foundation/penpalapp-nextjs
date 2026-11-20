@@ -1,224 +1,104 @@
 import { NextResponse } from "next/server";
-import { FieldPath } from "firebase-admin/firestore";
-
 import { db, auth } from "../../firebaseAdmin";
 import { sendEmail } from "../../utils/dormantConversationHelpers";
+import { isReminderDue } from "../../utils/dormantConversationPolicy.js";
+import { logError } from "../../utils/serverAnalytics.mjs";
+
+export const runtime = "nodejs";
+
+// Bound concurrent account lookups and SMTP requests for large conversation lists.
+async function mapConversations(documents, processConversation) {
+  const results = new Array(documents.length);
+  let index = 0;
+  await Promise.all(Array.from({ length: Math.min(4, documents.length) }, async () => {
+    while (index < documents.length) {
+      const next = index++;
+      results[next] = await processConversation(documents[next]);
+    }
+  }));
+  return results.flat();
+}
+
+function report(error, conversationId) {
+  void logError(error, { description: "Dormant conversation request failed", conversationId })
+    .catch(() => {});
+}
 
 export async function POST(request) {
-  if (auth == null) {
-    return NextResponse.json({ message: "Admin is null." }, { status: 500 });
+  if (!auth || !db) {
+    return NextResponse.json({ error: "Server auth/db is not configured." }, { status: 500 });
   }
+  const authHeader = request.headers.get("Authorization");
+  const idToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!idToken) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let decodedToken;
   try {
-    const authHeader = request.headers.get("Authorization");
-    const idToken = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : null;
-    if (!idToken) {
-      return NextResponse.json(
-        { error: "Unauthorized", message: "Missing or invalid Authorization header" },
-        { status: 401 }
-      );
-    }
-    let decodedToken;
-    try {
-      decodedToken = await auth.verifyIdToken(idToken);
-    } catch (err) {
-      return NextResponse.json(
-        { error: "Unauthorized", message: "Invalid or expired token" },
-        { status: 401 }
-      );
-    }
-    const uid = decodedToken.uid;
-    if (!db) {
-      return NextResponse.json(
-        { error: "Database not initialized" },
-        { status: 500 }
-      );
-    }
-    const userDoc = await db.collection("users").doc(uid).get();
-    const userData = userDoc.data();
-    if (!userDoc.exists || userData?.user_type !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden", message: "Only admin users can use this endpoint" },
-        { status: 403 }
-      );
+    decodedToken = await auth.verifyIdToken(idToken);
+  } catch {
+    return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+  }
+
+  try {
+    const userDoc = await db.collection("users").doc(decodedToken.uid).get();
+    if (!userDoc.exists || userDoc.data()?.user_type !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const conversationSnapshot = await db.collection("conversations").get();
-    const conversationesPromises = conversationSnapshot.docs
-      .filter((doc) => doc.data()?.deleted_at == null)
-      .map(async (doc) => {
-      const docData = doc.data();
-      let latestMessage = null;
-
-      const denormalizedAt = docData.latest_message_created_at;
-      if (denormalizedAt != null) {
-        latestMessage = {
-          id: docData.latest_message_id ?? null,
-          created_at: typeof denormalizedAt.toDate === "function" ? denormalizedAt.toDate() : denormalizedAt,
-          sent_by: docData.latest_message_sent_by ?? null,
-        };
-      }
-
-      if (latestMessage === null) {
-        // TODO: maintain latest_message_created_at at the level of `conversation`
-        // updated at the time of message approval so that it is faster to query here
-        const latestMessageSnapshot = await doc.ref
-          .collection("messages")
-          .orderBy("created_at", "desc")
-          .limit(1)
-          .get();
-
-        if (!latestMessageSnapshot.empty) {
-          const messageDoc = latestMessageSnapshot.docs[0];
-          const messageData = messageDoc.data();
-          const createdAt = messageData.created_at?.toDate?.();
-          const sentById = messageData.sent_by?.id ?? (typeof messageData.sent_by === "string" ? messageData.sent_by : null);
-          latestMessage = {
-            id: messageDoc.id,
-            created_at: createdAt,
-            sent_by: sentById,
-          };
+    const snapshot = await db.collection("conversations").get();
+    const results = await mapConversations(snapshot.docs, async (conversation) => {
+      try {
+        const data = conversation.data();
+        if (data.deleted_at != null) return [];
+        if (data.latest_message_created_at == null) {
+          const latest = await conversation.ref.collection("messages")
+            .orderBy("created_at", "desc").limit(1).get();
+          data.latest_message_created_at = latest.docs[0]?.data().created_at;
+        }
+        const reasons = ["user", "admin"].filter((reason) => isReminderDue(data, reason));
+        if (!reasons.length) return [];
+        const memberIds = [...new Set((data.members || [])
+          .map((member) => typeof member === "string" ? member : member.id).filter(Boolean))];
+        const [profiles, accountResults] = await Promise.all([
+          Promise.all(memberIds.map((uid) => db.collection("users").doc(uid).get())),
+          Promise.allSettled(memberIds.map((uid) => auth.getUser(uid))),
+        ]);
+        const members = profiles.filter((profile) => profile.exists).map((profile) => ({
+          id: profile.id, firstName: profile.data().first_name, lastName: profile.data().last_name,
+        }));
+        const emails = accountResults.filter((result) => result.status === "fulfilled")
+          .map((result) => result.value.email).filter(Boolean);
+        const accountLookupFailure = accountResults.find((result) => result.status === "rejected");
+        return await Promise.all(reasons.map(async (reason) => {
           try {
-            await doc.ref.update({
-              latest_message_created_at: messageData.created_at,
-              latest_message_id: messageDoc.id,
-              latest_message_sent_by: sentById,
-            });
-          } catch (err) {
-            // Non-fatal: next run will query again
+            // A missing member account prevents a complete user reminder, but
+            // the administrator can still be notified about the conversation.
+            if (reason === "user" && accountLookupFailure) throw accountLookupFailure.reason;
+            if (reason === "user" && (!memberIds.length || emails.length !== memberIds.length)) {
+              throw new Error("Missing reminder recipient email");
+            }
+            const result = await sendEmail(conversation.id, members, emails, reason);
+            if (result?.success === true || result?.skipped === true || result?.error) return result;
+            throw new Error("Invalid reminder delivery result");
+          } catch (error) {
+            report(error, conversation.id);
+            return { conversationId: conversation.id, reason, error: "Failed to send reminder." };
           }
-        }
-      }
-
-      return {
-        id: doc.id,
-        members: docData.members.map((member) => member.id),
-        latestMessage,
-        user_reminded_at: docData.user_reminded_at?.toDate?.(),
-        admin_reminded_at: docData.admin_reminded_at?.toDate?.(),
-      };
-    });
-    const conversationes = await Promise.all(conversationesPromises);
-
-    const emailPromises = [];
-
-    for (const conversation of conversationes) {
-      const latestMessageTimestamp = conversation?.latestMessage?.created_at;
-      const latestAdminDormantConversationTimestamp = conversation?.admin_reminded_at;
-      const latestUserDormantConversationTimestamp = conversation?.user_reminded_at;
-      const now = new Date();
-      let adminDiffDays = 0;
-      let userDiffDays = 0;
-
-      if (latestMessageTimestamp) {
-        const latestMessageTimestampDate = new Date(latestMessageTimestamp);
-        const diffMs = now - latestMessageTimestampDate;
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        adminDiffDays = diffDays;
-        userDiffDays = diffDays;
-      }
-
-      if (latestAdminDormantConversationTimestamp) {
-        const latestAdminDormantConversationTimestampDate = new Date(
-          latestAdminDormantConversationTimestamp
-        );
-        const diffMs = Math.floor(
-          (now - latestAdminDormantConversationTimestampDate) / (1000 * 60 * 60 * 24)
-        );
-        if (adminDiffDays === 0 || diffMs < adminDiffDays) {
-          adminDiffDays = diffMs;
-        }
-      }
-      if (latestUserDormantConversationTimestamp) {
-        const latestUserDormantConversationTimestampDate = new Date(
-          latestUserDormantConversationTimestamp
-        );
-        const diffMs = Math.floor(
-          (now - latestUserDormantConversationTimestampDate) / (1000 * 60 * 60 * 24)
-        );
-        if (userDiffDays === 0 || diffMs < userDiffDays) {
-          userDiffDays = diffMs;
-        }
-      }
-
-      if (userDiffDays >= 14 || adminDiffDays >= 28) {
-        const usersRef = db.collection("users");
-        const membersSnapshot = await usersRef
-          .where(FieldPath.documentId(), "in", conversation.members)
-          .get();
-        const allMembers = membersSnapshot.docs.map((doc) => {
-          const docData = doc.data();
-          return {
-            id: doc.id,
-            firstName: docData.first_name,
-            lastName: docData.last_name,
-          };
-        });
-
-        const userPromises = conversation.members.map((uid) =>
-          auth.getUser(uid).catch((err) => {
-            return null; // Handle missing users gracefully
-          })
-        );
-        const userRecords = await Promise.all(userPromises);
-        const emails = userRecords
-          .filter((record) => record !== null)
-          .map((record) => record.email);
-
-
-        if (userDiffDays >= 14) {
-          emailPromises.push(
-            sendEmail(conversation.id, allMembers, emails, "user").catch(
-              (err) => err
-            )
-          );
-        }
-
-        if (adminDiffDays >= 28) {
-          emailPromises.push(
-            sendEmail(conversation.id, allMembers, emails, "admin").catch(
-              (err) => err
-            )
-          );
-        }
-      }
-    }
-
-    const emailResults = await Promise.allSettled(emailPromises);
-    const successEmails = [];
-    const failedEmails = [];
-
-    emailResults.forEach((result) => {
-      if (result.status === "fulfilled") {
-        const value = result.value;
-        if (value && value.success) {
-          successEmails.push(value);
-        } else if (value && value.error) {
-          failedEmails.push(value);
-        }
-      } else {
-        failedEmails.push(result);
+        }));
+      } catch (error) {
+        report(error, conversation.id);
+        return [{ conversationId: conversation.id, error: "Failed to prepare reminders." }];
       }
     });
-
-    return NextResponse.json(
-      {
-        message: "DormantConversation Request Success!",
-        successEmails: successEmails,
-        failedEmails: failedEmails,
-        conversationes: conversationes,
-      },
-      { status: 200 }
-    );
+    const successEmails = results.filter((result) => result.success === true);
+    const skippedEmails = results.filter((result) => result.skipped === true);
+    const failedEmails = results.filter((result) => result.success !== true && result.skipped !== true);
+    const complete = failedEmails.length === 0;
+    return NextResponse.json({
+      message: complete ? "DormantConversation Request Success!" : "Some reminder emails failed.",
+      successEmails, failedEmails, skippedEmails,
+    }, { status: complete ? 200 : 500 });
   } catch (error) {
-    // Handle errors
-    return NextResponse.json(
-      {
-        error: "Failed to process request",
-        message: error.message,
-      },
-      { status: 500 }
-    );
+    report(error);
+    return NextResponse.json({ error: "Failed to process reminders." }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../firebaseAdmin";
 import { requireAdmin } from "../../utils/requireAdmin";
-import { logError } from "../../utils/analytics";
+import { logError } from "../../utils/serverAnalytics.mjs";
 
 export async function POST(request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request) {
     const userRecord = await auth.getUserByEmail(email);
     return NextResponse.json({ uid: userRecord.uid });
   } catch (error) {
-    logError("Error fetching UID: " + error.message, { error });
+    void logError(error, { description: "Error fetching UID" }).catch(() => {});
     if (error?.status && error.message) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
