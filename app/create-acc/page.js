@@ -26,6 +26,7 @@ import { PageHeader } from "../../components/general/PageHeader";
 import { logButtonEvent, logError } from "../utils/analytics";
 import { usePageAnalytics } from "../useAnalytics";
 import { useUser } from "../../contexts/UserContext";
+import { POLICY_VERSIONS } from "../utils/policyVersions";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -137,6 +138,7 @@ export default function CreateAccount() {
       );
 
       // Create a document in Firestore in "users" collection with UID as the document key
+
       await setDoc(doc(db, "users", uid), {
         created_at: new Date(),
         first_name: firstName,
@@ -145,6 +147,11 @@ export default function CreateAccount() {
         connected_penpals: connectedPenpals,
         connected_penpals_count: connectedPenpals.length,
         user_type: "international_buddy",
+        policyConsent: {
+          privacyPolicyVersion: POLICY_VERSIONS.privacyPolicy,
+          termsOfServiceVersion: POLICY_VERSIONS.termsOfService,
+          acceptedAt: new Date(),
+        },
       });
 
       localStorage.setItem("userFirstName", firstName);
