@@ -1971,11 +1971,6 @@ export default function Page(props) {
           }}
           onDrop={handleAttachmentDrop}
         >
-          <div className="px-4 pt-2 text-center text-xs text-gray-500">
-            {isDraggingAttachments
-              ? "Drop images, videos, or PDFs here"
-              : "Drag images, videos, or PDFs here to attach"}
-          </div>
           <div className="flex items-center justify-center px-4 py-2">
             <div className="flex items-center gap-2">
               <button
