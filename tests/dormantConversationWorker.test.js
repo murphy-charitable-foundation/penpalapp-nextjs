@@ -1,277 +1,112 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "fs";
-import path from "path";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 
-// Read the worker file and extract the sendDormantConversation function
-const workerPath = path.resolve("./public/workers/dormantConversationWorker.js");
-const workerCode = fs.readFileSync(workerPath, "utf8");
-
-// Extract the sendDormantConversation function
-const extractedFunction = workerCode.substring(
-  workerCode.indexOf("async function sendDormantConversation"),
-  workerCode.length
+const workerCode = readFileSync(
+  new URL("../public/workers/dormantConversationWorker.js", import.meta.url),
+  "utf8"
 );
 
-test("dormant conversation worker sends actual API request", async (t) => {
-  let fetchCalls = [];
-  const originalFetch = globalThis.fetch;
-
-  // Mock fetch to capture the request
-  globalThis.fetch = async (url, options) => {
-    fetchCalls.push({ url, options });
-    return {
-      ok: true,
-      json: async () => ({
-        message: "DormantConversation Request Success!",
-        successEmails: [
-          { success: true, reason: "user" },
-          { success: true, reason: "admin" },
-        ],
-        failedEmails: [],
-        conversationes: [
-          {
-            id: "conv1",
-            members: ["user1", "user2"],
-            latestMessage: {
-              id: "msg1",
-              created_at: new Date(),
-              sent_by: "user1",
-            },
-          },
-        ],
-      }),
-    };
+function createWorker(fetch) {
+  const messages = [];
+  const self = {
+    postMessage: (message) => messages.push(structuredClone(message)),
   };
-
-  t.after(() => {
-    globalThis.fetch = originalFetch;
+  runInNewContext(workerCode, { self, fetch }, {
+    filename: "dormantConversationWorker.js",
   });
+  return { self, messages };
+}
 
-  // Create a mock sendDormantConversation function using the extracted code
-  const sendDormantConversation = async (idToken) => {
-    const response = await fetch("/api/dormantConversation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  };
-
-  const testToken = "test-id-token-12345";
-  const result = await sendDormantConversation(testToken);
-
-  // Verify fetch was called correctly
-  assert.equal(fetchCalls.length, 1);
-  const fetchCall = fetchCalls[0];
-  assert.equal(fetchCall.url, "/api/dormantConversation");
-  assert.equal(fetchCall.options.method, "POST");
-  assert.equal(fetchCall.options.headers["Content-Type"], "application/json");
-  assert.equal(fetchCall.options.headers.Authorization, `Bearer ${testToken}`);
-
-  // Verify response is parsed correctly
-  assert.equal(result.message, "DormantConversation Request Success!");
-  assert.equal(Array.isArray(result.successEmails), true);
-  assert.equal(result.successEmails.length, 2);
-  assert.equal(result.successEmails[0].reason, "user");
-  assert.equal(result.successEmails[1].reason, "admin");
-  assert.equal(Array.isArray(result.failedEmails), true);
-  assert.equal(result.failedEmails.length, 0);
-});
-
-test("dormant conversation worker handles API errors", async (t) => {
-  let fetchCalls = [];
-  const originalFetch = globalThis.fetch;
-
-  globalThis.fetch = async (url, options) => {
-    fetchCalls.push({ url, options });
-    return {
-      ok: false,
-      status: 401,
-      statusText: "Unauthorized",
-    };
-  };
-
-  t.after(() => {
-    globalThis.fetch = originalFetch;
-  });
-
-  const sendDormantConversation = async (idToken) => {
-    const response = await fetch("/api/dormantConversation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  };
-
-  const testToken = "invalid-token";
-
-  try {
-    await sendDormantConversation(testToken);
-    assert.fail("Should have thrown an error");
-  } catch (error) {
-    assert.match(error.message, /API error: 401 Unauthorized/);
-  }
-
-  assert.equal(fetchCalls.length, 1);
-});
-
-test("dormant conversation worker handles network errors", async (t) => {
-  const originalFetch = globalThis.fetch;
-
-  globalThis.fetch = async () => {
-    throw new Error("Network request failed");
-  };
-
-  t.after(() => {
-    globalThis.fetch = originalFetch;
-  });
-
-  const sendDormantConversation = async (idToken) => {
-    const response = await fetch("/api/dormantConversation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  };
-
-  const testToken = "test-token";
-
-  try {
-    await sendDormantConversation(testToken);
-    assert.fail("Should have thrown an error");
-  } catch (error) {
-    assert.match(error.message, /Network request failed/);
-  }
-});
-
-test("dormant conversation worker includes proper authorization header", async (t) => {
-  let capturedHeaders = null;
-  const originalFetch = globalThis.fetch;
-
-  globalThis.fetch = async (url, options) => {
-    capturedHeaders = options.headers;
-    return {
-      ok: true,
-      json: async () => ({
-        message: "Success",
-        successEmails: [],
-        failedEmails: [],
-        conversationes: [],
-      }),
-    };
-  };
-
-  t.after(() => {
-    globalThis.fetch = originalFetch;
-  });
-
-  const sendDormantConversation = async (idToken) => {
-    const response = await fetch("/api/dormantConversation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  };
-
-  const testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token";
-  await sendDormantConversation(testToken);
-
-  assert.equal(capturedHeaders["Content-Type"], "application/json");
-  assert.equal(capturedHeaders.Authorization, `Bearer ${testToken}`);
-  assert.ok(capturedHeaders.Authorization.startsWith("Bearer "));
-});
-
-test("dormant conversation worker correctly parses JSON response", async (t) => {
-  const originalFetch = globalThis.fetch;
-  const mockResponse = {
+test("worker posts the API response after sending an authenticated request", async () => {
+  const requests = [];
+  const data = {
     message: "DormantConversation Request Success!",
     successEmails: [
-      { success: true, reason: "user", conversationId: "conv1" },
-      { success: true, reason: "admin", conversationId: "conv2" },
+      { success: true, reason: "user" },
+      { success: true, reason: "admin" },
     ],
-    failedEmails: [
-      { error: "Failed to send", conversationId: "conv3" },
-    ],
-    conversationes: [
-      {
-        id: "conv1",
-        members: ["user1", "user2"],
-        latestMessage: { id: "msg1", created_at: "2026-11-14T00:00:00Z", sent_by: "user1" },
-        user_reminded_at: null,
-        admin_reminded_at: null,
-      },
-    ],
+    failedEmails: [],
+    conversationes: [{ id: "conv1", members: ["user1", "user2"] }],
   };
-
-  globalThis.fetch = async () => {
-    return {
-      ok: true,
-      json: async () => mockResponse,
-    };
-  };
-
-  t.after(() => {
-    globalThis.fetch = originalFetch;
+  const worker = createWorker(async (url, options) => {
+    requests.push({ url, options: structuredClone(options) });
+    return { ok: true, json: async () => data };
   });
 
-  const sendDormantConversation = async (idToken) => {
-    const response = await fetch("/api/dormantConversation", {
+  await worker.self.onmessage({ data: { idToken: "test-token" } });
+
+  assert.deepEqual(requests, [{
+    url: "/api/dormantConversation",
+    options: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
+        Authorization: "Bearer test-token",
       },
-    });
+    },
+  }]);
+  assert.deepEqual(worker.messages, [{ success: true, data }]);
+});
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
+test("worker preserves successful and failed emails in a partial success response", async () => {
+  const data = {
+    message: "DormantConversation Request Success!",
+    successEmails: [{ success: true, reason: "user", reminderUserUids: ["user1"] }],
+    failedEmails: [{ message: "Failed to send email.", error: "Mail service unavailable" }],
+    conversationes: [{ id: "conv1" }, { id: "conv2" }],
   };
+  const worker = createWorker(async () => ({ ok: true, json: async () => data }));
 
-  const result = await sendDormantConversation("test-token");
+  await worker.self.onmessage({ data: { idToken: "test-token" } });
 
-  assert.deepEqual(result, mockResponse);
-  assert.equal(result.successEmails.length, 2);
-  assert.equal(result.failedEmails.length, 1);
-  assert.equal(result.conversationes.length, 1);
-  assert.equal(result.conversationes[0].members.length, 2);
+  assert.deepEqual(worker.messages, [{ success: true, data }]);
+});
+
+test("worker rejects a missing token without making a request", async () => {
+  let fetchCalls = 0;
+  const worker = createWorker(async () => { fetchCalls += 1; });
+
+  await worker.self.onmessage({ data: {} });
+
+  assert.equal(fetchCalls, 0);
+  assert.deepEqual(worker.messages, [{ success: false, error: "No auth token" }]);
+});
+
+test("worker reports HTTP errors", async () => {
+  const worker = createWorker(async () => ({
+    ok: false,
+    status: 401,
+    statusText: "Unauthorized",
+  }));
+
+  await worker.self.onmessage({ data: { idToken: "invalid-token" } });
+
+  assert.equal(worker.messages.length, 1);
+  assert.equal(worker.messages[0].success, false);
+  assert.equal(worker.messages[0].error, "API error: 401 Unauthorized");
+  assert.equal(worker.messages[0].errorName, "Error");
+  assert.equal(worker.messages[0].stage, "sendDormantConversation/parse");
+  assert.match(worker.messages[0].errorStack, /API error: 401 Unauthorized/);
+});
+
+test("worker reports network and response parsing errors", async () => {
+  for (const [fetch, message] of [
+    [async () => { throw new Error("Network request failed"); }, "Network request failed"],
+    [async () => ({
+      ok: true,
+      json: async () => { throw new SyntaxError("Invalid JSON"); },
+    }), "Invalid JSON"],
+  ]) {
+    const worker = createWorker(fetch);
+    await worker.self.onmessage({ data: { idToken: "test-token" } });
+
+    assert.equal(worker.messages.length, 1);
+    assert.equal(worker.messages[0].success, false);
+    assert.equal(worker.messages[0].error, message);
+    assert.equal(worker.messages[0].errorName, message === "Invalid JSON" ? "SyntaxError" : "Error");
+    assert.equal(worker.messages[0].stage, "sendDormantConversation/parse");
+    assert.match(worker.messages[0].errorStack, new RegExp(message));
+  }
 });
