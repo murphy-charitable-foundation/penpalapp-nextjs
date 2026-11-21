@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import nodemailer from "nodemailer";
 import { isReminderDue, timestampMillis } from "../app/utils/dormantConversationPolicy.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const conversationId = "private-conversation";
 const conversationPath = `conversations/${conversationId}`;
 const recipients = ["first@example.test", "second@example.test"];
+const acceptAll = (mail) => ({ accepted: [...(mail.to || []), ...(mail.bcc || [])], rejected: [] });
 const members = [{ firstName: "Private", lastName: "Person" }];
 const dormant = () => ({ latest_message_created_at: new Date(Date.now() - 35 * DAY_MS) });
 const dataModule = (source) => `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
@@ -88,14 +90,14 @@ async function setup(t, options = {}) {
   }, options.transactions);
   const emails = [];
   const errors = [];
+  t.mock.method(console, "error", (...args) => errors.push(args));
   const key = `dormant.delivery.test.${nextSetup++}`;
   globalThis[Symbol.for(key)] = {
     db,
     sendEmailMessage: async (mail) => {
       emails.push(mail);
-      return options.send ? options.send(mail, emails.length) : { accepted: mail.to, rejected: [] };
+      return options.send ? options.send(mail, emails.length) : acceptAll(mail);
     },
-    logError: async (...args) => errors.push(args),
   };
   t.after(() => delete globalThis[Symbol.for(key)]);
   if (!configuredTests.has(t)) {
@@ -108,13 +110,12 @@ async function setup(t, options = {}) {
     });
   }
   const dependencies = dataModule(`
-    export const { db, sendEmailMessage, logError } = globalThis[Symbol.for(${JSON.stringify(key)})];
+    export const { db, sendEmailMessage } = globalThis[Symbol.for(${JSON.stringify(key)})];
     export default function emailTemplate({ message }) { return '<p>' + message + '</p>'; }
   `);
   const source = (await readFile(new URL("../app/utils/dormantConversationHelpers.js", import.meta.url), "utf8"))
     .replace('from "../firebaseAdmin"', `from ${JSON.stringify(dependencies)}`)
     .replace('from "./email"', `from ${JSON.stringify(dependencies)}`)
-    .replace('from "./serverAnalytics.mjs"', `from ${JSON.stringify(dependencies)}`)
     .replace('from "../api/dormantConversation/emailTemplate"', `from ${JSON.stringify(dependencies)}`)
     .replace('from "./dormantConversationPolicy.js"',
       `from ${JSON.stringify(new URL("../app/utils/dormantConversationPolicy.js", import.meta.url).href)}`);
@@ -142,7 +143,7 @@ test("concurrent reminders claim one SMTP send, even when Firestore retries call
     send: async (mail) => {
       started.resolve();
       await complete.promise;
-      return { accepted: mail.to, rejected: [] };
+      return acceptAll(mail);
     },
   });
   const first = fixture.send();
@@ -177,7 +178,7 @@ test("the next due reminder cycle sends all recipients again with a fresh claim"
   conversation.user_reminded_at = new Date(Date.now() - 15 * DAY_MS);
   assert.equal((await fixture.send()).success, true);
   assert.equal(fixture.emails.length, 2);
-  assert.deepEqual(fixture.emails.map(({ to }) => to), [recipients, recipients]);
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [recipients, recipients]);
   assert.notEqual(fixture.journals()[0].claimId, firstClaim);
   assert.equal(fixture.journals()[0].state, "sent");
   assert.equal(fixture.journals()[0].acceptedRecipients.length, 2);
@@ -189,7 +190,7 @@ test("explicit SMTP 550 rejection releases the claim for a safe retry", async (t
   const fixture = await setup(t, {
     send: async (mail, attempt) => {
       if (attempt === 1) throw Object.assign(new Error("private SMTP response"), { responseCode: 550 });
-      return { accepted: mail.to, rejected: [] };
+      return acceptAll(mail);
     },
   });
   const failed = await fixture.send();
@@ -209,7 +210,7 @@ for (const failure of [
     const fixture = await setup(t, {
       send: async (mail, attempt) => {
         if (attempt === 1) throw Object.assign(new Error("Pre-send failure"), failure);
-        return { accepted: mail.to, rejected: [] };
+        return acceptAll(mail);
       },
     });
     assert.equal((await fixture.send()).code, "email-rejected");
@@ -217,21 +218,41 @@ for (const failure of [
     assert.deepEqual(fixture.journals()[0].acceptedRecipients, []);
     assert.equal(fixture.db.documents.get(conversationPath).user_reminded_at, undefined);
     assert.equal((await fixture.send()).success, true);
-    assert.deepEqual(fixture.emails.map(({ to }) => to), [recipients, recipients]);
+    assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [recipients, recipients]);
   });
 }
+
+test("member addresses are SMTP envelope recipients and absent from delivered headers", async (t) => {
+  let envelope;
+  let headers;
+  const transport = nodemailer.createTransport({
+    send(mail, done) {
+      envelope = mail.message.getEnvelope();
+      mail.message.build((error, bytes) => {
+        if (error) return done(error);
+        headers = bytes.toString().split("\r\n\r\n")[0];
+        done(null, { accepted: envelope.to, rejected: [] });
+      });
+    },
+  });
+  const fixture = await setup(t, { send: (mail) => transport.sendMail(mail) });
+  assert.equal((await fixture.send()).success, true);
+  assert.deepEqual(envelope.to, recipients);
+  for (const recipient of recipients) assert.ok(!headers.includes(recipient));
+  assert.doesNotMatch(headers, /^Bcc:/im);
+});
 
 test("a partial SMTP success retries only recipients that were rejected", async (t) => {
   const fixture = await setup(t, {
     send: async (mail, attempt) => attempt === 1
       ? { accepted: [recipients[0].toUpperCase()], rejected: [recipients[1]] }
-      : { accepted: mail.to, rejected: [] },
+      : acceptAll(mail),
   });
   assert.equal((await fixture.send()).code, "recipient-rejected");
   assert.equal(fixture.journals()[0].acceptedRecipients.length, 1);
   assert.equal(fixture.db.documents.get(conversationPath).user_reminded_at, undefined);
   assert.equal((await fixture.send()).success, true);
-  assert.deepEqual(fixture.emails.map(({ to }) => to), [recipients, [recipients[1]]]);
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [recipients, [recipients[1]]]);
   assert.equal(fixture.journals()[0].acceptedRecipients.length, 2);
 });
 
@@ -241,13 +262,13 @@ test("Unicode and ASCII domain forms share recipient acknowledgments and retry h
   const fixture = await setup(t, {
     send: async (mail, attempt) => attempt === 1
       ? { accepted: [{ address: asciiAddress.toUpperCase() }], rejected: [recipients[1]] }
-      : { accepted: mail.to, rejected: [] },
+      : acceptAll(mail),
   });
   assert.equal((await fixture.send("user", unicodeRecipients)).code, "recipient-rejected");
   assert.equal(fixture.journals()[0].state, "retryable");
   assert.equal(fixture.journals()[0].acceptedRecipients.length, 1);
   assert.equal((await fixture.send("user", unicodeRecipients)).success, true);
-  assert.deepEqual(fixture.emails.map(({ to }) => to), [
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [
     [asciiAddress, recipients[1]], [recipients[1]],
   ]);
   assert.equal(fixture.journals()[0].acceptedRecipients.length, 2);
@@ -258,7 +279,7 @@ test("invalid domains remain visible to SMTP rejection instead of being dropped 
   for (const invalidAddress of ["first@bad domain.example", "first@bücher.example/invalid", "first@\uFFFD.example"]) {
     const fixture = await setup(t, {
       send: async (mail) => {
-        assert.deepEqual(mail.to, [invalidAddress]);
+        assert.deepEqual(mail.bcc, [invalidAddress]);
         throw Object.assign(new Error("Invalid SMTP recipient"), { code: "EENVELOPE", responseCode: 550 });
       },
     });

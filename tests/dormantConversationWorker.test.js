@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
-import { handleDormantConversationResult } from "../app/utils/dormantConversationResult.js";
+import { canStartDormantConversationCheck, handleDormantConversationResult } from "../app/utils/dormantConversationResult.js";
 
 const workerSource = readFileSync(
   new URL("../public/workers/dormantConversationWorker.js", import.meta.url),
@@ -53,10 +53,11 @@ const partialBatch = {
   successEmails: [{ success: true, reason: "user", email: "private@example.com" }],
   failedEmails: [{ error: "private message", conversationId: "private-conversation" }],
 };
+const privateFixturePattern = /private@example\.com|private message|private-conversation/;
 
 function applyResult(result, initialTimestamp) {
   const storage = new Map();
-  if (initialTimestamp) storage.set("dormantConversationTimestamp", initialTimestamp);
+  if (initialTimestamp) storage.set("dormantConversationLiveSuccess.v1", initialTimestamp);
   const events = [];
   const errors = [];
   const complete = handleDormantConversationResult(result, {
@@ -98,9 +99,31 @@ test("production worker POSTs its bearer token and parses the result once", asyn
 
   const applied = applyResult(result);
   assert.equal(applied.complete, true);
-  assert.equal(applied.storage.get("dormantConversationTimestamp"), "2026-11-18T12:00:00.000Z");
+  assert.equal(applied.storage.get("dormantConversationLiveSuccess.v1"), "2026-11-18T12:00:00.000Z");
   assert.deepEqual(applied.events, [["user"], ["admin"]]);
   assert.deepEqual(applied.errors, []);
+});
+
+test("a mock success cannot delay the first real batch beyond the existing one-hour attempt cooldown", async () => {
+  const now = Date.parse("2026-11-18T12:00:00Z");
+  const hour = 60 * 60 * 1000;
+  const values = new Map([
+    ["dormantConversationTimestamp", new Date(now).toISOString()],
+    ["dormantConversationAttemptTimestamp", new Date(now).toISOString()],
+  ]);
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+    removeItem: (key) => values.delete(key),
+  };
+  assert.equal(canStartDormantConversationCheck(storage, now + hour - 1), false);
+  const firstLiveRun = now + hour;
+  assert.equal(canStartDormantConversationCheck(storage, firstLiveRun), true);
+  const worker = createWorker(async () => apiResponse({ successEmails: [], failedEmails: [] }));
+  handleDormantConversationResult(await worker.send(), { storage, now: () => new Date(firstLiveRun) });
+  const nextLiveRun = firstLiveRun + 28 * 24 * hour;
+  assert.equal(canStartDormantConversationCheck(storage, nextLiveRun - 1), false);
+  assert.equal(canStartDormantConversationCheck(storage, nextLiveRun), true);
 });
 
 test("no reminders needed is a successful completed batch", async () => {
@@ -130,7 +153,7 @@ for (const status of [401, 403, 500]) {
     assert.equal(error.name, result.errorName);
     assert.equal(error.code, result.errorCode);
     assert.equal(error.stack, result.errorStack);
-    assert.doesNotMatch(`${error.message} ${error.stack} ${JSON.stringify(context)}`, /private/);
+    assert.doesNotMatch(`${error.message} ${error.stack} ${JSON.stringify(context)}`, privateFixturePattern);
   });
 }
 
@@ -147,10 +170,10 @@ for (const status of [200, 500]) {
     const priorTimestamp = "2026-10-01T12:00:00.000Z";
     const applied = applyResult(result, priorTimestamp);
     assert.equal(applied.complete, false);
-    assert.equal(applied.storage.get("dormantConversationTimestamp"), priorTimestamp);
+    assert.equal(applied.storage.get("dormantConversationLiveSuccess.v1"), priorTimestamp);
     assert.deepEqual(applied.events, [["user"]]);
     const [error, context] = applied.errors[0];
-    assert.doesNotMatch(`${error.message} ${error.stack} ${JSON.stringify(context)}`, /private/);
+    assert.doesNotMatch(`${error.message} ${error.stack} ${JSON.stringify(context)}`, privateFixturePattern);
   });
 }
 
@@ -170,7 +193,7 @@ test("network failures expose a stable code without forwarding exception content
   assert.equal(result.success, false);
   assert.equal(result.errorCode, "network-error");
   assert.equal(result.stage, "request");
-  assert.doesNotMatch(result.errorStack, /private/);
+  assert.doesNotMatch(result.errorStack, privateFixturePattern);
   assert.equal(applyResult(result).storage.size, 0);
 });
 
@@ -189,7 +212,7 @@ for (const status of [200, 502]) {
     assert.equal(reads, 1);
     assert.equal(result.success, false);
     assert.equal(result.errorCode, status === 200 ? "invalid-response" : "http-error");
-    assert.doesNotMatch(result.errorStack, /private/);
+    assert.doesNotMatch(result.errorStack, privateFixturePattern);
     assert.equal(applyResult(result).storage.size, 0);
   });
 }

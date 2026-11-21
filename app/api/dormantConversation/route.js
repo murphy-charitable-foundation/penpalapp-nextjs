@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { db, auth } from "../../firebaseAdmin";
 import { sendEmail } from "../../utils/dormantConversationHelpers";
 import { isReminderDue } from "../../utils/dormantConversationPolicy.js";
-import { logError } from "../../utils/serverAnalytics.mjs";
 
 export const runtime = "nodejs";
 
@@ -20,8 +19,7 @@ async function mapConversations(documents, processConversation) {
 }
 
 function report(error, conversationId) {
-  void logError(error, { description: "Dormant conversation request failed", conversationId })
-    .catch(() => {});
+  console.error("Dormant conversation request failed", { error, conversationId });
 }
 
 export async function POST(request) {

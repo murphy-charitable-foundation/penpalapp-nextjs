@@ -8,9 +8,11 @@ last successful reminder of that type. Deleted conversations are excluded.
 The endpoint returns `successEmails`, `failedEmails`, and `skippedEmails`.
 Any failure returns HTTP 500, including a concurrent send that is still in
 progress. A completed batch, including one with no reminders due, returns 200.
-Only a completed batch sets the browser's 28-day success cooldown. Failed batches
-retain the existing one-hour attempt cooldown. Successful reminders in a mixed
-batch still contribute category-only analytics events.
+The browser stores its last completed live batch under `dormantConversationLiveSuccess.v1`
+and waits 28 days before another scan. Browsers that previously ran the mock worker
+can make their first live scan after the existing one-hour attempt cooldown. A failed
+batch also uses the one-hour cooldown. Successful reminders in a mixed batch still
+contribute category-only analytics events.
 
 ## Delivery coordination
 
@@ -18,7 +20,8 @@ batch still contribute category-only analytics events.
 SHA-256 hash of the conversation ID plus the reminder type (`user` or `admin`).
 Each claim transaction rechecks the conversation's current eligibility before
 recording `sending`. SMTP runs outside the transaction so Firestore transaction
-retries cannot resend the message.
+retries cannot resend the message. Member reminders use BCC to hide participants'
+email addresses from each other. The administrator receives a separate, direct email.
 
 | State | Meaning | Automatic retry |
 | --- | --- | --- |
@@ -66,11 +69,11 @@ verify the deployed policy. Existing broad collection wildcards must also be
 checked; an additional denying match does not override another allowing match.
 
 Run `npm run test:media` to execute the production worker, result handler,
-delivery helper, API route, storage wrapper, and analytics tests. This command
+delivery helper, API route, storage wrapper, and content-report tests. This command
 includes both `.test.js` and `.test.mjs` files and is used by the Node 22 CI job.
 Tests replace external boundaries with controlled fakes; they send no real
 emails or analytics events. Delivery tests cover concurrent claims, transaction
 retries, partial recipient acceptance, and failure after SMTP acceptance.
 
-See [analytics documentation](../app/README.MD#logerrorerror-errorinfo)
-for the GA event schema and optional server analytics environment variables.
+Reminder delivery errors are recorded in server logs. The reminder API does not
+depend on server-side GA delivery.

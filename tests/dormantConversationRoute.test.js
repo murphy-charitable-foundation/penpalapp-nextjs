@@ -14,6 +14,9 @@ const conversation = (id, data = {}) => ({
 async function harness(t, options = {}) {
   const sent = [];
   const errors = [];
+  t.mock.method(console, "error", (message, context) => {
+    if (message === "Dormant conversation request failed") errors.push(context.error);
+  });
   const reads = [];
   const documents = (options.conversations || []).map(({ id, ...data }) => ({
     id, data: () => ({ ...data }),
@@ -50,7 +53,6 @@ async function harness(t, options = {}) {
       sent.push(args);
       return options.send ? options.send(...args) : { success: true, conversationId: args[0], reason: args[3] };
     },
-    logError: async (error) => { errors.push(error); },
   };
   const id = nextFixture++;
   fixtures.set(id, fixture);
@@ -60,7 +62,6 @@ async function harness(t, options = {}) {
     "next/server": dataModule("export const NextResponse = Response;"),
     "../../firebaseAdmin": dataModule(`${prelude} export const db=f.db, auth=f.auth;`),
     "../../utils/dormantConversationHelpers": dataModule(`${prelude} export const sendEmail=f.sendEmail;`),
-    "../../utils/serverAnalytics.mjs": dataModule(`${prelude} export const logError=f.logError;`),
     "../../utils/dormantConversationPolicy.js": new URL("../app/utils/dormantConversationPolicy.js", import.meta.url).href,
   };
   let source = await readFile(new URL("../app/api/dormantConversation/route.js", import.meta.url), "utf8");

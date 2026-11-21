@@ -4,16 +4,13 @@ import { createContext, useState, useContext, useEffect, useCallback, useRef } f
 import { logDormantMessageSent, logError } from "../app/utils/analytics";
 import { auth } from "../app/firebaseConfig";
 import { SafeStorage } from "../app/utils/safeStorage";
-import { handleDormantConversationResult } from "../app/utils/dormantConversationResult";
+import {
+  ATTEMPT_TIMESTAMP_KEY,
+  canStartDormantConversationCheck,
+  handleDormantConversationResult,
+} from "../app/utils/dormantConversationResult";
 
 const DormantConversationContext = createContext(undefined);
-
-/** Returns a Date for valid ISO strings, or null if missing/invalid (avoids NaN in diffs). */
-function parseStoredISODate(value) {
-  if (value == null || value === "") return null;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
 
 export const DormantConversationProvider = ({ children }) => {
   const [isDormantConversationLoading, setIsDormantConversationLoading] = useState(false);
@@ -55,36 +52,7 @@ export const DormantConversationProvider = ({ children }) => {
   }, []);
 
   const handleDormantConversationWorker = useCallback(async () => {
-    if (inFlightRef.current) return;
-
-    const lastAttemptRaw = SafeStorage.getItem("dormantConversationAttemptTimestamp");
-    const lastAttemptDate = parseStoredISODate(lastAttemptRaw);
-    if (lastAttemptRaw && !lastAttemptDate) {
-      SafeStorage.removeItem("dormantConversationAttemptTimestamp");
-    }
-    if (lastAttemptDate) {
-      const diffInMinutes = Math.floor(
-        (Date.now() - lastAttemptDate.getTime()) / (1000 * 60)
-      );
-      // Cooldown to avoid repeated retries when API/worker fails.
-      if (diffInMinutes < 60) return;
-    }
-
-    const dormantRaw = SafeStorage.getItem("dormantConversationTimestamp");
-    const timestampDate = parseStoredISODate(dormantRaw);
-    if (dormantRaw && !timestampDate) {
-      SafeStorage.removeItem("dormantConversationTimestamp");
-    }
-    if (timestampDate) {
-      const now = new Date();
-      const diffInDays = Math.floor(
-        (now - timestampDate) / (1000 * 60 * 60 * 24)
-      );
-
-      if (diffInDays < 28) {
-        return;
-      }
-    }
+    if (inFlightRef.current || !canStartDormantConversationCheck(SafeStorage)) return;
 
     const worker = workerRef.current;
     if (!worker) return;
@@ -99,7 +67,7 @@ export const DormantConversationProvider = ({ children }) => {
     try {
       const idToken = await user.getIdToken();
       if (workerRef.current !== worker) return;
-      SafeStorage.setItem("dormantConversationAttemptTimestamp", new Date().toISOString());
+      SafeStorage.setItem(ATTEMPT_TIMESTAMP_KEY, new Date().toISOString());
       setIsDormantConversationLoading(true);
       worker.postMessage({ idToken });
     } catch (err) {

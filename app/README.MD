@@ -242,32 +242,7 @@ logInEvent("success", "User logged in via Google");
 ```
 
 ### `logError(error, errorInfo)`
-Logs an `uncaught_error` event to Firebase Analytics using fixed, allowlisted
-error names, codes, sources, and source types. Raw messages, descriptions, stacks,
-paths, user identifiers, arbitrary context, and content-derived fingerprints are
-never included. Unknown categories map to fixed defaults. Next.js navigation
-control-flow errors are ignored. Browser diagnostics are printed only in development.
-
-Server code imports `logError` from `utils/serverAnalytics.mjs`; full diagnostic
-context stays in access-controlled server logs. Optional server GA4 delivery uses
-`GA_MEASUREMENT_ID` and `GA_API_SECRET` (server environment variables only), has a
-three-second timeout, and includes a random event ID for log correlation. It does
-not send Firebase UIDs or a persistent client identity. Successful content reports
-write a server audit entry instead of an error event.
-
-For browser error and dormant-reminder events, automatic `page_location` and
-`page_referrer` are overridden with `https://redacted.invalid/`, and `page_title`
-with `Redacted page`. These fixed values prevent GA's default page context from
-including dynamic IDs or query strings. GA documents these defaults in its
-[configuration reference](https://developers.google.com/analytics/devguides/collection/ga4/reference/config).
-This change covers those events only; existing page-view, click, and other
-analytics collection retain their previous behavior.
-
-GA4 dashboards should use the event-scoped custom dimensions `error_name`,
-`error_code`, `error_source`, and `error_source_type`. Remove dependencies on the
-old raw error fields; they are no longer populated. Server `error_event_id` is a
-random log-correlation value, not a user identity or content fingerprint. Existing
-historical GA records are not modified by this code change.
+Logs an error to Firebase and Sentry.
 
 **Example:**
 
@@ -275,7 +250,7 @@ historical GA records are not modified by this code change.
 try {
   throw new Error("Something went wrong");
 } catch (err) {
-  logError(err, { source: "handled" });
+  logError(err, { context: "donate_page" });
 }
 ```
 

@@ -1,3 +1,24 @@
+export const ATTEMPT_TIMESTAMP_KEY = "dormantConversationAttemptTimestamp";
+// The legacy dormantConversationTimestamp was also written by the mock worker.
+const LIVE_SUCCESS_KEY = "dormantConversationLiveSuccess.v1";
+const HOUR_MS = 60 * 60 * 1000;
+
+function withinCooldown(storage, key, now, duration) {
+  const value = storage.getItem(key);
+  if (!value) return false;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    storage.removeItem(key);
+    return false;
+  }
+  return now - timestamp < duration;
+}
+
+export function canStartDormantConversationCheck(storage, now = Date.now()) {
+  return !withinCooldown(storage, ATTEMPT_TIMESTAMP_KEY, now, HOUR_MS) &&
+    !withinCooldown(storage, LIVE_SUCCESS_KEY, now, 28 * 24 * HOUR_MS);
+}
+
 /** Apply a worker result without putting reminder payloads into error logs. */
 export function handleDormantConversationResult(
   result,
@@ -11,7 +32,7 @@ export function handleDormantConversationResult(
     data.success !== false;
 
   if (complete) {
-    storage.setItem("dormantConversationTimestamp", now().toISOString());
+    storage.setItem(LIVE_SUCCESS_KEY, now().toISOString());
   }
 
   // Successful reminders are already marked on the server, including those in

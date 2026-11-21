@@ -1,6 +1,6 @@
 import admin from "firebase-admin";
 
-import { logError } from "./utils/serverAnalytics.mjs";
+import { logError } from "./utils/analytics.js";
 
 export function getOrInitApp(name='[DEFAULT]', envVar='FIREBASE_SERVICE_ACCOUNT_JSON') {
   const existingApp = admin.apps.find((app) => app.name === name);
@@ -11,7 +11,7 @@ export function getOrInitApp(name='[DEFAULT]', envVar='FIREBASE_SERVICE_ACCOUNT_
     const serviceAccount = JSON.parse(process.env[envVar]);
     return admin.initializeApp({credential: admin.credential.cert(serviceAccount)}, name);
   } catch (error) {
-    void logError(error, {
+    logError(error, {
       description: "Error parsing environment variable:",
     });
   }

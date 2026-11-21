@@ -2,7 +2,6 @@ import { createHash, randomUUID } from "node:crypto";
 import { domainToASCII } from "node:url";
 import { db } from "../firebaseAdmin";
 import { sendEmailMessage } from "./email";
-import { logError } from "./serverAnalytics.mjs";
 import { isReminderDue, timestampMillis } from "./dormantConversationPolicy.js";
 import generateDormantConversationEmailTemplate from "../api/dormantConversation/emailTemplate";
 
@@ -36,8 +35,7 @@ function definitelyNotDelivered(error) {
 }
 
 function report(error, conversationId, reason) {
-  void logError(error, { description: "Dormant reminder delivery failed", conversationId, reason })
-    .catch(() => {});
+  console.error("Dormant reminder delivery failed", { error, conversationId, reason });
 }
 
 function makeMessage(conversationId, members, toEmails, reason, recipients) {
@@ -47,7 +45,7 @@ function makeMessage(conversationId, members, toEmails, reason, recipients) {
     ? `Conversation ${conversationId}, involving ${formatList(names)} (${formatList(toEmails)}), has been inactive. Please consider contacting them.`
     : "You have unread messages from two weeks ago. Please check them at your earliest convenience.";
   return {
-    to: recipients,
+    ...(reason === "admin" ? { to: recipients } : { bcc: recipients }),
     from: process.env.PENPAL_EMAIL,
     subject: "Conversation reminder",
     text: message,
