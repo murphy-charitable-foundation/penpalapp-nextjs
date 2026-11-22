@@ -194,6 +194,16 @@ export const isValidPdfFile = async (file) => {
 export const validatePickedAttachment = async (file) => {
   if (file?.type.startsWith("image/")) return { mediaKind: "image" };
   if (file?.type.startsWith("video/")) return { mediaKind: "video" };
+  if (file?.type.startsWith("audio/")) return { mediaKind: "audio" };
+  if (
+    (file?.type === "" || file?.type === "application/octet-stream") &&
+    /\.m4a$/i.test(file.name)
+  ) {
+    return {
+      mediaKind: "audio",
+      file: new File([file], file.name, { type: "audio/mp4", lastModified: file.lastModified }),
+    };
+  }
   if (file?.type === "application/pdf") {
     if (!isPdfWithinSizeLimit(file)) {
       return { error: "PDF files must be 25 MB or smaller." };
@@ -203,7 +213,7 @@ export const validatePickedAttachment = async (file) => {
     }
     return { mediaKind: "pdf" };
   }
-  return { error: "Only image, video, and PDF files can be attached." };
+  return { error: "Only image, video, audio, and PDF files can be attached." };
 };
 
 export const isFileDrag = (dataTransfer) =>

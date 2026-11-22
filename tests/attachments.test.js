@@ -106,6 +106,8 @@ test("dropped attachments use the picker type and PDF safety checks", async (t) 
 
   assert.deepEqual(await validatePickedAttachment(file("image", "photo.jpg", "image/jpeg")), { mediaKind: "image" });
   assert.deepEqual(await validatePickedAttachment(file("video", "clip.mov", "video/quicktime")), { mediaKind: "video" });
+  assert.deepEqual(await validatePickedAttachment(file("audio", "voice.webm", "audio/webm")), { mediaKind: "audio" });
+  assert.deepEqual(await validatePickedAttachment(file("audio", "voice.m4a", "audio/x-m4a")), { mediaKind: "audio" });
   assert.deepEqual(await validatePickedAttachment(file("%PDF-1.7", "letter.pdf", "application/pdf")), { mediaKind: "pdf" });
   assert.deepEqual(
     await validatePickedAttachment({
@@ -117,8 +119,21 @@ test("dropped attachments use the picker type and PDF safety checks", async (t) 
   );
   assert.match((await validatePickedAttachment(file("not a PDF", "letter.pdf", "application/pdf"))).error, /valid PDF/);
   assert.match((await validatePickedAttachment({ type: "application/pdf", size: MAX_PDF_SIZE_BYTES + 1 })).error, /25 MB/);
-  assert.match((await validatePickedAttachment(file("audio", "voice.webm", "audio/webm"))).error, /Only image, video, and PDF/);
-  assert.match((await validatePickedAttachment(file("%PDF-1.7", "letter.pdf", ""))).error, /Only image, video, and PDF/);
+  assert.match((await validatePickedAttachment(file("%PDF-1.7", "letter.pdf", ""))).error, /Only image, video, audio, and PDF/);
+  assert.match((await validatePickedAttachment(file("text", "voice.m4a", "text/plain"))).error, /Only image, video, audio, and PDF/);
+});
+
+test("dropped M4A files with missing or generic MIME types are normalized for upload", async (t) => {
+  const { validatePickedAttachment } = await loadAttachments(t, {});
+  for (const type of ["", "application/octet-stream"]) {
+    const original = new File(["audio"], "Voice.M4A", { type, lastModified: 123 });
+    const result = await validatePickedAttachment(original);
+    assert.equal(result.mediaKind, "audio");
+    assert.equal(result.file.name, original.name);
+    assert.equal(result.file.type, "audio/mp4");
+    assert.equal(result.file.lastModified, original.lastModified);
+    assert.equal(await result.file.text(), await original.text());
+  }
 });
 
 test("file drops reject directories and unreadable entries without losing valid files", async (t) => {
@@ -178,6 +193,22 @@ test("skipped video compression uploads the original MOV and completes normally"
   assert.equal(observed.updates.at(-1).status, "done");
   assert.equal(observed.updates.at(-1).progress, 100);
   assert.equal(observed.uploads.length, 1);
+});
+
+test("dropped M4A with no MIME type uploads as audio", async (t) => {
+  const { validatePickedAttachment } = await loadAttachments(t, {});
+  const original = new File(["audio"], "voice.m4a");
+  const { file } = await validatePickedAttachment(original);
+  const { observed, uploadPromise } = await harness(t, { file, preserveOriginal: true });
+
+  assert.equal(observed.uploads.length, 1);
+  assert.equal(observed.uploads[0].file.name, "voice.m4a");
+  assert.deepEqual(observed.uploads[0].metadata, { contentType: "audio/mp4" });
+  await observed.complete();
+  await uploadPromise;
+  assert.deepEqual(observed.completed, ["voice.m4a"]);
+  assert.equal(observed.updates.at(-1).mediaKind, "audio");
+  assert.equal(observed.updates.at(-1).status, "done");
 });
 
 test("PDF uploads bypass compression and preserve PDF metadata", async (t) => {

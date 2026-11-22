@@ -574,7 +574,7 @@ export default function Page(props) {
         if (result.error) {
           errors.push(`${files[index].name}: ${result.error}`);
         } else {
-          handleAddAttachment({ file: files[index], mediaKind: result.mediaKind });
+          handleAddAttachment({ file: result.file || files[index], mediaKind: result.mediaKind });
         }
       });
       if (errors.length) {
