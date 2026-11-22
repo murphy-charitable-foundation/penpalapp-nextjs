@@ -174,6 +174,8 @@ export const isAllowedMediaUrl = (downloadUrl) => {
 };
 
 export const MAX_PDF_SIZE_BYTES = 25 * 1024 * 1024;
+const MAX_IMPORTED_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
+const MAX_FILES_PER_SELECTION = 10;
 
 export const isPdfWithinSizeLimit = (file) =>
   Boolean(file && file.size <= MAX_PDF_SIZE_BYTES);
@@ -191,8 +193,72 @@ export const isValidPdfFile = async (file) => {
   }
 };
 
+// File.type determines what can enter the queue. The extension fallback in
+// getMediaKind is only for displaying previously stored attachments.
+const validateAttachmentFile = async (file, { importedAudio }) => {
+  if (!file?.size) return { error: "This file is empty." };
+  const mediaKind = getMediaKind(file.type);
+  if (mediaKind === "file") {
+    return { error: "Only image, video, audio, and PDF files can be attached." };
+  }
+  if (mediaKind === "pdf") {
+    if (!isPdfWithinSizeLimit(file)) {
+      return { error: "PDF files must be 25 MiB or smaller." };
+    }
+    if (!(await isValidPdfFile(file))) {
+      return { error: "Please select a valid PDF file." };
+    }
+  }
+  if (importedAudio && mediaKind === "audio" && file.size > MAX_IMPORTED_AUDIO_SIZE_BYTES) {
+    return { error: "Audio files must be 25 MiB or smaller." };
+  }
+  return { mediaKind };
+};
+
+export const validateAttachmentFiles = async (files) => {
+  const selected = [];
+  let selectionTruncated = false;
+  for (const file of files) {
+    if (selected.length === MAX_FILES_PER_SELECTION) {
+      selectionTruncated = true;
+      break;
+    }
+    selected.push(file);
+  }
+  const results = await Promise.all(
+    selected.map((file) => validateAttachmentFile(file, { importedAudio: true })),
+  );
+  const accepted = [];
+  const errors = [];
+  results.forEach(({ mediaKind, error }, index) => {
+    const file = selected[index];
+    if (error) {
+      errors.push(`${file?.name || "Unnamed file"}: ${error}`);
+    } else if (mediaKind === "audio") {
+      accepted.push({ file, mediaKind, preserveOriginalAudio: true });
+    } else {
+      accepted.push({ file, mediaKind });
+    }
+  });
+  if (selectionTruncated) {
+    errors.push(`Only the first ${MAX_FILES_PER_SELECTION} files were checked. Select the remaining files separately.`);
+  }
+  return { accepted, errors };
+};
+
 export const sanitizeFileName = (fileName = "") =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+export const getAvailableAttachmentFileName = (fileName, isInUse) => {
+  const dot = fileName.lastIndexOf(".");
+  const stem = dot > 0 ? fileName.slice(0, dot) : fileName;
+  const extension = dot > 0 ? fileName.slice(dot) : "";
+  let candidate = fileName;
+  for (let number = 2; isInUse(candidate); number++) {
+    candidate = `${stem}-${number}${extension}`;
+  }
+  return candidate;
+};
 
 const isValidStoredFileName = (value) =>
   typeof value === "string" &&
@@ -243,11 +309,12 @@ export const getMediaKind = (contentType = "", fileName = "") => {
   return "file";
 };
 
-export const createAttachmentFromFile = (file, mediaKind) => ({
+export const createAttachmentFromFile = (file, mediaKind, preserveOriginalAudio = false) => ({
   clientKey: `attachment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   fileName: sanitizeFileName(file.name),
   byteSize: file.size,
   mediaKind,
+  preserveOriginalAudio,
   file,
   status: "pending",
   progress: 0,
@@ -476,6 +543,7 @@ export const uploadAttachmentFile = async ({
   onUpdate,
   onComplete,
   onDuplicate,
+  reserveFileName,
 }) => {
   if (signal?.aborted) return;
 
@@ -486,19 +554,20 @@ export const uploadAttachmentFile = async ({
 
   let fileToUpload = attachment.file;
 
-  const hasPdfMimeType = attachment.file.type === "application/pdf";
-  const isPdf = await isValidPdfFile(attachment.file);
-
-  if (
-    hasPdfMimeType &&
-    (!isPdf || !isPdfWithinSizeLimit(attachment.file))
-  ) {
+  const { mediaKind, error: validationError } = await validateAttachmentFile(
+    attachment.file, { importedAudio: attachment.preserveOriginalAudio },
+  );
+  if (signal?.aborted) return;
+  if (validationError) {
     onUpdate?.(attachment.clientKey, { status: "error" });
     return;
   }
 
-  // PDFs bypass compression; images and videos are compressed.
-  if (!isPdf) {
+  // Imported audio keeps its original format. Recorded voice messages still
+  // use the existing compression profile.
+  const compressBeforeUpload = mediaKind !== "pdf" &&
+    !(mediaKind === "audio" && attachment.preserveOriginalAudio);
+  if (compressBeforeUpload) {
     try {
       onUpdate?.(attachment.clientKey, {
         status: "compressing",
@@ -508,6 +577,7 @@ export const uploadAttachmentFile = async ({
       const compressedMedia = await compressMedia(
         attachment.file,
         (compressionProgress) => {
+          if (signal?.aborted) return;
           const progress = Math.round(
             Math.max(0, Math.min(1, compressionProgress)) * 40,
           );
@@ -517,8 +587,9 @@ export const uploadAttachmentFile = async ({
             progress,
           });
         },
-        {},
+        { signal },
       );
+      if (signal?.aborted) return;
 
       if (compressedMedia instanceof File) {
         fileToUpload = new File(
@@ -536,14 +607,8 @@ export const uploadAttachmentFile = async ({
           { type: compressedMedia.type || attachment.file.type },
         );
       }
-
-      onUpdate?.(attachment.clientKey, {
-        file: fileToUpload,
-        fileName: fileToUpload.name,
-        byteSize: fileToUpload.size,
-        mediaKind: getMediaKind(fileToUpload.type, fileToUpload.name),
-      });
     } catch (error) {
+      if (signal?.aborted) return;
       console.error("Attachment compression failed:", error);
       onUpdate?.(attachment.clientKey, { status: "error" });
       return;
@@ -552,7 +617,8 @@ export const uploadAttachmentFile = async ({
 
   if (signal?.aborted) return;
 
-  const fileName = sanitizeFileName(fileToUpload.name);
+  const proposedFileName = sanitizeFileName(fileToUpload.name);
+  const fileName = reserveFileName?.(proposedFileName) ?? proposedFileName;
   const objectPath = getMessageAttachmentObjectPath({
     conversationId,
     messageId,
@@ -562,6 +628,18 @@ export const uploadAttachmentFile = async ({
   if (!objectPath) {
     onUpdate?.(attachment.clientKey, { status: "error" });
     return;
+  }
+
+  if (fileName !== proposedFileName) {
+    fileToUpload = new File([fileToUpload], fileName, { type: fileToUpload.type });
+  }
+  if (compressBeforeUpload) {
+    onUpdate?.(attachment.clientKey, {
+      file: fileToUpload,
+      fileName,
+      byteSize: fileToUpload.size,
+      mediaKind: getMediaKind(fileToUpload.type, fileName),
+    });
   }
 
   const objectRef = storageRef(storage, objectPath);
@@ -585,7 +663,8 @@ export const uploadAttachmentFile = async ({
       const uploadProgress = snapshot.totalBytes
         ? snapshot.bytesTransferred / snapshot.totalBytes
         : 0;
-      const progress = Math.round(40 + uploadProgress * 60);
+      const start = compressBeforeUpload ? 40 : 0;
+      const progress = Math.round(start + uploadProgress * (100 - start));
       onUpdate?.(attachment.clientKey, { progress, status: "uploading" });
     },
     async (error) => {
@@ -599,7 +678,7 @@ export const uploadAttachmentFile = async ({
       if (error?.code === "storage/unauthorized") {
         try {
           await getMetadata(objectRef);
-          onDuplicate?.(fileName);
+          if (!signal?.aborted) onDuplicate?.(fileName);
           resolve();
           return;
         } catch (metadataError) {

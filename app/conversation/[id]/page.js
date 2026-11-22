@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, use } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, use } from "react";
 import { db } from "../../firebaseConfig";
 import {
   collection,
@@ -29,13 +29,15 @@ import {
   getCachedAttachmentQueue,
   getCompletedAttachmentFileNamesForSave,
   getMessageAttachmentFileNames,
-  isPdfWithinSizeLimit,
-  isValidPdfFile,
+  getAvailableAttachmentFileName,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
   sanitizeFileName,
   uploadAttachmentFile,
+  validateAttachmentFiles,
 } from "../../utils/attachments";
+import { createAttachmentSelection } from "../../utils/attachmentSelection";
+import { createAttachmentUploadQueue } from "../../utils/attachmentUploadQueue";
 import { formatTimestamp } from "../../utils/dateHelpers";
 import ProfileImage from "../../../components/general/ProfileImage";
 import { FaExclamationCircle } from "react-icons/fa";
@@ -69,21 +71,28 @@ const attachmentFileNamesToSave = (attachments) =>
 
 const getMessageContentForSave = (content) => (content ?? "").trim();
 
-export default function Page(props) {
-  const params = use(props.params);
-  const { id } = params;
+const isAttachmentProcessing = ({ status }) => status !== "done" && status !== "error";
 
-  const router = useRouter();
+export default function Page(props) {
+  const { id } = use(props.params);
   const { user } = useUser();
+  usePageAnalytics("/conversation/[id]");
+  return <Conversation key={JSON.stringify([id, user?.uid])} id={id} user={user} />;
+}
+
+function Conversation({ id, user }) {
+  const router = useRouter();
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
-  const pdfInputRef = useRef(null);
+  const filesInputRef = useRef(null);
   const messageContentRef = useRef("");
   const pendingAttachmentsRef = useRef([]);
   const attachmentAbortControllersRef = useRef(new Map());
+  const [enqueueUpload] = useState(() => createAttachmentUploadQueue());
   const activeAttachmentFileNamesRef = useRef(new Set());
+  const deletingDraftAttachmentFileNamesRef = useRef(new Set());
   const draftRef = useRef(null);
   const draftSaveQueueRef = useRef(Promise.resolve());
   const draftAttachmentViewerRef = useRef(null);
@@ -134,7 +143,11 @@ export default function Page(props) {
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const [pendingAttachments, setPendingAttachments] = useState([]);
-  const [pdfUploadError, setPdfUploadError] = useState("");
+  const [attachmentErrors, setAttachmentErrors] = useState([]);
+  const [composerBusy, setComposerBusy] = useState(false);
+  const [attachmentSelection] = useState(() =>
+    createAttachmentSelection(validateAttachmentFiles, setComposerBusy),
+  );
   const [queuedAttachmentDeletes, setQueuedAttachmentDeletes] = useState([]);
   const [attachmentToDelete, setAttachmentToDelete] = useState(null);
   const [showAttachmentDeleteDialog, setShowAttachmentDeleteDialog] = useState(false);
@@ -168,6 +181,14 @@ export default function Page(props) {
   useEffect(() => {
     pendingAttachmentsRef.current = pendingAttachments;
   }, [pendingAttachments]);
+
+  useLayoutEffect(() => {
+    const controllers = attachmentAbortControllersRef.current;
+    return () => {
+      attachmentSelection.cancel();
+      for (const controller of controllers.values()) controller.abort();
+    };
+  }, [attachmentSelection]);
 
   useEffect(() => {
     const previewCache = draftAttachmentPreviewCacheRef.current;
@@ -334,137 +355,115 @@ export default function Page(props) {
     setPendingAttachments(remainingAttachments);
   };
 
-  const uploadAttachment = async (attachment) => {
-    let uploadPromise;
+  const hasAttachmentFileName = (fileName) => {
+    if (pendingAttachmentsRef.current.some(
+      (item) => item.status !== "error" && item.fileName === fileName,
+    )) return true;
 
-    try {
-      if (!attachment || !user?.uid || !messagesRef) {
-        updateAttachment(attachment?.clientKey, { status: "error" });
-        return;
-      }
+    if (!editingMessageId) return deletingDraftAttachmentFileNamesRef.current.has(fileName);
+    // Removed edit attachments still belong to the message until the edit is saved.
+    const message = allMessages.find((item) => item.id === editingMessageId);
+    return editSessionUploadFileNamesRef.current.has(fileName) ||
+      getMessageAttachmentFileNames(message).includes(fileName);
+  };
 
-      const signal = attachmentAbortControllersRef.current.get(
-        attachment.clientKey,
-      )?.signal;
+  const uploadAttachment = async (attachment, signal) => {
+    if (!attachment || !user?.uid || !messagesRef) {
+      updateAttachment(attachment?.clientKey, { status: "error" });
+      return;
+    }
 
-      const isEditingExistingMessage = Boolean(editingMessageId);
-      let targetMessageId = editingMessageId;
+    const isEditingExistingMessage = Boolean(editingMessageId);
+    let targetMessageId = editingMessageId;
 
-      if (!isEditingExistingMessage) {
-        let draftMessage;
+    if (!isEditingExistingMessage) {
+      let draftMessage;
 
-        try {
-          draftMessage = await saveDraft(messageContent);
-        } catch (error) {
-          updateAttachment(attachment.clientKey, { status: "error" });
-          return;
-        }
-
-        if (!draftMessage?.id) {
-          updateAttachment(attachment.clientKey, { status: "error" });
-          return;
-        }
-
-        targetMessageId = draftMessage.id;
-      }
-
-      if (!targetMessageId) {
+      try {
+        draftMessage = await saveDraft(messageContentRef.current);
+        if (signal.aborted) return;
+      } catch (error) {
         updateAttachment(attachment.clientKey, { status: "error" });
         return;
       }
 
-      if (isEditingExistingMessage) {
-        editSessionUploadFileNamesRef.current.add(attachment.fileName);
+      if (!draftMessage?.id) {
+        updateAttachment(attachment.clientKey, { status: "error" });
+        return;
       }
 
-      uploadPromise = uploadAttachmentFile({
-        attachment,
-        signal,
-        conversationId: id,
-        messageId: targetMessageId,
-        onUpdate: updateAttachment,
-        onDuplicate: (fileName) => {
-          editSessionUploadFileNamesRef.current.delete(fileName);
-          removeAttachment(attachment.clientKey);
-          alert(`A file named "${fileName}" has already been uploaded.`);
-        },
-        onComplete: async (fileName) => {
-          const completedAttachments = pendingAttachmentsRef.current.map(
-            (item) =>
-              item.clientKey === attachment.clientKey
-                ? {
-                    ...item,
-                    fileName,
-                    file: null,
-                    status: "done",
-                    progress: 100,
-                  }
-                : item,
-          );
-          pendingAttachmentsRef.current = completedAttachments;
-          setPendingAttachments(completedAttachments);
-
-          if (!isEditingExistingMessage) {
-            try {
-              await saveDraft(
-                messageContentRef.current,
-                () => pendingAttachmentsRef.current,
-                targetMessageId,
-              );
-            } catch (error) {
-              logError(error, {
-                description: "Failed to save draft after attachment upload:",
-              });
-            }
-          }
-        },
-      });
-
-      if (isEditingExistingMessage) {
-        editSessionUploadPromisesRef.current.add(uploadPromise);
-      }
-
-      await uploadPromise;
-    } finally {
-      if (attachment?.file?.name) {
-        activeAttachmentFileNamesRef.current.delete(
-          sanitizeFileName(attachment.file.name),
-        );
-      }
-
-      if (attachment?.clientKey) {
-        attachmentAbortControllersRef.current.delete(attachment.clientKey);
-      }
-
-      if (uploadPromise) {
-        editSessionUploadPromisesRef.current.delete(uploadPromise);
-      }
+      targetMessageId = draftMessage.id;
     }
+
+    if (!targetMessageId) {
+      updateAttachment(attachment.clientKey, { status: "error" });
+      return;
+    }
+
+    const editUploadFileNames = editSessionUploadFileNamesRef.current;
+    const activeFileNames = activeAttachmentFileNamesRef.current;
+    let convertedFileName;
+    await uploadAttachmentFile({
+      attachment,
+      signal,
+      conversationId: id,
+      messageId: targetMessageId,
+      onUpdate: updateAttachment,
+      reserveFileName: (fileName) => {
+        // The original name was reserved when the file was queued.
+        if (fileName === attachment.fileName) return fileName;
+        convertedFileName = getAvailableAttachmentFileName(
+          fileName,
+          (name) => activeFileNames.has(name) || hasAttachmentFileName(name),
+        );
+        activeFileNames.add(convertedFileName);
+        return convertedFileName;
+      },
+      onDuplicate: (fileName) => {
+        removeAttachment(attachment.clientKey);
+        alert(`A file named "${fileName}" has already been uploaded.`);
+      },
+      onComplete: async (fileName) => {
+        // Storage has finished. A later navigation must not delete a file
+        // while the draft write that references it is completing.
+        attachmentAbortControllersRef.current.delete(attachment.clientKey);
+        if (isEditingExistingMessage) {
+          editUploadFileNames.add(fileName);
+          return;
+        }
+        try {
+          await saveDraft(
+            messageContentRef.current,
+            () => pendingAttachmentsRef.current,
+            targetMessageId,
+          );
+        } catch (error) {
+          logError(error, {
+            description: "Failed to save draft after attachment upload:",
+          });
+        }
+      },
+    }).finally(() => {
+      if (convertedFileName) activeFileNames.delete(convertedFileName);
+    });
   };
 
-  const handleAddAttachment = ({ file, mediaKind }) => {
+  const handleAddAttachment = ({ file, mediaKind, preserveOriginalAudio }) => {
     const fileName = sanitizeFileName(file.name);
     if (activeAttachmentFileNamesRef.current.has(fileName)) {
       alert(`Please wait for the previous upload of "${fileName}" to finish.`);
       return;
     }
 
-    const hasDuplicateFileName = pendingAttachmentsRef.current.some(
-      (attachment) =>
-        attachment.status !== "error" && attachment.fileName === fileName,
-    );
-
-    if (hasDuplicateFileName) {
+    if (hasAttachmentFileName(fileName)) {
       alert(`A file named "${fileName}" has already been uploaded.`);
       return;
     }
 
-    const newAttachment = createAttachmentFromFile(file, mediaKind);
+    const newAttachment = createAttachmentFromFile(file, mediaKind, preserveOriginalAudio);
     activeAttachmentFileNamesRef.current.add(fileName);
-    attachmentAbortControllersRef.current.set(
-      newAttachment.clientKey,
-      new AbortController(),
-    );
+    const controller = new AbortController();
+    attachmentAbortControllersRef.current.set(newAttachment.clientKey, controller);
     pendingAttachmentsRef.current = [
       ...pendingAttachmentsRef.current,
       newAttachment,
@@ -472,73 +471,40 @@ export default function Page(props) {
     setPendingAttachments(pendingAttachmentsRef.current);
     setIsEditing(true);
     setHasDraftContent(true);
-    uploadAttachment(newAttachment);
+    const upload = enqueueUpload(
+      () => uploadAttachment(newAttachment, controller.signal),
+      controller.signal,
+    ).catch((error) => {
+      if (!controller.signal.aborted) {
+        updateAttachment(newAttachment.clientKey, { status: "error" });
+        logError(error, { description: "Failed to upload attachment" });
+      }
+    }).finally(() => {
+      activeAttachmentFileNamesRef.current.delete(fileName);
+      attachmentAbortControllersRef.current.delete(newAttachment.clientKey);
+      editSessionUploadPromisesRef.current.delete(upload);
+    });
+    if (editingMessageId) editSessionUploadPromisesRef.current.add(upload);
   };
 
-  const handlePickImage = () => {
-    if (!user?.uid) {
-      handleRequireLogin();
-      return;
-    }
-    imageInputRef.current?.click();
+  const openFilePicker = (inputRef) => {
+    if (!user?.uid) return handleRequireLogin();
+    inputRef.current?.click();
   };
 
-  const handlePickVideo = () => {
-    if (!user?.uid) {
-      handleRequireLogin();
-      return;
-    }
-    videoInputRef.current?.click();
+  const selectAttachmentFiles = (files) => {
+    if (!files?.length) return;
+    if (!user?.uid) return handleRequireLogin();
+    setAttachmentErrors([]);
+    return attachmentSelection.select(files, {
+      onAdd: handleAddAttachment,
+      onErrors: setAttachmentErrors,
+    });
   };
 
-  const handlePickPdf = () => {
-    if (!user?.uid) {
-      handleRequireLogin();
-      return;
-    }
-    pdfInputRef.current?.click();
-  };
-
-  const handleImageFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    event.target.value = "";
-    if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file.");
-      return;
-    }
-    handleAddAttachment({ file, mediaKind: "image" });
-  };
-
-  const handleVideoFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    event.target.value = "";
-    if (!file.type.startsWith("video/")) {
-      alert("Please select a valid video file.");
-      return;
-    }
-    handleAddAttachment({ file, mediaKind: "video" });
-  };
-
-  const handlePdfFileChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    event.target.value = "";
-    setPdfUploadError("");
-
-    if (!isPdfWithinSizeLimit(file)) {
-      setPdfUploadError("PDF files must be 25 MB or smaller.");
-      return;
-    }
-
-    if (!(await isValidPdfFile(file))) {
-      setPdfUploadError("Please select a valid PDF file.");
-      return;
-    }
-
-    handleAddAttachment({ file, mediaKind: "pdf" });
+  const handleAttachmentFiles = (event) => {
+    selectAttachmentFiles(event.currentTarget.files);
+    event.currentTarget.value = "";
   };
 
   const handleRequestDeleteAttachment = (attachment) => {
@@ -547,29 +513,32 @@ export default function Page(props) {
   };
 
   const handleConfirmDeleteAttachment = async () => {
-    if (!attachmentToDelete) {
+    const att = pendingAttachmentsRef.current.find(
+      (item) => item.clientKey === attachmentToDelete?.clientKey,
+    );
+    if (!att) {
+      setAttachmentToDelete(null);
       setShowAttachmentDeleteDialog(false);
       return;
     }
 
-    const att = attachmentToDelete;
-    const remainingAttachments = pendingAttachments.filter(
-      (item) => item.clientKey !== att.clientKey,
-    );
-
-    // Remove from pending UI immediately
+    const deleteFromDraft = !editingMessageId && att.status === "done";
+    const deletingDraftFileNames = deletingDraftAttachmentFileNamesRef.current;
+    if (deleteFromDraft) deletingDraftFileNames.add(att.fileName);
     removeAttachment(att.clientKey);
 
     try {
       if (editingMessageId) {
-        setQueuedAttachmentDeletes((current) => [...current, att.fileName]);
+        if (att.status === "done") {
+          setQueuedAttachmentDeletes((current) => [...current, att.fileName]);
+        }
         const hasContent = Boolean(messageContent.trim());
-        setHasDraftContent(hasContent || remainingAttachments.length > 0);
+        setHasDraftContent(hasContent || pendingAttachmentsRef.current.length > 0);
       } else {
-        const savedDraft = await saveDraft(messageContent, remainingAttachments);
+        const savedDraft = await saveDraft(messageContent);
         const draftMessageId = savedDraft?.id || draft?.id;
 
-        if (draftMessageId) {
+        if (deleteFromDraft && draftMessageId) {
           await deleteMessageAttachment({
             conversationId: id,
             messageId: draftMessageId,
@@ -580,6 +549,7 @@ export default function Page(props) {
     } catch (error) {
       console.error("Error during attachment deletion:", error);
     } finally {
+      if (deleteFromDraft) deletingDraftFileNames.delete(att.fileName);
       setAttachmentToDelete(null);
       setShowAttachmentDeleteDialog(false);
     }
@@ -593,6 +563,7 @@ export default function Page(props) {
     closeDraftAttachmentViewer();
     pendingAttachmentsRef.current = [];
     setPendingAttachments([]);
+    setAttachmentErrors([]);
   }, [closeDraftAttachmentViewer]);
 
   const deleteEditSessionUploads = useCallback(async () => {
@@ -600,6 +571,7 @@ export default function Page(props) {
 
     if (!messageId) return;
 
+    for (const controller of attachmentAbortControllersRef.current.values()) controller.abort();
     await Promise.allSettled([...editSessionUploadPromisesRef.current]);
 
     const fileNames = [...editSessionUploadFileNamesRef.current];
@@ -898,6 +870,7 @@ export default function Page(props) {
 
       setEditingMessageId(null);
       setEditingMessageOriginalContent("");
+      setAttachmentErrors([]);
       setQueuedAttachmentDeletes([]);
       setSelectedMessageId(null);
 
@@ -936,6 +909,7 @@ export default function Page(props) {
   };
 
   const handleSendMessage = async () => {
+    if (pendingAttachmentsRef.current.some((item) => item.status !== "done")) return;
     if (editingMessageId) {
       return handleUpdateMessage();
     }
@@ -1042,14 +1016,12 @@ export default function Page(props) {
   const handleAudioRecordComplete = ({ blob, fileName }) => {
     const audioFile = new File(
       [blob],
-      fileName || `voice_${Date.now()}.webm`,
+      fileName,
       {
         type: blob?.type || "audio/webm",
       },
     );
 
-    // TODO: record them at the desired bitrate from AudioRecorder instead of recording high-quality audio
-    // and recompressing it in the following function. Maybe propagate a skipCompression argument?
     handleAddAttachment({ file: audioFile, mediaKind: "audio" });
     setShowAudioRecorder(false);
   };
@@ -1058,6 +1030,7 @@ export default function Page(props) {
     if (isSendButtonDisabled || isUpdatingFirebase) {
       return;
     }
+    if (!editingMessageId && pendingAttachmentsRef.current.some(isAttachmentProcessing)) return;
 
     const trimmedMessageContent = messageContent.trim();
     const hasAttachments = pendingAttachments.length > 0;
@@ -1066,6 +1039,7 @@ export default function Page(props) {
       const hasEditChanges =
         trimmedMessageContent !== editingMessageOriginalContent.trim() ||
         editSessionUploadFileNamesRef.current.size > 0 ||
+        editSessionUploadPromisesRef.current.size > 0 ||
         queuedAttachmentDeletes.length > 0;
 
       if (hasEditChanges) {
@@ -1103,6 +1077,7 @@ export default function Page(props) {
   };
 
   const handleConfirmClose = async () => {
+    if (!editingMessageId && pendingAttachmentsRef.current.some(isAttachmentProcessing)) return;
     setShowCloseDialog(false);
 
     if (editingMessageId) {
@@ -1132,13 +1107,15 @@ export default function Page(props) {
   // FIXED: Save draft before switching to edit mode
   const handleEditMessage = async (message) => {
     if (
+      editingMessageIdRef.current ||
+      pendingAttachmentsRef.current.some((attachment) => attachment.status !== "done") ||
       message.status !== "pending_review" ||
       message.sent_by?.id !== user?.uid
     ) {
       return;
     }
 
-    if (messageContent.trim().length > 0 && !editingMessageId) {
+    if (messageContent.trim().length > 0) {
       try {
         await saveDraft(messageContent);
       } catch (error) {
@@ -1161,6 +1138,7 @@ export default function Page(props) {
       fileNames: attachmentFileNames,
     });
 
+    setAttachmentErrors([]);
     setEditingMessageId(message.id);
     setEditingMessageOriginalContent(message.content);
     setMessageContent(message.content);
@@ -1195,6 +1173,7 @@ export default function Page(props) {
   };
 
   const handleReplyClick = async () => {
+    if (editingMessageIdRef.current) return;
     setIsEditing(true);
 
     // Preserve local unsent/in-flight attachment state instead of replacing
@@ -1266,8 +1245,6 @@ export default function Page(props) {
       }
     }, 100);
   };
-
-  usePageAnalytics(`/conversation/[id]`);
 
   useEffect(() => {
     const auth = getAuth();
@@ -1553,10 +1530,13 @@ export default function Page(props) {
     return message.senderLocation || sender?.location || "";
   };
 
+  const draftActionDisabled = composerBusy || showAudioRecorder;
+  const waitingForDraftUploads = !editingMessageId && pendingAttachments.some(isAttachmentProcessing);
   const canSendMessage = () => {
     return (
       (messageContent.trim().length > 0 || pendingAttachments.length > 0) &&
       !isSending &&
+      !draftActionDisabled &&
       !hasUploadingAttachments
     );
   };
@@ -1572,9 +1552,10 @@ export default function Page(props) {
         {/* ===== HEADER ===== */}
         <div className="bg-blue-100 p-4 flex items-center justify-between border-b min-h-[64px]">
           <button
-            onClick={handleCloseMessage}
-            className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3"
-            title="Close conversation"
+            disabled={draftActionDisabled || waitingForDraftUploads}
+            onClick={() => attachmentSelection.runTransition(handleCloseMessage)}
+            className="text-gray-700 cursor-pointer hover:text-gray-900 pl-3 disabled:opacity-50"
+            title={waitingForDraftUploads ? "Waiting for attachments to save to your draft" : "Close conversation"}
           >
             X
           </button>
@@ -1587,7 +1568,7 @@ export default function Page(props) {
               </div>
             ) : (
               <button
-                onClick={handleSendMessage}
+                onClick={() => attachmentSelection.runTransition(handleSendMessage)}
                 disabled={!isEditing || !canSendMessage()}
                 className={`p-1 ${
                   !isEditing || !canSendMessage()
@@ -1623,10 +1604,12 @@ export default function Page(props) {
             </div>
 
             <button
-              onClick={async () => {
+              disabled={draftActionDisabled}
+              onClick={() => attachmentSelection.runTransition(async () => {
                 const messageUserRef = userRef || doc(db, "users", user?.uid);
 
                 await deleteEditSessionUploads();
+                setAttachmentErrors([]);
 
                 try {
                   const existingDraft = await fetchDraft(id, messageUserRef, false);
@@ -1668,8 +1651,8 @@ export default function Page(props) {
                 setEditingMessageId(null);
                 setEditingMessageOriginalContent("");
                 setSelectedMessageId(null);
-              }}
-              className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap"
+              })}
+              className="text-amber-600 hover:text-amber-800 text-sm underline shrink-0 whitespace-nowrap disabled:opacity-50"
             >
               {/* Keep banner height consistent while editing */}
               Cancel
@@ -1821,16 +1804,17 @@ export default function Page(props) {
                                   {/* Wrapper so the check can stick to the button */}
                                   <div className="relative inline-flex">
                                     <button
+                                      disabled={draftActionDisabled || hasUploadingAttachments || Boolean(editingMessageId)}
                                       onClick={(e) => {
                                         e.stopPropagation();
 
-                                        handleEditMessage(message);
+                                        attachmentSelection.runTransition(() => handleEditMessage(message));
                                         logButtonEvent(
                                           "Edit message clicked!",
                                           "/conversation/[id]",
                                         );
                                       }}
-                                      className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700"
+                                      className="absolute -bottom-0.5 right-7 bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors hover:bg-blue-700 disabled:opacity-50"
                                       title="Edit message"
                                     >
                                       Edit
@@ -1864,7 +1848,8 @@ export default function Page(props) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handlePickImage}
+                disabled={composerBusy}
+                onClick={() => openFilePicker(imageInputRef)}
                 className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
                 title="Send photo"
               >
@@ -1872,7 +1857,8 @@ export default function Page(props) {
               </button>
               <button
                 type="button"
-                onClick={handlePickVideo}
+                disabled={composerBusy}
+                onClick={() => openFilePicker(videoInputRef)}
                 className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
                 title="Send video"
               >
@@ -1880,21 +1866,25 @@ export default function Page(props) {
               </button>
               <button
                 type="button"
-                onClick={handlePickPdf}
+                disabled={composerBusy}
+                onClick={() => openFilePicker(filesInputRef)}
                 className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
-                title="Send PDF"
+                aria-label="Attach files (images, videos, audio, or PDFs)"
+                title="Attach files (images, videos, audio, or PDFs)"
               >
-                <FileText size={18} className="text-slate-600" />
+                <Paperclip size={18} className="text-slate-600" />
               </button>
               <button
                 type="button"
+                disabled={composerBusy}
                 onClick={() => setShowAudioRecorder((prev) => !prev)}
+                aria-expanded={showAudioRecorder}
                 className={`p-2 rounded-full transition-colors ${
                   showAudioRecorder
                     ? "bg-blue-600 text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
-                title="Send voice message"
+                title={showAudioRecorder ? "Close voice recorder" : "Record voice message"}
               >
                 <Mic size={18} />
               </button>
@@ -1944,6 +1934,7 @@ export default function Page(props) {
                       </div>
                       <div className="text-xs text-emerald-700">
                         {formatFileSize(attachment.byteSize)}
+                        {attachment.status === "pending" && " • Queued"}
                         {attachment.status === "compressing" && " • Compressing..."}
                         {attachment.status === "uploading" && " • Uploading..."}
                         {attachment.status === "error" && " • Upload failed"}
@@ -1952,6 +1943,7 @@ export default function Page(props) {
                   </button>
                   <button
                     type="button"
+                    disabled={composerBusy}
                     onClick={() => handleRequestDeleteAttachment(attachment)}
                     className="text-emerald-700 hover:text-emerald-900"
                     title="Delete attachment"
@@ -1967,47 +1959,55 @@ export default function Page(props) {
             ref={imageInputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
-            onChange={handleImageFileChange}
+            onChange={handleAttachmentFiles}
           />
           <input
             ref={videoInputRef}
             type="file"
             accept="video/*"
+            multiple
             className="hidden"
-            onChange={handleVideoFileChange}
+            onChange={handleAttachmentFiles}
           />
           <input
-            ref={pdfInputRef}
+            ref={filesInputRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept="image/*,video/*,audio/*,application/pdf,.pdf"
+            multiple
             className="hidden"
-            onChange={handlePdfFileChange}
+            onChange={handleAttachmentFiles}
           />
-          {pdfUploadError && (
+          {attachmentErrors.length > 0 && (
             <div
               role="alert"
               className="mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
             >
-              {pdfUploadError}
+              <ul>
+                {attachmentErrors.map((error, index) => <li key={index}>{error}</li>)}
+              </ul>
             </div>
           )}
 
           {!isEditing ? (
             <div className="p-4">
-              <div
-                className="w-full p-3 border border-cyan-500 rounded-md text-gray-500 cursor-text"
-                onClick={handleReplyClick}
+              <button
+                type="button"
+                disabled={draftActionDisabled}
+                className="w-full p-3 border border-cyan-500 rounded-md text-left text-gray-500 cursor-text"
+                onClick={() => attachmentSelection.runTransition(handleReplyClick)}
               >
                 {hasDraftContent
                   ? "Continue draft..."
                   : "Reply to the message..."}
-              </div>
+              </button>
             </div>
           ) : (
             <div className="p-4 relative" style={{ height: "40vh" }}>
               <textarea
                 ref={textAreaRef}
+                readOnly={composerBusy}
                 className="w-full h-full p-3 focus:outline-none resize-none text-black bg-white"
                 placeholder={
                   editingMessageId
@@ -2044,7 +2044,8 @@ export default function Page(props) {
               },
               {
                 text: editingMessageId ? "Discard" : "Close",
-                onClick: handleConfirmClose,
+                disabled: draftActionDisabled || waitingForDraftUploads,
+                onClick: () => attachmentSelection.runTransition(handleConfirmClose),
                 variant: "secondary",
                 className: "flex-1",
               },
@@ -2062,7 +2063,8 @@ export default function Page(props) {
               </p>
               <div className="flex space-x-3">
                 <button
-                  onClick={handleConfirmDeleteAttachment}
+                  disabled={composerBusy}
+                  onClick={() => attachmentSelection.runTransition(handleConfirmDeleteAttachment)}
                   className="flex-1 bg-[#4E802A] text-white py-3 px-4 rounded-2xl"
                 >
                   Continue
