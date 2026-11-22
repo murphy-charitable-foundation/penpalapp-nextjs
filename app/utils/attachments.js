@@ -216,6 +216,18 @@ export const validatePickedAttachment = async (file) => {
   return { error: "Only image, video, audio, and PDF files can be attached." };
 };
 
+export const queueValidatedAttachments = (files, results, rejected, enqueue) => {
+  const errors = rejected ? ["Folders and unreadable files cannot be attached."] : [];
+  results.forEach((result, index) => {
+    if (result.error) {
+      errors.push(`${files[index].name}: ${result.error}`);
+    } else {
+      enqueue({ file: result.file || files[index], mediaKind: result.mediaKind });
+    }
+  });
+  return errors;
+};
+
 export const isFileDrag = (dataTransfer) =>
   Array.from(dataTransfer?.types || []).includes("Files");
 

@@ -154,6 +154,47 @@ test("file drops reject directories and unreadable entries without losing valid 
   assert.deepEqual(getDroppedAttachmentFiles({ files: [file] }), { files: [file], rejected: false });
 });
 
+test("mixed file drops queue valid attachments and report each rejection", async (t) => {
+  const {
+    createAttachmentFromFile,
+    getDroppedAttachmentFiles,
+    queueValidatedAttachments,
+    validatePickedAttachment,
+  } = await loadAttachments(t, {});
+  const image = new File(["image"], "photo.png", { type: "image/png" });
+  const unsupported = new File(["text"], "notes.txt", { type: "text/plain" });
+  const audio = new File(["audio"], "voice.m4a");
+  const invalidPdf = new File(["not a PDF"], "invalid.pdf", { type: "application/pdf" });
+  const transfer = {
+    types: ["Files"],
+    items: [
+      ...[image, unsupported, audio, invalidPdf].map((file) => ({
+        kind: "file",
+        getAsFile: () => file,
+      })),
+      { kind: "file", webkitGetAsEntry: () => ({ isDirectory: true }) },
+      { kind: "file", getAsFile: () => null },
+    ],
+  };
+  const { files, rejected } = getDroppedAttachmentFiles(transfer);
+  const results = await Promise.all(files.map(validatePickedAttachment));
+  const queue = [];
+  const errors = queueValidatedAttachments(files, results, rejected, ({ file, mediaKind }) => {
+    queue.push(createAttachmentFromFile(file, mediaKind));
+  });
+
+  assert.deepEqual(queue.map(({ fileName, mediaKind, status }) => ({ fileName, mediaKind, status })), [
+    { fileName: "photo.png", mediaKind: "image", status: "pending" },
+    { fileName: "voice.m4a", mediaKind: "audio", status: "pending" },
+  ]);
+  assert.equal(queue[1].file.type, "audio/mp4");
+  assert.deepEqual(errors, [
+    "Folders and unreadable files cannot be attached.",
+    "notes.txt: Only image, video, audio, and PDF files can be attached.",
+    "invalid.pdf: Please select a valid PDF file.",
+  ]);
+});
+
 test("compressed video uploads send one MP4 and complete normally", async (t) => {
   const { compressed, observed, uploadPromise } = await harness(t);
   assert.equal(observed.uploads.length, 1);

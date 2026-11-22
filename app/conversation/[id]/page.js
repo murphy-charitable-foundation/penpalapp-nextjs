@@ -31,6 +31,7 @@ import {
   getDroppedAttachmentFiles,
   getMessageAttachmentFileNames,
   isFileDrag,
+  queueValidatedAttachments,
   resolveMessageAttachmentPreview,
   restoreAttachmentQueue,
   sanitizeFileName,
@@ -569,14 +570,7 @@ export default function Page(props) {
     try {
       const results = await Promise.all(files.map(validatePickedAttachment));
       if (generation !== attachmentValidationGenerationRef.current) return;
-      const errors = rejected ? ["Folders and unreadable files cannot be attached."] : [];
-      results.forEach((result, index) => {
-        if (result.error) {
-          errors.push(`${files[index].name}: ${result.error}`);
-        } else {
-          handleAddAttachment({ file: result.file || files[index], mediaKind: result.mediaKind });
-        }
-      });
+      const errors = queueValidatedAttachments(files, results, rejected, handleAddAttachment);
       if (errors.length) {
         setPdfUploadError((previous) => [previous, ...errors].filter(Boolean).join(" "));
       }
