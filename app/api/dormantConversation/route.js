@@ -169,7 +169,7 @@ export async function POST(request) {
 
         if (userDiffDays >= 14) {
           emailPromises.push(
-            sendEmail(conversation.id, allMembers, emails, "user").catch(
+            sendEmail(conversation.id, allMembers, emails, "user", uid).catch(
               (err) => err
             )
           );
@@ -177,7 +177,7 @@ export async function POST(request) {
 
         if (adminDiffDays >= 28) {
           emailPromises.push(
-            sendEmail(conversation.id, allMembers, emails, "admin").catch(
+            sendEmail(conversation.id, allMembers, emails, "admin", uid).catch(
               (err) => err
             )
           );

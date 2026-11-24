@@ -7,6 +7,7 @@ import imageCompression from "browser-image-compression";
 
 import { storage, auth } from "../../app/firebaseConfig";
 import useBeforeUnloadWarning from "./useBeforeUnloadWarning";
+import { logError, logButtonEvent } from "../../app/utils/analytics";
 
 const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   const [file, setFile] = useState(null);
@@ -60,12 +61,15 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
   };
 
   const handleCancel = () => {
+    logButtonEvent("image upload cancel button clicked", "/conversation/[id]");
     resetState();
   };
 
   const handleSend = async () => {
     if (!file || !user) return;
 
+    logButtonEvent("image upload send button clicked", "/conversation/[id]");
+    
     setStatus("compressing");
 
     try {
@@ -82,18 +86,19 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           };
 
           const compressedFile = await imageCompression(file, options);
-
+          /*
           console.log(
             `Compression: ${(file.size / 1024).toFixed(2)}KB -> ${(
               compressedFile.size / 1024
             ).toFixed(2)}KB`
           );
+          */
 
           if (compressedFile.size < file.size) {
             fileToUpload = compressedFile;
           }
         } catch (compressErr) {
-          console.error("Compression failed, using original", compressErr);
+          logError(compressErr, {description: "Image compression failed"});
         }
       }
 
@@ -114,7 +119,7 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
           setProgress(p);
         },
         (err) => {
-          console.error(err);
+          logError(err, {description: "Upload failed"});
           alert("Upload failed: " + err.message);
           resetState();
         },
@@ -125,7 +130,7 @@ const ImageUploader = ({ onUploadSuccess, onRequireLogin, trigger }) => {
         }
       );
     } catch (e) {
-      console.error(e);
+      logError(e, {description: "Processing error"});
       alert("Processing error: " + e.message);
       resetState();
     }
