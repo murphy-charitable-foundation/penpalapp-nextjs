@@ -25,9 +25,9 @@ email addresses from each other. The administrator receives a separate, direct e
 
 | State | Meaning | Automatic retry |
 | --- | --- | --- |
-| `sending` | A process claimed delivery; completion has not been recorded | No |
-| `retryable` | SMTP explicitly rejected delivery or failed before sending | Yes, only recipients without recorded acceptance |
-| `uncertain` | SMTP may have accepted delivery but acknowledgment is incomplete | No |
+| `sending` | A process claimed delivery; completion has not been recorded | After the 5-minute lease, the next run uses the remaining attempt |
+| `retryable` | SMTP explicitly rejected delivery or failed before sending | On the next run, only recipients without recorded acceptance |
+| `uncertain` | SMTP may have accepted delivery but acknowledgment is incomplete | After 14 days, on the next run |
 | `sent` | All intended recipients were accepted by SMTP | After the normal reminder interval |
 
 The journal stores accepted recipient hashes, timestamps, and coordination
@@ -37,28 +37,22 @@ one transaction. A partially rejected email can retry its remaining recipients
 without resending to those already accepted, for the same latest message.
 
 SMTP acceptance does not guarantee inbox delivery. There is also no atomic
-transaction spanning SMTP and Firestore: if a process stops after SMTP accepts
-an email, the journal can remain `sending`. Claims therefore never expire
-automatically. This favors preventing duplicate reminders over silently retrying
-an ambiguous delivery.
+transaction spanning SMTP and Firestore, so an ambiguous send can be duplicated.
+The helper retries an ambiguous result once immediately, and checkpoints accepted
+recipients before that retry. If the second attempt is still ambiguous, it records
+`uncertain` and schedules another cycle 14 days later. Confirmed accepted recipients
+are skipped in later cycles. The journal tracks each uncertain recipient’s
+deadline by address hash. When a batch contains both a definite rejection and
+an uncertain outcome, it stays `retryable` for the rejected recipient. Retrying
+that recipient preserves the other recipient’s original deadline. The 14-day
+hold makes a recipient eligible on the next scan at or after that deadline.
 
-## Reconciling an uncertain delivery
-
-An operator must check `sending` or `uncertain` entries against the SMTP
-provider's delivery logs. First ensure the original request/process has stopped.
-Use the conversation ID, reminder type, and attempt time to identify the send.
-
-- If all recipients were accepted, atomically mark the journal `sent` and set
-  the corresponding conversation reminder timestamp to the confirmed send time.
-- If delivery was definitely rejected, set the journal to `retryable`. Preserve
-  any confirmed `acceptedRecipients` hashes so the next run skips those people.
-  Hash addresses using SHA-256 after trimming, lowercasing, and converting Unicode
-  domains to ASCII, matching the helper.
-- If acceptance cannot be established, leave the entry blocked for investigation.
-
-Use a transaction that checks the current `claimId` before reconciling it. Do not
-blindly delete a claim or retry a timed-out SMTP request; either can duplicate a
-message already accepted by the provider.
+A `sending` claim has a 5-minute lease. The next endpoint run after the lease
+continues with the remaining attempt; if the second attempt was already started
+when the process stopped, the claim becomes `uncertain` and receives the 14-day
+retry delay. This is recovered on the next endpoint run, not by a background timer.
+The SMTP transport timeouts are 30 seconds. Explicitly known pre-send failures and
+SMTP rejections remain `retryable` on the next run.
 
 ## Access and validation
 

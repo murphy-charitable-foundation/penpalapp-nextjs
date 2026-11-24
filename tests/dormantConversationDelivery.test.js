@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import nodemailer from "nodemailer";
@@ -7,6 +8,7 @@ import { isReminderDue, timestampMillis } from "../app/utils/dormantConversation
 const DAY_MS = 24 * 60 * 60 * 1000;
 const conversationId = "private-conversation";
 const conversationPath = `conversations/${conversationId}`;
+const deliveryPath = `dormantReminderDeliveries/${createHash("sha256").update(conversationId).digest("hex")}-user`;
 const recipients = ["first@example.test", "second@example.test"];
 const acceptAll = (mail) => ({ accepted: [...(mail.to || []), ...(mail.bcc || [])], rejected: [] });
 const members = [{ firstName: "Private", lastName: "Person" }];
@@ -299,7 +301,8 @@ test("a post-SMTP database failure retains the claim and prevents a duplicate se
   assert.equal(fixture.emails.length, 1);
 });
 
-test("an ambiguous DATA timeout retains an uncertain claim and never blindly resends", async (t) => {
+test("an ambiguous DATA timeout retries once, then defers another retry for 14 days", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
   const fixture = await setup(t, {
     send: async () => {
       throw Object.assign(new Error("Lost acknowledgment after DATA"), {
@@ -309,16 +312,143 @@ test("an ambiguous DATA timeout retains an uncertain claim and never blindly res
   });
   assert.equal((await fixture.send()).code, "delivery-uncertain");
   assert.equal(fixture.journals()[0].state, "uncertain");
-  assert.equal((await fixture.send()).code, "reminder-in-progress");
-  assert.equal(fixture.emails.length, 1);
+  assert.equal(fixture.emails.length, 2);
+  const deadline = Date.now() + 14 * DAY_MS;
+  assert.deepEqual(Object.values(fixture.journals()[0].holdUntil), [deadline, deadline]);
+  assert.equal((await fixture.send()).skipped, true);
+  assert.equal(fixture.emails.length, 2);
+
+  t.mock.timers.setTime(deadline - 1);
+  assert.equal((await fixture.send()).skipped, true);
+  t.mock.timers.setTime(deadline);
+  assert.equal((await fixture.send()).code, "delivery-uncertain");
+  assert.equal(fixture.emails.length, 4);
+});
+
+test("definite rejections retry on the next run while ambiguous recipients keep their own deadline", async (t) => {
+  const now = Date.now();
+  t.mock.timers.enable({ apis: ["Date"], now });
+  const fixture = await setup(t, {
+    send: async (mail, attempt) => {
+      if (attempt === 1) return { rejected: [recipients[0]], accepted: [] };
+      if (attempt === 2) return {};
+      return acceptAll(mail);
+    },
+  });
+  await fixture.send();
+  assert.equal(fixture.journals()[0].state, "retryable");
+  t.mock.timers.setTime(now + DAY_MS);
+  await fixture.send();
+  assert.equal(fixture.journals()[0].state, "uncertain");
+  t.mock.timers.setTime(now + 14 * DAY_MS - 1);
+  assert.equal((await fixture.send()).skipped, true);
+  t.mock.timers.setTime(now + 14 * DAY_MS);
+  assert.equal((await fixture.send()).success, true);
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc),
+    [recipients, [recipients[1]], [recipients[0]], [recipients[1]]]);
+});
+
+test("an ambiguous first attempt retries only unconfirmed recipients immediately", async (t) => {
+  const fixture = await setup(t, {
+    send: async (mail, attempt) => attempt === 1
+      ? { accepted: [recipients[0]], rejected: [] }
+      : acceptAll(mail),
+  });
+  assert.equal((await fixture.send()).success, true);
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [recipients, [recipients[1]]]);
+  assert.equal(fixture.journals()[0].state, "sent");
+  assert.equal(fixture.journals()[0].acceptedRecipients.length, 2);
 });
 
 test("SMTP results without recipient acknowledgment are uncertain, not successful", async (t) => {
   const fixture = await setup(t, { send: async () => ({ accepted: [recipients[0]], rejected: [] }) });
   assert.equal((await fixture.send()).code, "delivery-uncertain");
   assert.equal(fixture.db.documents.get(conversationPath).user_reminded_at, undefined);
-  assert.equal((await fixture.send()).code, "reminder-in-progress");
+  assert.equal(fixture.journals()[0].state, "uncertain");
+  assert.equal(fixture.journals()[0].acceptedRecipients.length, 1);
+  assert.equal((await fixture.send()).skipped, true);
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [recipients, [recipients[1]]]);
+});
+
+test("an abandoned first attempt is retried after its five-minute lease", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  const fixture = await setup(t, {
+    documents: {
+      [deliveryPath]: {
+        conversationId,
+        reason: "user",
+        claimId: "abandoned-claim",
+        state: "sending",
+        messageAt: timestampMillis(dormant().latest_message_created_at),
+        startedAt: new Date(Date.now() - 6 * 60 * 1000),
+        attemptCount: 1,
+        acceptedRecipients: [],
+      },
+    },
+  });
+  assert.equal((await fixture.send()).success, true);
   assert.equal(fixture.emails.length, 1);
+  assert.equal(fixture.journals()[0].attemptCount, 2);
+  assert.equal(fixture.journals()[0].state, "sent");
+});
+
+test("an abandoned second attempt becomes uncertain and waits 14 days", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() });
+  const fixture = await setup(t, {
+    documents: {
+      [deliveryPath]: {
+        conversationId,
+        reason: "user",
+        claimId: "abandoned-claim",
+        state: "sending",
+        messageAt: timestampMillis(dormant().latest_message_created_at),
+        startedAt: new Date(Date.now() - 6 * 60 * 1000),
+        attemptCount: 2,
+        acceptedRecipients: [],
+      },
+    },
+  });
+  assert.equal((await fixture.send()).code, "delivery-uncertain");
+  assert.equal(fixture.journals()[0].state, "uncertain");
+  const deadline = Date.now() + 14 * DAY_MS;
+  assert.deepEqual(Object.values(fixture.journals()[0].holdUntil), [deadline, deadline]);
+  assert.equal((await fixture.send()).skipped, true);
+  assert.equal(fixture.emails.length, 0);
+});
+
+test("recovering the second attempt only holds recipients on its SMTP envelope", async (t) => {
+  const now = Date.now();
+  t.mock.timers.enable({ apis: ["Date"], now });
+  const interrupted = createHash("sha256").update(recipients[1]).digest("hex");
+  const fixture = await setup(t, {
+    documents: {
+      [deliveryPath]: {
+        state: "sending", messageAt: timestampMillis(dormant().latest_message_created_at),
+        startedAt: new Date(now - 5 * 60 * 1000), attemptCount: 2,
+        inFlightRecipients: [interrupted], acceptedRecipients: [],
+      },
+    },
+  });
+  await fixture.send();
+  assert.deepEqual(fixture.emails.map(({ bcc }) => bcc), [[recipients[0]]]);
+  assert.deepEqual(fixture.journals()[0].holdUntil, { [interrupted]: now + 14 * DAY_MS });
+});
+
+test("older uncertain journals use 14 days from completion", async (t) => {
+  const now = Date.now();
+  t.mock.timers.enable({ apis: ["Date"], now });
+  const fixture = await setup(t, {
+    documents: {
+      [deliveryPath]: {
+        state: "uncertain", messageAt: timestampMillis(dormant().latest_message_created_at),
+        completedAt: new Date(now), nextAttemptAt: new Date(now + 30 * DAY_MS),
+      },
+    },
+  });
+  t.mock.timers.setTime(now + 14 * DAY_MS - 1);
+  assert.equal((await fixture.send()).skipped, true);
+  t.mock.timers.setTime(now + 14 * DAY_MS);
+  assert.equal((await fixture.send()).success, true);
 });
 
 test("user and administrator reminders have independent claims and cooldowns", async (t) => {
