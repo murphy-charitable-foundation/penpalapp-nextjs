@@ -17,7 +17,6 @@
 import { NextResponse } from "next/server";
 import { sendEmailMessage } from "../../utils/email";
 import { auth, db } from "../../firebaseAdmin";
-import { logError } from "../../utils/analytics";
 
 export const runtime = "nodejs";
 
@@ -69,12 +68,6 @@ export async function POST(request) {
 
     const authHeader = request.headers.get("authorization");
 
-    console.log("Authorization header exists:", Boolean(authHeader));
-    console.log(
-      "Authorization header starts with Bearer:",
-      authHeader?.startsWith("Bearer ")
-    );
-
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return jsonError("Missing or invalid authorization header.", 401);
     }
@@ -86,7 +79,6 @@ export async function POST(request) {
     try {
       const decodedToken = await auth.verifyIdToken(idToken);
       reporterUid = decodedToken.uid;
-      console.log("Verified reporter UID:", reporterUid);
     } catch (authError) {
       return jsonError("Invalid or expired token.", 401, authError);
     }
@@ -225,14 +217,9 @@ Reported Excerpt:
       return jsonError("Failed to send report email.", 500, emailError);
     }
 
-    logError(new Error("Message reported by user"), {
-      description: "User submitted content report",
-      reporter_uid: reporterUid,
-      reporter_first_name: userData.first_name || "",
-      reporter_last_name: userData.last_name || "",
-      conversation_url: String(currentUrl),
-      excerpt: String(excerpt),
-    });
+    // Successful moderation reports are normal activity. Keep the audit entry
+    // on the server without sending private report data or delaying the response.
+    console.info("content_report_submitted", { reporterUid });
 
     return NextResponse.json(
       { message: "Message reported successfully!" },

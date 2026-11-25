@@ -8,6 +8,15 @@ import * as Sentry from "@sentry/nextjs";
 // Initialize Firebase Analytics
 const analytics = typeof window !== "undefined" ? getAnalytics(app) : null; // Only run on the client side
 
+const logDormantMessageSent = (reason) => {
+  if (analytics) {
+    logEvent(analytics, "dormant_message_sent", {
+      dormant_conversation_reason:
+        reason === "user" || reason === "admin" ? reason : "unknown",
+    });
+  }
+};
+
 // Function to track page views
 /**
  * Logs page views to Firebase Analytics.
@@ -140,6 +149,7 @@ const logLoadingTime = (pagePath, loadingTime) => {
 };
 
 export {
+  logDormantMessageSent,
   logPageView,
   logButtonEvent,
   logInEvent,

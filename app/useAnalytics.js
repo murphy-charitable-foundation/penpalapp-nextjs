@@ -32,6 +32,7 @@ import {
 import { useReportWebVitals } from "next/web-vitals";
 import { ref, uploadString } from "@firebase/storage";
 import { storage } from "./firebaseConfig";
+import { SafeStorage } from "./utils/safeStorage";
 
 const DEAD_CLICK_RULESET_ID = "deadclick-v2.0";
 const RAPID_REPEAT_THRESHOLD_MS = 300;
@@ -762,25 +763,45 @@ class GlobalTracker {
 
   /**
    * Adds listeners for online and offline events to track internet connectivity.
-   * When the connection is lost, it logs the start time of the disconnection.
+   * Persists an outage's start time when possible, with in-memory fallback.
    * When the connection is restored, it logs the duration of the disconnection.
    */
   initializeConnectivityTracking() {
-    window.addEventListener("online", () => {
-      if (this.disconnectionStartTime) {
-        const duration = Math.round(
-          (Date.now() - this.disconnectionStartTime) / 1000
-        );
-        console.log("internet disconnection duration:", duration);
-        logInternetDisconnection(duration, true);
-        this.disconnectionStartTime = null;
-      }
-    });
+    const storageKey = "internetDisconnectionStartTime";
+    const storedStartTime = Number(SafeStorage.getItem(storageKey));
+    if (Number.isFinite(storedStartTime) && storedStartTime > 0) {
+      this.disconnectionStartTime = storedStartTime;
+    } else {
+      SafeStorage.removeItem(storageKey);
+    }
 
-    window.addEventListener("offline", () => {
+    const logCompletedDisconnection = () => {
+      if (!this.disconnectionStartTime) return;
+
+      const duration = Math.max(
+        0,
+        Math.round((Date.now() - this.disconnectionStartTime) / 1000)
+      );
+      logInternetDisconnection(duration, true);
+      this.disconnectionStartTime = null;
+      SafeStorage.removeItem(storageKey);
+    };
+
+    const recordDisconnection = () => {
+      if (this.disconnectionStartTime) return;
       this.disconnectionStartTime = Date.now();
+      SafeStorage.setItem(storageKey, this.disconnectionStartTime);
       logInternetDisconnection(0, false);
-    });
+    };
+
+    if (navigator.onLine) {
+      logCompletedDisconnection();
+    } else {
+      recordDisconnection();
+    }
+
+    window.addEventListener("online", logCompletedDisconnection);
+    window.addEventListener("offline", recordDisconnection);
   }
 
   /**
@@ -800,4 +821,4 @@ class GlobalTracker {
 const globalTracker = new GlobalTracker();
 globalTracker.initialize();
 
-export { usePageAnalytics, globalTracker };
+export { usePageAnalytics, globalTracker, SafeStorage };

@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "test:video": "node --test tests/videoTranscoder.test.js tests/videoContainer.test.js",
     "test:video:browser": "node tests/video-compression.browser.js",
-    "test:media": "node --test tests/*.test.js"
+    "test:media": "node --test tests/*.test.*"
   },
   "dependencies": {
     "@firebase/storage": "^0.12.3",
