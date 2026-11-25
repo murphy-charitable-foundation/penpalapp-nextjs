@@ -56,11 +56,25 @@ SMTP rejections remain `retryable` on the next run.
 
 ## Access and validation
 
-Client access to `dormantReminderDeliveries` must be denied in the deployed
-Firestore rules. Admin SDK operations use server credentials and bypass those
-rules. The checked-in `firestore.rules` is empty, so this repository alone cannot
-verify the deployed policy. Existing broad collection wildcards must also be
-checked; an additional denying match does not override another allowing match.
+The [Firestore rules](../firestore.rules) deny client reads and writes to every
+`dormantReminderDeliveries/{deliveryId}` document, including requests from
+signed-in app admins. The reminder API uses the Admin SDK with server IAM
+permissions. Journal entries are top-level documents. The recursive rules for
+the admin inbox match documents in collections named `messages` and do not
+grant access to journal entries.
+
+The default Firestore databases in dev and production use the same rules file.
+Deploy future rules changes to dev first, then production.
+
+```sh
+firebase deploy --only firestore:rules --project penpalmagicapp-dev
+firebase deploy --only firestore:rules --project penpalmagicapp
+```
+
+When changing wildcard rules, test `get`, `list`, `create`, `update`, and
+`delete` on a journal entry as a guest, a member, and an app admin. All 15
+cases should be denied. Also verify that an app admin can still list messages
+for moderation. Firestore grants access if any matching rule allows it.
 
 Run `npm run test:media` to execute the production worker, result handler,
 delivery helper, API route, storage wrapper, and content-report tests. This command
