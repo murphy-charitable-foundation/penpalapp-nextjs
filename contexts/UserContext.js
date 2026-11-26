@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
@@ -23,6 +23,8 @@ export function UserProvider({ children }) {
   const [userDocRef, setUserDocRef] = useState(null);
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
+  const authRequestId = useRef(0);
+  const activeUid = useRef(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -32,13 +34,17 @@ export function UserProvider({ children }) {
     setDisplayName(data.first_name || '');
   };
 
-  const loadProfileImage = async (uid) => {
+  const loadProfileImage = async (uid, isCurrentRequest) => {
     try {
       const pfp = await getUserPfp(uid);
-      setProfileImage(pfp || '');
+      if (isCurrentRequest()) {
+        setProfileImage(pfp || '');
+      }
     } catch (error) {
-      console.error('Error fetching profile image:', error);
-      setProfileImage('');
+      if (isCurrentRequest()) {
+        console.error('Error fetching profile image:', error);
+        setProfileImage('');
+      }
     }
   };
 
@@ -46,6 +52,26 @@ export function UserProvider({ children }) {
     let lastUid = null;
 
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      const requestId = ++authRequestId.current;
+      const isCurrentRequest = () =>
+        requestId === authRequestId.current &&
+        (auth.currentUser?.uid ?? null) === (authUser?.uid ?? null);
+      if (!isCurrentRequest()) return;
+
+      const currentUid = authUser?.uid ?? null;
+
+      if (activeUid.current !== currentUid) {
+        if (activeUid.current) {
+          clearCachedUser(activeUid.current);
+        }
+        activeUid.current = currentUid;
+        setUserData(null);
+        setUserType(null);
+        setDisplayName('');
+        setProfileImage('');
+        setLoading(true);
+      }
+
       if (authUser) {
         if (lastUid && lastUid !== authUser.uid) {
           clearCachedUser(lastUid);
@@ -58,11 +84,17 @@ export function UserProvider({ children }) {
         setUserDocRef(userDocRef);  // Set it in state
 
         try {
-          const fetchedUserData = await getUserData(authUser.uid, userDocRef);
+          const fetchedUserData = await getUserData(
+            authUser.uid,
+            userDocRef,
+            isCurrentRequest
+          );
+
+          if (!isCurrentRequest()) return;
 
           if (fetchedUserData) {
             applyUserData(fetchedUserData);
-            await loadProfileImage(authUser.uid);
+            await loadProfileImage(authUser.uid, isCurrentRequest);
           } else {
             setUserData(null);
             setUserType('Unknown Type');
@@ -73,12 +105,16 @@ export function UserProvider({ children }) {
             }
           }
         } catch (error) {
+          if (!isCurrentRequest()) return;
+
           console.error('Error fetching user data:', error);
           setUserData(null);
           setUserType('Unknown Type');
           setProfileImage('');
         } finally {
-          setLoading(false);
+          if (isCurrentRequest()) {
+            setLoading(false);
+          }
         }
       } else {
         if (lastUid) {
@@ -87,9 +123,12 @@ export function UserProvider({ children }) {
           clearAllCachedUsers();
         }
         lastUid = null;
+        if (!isCurrentRequest()) return;
+
         setUser(null);
         setUserType(null);
         setUserData(null);
+        setDisplayName('');
         setProfileImage('');
         setUserDocRef(null);
 
@@ -100,7 +139,10 @@ export function UserProvider({ children }) {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      authRequestId.current += 1;
+      unsubscribe();
+    };
   }, [pathname, router]);
 
   const value = {

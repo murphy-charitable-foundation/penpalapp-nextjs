@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { db } from "../firebaseConfig";
 import { useUser } from "../../contexts/UserContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 
 import NavBar from "../../components/bottom-nav-bar";
 import ConversationList from "../../components/general/ConversationList";
@@ -32,21 +32,9 @@ export default function Home() {
   const [, setError] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [userId, setUserId] = useState("");
-  const { user } = useUser();
+  const { user, userData } = useUser();
   
   usePageAnalytics("/inbox");
-
-  const getUserData = async (uid) => {
-    const docRef = doc(db, "users", uid);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      return docSnap.data();
-    }
-
-    setError("User data not found.");
-    throw new Error("No user document found.");
-  };
 
   const getConversations = useCallback(async (uid) => {
     try {
@@ -97,8 +85,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
     const fetchData = async () => {
-      if (!user) return;
+      if (!user || !userData) {
+        setIsLoading(true);
+        return;
+      }
 
       setIsLoading(true);
 
@@ -106,32 +99,43 @@ export default function Home() {
         const uid = user.uid;
         setUserId(uid);
 
-        const userData = await getUserData(uid);
-
         setUserName(userData.first_name || "Unknown User");
 
         try {
           const downloaded = await getUserPfp(uid);
-          setProfileImage(downloaded || "");
+          if (active) {
+            setProfileImage(downloaded || "");
+          }
         } catch (error) {
-          console.error("Failed to load profile image", error);
-          setProfileImage("");
+          if (active) {
+            console.error("Failed to load profile image", error);
+            setProfileImage("");
+          }
         }
 
         const userConversations = await getConversations(uid);
-        setConversations(userConversations);
+        if (active) {
+          setConversations(userConversations);
+        }
       } catch (err) {
-        logError(err, {
-          description: "Error loading user data and conversations",
-        });
-        setError("Failed to load data.");
+        if (active) {
+          logError(err, {
+            description: "Error loading user data and conversations",
+          });
+          setError("Failed to load data.");
+        }
       } finally {
-        setIsLoading(false);
+        if (active) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [user, getConversations]);
+    return () => {
+      active = false;
+    };
+  }, [user, userData, getConversations]);
 
   if (isLoading) {
     return <InboxSkeleton />;

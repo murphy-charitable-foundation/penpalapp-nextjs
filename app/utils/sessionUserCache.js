@@ -16,6 +16,7 @@
  */
 
 import { getDoc } from 'firebase/firestore';
+import { encryptData, decryptData } from './cacheCrypto';
 
 /** Build a per-user storage key so different accounts never collide. */
 const storageKey = (uid) => `cached-user-${uid}`;
@@ -29,42 +30,55 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  * or the entry has expired past CACHE_TTL_MS.
  * @param {string} uid – the Firebase auth uid for the current user.
  */
-export const getCachedUser = (uid) => {
+export const getCachedUser = async (uid) => {
+  if (!uid) return null;
+
+  const key = storageKey(uid);
+  let raw = null;
+
+  const removeIfUnchanged = () => {
+    try {
+      if (raw !== null && localStorage.getItem(key) === raw) {
+        localStorage.removeItem(key);
+      }
+    } catch {
+      // Ignore storage cleanup failures.
+    }
+  };
+
   try {
-    if (!uid) return null;
-    const raw = localStorage.getItem(storageKey(uid));
+    raw = localStorage.getItem(key);
     if (!raw) return null;
 
-    const { user, cachedAt } = JSON.parse(raw);
+    const encrypted = JSON.parse(raw);
+    const { user, cachedAt } = await decryptData(encrypted, uid);
 
-    // Reject malformed cache entries. If cachedAt is not a valid number,
-    // the TTL check below would evaluate against NaN and the entry would
-    // never expire.
     if (
       !Number.isFinite(cachedAt) ||
+      cachedAt > Date.now() ||
       !user ||
-      typeof user !== "object"
+      typeof user !== 'object' ||
+      Array.isArray(user) ||
+      typeof user.first_name !== 'string' ||
+      typeof user.user_type !== 'string' ||
+      Object.keys(user).length !== 2
     ) {
-      localStorage.removeItem(storageKey(uid));
+      removeIfUnchanged();
       return null;
     }
 
-    // If the entry is older than the TTL, treat it as a cache miss.
     if (Date.now() - cachedAt > CACHE_TTL_MS) {
-      localStorage.removeItem(storageKey(uid));
+      removeIfUnchanged();
+      return null;
+    }
+
+    if (localStorage.getItem(key) !== raw) {
       return null;
     }
 
     return user;
   } catch {
-    // Guard against malformed JSON or a sandboxed environment
-    // where localStorage throws. Remove the bad entry so we
-    // don't keep hitting this path on every read.
-    try {
-      localStorage.removeItem(storageKey(uid));
-    } catch {
-      // Ignore storage cleanup failures.
-    }
+    removeIfUnchanged();
     return null;
   }
 };
@@ -75,13 +89,30 @@ export const getCachedUser = (uid) => {
  * @param {string} uid – the Firebase auth uid for the current user.
  * @param {Object} user – the user document data to cache.
  */
-export const setCachedUser = (uid, user) => {
+export const setCachedUser = async (
+  uid,
+  user,
+  isRequestValid = () => true
+) => {
   try {
-    if (!uid) return;
-    const envelope = JSON.stringify({ user, cachedAt: Date.now() });
-    localStorage.setItem(storageKey(uid), envelope);
+    if (!uid || !isRequestValid()) return;
+
+    const envelope = {
+      user,
+      cachedAt: Date.now(),
+    };
+
+    const encrypted = await encryptData(envelope, uid);
+
+    if (!isRequestValid()) return;
+
+    localStorage.setItem(
+      storageKey(uid),
+      JSON.stringify(encrypted)
+    );
   } catch {
-    // localStorage may be full or unavailable; fail silently.
+    // Encryption or storage may be unavailable.
+    // Continue without caching.
   }
 };
 
@@ -118,23 +149,41 @@ export const clearAllCachedUsers = () => {
  * Fetch user data using a cache-first strategy:
  * 1. Return cached user data if fresh in localStorage.
  * 2. Fall back to Firestore getDoc if missing or stale.
- * 3. Update localStorage cache with fetched data before returning.
+ * 3. Update localStorage cache if the request is still valid.
  * @param {string} uid – the user ID
  * @param {DocumentReference} userDocRef – the Firestore document reference
+ * @param {() => boolean} isRequestValid – optional guard for the request's auth state
  * @returns {Promise<Object|null>} user data object, or null if doc doesn't exist
  */
-export const getUserData = async (uid, userDocRef) => {
-  const cachedUser = getCachedUser(uid);
+export const getUserData = async (
+  uid,
+  userDocRef,
+  isRequestValid = () => true
+) => {
+  const cachedUser = await getCachedUser(uid);
+  if (!isRequestValid()) return null;
+
   if (cachedUser) {
-    //console.log('✅ Cache hit for user:', uid);
+    //console.log('Cache hit for user:', uid);
     return cachedUser;
   }
 
-  //console.log('⬇️ Fetching user from Firestore for user:', uid);
+  //console.log('Fetching user from Firestore for user:', uid);
   const userDoc = await getDoc(userDocRef);
   if (userDoc.exists()) {
-    const fetchedUserData = userDoc.data();
-    setCachedUser(uid, fetchedUserData);
+    const data = userDoc.data();
+
+    const fetchedUserData = {
+      first_name: data.first_name || '',
+      user_type: data.user_type || 'Unknown Type',
+    };
+    if (!isRequestValid()) {
+      return null;
+    }
+
+    await setCachedUser(uid, fetchedUserData, isRequestValid);
+    if (!isRequestValid()) return null;
+
     return fetchedUserData;
   }
 
