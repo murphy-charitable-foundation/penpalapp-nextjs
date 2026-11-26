@@ -32,6 +32,16 @@ Attachment objects live in Cloud Storage at
 content types, and byte sizes are resolved from Cloud Storage and are never stored
 on the Firestore message.
 
+The conversation composer accepts images, videos, audio files, and PDFs. All
+file pickers use the same selection handler. It checks the first 10 files in
+each selection and reports rejections alongside the files it accepts. PDFs and
+imported audio are limited to 25 MiB each. Imported audio keeps its original
+format. Voice recordings use the existing media compression profile.
+
+Each composer runs up to two attachment uploads at once, including compression.
+The uploader reserves the final Storage filename after compression so two videos
+that both become MP4 can be saved as separate attachments.
+
 ## Analytics & errors (gotcha)
 Use helpers in `app/utils/analytics.js` so events go to Firebase Analytics and errors to Sentry.
 
