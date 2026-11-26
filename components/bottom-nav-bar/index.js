@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
+import { clearCachedUser } from "@/app/utils/sessionUserCache";
 import {
   FaUserAlt,
   FaCompass,
@@ -80,6 +81,7 @@ export default function NavBar() {
     setIsNavigating(true);
 
     try {
+      clearCachedUser(auth.currentUser?.uid);
       await signOut(auth);
       router.push("/choose-profile");
     } catch (err) {
