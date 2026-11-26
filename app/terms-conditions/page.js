@@ -34,7 +34,7 @@ export default function TermsCondition() {
             
               <p><strong>Last Updated:</strong> June 20, 2026</p>
 
-              <p class="intro">
+              <p className="intro">
                 Below are our terms for using the App:
               </p>
 
